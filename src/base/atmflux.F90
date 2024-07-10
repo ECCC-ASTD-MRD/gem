@@ -21,7 +21,7 @@ contains
     real, dimension(F_ni,F_nk), intent(in) :: F_sig             !Sigma levels of tendencies
     real, dimension(F_ni), intent(in) :: F_p0                   !Surface pressure (Pa)
     real, dimension(F_ni), intent(in), optional :: F_topflux    !Top boundary flux [0] (field units)
-    integer, intent(in), optional :: F_type            !Type of integration strategy to use ('pchip',['linear'],'step')
+    integer, intent(in), optional :: F_type                     !Type of integration strategy to use ('pchip',['linear'],'step')
     real, dimension(F_ni,F_nk), intent(out) :: F_flux           !Field flux on staggered flux-levels
 
     ! Local declarations

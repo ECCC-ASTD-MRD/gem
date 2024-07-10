@@ -14,20 +14,27 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P TCONTHL - WATER VAPOR CONTINUUM
-!
-      subroutine ccc2_tconthl4 (taug, coef1, coef2, s1, dp, dip, dir, dt, &
-                          inptr, inpt, mcont, il1, il2, ilg, lay)
-!
+
+module ccc2_tconthl
+   implicit none
+   private
+   public :: ccc2_tconthl2
+   
+contains
+
+      subroutine ccc2_tconthl2(taug, coef1, coef2, s1, dp, dip, dir, dt, &
+                          inptr, inpt, mcont, ni, lay)
       implicit none
 !!!#include <arch_specific.hf>
-!
-      integer ilg, lay, il1, il2, mcont(ilg)
-      real taug(ilg,lay), coef1(5,5,4), coef2(5,5,4)
-!
-      real s1(ilg,lay), dp(ilg,lay), dip(ilg,lay), dir(ilg,lay), &
-           dt(ilg,lay)
-      integer inptr(ilg,lay), inpt(ilg,lay)
-!
+
+      integer, intent(in) :: ni, lay
+      integer, intent(in) :: mcont(ni)
+      real, intent(inout) :: taug(ni,lay)
+      real, intent(in) :: coef1(5,5,4), coef2(5,5,4)
+      real, intent(in) :: s1(ni,lay), dp(ni,lay), dip(ni,lay), dir(ni,lay), &
+           dt(ni,lay)
+      integer, intent(in) :: inptr(ni,lay), inpt(ni,lay)
+
 !Authors
 !
 !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -83,8 +90,8 @@
       integer  k, i, j, m, n, l, lp1
       real x1, y1, x2, y2, x11, x21, y21, y11, x12, x22, y12, y22
 
-      do 300 i = il1, il2
-      do 200 k = mcont(i), lay
+      DO_I: do i = 1, ni
+      do k = mcont(i), lay
        if (inpt(1,k) .lt. 950)                                      then
          m =  inpt(i,k) - 14
          n =  m + 1
@@ -240,9 +247,10 @@
                        dip(i,k)) * 1.608 * s1(i,k) + y1 + (y2 - y1) * &
                        dip(i,k)) * s1(i,k) * dp(i,k)
          endif
-       endif
-  200 continue
-  300 continue
-!
+        endif
+      enddo
+      enddo DO_I
       return
-      end
+   end subroutine ccc2_tconthl2
+
+end module ccc2_tconthl

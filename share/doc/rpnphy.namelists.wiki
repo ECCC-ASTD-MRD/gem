@@ -327,11 +327,6 @@ Time length (hours) for special time accumulated physics variables
 | 0 || integer
 
 |-
-| advecqtbl ||
-Boundary layer cloud advect. is active if .true.
-| .false. || logical
-
-|-
 | advectke ||
 Turbulent kinetic energy advect. is active if .true.
 | .false. || logical
@@ -347,6 +342,11 @@ Conservation corrections for gridscale condensation
 * 'NIL ' : No conservation correction applied
 * 'TEND' : Temperature and moisture tendencies corrected
 | 'NIL' || character(len=16)
+
+|-
+| cond_drhc ||
+Account for time-evolution of critical RH in condensation
+| .false. || logical
 
 |-
 | cond_evap ||
@@ -375,6 +375,11 @@ for stratiform condensation, Sunqvist gridscale condensation)
 | cond_iceacc ||
 Dry accretion of ice crystals by snow in Sundqvist (factor)
 | 5. || real
+
+|-
+| cond_sgspdf ||
+Distribution of subgrid-scale moisture variance assumed for cloud fraction
+| 'NIL' || character(len=16)
 
 |-
 | debug_alldiag_l ||
@@ -685,8 +690,13 @@ For triple-moment ice in microphysics (P3)
 
 |-
 | p_runlgt ||
-Vectoc lenght physics memory space folding for openMP
+Vector length physics memory space folding for openMP
 | -1 || integer
+
+|-
+| pbl_ae ||
+Coefficient controlling strength of TKE diffusion
+| 0.35 || real
 
 |-
 | pbl_cmu_timeavg ||
@@ -765,6 +775,11 @@ Use the non-local PBL cloud formulation
 * 'NIL   ' : no non-local PBL cloud formulation
 * 'LOCK06' : Non-local cloud scheme of Lock and Mailhot (2006)
 | 'NIL' || character(len=16)
+
+|-
+| pbl_progvar ||
+Use prognostic equations for subgrid-scale variances of conserved variables
+| .false. || logical
 
 |-
 | pbl_ribkg ||

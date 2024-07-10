@@ -14,17 +14,24 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
+module ccc2_tline1z_m
+   implicit none
+   private
+   public :: ccc2_tline1z
+   
+contains
+   
 subroutine ccc2_tline1z(taug, coef1, s1,  dp, dip, &
-     dt, inpt, lev1, gh, lc, iplus, &
-     il1, il2, ilg, lay)
+     dt, inpt, lev1, gh, lc, nig, ni, lay)
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ilg, lay, lc, lev1, iplus, il1, il2
-   real taug(ilg,lay), coef1(5,lc), s1(ilg,lay), dp(ilg,lay), &
-        dip(ilg,lay), dt(ilg,lay)
-   integer inpt(ilg,lay)
-   logical gh
+   integer, intent(in) :: ni, lay, lc, lev1, nig
+   real, intent(inout) :: taug(ni,lay)
+   real, intent(in) :: coef1(5,lc), s1(ni,lay), dp(ni,lay), &
+        dip(ni,lay), dt(ni,lay)
+   integer, intent(in) :: inpt(ni,lay)
+   logical, intent(in) :: gh
 
    !@Authors
    !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -81,66 +88,59 @@ subroutine ccc2_tline1z(taug, coef1, s1,  dp, dip, &
 
 #include "ccc_tracegases.cdk"
 
-   integer k, i, m, n
-   integer lay1, lay2
-   real x1, x2
+   integer :: k, i, m, n, a, lay1, w1, m1
+   real :: x1, x2, w2
+   
+   lay1 = lev1
+   if (gh) lay1 = 1
 
-   if (gh) then
-      lay1 =  1
-   else
-      lay1 =  lev1
-   endif
-   lay2   =  lay
+   do k = lay1, lay
+      IF950: if (inpt(1,k) < 950) then
 
-   !     initialize taug if iplus=2.
-
-   if (iplus .eq. 2) then
-      do k = lay1, lay2
-         do i = il1, il2
-            taug(i,k)     =  0.
-         enddo
-      enddo
-   endif
-
-   do k = lay1, lay2
-      if (inpt(1,k) .lt. 950) then
-         do i = il1, il2
-            m  =  inpt(i,k)
-            n  =  m + 1
-            x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
+         DO_I1: do i = 1, nig
+            m  = inpt(i,k)
+            n  = m + 1
+            x2 = coef1(1,n) + dt(i,k) * (coef1(2,n) + &
                  dt(i,k) * (coef1(3,n) + dt(i,k) * &
                  (coef1(4,n) + dt(i,k) * coef1(5,n))))
-            if (m .gt. 0) then
-               x1      =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
+!!$            if (m > 0) then
+            m1 = max(1, m)
+            x1 = coef1(1,m1) + dt(i,k) * (coef1(2,m1) + &
+                 dt(i,k) * (coef1(3,m1) + dt(i,k) * &
+                 (coef1(4,m1) + dt(i,k) * coef1(5,m1))))
+            w1 = max(0, min(m, 1))
+            x1 = float(w1) * x1
+!!$            endif
+            taug(i,k) = (x1 + (x2 - x1) * dip(i,k)) * s1(i,k) * dp(i,k)
+         enddo DO_I1
+
+      else  !IF950
+         
+         m  = inpt(1,k) - 1000  !# Looks like a cause for bitpattern change with topo/runlgt, use 1st point in the row.
+         n  = m + 1
+         if (m > 0) then
+            DO_I2: do i = 1, nig
+               x2 =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
+                    dt(i,k) * (coef1(3,n) + dt(i,k) * &
+                    (coef1(4,n) + dt(i,k) * coef1(5,n))))
+               x1 =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
                     dt(i,k) * (coef1(3,m) + dt(i,k) * &
                     (coef1(4,m) + dt(i,k) * coef1(5,m))))
-            else
-               x1      =  0.0
-            endif
-
-            taug(i,k) =  taug(i,k) + (x1 + (x2 - x1) * dip(i,k)) * &
-                 s1(i,k) * dp(i,k)
-         enddo
-      else
-         m  =  inpt(1,k) - 1000
-         n  =  m + 1
-         do i = il1, il2
-            x2        =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
-                 dt(i,k) * (coef1(3,n) + dt(i,k) * &
-                 (coef1(4,n) + dt(i,k) * coef1(5,n))))
-            if (m .gt. 0) then
-               x1      =  coef1(1,m) + dt(i,k) * (coef1(2,m) + &
-                    dt(i,k) * (coef1(3,m) + dt(i,k) * &
-                    (coef1(4,m) + dt(i,k) * coef1(5,m))))
-            else
-               x1      =  0.0
-            endif
-
-            taug(i,k) =  taug(i,k) + (x1 + (x2 - x1) * dip(i,k)) * &
-                 s1(i,k) * dp(i,k)
-         enddo
-      endif
+               taug(i,k) = (x1 + (x2 - x1) * dip(i,k)) * s1(i,k) * dp(i,k)
+            enddo DO_I2
+         else
+            DO_I3: do i = 1, nig
+               x2 =  coef1(1,n) + dt(i,k) * (coef1(2,n) + &
+                    dt(i,k) * (coef1(3,n) + dt(i,k) * &
+                    (coef1(4,n) + dt(i,k) * coef1(5,n))))
+               taug(i,k) = x2 * dip(i,k) * s1(i,k) * dp(i,k)
+            enddo DO_I3
+         endif
+         
+      endif IF950
    enddo
 
    return
 end subroutine ccc2_tline1z
+
+end module ccc2_tline1z_m

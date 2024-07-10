@@ -14,16 +14,23 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P PREINTP - DETERMINES THE PRESSURE INTERPOLATION POINTS
-!
-      subroutine ccc2_preintp (inpt, inptm, dip, dip0, pp, il1, il2, ilg,lay)
+
+
+module ccc2_preintp_m
+   implicit none
+   private
+   public :: ccc2_preintp
+   
+contains
+
+      subroutine ccc2_preintp (inpt, inptm, dip, dip0, pp, ni,lay)
       implicit none
 !!!#include <arch_specific.hf>
 !
-      integer ilg, lay, il1, il2, jends, k, i, j, inpdif, m, n
-      real p0(ilg)  !#, pm
-      real dip(ilg,lay), dip0(ilg)
-      real pp(ilg,lay), standp(28)
-      integer inpt(ilg,lay), inptm(ilg,lay)
+      integer, intent(in) :: ni, lay
+      real, intent(in) :: pp(ni,lay)
+      real, intent(inout) :: dip(ni,lay), dip0(ni)
+      integer, intent(inout) :: inpt(ni,lay), inptm(ni,lay)
 !
 !Authors
 !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -49,6 +56,10 @@
 ! dip0   interpolation factor for pressure above model top level
 !----------------------------------------------------------------------
 !*
+      integer :: jends, k, i, j, inpdif, m, n
+      real :: p0(ni)  !#, pm
+      real :: standp(28)
+      
       data standp / 5.0000e-04, 1.4604e-03, 2.9621e-03, 6.0080e-03, &
                     1.2186e-02, 2.4717e-02, 5.0134e-02, 1.0169e-01, &
                     2.0625e-01, 4.1834e-01, &
@@ -56,18 +67,20 @@
                     13.0091, 19.3054, 28.6491, 42.5151, 63.0922, &
                     93.6284, 138.9440, 206.1920, 305.9876, 454.0837, &
                     673.8573, 1000.0000 /
-!
+
       jends = 27
-      do 500 k = 1, lay
+      DO_K: do k = 1, lay
+         
         inpdif =  0
-        do 200 i = il1, il2
+        DO_I: do i = 1, ni
+           
           inpt(i,k)   =  0
-          do 100 j = 1, jends
-            if (pp(i,k) .gt. standp(j))                               then
+          do j = 1, jends
+            if (pp(i,k) .gt. standp(j))                             then
               inpt(i,k) =  inpt(i,k) + 1
             endif
-  100   continue
-!
+          enddo
+
 !----------------------------------------------------------------------
 !     calculate arrays dip and dit required later for gasopt routines.
 !     also, set values of inpt for a given level to be negative if all
@@ -79,7 +92,7 @@
 !     the value of zero and no indirect-addressing is done in the
 !     gasopt routines.
 !----------------------------------------------------------------------
-!
+
           if(inpt(i,k) .ne. inpt(1,k) )  inpdif = 1
           m  =  inpt(i,k)
           n  =  m + 1
@@ -88,44 +101,46 @@
           else
             dip(i,k)  =  pp(i,k) / standp(1)
           endif
-  200   continue
-!
+        enddo DO_I
+
 !       when all values along i are the same
 !       we add 1000
-!
+
         if(inpdif .eq. 0)                                           then
-          do 250 i = il1, il2
+          do i = 1, ni
             inpt(i,k) =  inpt(i,k) + 1000
-  250     continue
+          enddo
         endif
-!
-        do 300 i = il1, il2
+
+        do i = 1, ni
           inptm(i,k)  =  inpt(i,k) - 10
-  300   continue
-!
-  500 continue
-!
+        enddo
+
+     enddo DO_K
+
 !----------------------------------------------------------------------
 !     interpolation factor for lattenu and sattenu (attenuation above
 !     model top
 !     note : remove commented lines below if top is less than .0005 mb
 !----------------------------------------------------------------------
 !       pm =  pp(1,1)
-!       do 700 i = il1, il2
+!       do 700 i = 1, ni
 !         pm          =  min (pm, pp(i,1))
 ! 700   continue
 !
 !       if (pm .le. 0.0005)                                         then
-!         do 800 i = il1, il2
+!         do 800 i = 1, ni
 !           dip0(i)   =  0.0
 ! 800     continue
 !       else
-          do i = il1, il2
+          do i = 1, ni
             p0(i)   = pp(i,1)*pp(i,1) / pp(i,2)
             dip0(i) = sqrt(p0(i) * pp(i,1))
             dip0(i) = (dip0(i) - pp(i,1)) / (p0(i) - pp(i,1))
           enddo 
 !       endif
-!
+
       return
-      end
+   end subroutine ccc2_preintp
+   
+end module ccc2_preintp_m

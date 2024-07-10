@@ -93,7 +93,7 @@ contains
       MKPTR2D(zwplus, wplus, pvars)
       MKPTR2D(zze, ze, pvars)
 
-      call series_xst(zfl, 'fl', trnch)
+      if (associated(zfl)) call series_xst(zfl, 'fl', trnch)
 
       ! Extract time series and zonal diagnostics on nk levels
 

@@ -18,6 +18,7 @@
 subroutine litozon(F_file_S, F_myproc)
    use mu_jdate_mod, only: jdate_month
    use phy_options
+   use phyrdfile, only: phyrdfile1, READOZO
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -49,7 +50,7 @@ subroutine litozon(F_file_S, F_myproc)
    !-----------------------------------------------------------------
    call msg(MSG_INFO,'litozon')
 
-   call phyrdfile(F_file_S, rd_ozone, 'OZONE', F_myproc)
+   call phyrdfile1(F_file_S, READOZO, 'OZONE', F_myproc)
 
    fozon = 1
    clat = fozon + nlacl*npcl

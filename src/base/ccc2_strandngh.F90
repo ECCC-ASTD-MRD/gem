@@ -15,26 +15,34 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P STRANDNGH - CALCULATION OF THE DOWNWARD SOLAR FLUX
-!
+
+module ccc2_strandngh
+   implicit none
+   private
+   public :: ccc2_strandngh4
+   
+contains
+   
       subroutine ccc2_strandngh4 (tran, gwgh, atten, taua, tauoma, &
                             taucs, tauomc, cldfrac, rmu, dp, &
                             o3, qq, co2, ch4, o2, ib, ig, inpt, &
                             dip, dt, lev1, gh, cut, &
-                            il1, il2, ilg, lay, lev)
-!
+                            nig, ni, lay, lev)
+      use ccc2_tline1z_m, only: ccc2_tline1z
+      use ccc2_tline2z_m, only: ccc2_tline2z
       implicit none
 !!!#include <arch_specific.hf>
-!
-      integer ilg, lay, lev, ib, ig, lev1, il1, il2
-      real gwgh, cut
-      real tran(ilg,2,lev), atten(ilg), taua(ilg,lay), tauoma(ilg,lay), &
-           taucs(ilg,lay), tauomc(ilg,lay), cldfrac(ilg,lay), rmu(ilg), &
-           dp(ilg,lay), o3(ilg,lay),  o2(ilg,lay), co2(ilg,lay), ch4(ilg,lay), &
-           qq(ilg,lay), dip(ilg,lay), dt(ilg,lay)
-       integer inpt(ilg,lay)
-       logical gh
 
-!
+      integer, intent(in) :: ni, lay, lev, ib, ig, lev1, nig
+      real, intent(inout) :: gwgh
+      real, intent(inout) :: tran(ni,2,lev)
+      real, intent(in) :: atten(ni), taua(ni,lay), tauoma(ni,lay), &
+           taucs(ni,lay), tauomc(ni,lay), cldfrac(ni,lay), rmu(ni), &
+           dp(ni,lay), o3(ni,lay),  o2(ni,lay), co2(ni,lay), ch4(ni,lay), &
+           qq(ni,lay), dip(ni,lay), dt(ni,lay), cut
+       integer, intent(in) :: inpt(ni,lay)
+       logical, intent(in) :: gh
+
 !Authors
 !
 !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -66,8 +74,6 @@
 ! 005  P. vaillancourt, A-M. Leduc (Apr 2010) - Integrating the Li/Lazare 2009 version.(strandngh4)
 !                                add arguments: co2,ch4,o2
 !                                remove ng, ng2 , gw1 ,cs1o3, cs1o21, and remove arguments , s, taug
-
-
 
 !
 !Object
@@ -106,9 +112,8 @@
 ! lev1     a level close to 1 mb determined in cldifm  TO CHECK   AML
 ! gh       logical key      A DEFINIR   AML
 ! cut                              A DEFINIR   AML
-! il1      1
-! il2      horizontal dimension
-! ilg      horizontal dimension
+! nig      horizontal dimension
+! ni       horizontal dimension
 ! lay      number of model levels
 
 !
@@ -118,15 +123,15 @@
 #include "ccc2_bandsh.cdk"
 !
 !*
-      integer i, k, kp1, im, init
+      integer i, k, kp1, im
       real absc,dto3
-      real tau,dtr1,taug(ilg,lay)
+      real tau,dtr1,taug(ni,lay)
 
-      do 10 i = il1, il2
+      do i = 1, nig
         tran(i,1,1)           =  atten(i)
         tran(i,2,1)           =  atten(i)
-   10 continue
-!
+      enddo
+     
       if (ib .eq. 1)                                                then
 !
 !----------------------------------------------------------------------
@@ -135,9 +140,9 @@
 !----------------------------------------------------------------------
 !
         if (ig .eq. 3)                                              then
-          do 105 k = 1, lay
+          DO_K1: do k = 1, lay
             kp1 = k + 1
-            do i = il1, il2
+            do i = 1, nig
               dto3            =  dt(i,k) + 23.13
               tau             = ((cs1o3gh(1,ig) + &
                                  dto3 * (cs1o3gh(2,ig) + &
@@ -152,7 +157,7 @@
 !     3                           cs1o2gh3 * o2(i,k)) * dp(i,k) +
 !     4                           taua(i,k)
               tran(i,1,kp1)   =  tran(i,1,k) * dtr1   
-!
+
               if (cldfrac(i,k) .lt. cut)                            then
                 tran(i,2,kp1) =  tran(i,2,k) * dtr1   
               else
@@ -162,11 +167,11 @@
                 tran(i,2,kp1) =  tran(i,2,k) * absc
               endif
            enddo
-  105     continue
+          enddo DO_K1
         else
-          do 115 k = 1, lay
+          DO_K2: do k = 1, lay
             kp1 = k + 1
-            do i = il1, il2
+            do i = 1, nig
               dto3            =  dt(i,k) + 23.13
               tau             = (cs1o3gh(1,ig) + dto3 * (cs1o3gh(2,ig) + &
                                  dto3 * cs1o3gh(3,ig))) * o3(i,k) * &
@@ -176,7 +181,7 @@
 !     1                           dto3 * cs1o3gh(3,ig))) * o3(i,k) *
 !     2                           dp(i,k) + taua(i,k)
               tran(i,1,kp1)   =  tran(i,1,k) * dtr1   
-!
+
               if (cldfrac(i,k) .lt. cut)                            then
                 tran(i,2,kp1) =  tran(i,2,k) * dtr1   
               else
@@ -186,10 +191,10 @@
                 tran(i,2,kp1) =  tran(i,2,k) * absc
               endif
            enddo
-  115     continue
+          enddo DO_K2
         endif
       gwgh =  gws1gh(ig)
-!
+
       else if (ib .eq. 2)                                           then
 !
 !----------------------------------------------------------------------
@@ -198,26 +203,22 @@
 !----------------------------------------------------------------------
 !
         if (ig .eq. 1)                                              then
-          init=2
-          call ccc2_tline1z (taug, cs2h2ogh(1,1), qq, dp, dip, &
-                       dt, inpt, lev1, gh, ntl, init, &
-                       il1, il2, ilg, lay)
+          call ccc2_tline1z(taug, cs2h2ogh(1,1), qq, dp, dip, &
+                       dt, inpt, lev1, gh, ntl, nig, ni, lay)
         else
           im =  ig - 1
-          init=2
-          call ccc2_tline1z (taug, cs2o2gh(1,1,im), o2, dp, dip, &
-                       dt, inpt, lev1, gh, ntl, init, &
-                       il1, il2, ilg, lay)
+          call ccc2_tline1z(taug, cs2o2gh(1,1,im), o2, dp, dip, &
+                       dt, inpt, lev1, gh, ntl, nig, ni, lay)
         endif
-!
-        do 205 k = 1, lay
+
+        DO_K3: do k = 1, lay
           kp1 = k + 1
-          do i = il1, il2
+          do i = 1, nig
             tau               =  taug(i,k) + taua(i,k)
             dtr1              =  exp( - (tau    - tauoma(i,k)) / rmu(i) )
 !           tau               =  taug(i,k) + taua(i,k)
             tran(i,1,kp1)     =  tran(i,1,k) * dtr1   
-!
+
             if (cldfrac(i,k) .lt. cut)                              then
               tran(i,2,kp1)   =  tran(i,2,k) * dtr1   
             else
@@ -227,10 +228,10 @@
               tran(i,2,kp1)   =  tran(i,2,k) * absc
             endif
          enddo
-  205   continue
-!
+        enddo DO_K3
+
         gwgh =  gws2gh(ig)
-!
+
       else if (ib .eq. 3)                                           then
 !
 !----------------------------------------------------------------------
@@ -239,25 +240,23 @@
 !----------------------------------------------------------------------
 !
         if (ig .le. 2)                                              then
-          call ccc2_tline2z (taug, cs3h2ogh(1,1,ig), cs3co2gh(1,1,ig), qq, &
+          call ccc2_tline2z(taug, cs3h2ogh(1,1,ig), cs3co2gh(1,1,ig), qq, &
                        co2, dp, dip, dt, inpt, &
-                       lev1, gh, ntl, il1, il2, ilg, lay)
+                       lev1, gh, ntl, nig, ni, lay)
 
         else
-          init=2
-          call ccc2_tline1z (taug, cs3co2gh(1,1,ig), co2, dp, dip, &
-                       dt, inpt, lev1, gh, ntl, init, &
-                       il1, il2, ilg, lay)
+          call ccc2_tline1z(taug, cs3co2gh(1,1,ig), co2, dp, dip, &
+                       dt, inpt, lev1, gh, ntl, nig, ni, lay)
         endif
-!
-        do 305 k = 1, lay
+
+        DO_K4: do k = 1, lay
           kp1 = k + 1
-          do i = il1, il2
+          do i = 1, nig
             tau               =  taug(i,k) + taua(i,k)
             dtr1              =  exp( - (tau    - tauoma(i,k)) / rmu(i))
 !           tau               =  taug(i,k) + taua(i,k)
             tran(i,1,kp1)     =  tran(i,1,k) * dtr1   
-!
+
             if (cldfrac(i,k) .lt. cut)                              then
               tran(i,2,kp1)   =  tran(i,2,k) * dtr1   
             else
@@ -267,10 +266,10 @@
               tran(i,2,kp1)   =  tran(i,2,k) * absc
             endif
          enddo
-  305   continue
-!
+        enddo DO_K4
+
         gwgh =  gws3gh(ig)
-!
+
       else if (ib .eq. 4)                                           then
 !
 !----------------------------------------------------------------------
@@ -279,41 +278,37 @@
 !----------------------------------------------------------------------
 !
         if (ig .le. 3)                                              then
-          call ccc2_tline2z (taug, cs4h2ogh(1,1,ig), cs4co2gh(1,1,ig), qq, &
+          call ccc2_tline2z(taug, cs4h2ogh(1,1,ig), cs4co2gh(1,1,ig), qq, &
                        co2, dp, dip, dt, inpt, &
-                       lev1, gh, ntl, il1, il2, ilg, lay)
+                       lev1, gh, ntl, nig, ni, lay)
         else if (ig .eq. 6 .or. ig .eq. 8)           then
           if (ig .eq. 6)  im = 5
           if (ig .eq. 8)  im = 6
-          init=2
           call ccc2_tline1z (taug, cs4h2ogh(1,1,im), qq, dp, dip, &
-                       dt, inpt, lev1, gh, ntl, init, &
-                       il1, il2, ilg, lay)
+                       dt, inpt, lev1, gh, ntl, nig, ni, lay)
         else if (ig .eq. 5 .or. ig .eq. 7 .or. ig .eq. 9)           then
           if (ig .eq. 5)  im = 4
           if (ig .eq. 7)  im = 5
           if (ig .eq. 9)  im = 6
-          init=2
           call ccc2_tline1z (taug, cs4co2gh(1,1,im), co2, dp, dip, &
-                       dt, inpt, lev1, gh, ntl, init, &
-                       il1, il2, ilg, lay)
+                       dt, inpt, lev1, gh, ntl, nig, ni, lay)
         else
          im = 4
-          call ccc2_tline2z (taug, cs4h2ogh(1,1,im), cs4ch4gh, qq, ch4, &
+          call ccc2_tline2z(taug, cs4h2ogh(1,1,im), cs4ch4gh, qq, ch4, &
                         dp, dip, dt, inpt, lev1, gh, ntl, &
-                        il1, il2, ilg, lay)
+                        nig, ni, lay)
 
 
         endif
-!
-        do 405 k = 1, lay
+
+        DO_K5: do k = 1, lay
           kp1 = k + 1
-          do i = il1, il2
+          do i = 1, nig
             tau               =  taug(i,k) + taua(i,k)
             dtr1              =  exp( - (tau    - tauoma(i,k)) / rmu(i) )
 !           tau               =  taug(i,k) + taua(i,k)
             tran(i,1,kp1)     =  tran(i,1,k) * dtr1   
-!
+
             if (cldfrac(i,k) .lt. cut)                              then
               tran(i,2,kp1)   =  tran(i,2,k) * dtr1   
             else
@@ -323,11 +318,13 @@
               tran(i,2,kp1)   =  tran(i,2,k) * absc
             endif
          enddo
-  405   continue
-!
+        enddo DO_K5
+
         gwgh =  gws4gh(ig)
-!
+
       endif
-!
+
       return
-      end
+   end subroutine ccc2_strandngh4
+
+end module 

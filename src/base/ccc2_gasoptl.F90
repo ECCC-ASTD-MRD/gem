@@ -14,24 +14,37 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
+module ccc2_gasoptl
+   implicit none
+   private
+   public :: ccc2_gasoptl7
+   
+contains
+   
 subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
      f11,f12,f113,f114, inptr, inpt, mcont, &
      dir, dip, dt, lev1, gh, &
-     il1, il2, ilg, lay)
+     ni, lay)
+   use ccc2_tcontl, only: ccc2_tcontl2
+   use ccc2_tconthl, only: ccc2_tconthl2
+   use ccc2_tline1z_m, only: ccc2_tline1z
+   use ccc2_tline2z_m, only: ccc2_tline2z
+   use ccc2_tline3z_m, only: ccc2_tline3z
+   use ccc2_tlinehc_m, only: ccc2_tlinehc2
    implicit none
 !!!#include <arch_specific.hf>
 
-   integer ilg, lay, ib, ig, mcont(ilg), lev1, il1, il2
-   real taug(ilg,lay), gw
+   integer, intent(in) :: ni, lay, ib, ig, lev1
+   integer :: mcont(ni)
+   real taug(ni,lay), gw
 
-   real dp(ilg,lay), o3(ilg,lay), qq(ilg,lay), co2(ilg,lay), &
-        ch4(ilg,lay),an2o(ilg,lay),f11(ilg,lay), f12(ilg,lay), &
-        f113(ilg,lay), f114(ilg,lay), dir(ilg,lay), &
-        dip(ilg,lay), dt(ilg,lay)
+   real dp(ni,lay), o3(ni,lay), qq(ni,lay), co2(ni,lay), &
+        ch4(ni,lay),an2o(ni,lay),f11(ni,lay), f12(ni,lay), &
+        f113(ni,lay), f114(ni,lay), dir(ni,lay), &
+        dip(ni,lay), dt(ni,lay)
    real CAN2O,CRMCO2
-   integer inptr(ilg,lay), inpt(ilg,lay)
-   logical gh
-   integer init2
+   integer inptr(ni,lay), inpt(ni,lay)
+   logical, intent(in) :: gh
 
    !@Authors
    !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -118,8 +131,6 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
    integer k, i, lc
    real fact
 
-   data init2 /2/
-
    if (ib .eq. 1) then
 
       !----------------------------------------------------------------------
@@ -129,14 +140,14 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
 
       call ccc2_tline2z(taug, cl1h2o, cl1co2, qq, co2, &
            dp, dip, dt, inpt, &
-           lev1, gh, mtl, il1, il2, ilg, lay)
+           lev1, gh, mtl, ni, ni, lay)
 
       !----------------------------------------------------------------------
       !     simply add the n2o effect
       !----------------------------------------------------------------------
 
       do k = lev1, lay
-         do i = il1, il2
+         do i = 1, ni
             CAN2O     =  2.0437 * 1.E-07 * sqrt(AN2O(I,K) * 1.E+07)
             FACT      =  QQ(I,K) / (QQ(I,K) + 8.E+04 * CAN2O)
             TAUG(I,K) =  TAUG(I,K) + (754.9786 + 10141.5049 * FACT * FACT) * &
@@ -153,19 +164,18 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z(taug, cl2h2o, qq, dp, dip, &
-           dt, inpt, lev1, gh, mtl, init2, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, mtl, ni, ni, lay)
 
       lc =  3
-      call ccc2_tcontl1(taug, cl2cs, cl2cf, qq, dp, dip, dt, &
-           lc, inpt, mcont, gh, il1, il2, ilg, lay)
+      call ccc2_tcontl2(taug, cl2cs, cl2cf, qq, dp, dip, dt, &
+           lc, inpt, mcont, gh, ni, ni, lay)
 
       !----------------------------------------------------------------------
       !     simply add the n2o effect
       !----------------------------------------------------------------------
 
       do k = lev1, lay
-         do i = il1, il2
+         do i = 1, ni
             CAN2O     =  2.0437 * 1.E-07 * sqrt(AN2O(I,K) * 1.E+07)
             FACT      =  QQ(I,K) / (QQ(I,K) + 72000. * CAN2O)
             TAUG(I,K) =  TAUG(I,K) + (93. + 3500. * FACT * FACT) * &
@@ -182,15 +192,14 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z(taug, cl3h2o(1,1,ig), qq, dp, dip, &
-           dt, inpt, lev1, gh, mtl, init2, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, mtl, ni, ni, lay)
 
       lc =  4
-      call ccc2_tcontl1(taug, cl3cs(1,1,ig), cl3cf(1,1,ig), qq, dp, dip, dt, &
-           lc, inpt, mcont, gh, il1, il2, ilg, lay)
+      call ccc2_tcontl2(taug, cl3cs(1,1,ig), cl3cf(1,1,ig), qq, dp, dip, dt, &
+           lc, inpt, mcont, gh, ni, ni, lay)
 
       do K = LEV1, LAY
-         do I = IL1, IL2
+         do I = 1, NI
             TAUG(I,K) =  TAUG(I,K) + CL3CH4(IG) * CH4(I,K) * DP(I,K)
          enddo
       enddo
@@ -207,19 +216,18 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
 
       call ccc2_tline3z(taug, cl4h2o(1,1,ig), cl4ch4(1,1,ig), &
            cl4n2o(1,1,ig), qq, ch4, an2o, dp, dip, &
-           dt, inpt,lev1, gh, mtl, il1, il2, &
-           ilg, lay)
+           dt, inpt,lev1, gh, mtl, ni, ni, lay)
 
       lc =  4
-      call ccc2_tcontl1(taug, cl4cs(1,1,ig), cl4cf(1,1,ig), qq, dp, dip, dt, &
-           lc, inpt, mcont, gh, il1, il2, ilg, lay)
+      call ccc2_tcontl2(taug, cl4cs(1,1,ig), cl4cf(1,1,ig), qq, dp, dip, dt, &
+           lc, inpt, mcont, gh, ni, ni, lay)
 
       !----------------------------------------------------------------------
       !     simply add the cfc effect
       !----------------------------------------------------------------------
 
       do k = lev1, lay
-         do i = il1, il2
+         do i = 1, ni
             TAUG(I,K) =  TAUG(I,K) + (CL4F12(IG) * F12(I,K) +       &
                  1037.3 * F113(I,K) + 1426.9 * F114(I,K)) * &
                  DP(I,K)
@@ -237,11 +245,11 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
       !
       call ccc2_tline2z(taug, cl5h2o(1,1,ig), cl5o3(1,1,ig), qq, o3, &
            dp, dip, dt, inpt, lev1, gh, mtl, &
-           il1, il2, ilg, lay)
+           ni, ni, lay)
 
       lc =  4
-      call ccc2_tcontl1(taug, cl5cs(1,1,ig), cl5cf(1,1,ig), qq, dp, dip, dt, &
-           lc, inpt, mcont, gh, il1, il2, ilg, lay)
+      call ccc2_tcontl2(taug, cl5cs(1,1,ig), cl5cf(1,1,ig), qq, dp, dip, dt, &
+           lc, inpt, mcont, gh, ni, ni, lay)
 
       !----------------------------------------------------------------------
       !     simply add the co2 + cfc effect
@@ -250,7 +258,7 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
       !----------------------------------------------------------------------
 
       do k = lev1, lay
-         do i = il1, il2
+         do i = 1, ni
             CRMCO2    =  2.3056E-04 * sqrt(CO2(I,K) * 1.E+04)
             TAUG(I,K) =  TAUG(I,K) + ( (0.009 +  0.093 * QQ(I,K) / (QQ(I,K) +   &
                  2.1 * CRMCO2)) * CO2(I,K) + CL5F11(IG) * F11(I,K) +    &
@@ -270,14 +278,14 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
 
       call ccc2_TLINE3Z(TAUG, CL6H2O(1,1,IG), CL6F11(1,1,IG),           &
            CL6F12(1,1,IG), QQ, F11, F12, DP, DIP, DT, INPT, &
-           LEV1, GH, MTL, IL1, IL2, ILG, LAY)
+           LEV1, GH, MTL, NI, NI, LAY)
 
       !----------------------------------------------------------------------
       !     simply add the co2 + cfc effect
       !----------------------------------------------------------------------
 
       do k = lev1, lay
-         do i = il1, il2
+         do i = 1, ni
             TAUG(I,K) =  TAUG(I,K) + ( (0.0074 + 0.0396 * QQ(I,K) /   &
                  (QQ(I,K) + 2.8 * CO2(I,K))) * CO2(I,K) +      &
                  1191. * F113(I,K) + 1098. * F114(I,K) ) * DP(I,K)
@@ -286,8 +294,8 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
 
       if (ig .eq. 1) then
          lc =  4
-         call ccc2_tcontl1 (taug, cl6cs, cl6cf, qq, dp, dip, dt, &
-              lc, inpt, mcont, gh, il1, il2, ilg, lay)
+         call ccc2_tcontl2(taug, cl6cs, cl6cf, qq, dp, dip, dt, &
+              lc, inpt, mcont, gh, ni, ni, lay)
       endif
 
       gw =  gwl6(ig)
@@ -300,19 +308,19 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
       !     o3 effect is simply added
       !----------------------------------------------------------------------
 
-      call ccc2_tlinehc4(taug, cl7h2ou(1,1,ig), cl7h2od(1,1,1,ig), &
+      call ccc2_tlinehc2(taug, cl7h2ou(1,1,ig), cl7h2od(1,1,1,ig), &
            cl7co2u(1,1,ig), cl7co2d(1,1,1,ig), qq, co2, dp, dip, &
-           dir, dt, inptr, inpt, lev1, il1, il2, ilg, lay)
+           dir, dt, inptr, inpt, lev1, ni, lay)
       !
-      call ccc2_tconthl4(taug, cl7cs(1,1,1,ig), cl7cf(1,1,1,ig), qq, dp, dip, &
-           dir, dt, inptr, inpt, mcont, il1, il2, ilg, lay)
+      call ccc2_tconthl2(taug, cl7cs(1,1,1,ig), cl7cf(1,1,1,ig), qq, dp, dip, &
+           dir, dt, inptr, inpt, mcont, ni, lay)
 
       !----------------------------------------------------------------------
       !     simply add the o3 and n2o effect
       !----------------------------------------------------------------------
 
       do k = lev1, lay
-         do i = il1, il2
+         do i = 1, ni
             CAN2O     =  2.0437 * 1.E-07 * sqrt(AN2O(I,K) * 1.E+07)
             TAUG(I,K) =  TAUG(I,K) + (CL7O3(IG) * O3(I,K) +    &
                  CL7N2O(IG) * CAN2O) * DP(I,K)
@@ -328,13 +336,12 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
       !----------------------------------------------------------------------
       !
       call ccc2_tline1z(taug, cl8h2o(1,1,ig), qq, dp, dip, &
-           dt, inpt, lev1, gh, mtl, init2, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, mtl, ni, ni, lay)
 
       if (ig .le. 4) then
          lc =  6
-         call ccc2_tcontl1(taug, cl8cs(1,1,ig), cl8cf(1,1,ig), qq, dp, dip,dt, &
-              lc, inpt, mcont, gh, il1, il2, ilg, lay)
+         call ccc2_tcontl2(taug, cl8cs(1,1,ig), cl8cf(1,1,ig), qq, dp, dip,dt, &
+              lc, inpt, mcont, gh, ni, ni, lay)
       endif
 
       gw =  gwl8(ig)
@@ -346,12 +353,11 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
       !----------------------------------------------------------------------
 
       call ccc2_tline1z(taug, cl9h2o(1,1,ig), qq, dp, dip, &
-           dt, inpt, lev1, gh, mtl, init2, &
-           il1, il2, ilg, lay)
+           dt, inpt, lev1, gh, mtl, ni, ni, lay)
 
       lc =  6
-      call ccc2_tcontl1(taug, cl9cs(1,1,ig), cl9cf(1,1,ig), qq, dp, dip, dt, &
-           lc, inpt, mcont, gh, il1, il2, ilg, lay)
+      call ccc2_tcontl2(taug, cl9cs(1,1,ig), cl9cf(1,1,ig), qq, dp, dip, dt, &
+           lc, inpt, mcont, gh, ni, ni, lay)
 
       gw =  gwl9(ig)
 
@@ -359,3 +365,5 @@ subroutine ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qq, co2, ch4,an2o, &
 
    return
 end subroutine ccc2_gasoptl7
+
+end module ccc2_gasoptl

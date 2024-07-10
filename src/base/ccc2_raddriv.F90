@@ -14,7 +14,13 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
 
-
+module ccc2_raddriv
+   implicit none
+   private
+   public :: ccc2_raddriv3
+   
+contains
+   
 subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      fatb,fadb,fafb,fctb,fcdb,fcfb, &
      albpla, fdl, ful, hrs, hrl, &
@@ -27,35 +33,42 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      omcs, gcs, taucl, omcl, gcl, &
      cldfrac, tauae, exta, exoma, exomga, &
      fa, absa, lcsw, lclw, mrk2, luvonly, &
-     il1, il2, ilg, lay, lev)
+     ni, lay, lev)
    use tdpack_const
    use phy_options, only: RAD_NUVBRANDS, rad_atmpath
    use ens_perturb, only: ens_nc2d
+   use ccc2_preintp_m, only: ccc2_preintp
+   use ccc2_lwtran, only: ccc2_lwtran1
+   use ccc2_lwtragh, only: ccc2_lwtragh1
+   use ccc2_gasopts, only: ccc2_gasopts5
+   use ccc2_gasoptl, only: ccc2_gasoptl7
+   use ccc2_gasoptlgh, only: ccc2_gasoptlgh7
+   use ccc2_strandngh, only: ccc2_strandngh4
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
 
-   integer ilg,lay,lev,il1,il2
-   real fsg(ilg), fsd(ilg), fsf(ilg), fsv(ilg), fsi(ilg), &
-        albpla(ilg), fdl(ilg), ful(ilg), hrs(ilg,lay), hrl(ilg,lay), &
-        cst(ilg), csb(ilg), clt(ilg), clb(ilg), par(ilg), em0(ilg)
+   integer, intent(in) ::  ni,lay,lev
+   real fsg(ni), fsd(ni), fsf(ni), fsv(ni), fsi(ni), &
+        albpla(ni), fdl(ni), ful(ni), hrs(ni,lay), hrl(ni,lay), &
+        cst(ni), csb(ni), clt(ni), clb(ni), par(ni), em0(ni)
 
-   real, dimension(ilg,RAD_NUVBRANDS)  ::   fatb,fadb,fafb,fctb,fcdb,fcfb
+   real, dimension(ni,RAD_NUVBRANDS)  ::   fatb,fadb,fafb,fctb,fcdb,fcfb
 
-   real ps(ilg), shtj(ilg,lev), sig(ilg,lay), &
-        tfull(ilg,lev), tt(ilg,lay), gt(ilg), o3(ilg,lay), &
-        o3top(ilg), qq(ilg,lay), rmu(ilg), r0r, salb(ilg,nbs), &
-        co2(ilg,lay),ch4(ilg,lay), an2o(ilg,lay), f11(ilg,lay),f12(ilg,lay), &
-        f113(ilg,lay), f114(ilg,lay),o2(ilg,lay)
+   real ps(ni), shtj(ni,lev), sig(ni,lay), &
+        tfull(ni,lev), tt(ni,lay), gt(ni), o3(ni,lay), &
+        o3top(ni), qq(ni,lay), rmu(ni), r0r, salb(ni,nbs), &
+        co2(ni,lay),ch4(ni,lay), an2o(ni,lay), f11(ni,lay),f12(ni,lay), &
+        f113(ni,lay), f114(ni,lay),o2(ni,lay)
 
-   real taucs(ilg,lay,nbs), omcs(ilg,lay,nbs), gcs(ilg,lay,nbs), &
-        taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
-        cldfrac(ilg,lay), fslo(ilg), fsamoon(ilg)
+   real taucs(ni,lay,nbs), omcs(ni,lay,nbs), gcs(ni,lay,nbs), &
+        taucl(ni,lay,nbl), omcl(ni,lay,nbl), gcl(ni,lay,nbl), &
+        cldfrac(ni,lay), fslo(ni), fsamoon(ni)
 
-   real, dimension(ilg, ens_nc2d) :: mrk2
+   real, dimension(ni, ens_nc2d) :: mrk2
    logical lcsw, lclw, luvonly
 
-   real flxds(ilg,lev),flxus(ilg,lev),flxdl(ilg,lev),flxul(ilg,lev)
+   real flxds(ni,lev),flxus(ni,lev),flxdl(ni,lev),flxul(ni,lev)
 
    !@Authors
    !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -66,7 +79,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    !
    !@Revisions
    !  001    P.Vaillancourt, M.Lazare (sep 2006) : displace a1(i,5)
-   !  002    P.Vaillancourt           (Apr 08) : use integer variables(ilg1,ilg2) instead of actual integers
+   !  002    P.Vaillancourt           (Apr 08) : use integer variables(nig) instead of actual integers
    !  003    P.Vaillancourt           (Feb 12) : assume temperature is isothermal above model top
    !  004    P.Vaillancourt           (Feb 12) : impose min on humidity mixing ratio of 1.5e-6 kg/kg for sw and lw
    !  005    P.Vaillancourt           (Sep 14) : Update to gcm17
@@ -119,9 +132,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    ! lcsw         logical key to control call to sw radiative transfer
    ! lclw         logical key to control call to lw radiative transfer
    ! mrk2         Markov chains for stochastic parameter perturbations
-   ! il1          1
-   ! il2          horizontal dimension (ni)
-   ! ilg          horizontal dimension (il2-il1+1)
+   ! ni          horizontal dimension (ni)
    ! lay          number of model levels
    ! lev          number of flux levels (lay+1)
 
@@ -130,80 +141,80 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
 #include "tables.cdk"
 include "nocld.cdk"
 
-   integer, dimension(ilg) :: mtop
-   real, dimension(ilg) :: c1
-   real, dimension(ilg) :: c2
-   real, dimension(ilg) :: bs
-   real, dimension(ilg,lay) :: pg
-   real, dimension(ilg,lay) :: qg
-   real, dimension(ilg,lay) :: qgs
-   real, dimension(ilg,lev) :: flxu
-   real, dimension(ilg,lev) :: flxd
-   real, dimension(ilg,lay) :: pp
-   real, dimension(ilg,lay) :: dp
-   real, dimension(ilg,lay) :: dps
-   real, dimension(ilg,lay) :: taur
-   real, dimension(ilg,lay) :: taug
-   real, dimension(ilg,lay) :: taua
-   real, dimension(ilg,lev) :: pfull
-   real, dimension(ilg,lay) :: f1
-   real, dimension(ilg,lay) :: f2
-   real, dimension(ilg,lay) :: anu
-   real, dimension(ilg,lay) :: urbf
-   real, dimension(ilg,lay) :: tauoma
-   real, dimension(ilg,lay) :: tauomga
-   real, dimension(ilg,lay) :: dip
-   real, dimension(ilg,lay) :: dt
-   real, dimension(ilg,lay) :: dts
-   real, dimension(ilg,2,lev) :: refl
-   real, dimension(ilg,2,lev) :: tran
-   real, dimension(ilg,lay,5) :: tauae
+   integer, dimension(ni) :: mtop
+   real, dimension(ni) :: c1
+   real, dimension(ni) :: c2
+   real, dimension(ni) :: bs
+   real, dimension(ni,lay) :: pg
+   real, dimension(ni,lay) :: qg
+   real, dimension(ni,lay) :: qgs
+   real, dimension(ni,lev) :: flxu
+   real, dimension(ni,lev) :: flxd
+   real, dimension(ni,lay) :: pp
+   real, dimension(ni,lay) :: dp
+   real, dimension(ni,lay) :: dps
+   real, dimension(ni,lay) :: taur
+   real, dimension(ni,lay) :: taug
+   real, dimension(ni,lay) :: taua
+   real, dimension(ni,lev) :: pfull
+   real, dimension(ni,lay) :: f1
+   real, dimension(ni,lay) :: f2
+   real, dimension(ni,lay) :: anu
+   real, dimension(ni,lay) :: urbf
+   real, dimension(ni,lay) :: tauoma
+   real, dimension(ni,lay) :: tauomga
+   real, dimension(ni,lay) :: dip
+   real, dimension(ni,lay) :: dt
+   real, dimension(ni,lay) :: dts
+   real, dimension(ni,2,lev) :: refl
+   real, dimension(ni,2,lev) :: tran
+   real, dimension(ni,lay,5) :: tauae
 
    !     gathered and other work arrays used generally by solar.
 
-   real, dimension(ilg,12) :: a1
-   real, dimension(ilg,12) :: a1g
-   real, dimension(ilg,4,lev) :: cumdtr
-   real, dimension(ilg,lay,nbs) :: exta
-   real, dimension(ilg,lay,nbs) :: exoma
-   real, dimension(ilg,lay,nbs) :: exomga
-   real, dimension(ilg,lay,nbs) :: fa
-   real, dimension(ilg,lay) :: taucsg
-   real, dimension(ilg,lay) :: tauomc
-   real, dimension(ilg,lay) :: tauomgc
-   real, dimension(ilg,lev) :: pfullg
-   real, dimension(ilg,lay) :: o3g
-   real, dimension(ilg,lay) :: co2g
-   real, dimension(ilg,lay) :: ch4g
-   real, dimension(ilg,lay) :: o2g
-   real, dimension(ilg,lay) :: cldg
-   real, dimension(ilg,lay) :: cldmg
-   real, dimension(ilg) :: o3topg
-   real, dimension(ilg) :: albsur
-   real, dimension(ilg) :: rmug, rmu0
-   real, dimension(ilg) :: dmix
-   integer, dimension(ilg,lay) :: inptg
-   integer, dimension(ilg,lay) :: inptmg
-   integer, dimension(ilg,lay) :: nblk
-   integer, dimension(ilg) :: isun
-   integer, dimension(ilg) :: mcont
+   real, dimension(ni,12) :: a1
+   real, dimension(ni,12) :: a1g
+   real, dimension(ni,4,lev) :: cumdtr
+   real, dimension(ni,lay,nbs) :: exta
+   real, dimension(ni,lay,nbs) :: exoma
+   real, dimension(ni,lay,nbs) :: exomga
+   real, dimension(ni,lay,nbs) :: fa
+   real, dimension(ni,lay) :: taucsg
+   real, dimension(ni,lay) :: tauomc
+   real, dimension(ni,lay) :: tauomgc
+   real, dimension(ni,lev) :: pfullg
+   real, dimension(ni,lay) :: o3g
+   real, dimension(ni,lay) :: co2g
+   real, dimension(ni,lay) :: ch4g
+   real, dimension(ni,lay) :: o2g
+   real, dimension(ni,lay) :: cldg
+   real, dimension(ni,lay) :: cldmg
+   real, dimension(ni) :: o3topg
+   real, dimension(ni) :: albsur
+   real, dimension(ni) :: rmug, rmu0
+   real, dimension(ni) :: dmix
+   integer, dimension(ni,lay) :: inptg
+   integer, dimension(ni,lay) :: inptmg
+   integer, dimension(ni,lay) :: nblk
+   integer, dimension(ni) :: isun
+   integer, dimension(ni) :: mcont
 
    !     work arrays used generally by longwave.
 
-   real, dimension(ilg,lay,nbl) :: absa
-   real, dimension(ilg,lay) :: tauci
-   real, dimension(ilg,lay) :: omci
-   real, dimension(ilg,lay) :: gci
-   real, dimension(ilg,lay) :: cldm
-   real, dimension(ilg,lev) :: bf
-   integer, dimension(ilg,lay) :: inpt
-   integer, dimension(ilg,lay) :: inptm
-   integer, dimension(ilg,lay) :: inpr
-   integer, dimension(ilg,lay) :: ncd
-   integer, dimension(ilg,lay) :: ncu
-   integer, dimension(ilg) :: mcontg !(size is lengath)
-   integer, dimension(ilg) :: nct
-   integer, dimension(ilg) :: nctg
+   real, dimension(ni,lay,nbl) :: absa
+   real, dimension(ni,lay) :: tauci
+   real, dimension(ni,lay) :: omci
+   real, dimension(ni,lay) :: gci
+   real, dimension(ni,lay) :: cldm
+   real, dimension(ni,lev) :: bf
+   integer, dimension(ni,lay) :: inpt
+   integer, dimension(ni,lay) :: inptm
+   integer, dimension(ni,lay) :: inpr
+   integer, dimension(ni,lay) :: ncd
+   integer, dimension(ni,lay) :: ncu
+   integer, dimension(ni) :: mcontg !(size is lengath)
+   integer, dimension(ni) :: nct
+   integer, dimension(ni) :: nctg
    integer, dimension(lay) :: ncum
    integer, dimension(lay) :: ncdm
 
@@ -221,7 +232,7 @@ include "nocld.cdk"
    real ubeta0, epsd0, hrcoef, uu3, cut, seuil,specirr,qmr,qmin
    integer i, k, ib, lev1, maxc, jyes, lengath, j, kp1, ig
    logical gh
-   integer ilg1,ilg2 !subsize of il1,il2
+   integer nig  !subsize of ni
 
    parameter (seuil=1.e-3)
    parameter (qmin=1.5e-6)
@@ -343,7 +354,7 @@ include "nocld.cdk"
    !     initialization
    !----------------------------------------------------------------------
 
-   do i = il1, il2
+   do i = 1, ni
       fsg(i)                  =  0.0
       fsd(i)                  =  0.0
       fsf(i)                  =  0.0
@@ -363,16 +374,16 @@ include "nocld.cdk"
       isun(i)                 =  1
    enddo
 
-   fatb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
-   fadb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
-   fafb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
-   fctb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
-   fcdb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
-   fcfb(IL1:IL2,1:RAD_NUVBRANDS) = 0.0
+   fatb = 0.0
+   fadb = 0.0
+   fafb = 0.0
+   fctb = 0.0
+   fcdb = 0.0
+   fcfb = 0.0
 
    do k = 1, lay
       kp1 = k + 1
-      do i = il1, il2
+      do i = 1, ni
          taug(i,k)               =  0.0
          tran(i,1,k)             =  0.0
          tran(i,2,k)             =  0.0
@@ -403,7 +414,7 @@ include "nocld.cdk"
 
    mcont = lev
    do k = 1, lev
-      do i = il1, il2
+      do i = 1, ni
          if (pfull(i,k) .ge. 200.) THEN
             mtop(i)               =  mtop(i) + 1
             if (mtop(i) .eq. 1) mcont(i) =  max(k-1,1)
@@ -449,7 +460,7 @@ include "nocld.cdk"
    call ccc_cldifm1 (cldm, tauomgc, anu, a1, ncd, &
         ncu, inptg, nct, ncum, ncdm, &
         cldfrac, pfull, mrk2, lev1, cut, maxc, &
-        il1, il2, ilg, lay, lev)
+        1, ni, ni, lay, lev)
 
 
    !----------------------------------------------------------------------
@@ -459,7 +470,7 @@ include "nocld.cdk"
    !            than .0005
    !----------------------------------------------------------------------
 
-   call ccc2_preintp(inpt, inptm, dip, a1(1,12), pp, il1, il2, ilg, lay)
+   call ccc2_preintp(inpt, inptm, dip, a1(1,12), pp, ni, lay)
 
    if (lcsw) then
 
@@ -469,7 +480,7 @@ include "nocld.cdk"
       !----------------------------------------------------------------------
 
       jyes = 0
-      do i = il1, il2
+      do i = 1, ni
          if (rmu(i) .gt. seuil) then
             jyes                  =  jyes + 1
             isun(jyes)            =  i
@@ -484,29 +495,28 @@ include "nocld.cdk"
       if (lengath .eq. 0) go to 499
 
       !     use integer variables instead of actual integers
-      ilg1=1
-      ilg2=lengath
+      nig = lengath
 
       ! Set the effective solar path length
       select case (rad_atmpath)
       case ('RODGERS67')
-         do i=ilg1,ilg2
+         do i=1,nig
             j = isun(i)
             rmug(i) =  sqrt (1224.0 * rmu(j) * rmu(j) + 1.0) / 35.0
          enddo
       case ('LI06')
-         do i=ilg1,ilg2
+         do i=1,nig
             j = isun(i)
             rmug(i) = (2.0 * rmu(j) + sqrt(498.5225 * rmu(j) * rmu(j) + 1.0)) / 24.35
          enddo
       end select
 ! for TOA fluxes, need non normalized solar angle(rmu and not rmug)
-      do i=ilg1,ilg2
+      do i=1,nig
          j = isun(i)
          rmu0(i) = rmu(j)
       enddo
 
-      DO230: do i = ilg1, ilg2
+      DO230: do i = 1, nig
          j = isun(i)
          mcontg(i)               =  mcont(j) !mcontg is subset of mcont
          o3topg(i)               =  o3top(j)
@@ -574,7 +584,7 @@ include "nocld.cdk"
 
       DO255: do k = 1, lay
          kp1 = k + 1
-         DO250: do i = ilg1, ilg2
+         DO250: do i = 1, nig
             j = isun(i)
             flxu(i,k)             =  0.0
             flxd(i,k)             =  0.0
@@ -650,7 +660,7 @@ include "nocld.cdk"
 
       DONBS: do ib = 1, nbs
 
-         do i = ilg1, ilg2
+         do i = 1, nig
             j = isun(i)
             albsur(i)               =  salb(j,ib)
          enddo
@@ -660,7 +670,7 @@ include "nocld.cdk"
          !----------------------------------------------------------------------
 
          DO310: do k = 1, lay
-            do i = ilg1, ilg2
+            do i = 1, nig
                j = isun(i)
                a11                   =  tauae(j,k,1) * extab(ib,1)
                a12                   =  tauae(j,k,2) * extab(ib,2)
@@ -724,7 +734,7 @@ include "nocld.cdk"
          !----------------------------------------------------------------------
 
          if (ib .ne. 1) then
-            call ccc_raylei (taur, ib, dps, ilg1, ilg2, ilg, lay)
+            call ccc_raylei (taur, ib, dps, 1, nig, ni, lay)
          endif
 
          gh = .false.
@@ -737,7 +747,7 @@ include "nocld.cdk"
                !     raylev, visible rayleigh scattering, it is dependant on ig.
                !----------------------------------------------------------------------
 
-               call ccc2_raylev2(taur, ig, dps, a1(1,3), ilg1, ilg2, ilg, lay)
+               call ccc2_raylev2(taur, ig, dps, a1(1,3), 1, nig, ni, lay)
 
                !----------------------------------------------------------------------
                !     solar attenuation above the model top lay. only apply to band
@@ -747,9 +757,9 @@ include "nocld.cdk"
 
                call ccc2_sattenu4(a1, ib, ig, rmug, o3topg, co2g, ch4g, o2g, &
                     pfullg, a1g(1,12), dts, a1(1,5), inptg, gh, &
-                    ilg1, ilg2, ilg)
+                    1, nig, ni)
             else
-               do i = ilg1, ilg2
+               do i = 1, nig
                   a1(i,1)           =  1.0
                enddo
             endif
@@ -761,17 +771,17 @@ include "nocld.cdk"
 
             if (lev1 .gt. 1) then
                call ccc2_strandn3(tran, bs, a1, rmug, dps, dts, o3g, o2g, a1(1,3), &
-                    ib, ig, lev1, ilg1, ilg2, ilg, lay, lev)
+                    ib, ig, lev1, 1, nig, ni, lay, lev)
 
             else
-               do i = ilg1, ilg2
+               do i = 1, nig
                   bs(i)             =  a1(i,1)
                enddo
             endif
 
             call ccc2_gasopts5(taug, gw, dps, ib, ig, o3g, qgs, co2g, ch4g, o2g, &
                  inptmg, mcontg, omci, dts, a1(1,3), lev1, gh, &
-                 ilg1, ilg2, ilg, lay)
+                 nig, ni, lay)
 
 
             call ccc_swtran (refl, tran, cumdtr, bs, taua, &
@@ -779,36 +789,36 @@ include "nocld.cdk"
                  f2, taucsg, tauomc, tauomgc, cldg, &
                  cldmg, a1g, rmug, c1, c2, &
                  albsur, nblk, nctg, cut, lev1, &
-                 ilg1, ilg2, ilg, lay, lev)
+                 1, nig, ni, lay, lev)
 
             !new          if(mcica.eq.0) then
             !new            call swtran2(refl, tran, cumdtr, bs, taua, taur, taug,
             !new     1                   tauoma, tauomga, f1, f2, taucsg,
             !new     2                   tauomc, tauomgc, cldg, cldmg, a1g,
             !new     3                   rmug, c1, c2, albsur, csalg, nblkg, nctg,
-            !new     4                   cut, lev1, ilg1, ilg2, ilg, lay, lev)
+            !new     4                   cut, lev1, 1, nig, ni, lay, lev)
             !new
             if (lev1 .gt. 1) then
                call ccc2_stranup3(refl, dps, dts, o3g, o2g, ib, ig, lev1, &
-                    ilg1, ilg2, ilg, lay, lev)
+                    1, nig, ni, lay, lev)
             endif
             !new          else
             !new            call swtran_mcica(refl, tran, cumdtr, bs, taua, taur, taug,
             !new     1                        tauoma, tauomga, f1, f2, taucsg,
             !new     2                        tauomc, tauomgc, cldg,
             !new     3                        rmug, c1, c2, albsur, csalg, nctg,
-            !new     4                        cut, lev1, ilg1, ilg2, ilg, lay, lev)
+            !new     4                        cut, lev1, 1, nig, ni, lay, lev)
             !c
             !new            if (lev1 .gt. 1) then
             !new             call stranup3(refl, dps, dts, o3g, o2g, ib, ig, lev1,
-            !new     1                     ilg1, ilg2, ilg, lay, lev)
+            !new     1                     1, nig, ni, lay, lev)
             !new            endif
 
             !           * for the total sky fluxes weight the clear and cloudy sky
             !           * fluxes by the total vertically projected cloud fraction.
 
             !new            do k = 1,lev
-            !new            do i = ilg1, ilg2
+            !new            do i = 1, nig
             !new              j = isun(i)
             !new              if (cldt(j).lt.1.0) then
             !new                 refl(i,2,k) = (1.0 - cldt(j)) * refl(i,1,k) +
@@ -826,7 +836,7 @@ include "nocld.cdk"
             !----------------------------------------------------------------------
 
             rgw = gw * fracs
-            DO350: do i = ilg1, ilg2
+            DO350: do i = 1, nig
                j = isun(i)
                x                   =  a1g(i,7) * cumdtr(i,1,lev) + &
                     a1g(i,1) * cumdtr(i,2,lev) + &
@@ -855,7 +865,7 @@ include "nocld.cdk"
             enddo DO350
 
             !new          rgw = gw * www * (fracs)
-            !new          do 350 i = ilg1, ilg2
+            !new          do 350 i = 1, nig
             !new            j = isun(i)
             !new            if(mcica.eq.0) then
             !new              x                 =  a1g(i,7) * cumdtr(i,1,lev) +
@@ -889,7 +899,7 @@ include "nocld.cdk"
 
             do k = 1, lay
                kp1 = k + 1
-               do i = ilg1, ilg2
+               do i = 1, nig
                   j = isun(i)
                   dfnet             = (tran(i,2,k) - tran(i,2,kp1) - &
                        refl(i,2,k) + refl(i,2,kp1)) * &
@@ -909,7 +919,7 @@ include "nocld.cdk"
             !----------------------------------------------------------------------
 
             if (ib .eq. 1) then
-               do i = ilg1, ilg2
+               do i = 1, nig
                   j = isun(i)
                   x                 = (1.0 - a1(i,1)) * a1(i,2)
                   fsamoon(j)        =  fsamoon(j) + x * (1.0 + refl(i,2,1))
@@ -918,7 +928,7 @@ include "nocld.cdk"
             endif
 
             if (ib .eq. 1 .and. ig .eq. 2) then
-               do i = ilg1, ilg2
+               do i = 1, nig
                   par(isun(i))      =   flxd(i,lev)
                enddo
             endif
@@ -939,12 +949,12 @@ include "nocld.cdk"
 
             call ccc2_sattenu4(a1, ib, ig, rmug, o3topg, co2g, ch4g, o2g, &
                  pfullg, a1g(1,12), dts, a1(1,5), inptg, gh, &
-                 ilg1, ilg2, ilg)
+                 1, nig, ni)
 
             call ccc2_strandngh4(tran, gwgh, a1, taua, tauoma, taucsg, tauomc, &
                  cldg, rmug, dps, o3g, qgs, co2g, ch4g, o2g, ib, &
                  ig, inptg, omci, dts, lev1, gh, cut, &
-                 ilg1, ilg2, ilg, lay, lev)
+                 nig, ni, lay, lev)
 
             !new          if(mcica.ne.0) then
             !new
@@ -952,7 +962,7 @@ include "nocld.cdk"
             !new           * fluxes by the total vertically projected cloud fraction.
             !new
             !new            do k = 1, lev
-            !new            do i = ilg1, ilg2
+            !new            do i = 1, nig
             !new              j = isun(i)
             !new              if (cldt(j).lt.1.0) then
             !new                tran(i,2,k) = (1.0 - cldt(j)) * tran(i,1,k) +
@@ -966,7 +976,7 @@ include "nocld.cdk"
             rgw = gwgh * fracs
             !new          rgw = gwgh * www* fracs
 
-            do i = ilg1, ilg2
+            do i = 1, nig
                j = isun(i)
                a1(i,2)             =  rgw * rmu0(i)
                cst(j)              =  cst(j) + a1(i,2)
@@ -978,7 +988,7 @@ include "nocld.cdk"
             enddo
             do k = 1, lay
                kp1 = k + 1
-               do i = ilg1, ilg2
+               do i = 1, nig
                   j = isun(i)
                   flxd(i,kp1)       =  flxd(i,kp1) + a1(i,2) * tran(i,2,kp1)
                   dfnet             =  tran(i,2,k) - tran(i,2,kp1)
@@ -990,7 +1000,7 @@ include "nocld.cdk"
          enddo DOMINSW
 
          if (ib .eq. 1) then
-            do i = ilg1, ilg2
+            do i = 1, nig
                fsv(isun(i))        =  flxd(i,lev)
             enddo
          endif
@@ -1003,7 +1013,7 @@ include "nocld.cdk"
       !----------------------------------------------------------------------
 
       rsolarc = r0r * solarc
-      do i = ilg1, ilg2
+      do i = 1, nig
          j = isun(i)
          fsg(j)                  =  flxd(i,lev) - flxu(i,lev)
          fsi(j)                  =  flxd(i,lev) - fsv(j)
@@ -1016,14 +1026,14 @@ include "nocld.cdk"
       !     on veut les flux en sortie
       !     make sure that sw heating rate is never negative
       do k = 1,lev
-         do i = ilg1, ilg2
+         do i = 1, nig
             j = isun(i)
             flxds(j,k)=flxd(i,k)
             flxus(j,k)=flxu(i,k)
          enddo
       enddo
       do k = 1,lay
-         do i = ilg1, ilg2
+         do i = 1, nig
             j = isun(i)
             hrs(j,k)=max(hrs(j,k),0.)
          enddo
@@ -1055,7 +1065,7 @@ include "nocld.cdk"
       !     bound temperature for planck calculation.
       !----------------------------------------------------------------------
 
-      do i = il1, il2
+      do i = 1, ni
          ! The following line extrapolates the temperature above model top for moon layer temperature
          !        a1(i,5)                 =  2.0 * tt(i,1) - tt(i,2) - 250.0
          ! The following line assumes an isothermal temperature above model top for moon layer temperature
@@ -1064,7 +1074,7 @@ include "nocld.cdk"
          clb(i)                  =  0.0
       enddo
       do k = 1, lev
-         do i = il1, il2
+         do i = 1, ni
             flxu(i,k)               =  0.0
             flxd(i,k)               =  0.0
          enddo
@@ -1075,7 +1085,7 @@ include "nocld.cdk"
       !     and reuse tauomc as a work array
       !----------------------------------------------------------------------
 
-      call ccc2_preintr3 (inpr, pg, qg, co2, tauomc, il1, il2, ilg, lay)
+      call ccc2_preintr3 (inpr, pg, qg, co2, tauomc, 1, ni, ni, lay)
 
       DONBL: do ib = 1, nbl
 
@@ -1086,7 +1096,7 @@ include "nocld.cdk"
          !     scaling cloud optical properties for ir scattering calculation
          !----------------------------------------------------------------------
 
-         do i = il1, il2
+         do i = 1, ni
             if (rmu(i) .gt. 0.0) then
                c1(i)               =  rmu(i) * sfinptl(ib)
             else
@@ -1095,7 +1105,7 @@ include "nocld.cdk"
          enddo
 
          DO610: do k = 1, lay
-            do i = il1, il2
+            do i = 1, ni
                taua(i,k)             =  absa(i,k,ib) * dp(i,k) + &
                     tauae(i,k,1) * absab(ib,1) + &
                     tauae(i,k,2) * absab(ib,2) + &
@@ -1121,7 +1131,7 @@ include "nocld.cdk"
          !----------------------------------------------------------------------
 
          call ccc2_planck2(bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
-              il1, il2, ilg, lay, lev)
+              1, ni, ni, lay, lev)
 
          gh = .false.
 
@@ -1129,27 +1139,27 @@ include "nocld.cdk"
 
             call ccc2_gasoptl7(taug, gw, dp, ib, ig, o3, qg, co2, ch4, an2o, &
                  f11, f12, f113, f114, inpr, inptm, mcont, pg, &
-                 dip, dt, lev1, gh, il1, il2, ilg, lay)
+                 dip, dt, lev1, gh, ni, lay)
 
             pgw = pi * gw
             !new           if(mcica.eq.0) then
-            call ccc2_lwtran4(refl, tran, c1, tauci, omci, &
+            call ccc2_lwtran1(refl, tran, c1, tauci, omci, &
                  gci,  f2, taua, taug, bf, &
                  bs, urbf, o3g, em0,cldfrac, &
                  cldm, anu, nct, ncd, ncu, &
                  ncum, ncdm,lev1, cut, maxc, &
-                 il1, il2, ilg, lay, lev)
+                 ni, lay, lev)
             !new           else
             !new            call lwtran_mcica2(refl, tran, c1, tauci, omci, gci,
             !new     1                         f2, taua, taug, bf, bs, urbf, o3g, em0,
             !new     2                         cldg, nct, lev1, cut, maxc,
-            !new     3                         il1, il2, ilg, lay, lev)
+            !new     3                         1, ni, ni, lay, lev)
 
             !           * for the total sky fluxes weight the clear and cloudy sky
             !           * fluxes by the total vertically projected cloud fraction.
 
             !new            do k = lev1,lev
-            !new            do i = il1,il2
+            !new            do i = 1,ni
             !new              if (cldt(i).lt.1.0) then
             !new                refl(i,2,k) = (1.0 - cldt(i)) * refl(i,1,k) +
             !new     1                         cldt(i)  * refl(i,2,k)
@@ -1163,7 +1173,7 @@ include "nocld.cdk"
 
             do k = lev1, lay
                kp1 = k + 1
-               do i = il1, il2
+               do i = 1, ni
                   flxu(i,k)         =  flxu(i,k) + refl(i,2,k) * pgw
                   flxd(i,k)         =  flxd(i,k) + tran(i,2,k) * pgw
 
@@ -1174,7 +1184,7 @@ include "nocld.cdk"
                enddo
             enddo
 
-            do i = il1, il2
+            do i = 1, ni
                flxu(i,lev)         =  flxu(i,lev) + refl(i,2,lev) * pgw
                flxd(i,lev)         =  flxd(i,lev) + tran(i,2,lev) * pgw
 
@@ -1186,7 +1196,7 @@ include "nocld.cdk"
             if (lev1 .gt. 1) then
                do k = lev1 - 1, 1, - 1
                   kp1 =  k + 1
-                  do i = il1, il2
+                  do i = 1, ni
                      flxu(i,k)       =  flxu(i,k) + refl(i,2,lev1) * pgw
                      flxd(i,k)       =  flxd(i,k) + c1(i) * pgw
                   enddo
@@ -1203,7 +1213,7 @@ include "nocld.cdk"
 
                call ccc2_gasoptlgh7(taug, gwgh, dp, ib, ig, o3, qg, co2, ch4, &
                     an2o, inpt, mcont, dip, dt, lev1, gh, &
-                    il1, il2, ilg, lay)
+                    ni, lay)
 
 
                !----------------------------------------------------------------------
@@ -1214,9 +1224,9 @@ include "nocld.cdk"
                !----------------------------------------------------------------------
 
                call ccc2_lattenu4(a1, ib, ig, o3top, qg, co2, pfull, a1(1,12), &
-                    dt, a1(1,5), inpt, il1, il2, ilg)
+                    dt, a1(1,5), inpt, 1, ni, ni)
 
-               do i = il1, il2
+               do i = 1, ni
                   tran0 = exp(- a1(i,1))
                   if (pfull(i,1) .gt. 0.001) then
                      x               =  max(a1(i,1), 1.e-10)
@@ -1233,9 +1243,8 @@ include "nocld.cdk"
                   endif
                enddo
 
-               call ccc2_lwtragh4(refl, tran, c2, tauci, omci, taua, taug, &
-                    bf, urbf, cldfrac, em0, bs, cut, &
-                    il1, il2, ilg, lay, lev)
+               call ccc2_lwtragh1(refl, tran, c2, tauci, omci, taua, taug, &
+                    bf, urbf, cldfrac, em0, bs, cut, ni, lay, lev)
 
                pgw = pi * gwgh
                !new          if(mcica.ne.0) then
@@ -1244,7 +1253,7 @@ include "nocld.cdk"
                !           * fluxes by the total vertically projected cloud fraction.
 
                !new            do k = 1, lev
-               !new            do i = il1,il2
+               !new            do i = 1,ni
                !new              if (cldt(i).lt.1.0) then
                !new                  refl(i,2,k) = (1.0 - cldt(i))*refl(i,1,k)
                !new     1                           + cldt(i)  * refl(i,2,k)
@@ -1259,7 +1268,7 @@ include "nocld.cdk"
 
                do k = 1, lay
                   kp1 = k + 1
-                  do i = il1, il2
+                  do i = 1, ni
                      flxu(i,k)       =  flxu(i,k) + refl(i,2,k) * pgw
                      flxd(i,k)       =  flxd(i,k) + tran(i,2,k) * pgw
                      dfnet           =  tran(i,2,k) - tran(i,2,kp1) - &
@@ -1275,7 +1284,7 @@ include "nocld.cdk"
                !     model top is about 1 mb or higher
                !----------------------------------------------------------------------
 
-               do i = il1, il2
+               do i = 1, ni
                   flxu(i,lev)       =  flxu(i,lev) + refl(i,2,lev) * pgw
                   flxd(i,lev)       =  flxd(i,lev) + tran(i,2,lev) * pgw
                   clt(i)            =  clt(i) -  refl(i,1,1) * pgw
@@ -1288,14 +1297,14 @@ include "nocld.cdk"
          endif
       enddo DONBL
 
-      do i = il1, il2
+      do i = 1, ni
          fdl(i)                  =  flxd(i,lev)
          ful(i)                  =  flxu(i,1)
       enddo
 
       !     on veut les flux en sortie
       do k = 1,lev
-         do i = il1,il2
+         do i = 1,ni
             flxdl(i,k)=flxd(i,k)
             flxul(i,k)=flxu(i,k)
          enddo
@@ -1303,7 +1312,7 @@ include "nocld.cdk"
 
       !     decommenter cette partie si on fait lclw = false sinon ca plante
             else
-               do i = il1, il2
+               do i = 1, ni
                  fdl(i)       = 0.0
                  ful(i)       = 0.0
                  clt(i)       = 0.0
@@ -1312,7 +1321,7 @@ include "nocld.cdk"
                  flxul(i,lev) = 0.0
                enddo
                do k = 1, lay
-               do i = il1, il2
+               do i = 1, ni
                  flxdl(i,k)   = 0.0
                  flxul(i,k)   = 0.0
                  hrl(i,k)     = 0.0
@@ -1323,3 +1332,5 @@ include "nocld.cdk"
 
    return
 end subroutine ccc2_raddriv3
+
+end module ccc2_raddriv

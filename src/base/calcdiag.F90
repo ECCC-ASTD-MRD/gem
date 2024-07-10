@@ -65,17 +65,33 @@ contains
       real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
       character(len=*), parameter :: EC_INTERP='cubic' !Type of vertical interpolation for ECMWF diagnostics
 
-      logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr, is_p3v5
+      logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr, is_mp, is_consun, &
+           is_pcptype_nil, is_pcptype_sps, is_pcptype_b3d, is_radia, is_fluvert_nil, is_fluvert_sfc
       integer :: i, k, moyhr_steps, istat, istat1, nkm1
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
+      real :: w1, w2, w_p3v5, w_etccdiag, w_my2
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
-           vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec
+           vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw
       real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
       real, dimension(ni,nk) :: presinv, t2inv, tiinv, lwcp, iwcp
       real, dimension(ni,nk-1) :: q_grpl, iiwc, prest
 
+      real, target :: dummy1Dni(ni), dummy2Dnk(ni,nk)
+
 #define PHYPTRDCL
 #include "calcdiag_ptr.hf"
+
+!# if (V1 >= V2) w=1 ; else w=0
+#define MASK_GE(V1, V2) max(0., sign(1., V1 - V2))
+!# if (V1 < V2) w=1 ; else w=0
+#define MASK_LT(V1, V2) (1. - MASK_GE(V1, V2))
+!# if (V1 <= V2) w=1 ; else w=0
+#define MASK_LE(V1, V2) max(0., sign(1., V2 - V1))
+!# if (V1 > V2) w=1 ; else w=0
+#define MASK_GT(V1, V2) (1. - MASK_LE(V1, V2))
+      
+#define ISOUT1(ON)       (debug_alldiag_L .or. any(phystepoutlist_S(1:nphystepoutlist) == ON))
+#define ISOUT2(ON,ONMOY) (debug_alldiag_L .or. any(phystepoutlist_S(1:nphystepoutlist) == ON) .or. any(phyoutlist_S(1:nphyoutlist) == ONMOY))
 
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'calcdiag [BEGIN]')
@@ -84,14 +100,32 @@ contains
       nkm1 = nk-1
 
 #undef PHYPTRDCL
+#define PHYPTRASSIGNLOCAL
 #include "calcdiag_ptr.hf"
-
+      
+      dummy1Dni = 0.
+      dummy2Dnk = 0.
+      
       call init2nan(uvs, vmod, vdir, th_air, hblendm, ublend)
-      call init2nan(vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec)
+      call init2nan(vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw)
       call init2nan(en0, pw0, en1, pw1)
       call init2nan(presinv, t2inv, tiinv, q_grpl, iiwc, lwcp, iwcp)
 
-      is_p3v5 = (stcond == 'MP_P3')
+      w_p3v5 = 0.
+      if (stcond == 'MP_P3') w_p3v5 = 1.
+      w_etccdiag = 0.
+      if (etccdiag) w_etccdiag = 1.
+      w_my2 = 0.
+      if (stcond(1:6) == 'MP_MY2') w_my2 = 1.
+      is_mp = (stcond(1:3) == 'MP_')
+      is_consun = (stcond == 'CONSUN')
+      is_pcptype_nil = (pcptype(1:3)=='NIL')
+      is_pcptype_sps = any(pcptype == (/'SPS_W19', 'SPS_FRC'/))
+      is_pcptype_b3d = (pcptype == 'BOURGE3D')
+      is_radia = (radia(1:8) == 'CCCMARAD')
+      is_fluvert_nil = (fluvert == 'NIL')
+      is_fluvert_sfc = (fluvert == 'SURFACE')
+      
       lkount0 = (kount == 0)
       lmoyhr = (moyhr > 0)
       lacchr = .false.
@@ -111,7 +145,7 @@ contains
          !  averaged when moving through driver step = 0
          moyhr_steps = moyhr
          if (step_driver == 0 .and. .not.lkount0) moyhr_steps = min(moyhr,kount)
-         moyhri = 1./float(moyhr_steps)
+         if (lavg) moyhri = 1./float(moyhr_steps)
       endif
 
       !# Final PBL height
@@ -145,7 +179,7 @@ contains
       !     ---------------------------
 
       ! Derived screen-level fields
-      if (.not.(lkount0 .and. fluvert /= 'NIL').or.fluvert=='SURFACE') then
+      if (.not.(lkount0 .and. .not.is_fluvert_nil) .or. is_fluvert_sfc) then
 
          ! Clip the screen level relative humidity to a range from 0-1
          call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
@@ -202,8 +236,10 @@ contains
             return
          endif
          call mhuaes3(esdiagec, zqdiagec, ztdiagec, zpplus, .false., ni, 1, ni)
-         esdiagec(:) = max(esdiagec(:), 0.)
-         ztddiagec(:) = ztdiagec(:) - esdiagec(:)
+         do i=1,ni
+            esdiagec(i) = max(esdiagec(i), 0.)
+            ztddiagec(i) = ztdiagec(i) - esdiagec(i)
+         enddo
 
       endif ECMWF_SCREEN
       
@@ -215,58 +251,56 @@ contains
       !  acchr hours, and by default (acchr=0) as the model step goes through 0.
       IF_RESET_PRECIP: if (lkount0 .or. lacchr) then
 
-         zasc(:)  = 0.
-         zascs(:) = 0.
-         zalc(:)  = 0.
-         zalcm(:) = 0.
-         zalcs(:) = 0.
-         zass(:)  = 0.
-         zals(:)  = 0.
-         zpc(:)   = 0.
-         zpy(:)   = 0.
-         zpz(:)   = 0.
-         zae(:)   = 0.
-         zpr(:)   = 0.
-         zazr(:)  = 0.
-         zrn(:)   = 0.
-         zaip(:)  = 0.
-         zsn(:)   = 0.
+         do i = 1, ni
+            zasc(i)  = 0.
+            zascs(i) = 0.
+            zalc(i)  = 0.
+            zalcm(i) = 0.
+            zalcs(i) = 0.
+            zass(i)  = 0.
+            zals(i)  = 0.
+            zpc(i)   = 0.
+            zpy(i)   = 0.
+            zpz(i)   = 0.
+            zae(i)   = 0.
+            zpr(i)   = 0.
+            zazr(i)  = 0.
+            zrn(i)   = 0.
+            zaip(i)  = 0.
+            zsn(i)   = 0.
 
-         if (associated(zals_rn1)) zals_rn1(:)  = 0.
-         if (associated(zals_rn2)) zals_rn2(:)  = 0.
-         if (associated(zals_fr1)) zals_fr1(:)  = 0.
-         if (associated(zals_fr2)) zals_fr2(:)  = 0.
-         if (associated(zass_sn1)) zass_sn1(:)  = 0.
-         if (associated(zass_sn2)) zass_sn2(:)  = 0.
-         if (associated(zass_sn3)) zass_sn3(:)  = 0.
-         if (associated(zass_pe1)) zass_pe1(:)  = 0.
-         if (associated(zass_pe2)) zass_pe2(:)  = 0.
-         if (associated(zass_pe2l)) zass_pe2l(:)  = 0.
-         if (associated(zass_snd))  zass_snd(:)   = 0.
-         if (associated(zass_mx))   zass_mx(:)    = 0.
-         if (associated(zass_s2l))  zass_s2l(:)   = 0.
-         if (is_p3v5) then
-            if (associated(zass_ws))   zass_ws(:)    = 0.
-            if (associated(zsw_dhmax)) zsw_dhmax(:) = 0.
-         endif
-
+            zals_rn1(i)  = 0.
+            zals_rn2(i)  = 0.
+            zals_fr1(i)  = 0.
+            zals_fr2(i)  = 0.
+            zass_sn1(i)  = 0.
+            zass_sn2(i)  = 0.
+            zass_sn3(i)  = 0.
+            zass_pe1(i)  = 0.
+            zass_pe2(i)  = 0.
+            zass_pe2l(i)  = 0.
+            zass_snd(i)   = 0.
+            zass_mx(i)    = 0.
+            zass_s2l(i)   = 0.
+            zass_ws(i)    = 0.
+            zsw_dhmax(i) = 0.
+         enddo
       endif IF_RESET_PRECIP
 
       IF_KOUNT_NOT_0: if (.not.lkount0) then
 
          ! Diagnostics on precipitation type.
-         if (pcptype == 'BOURGE' .or. &
-              (stcond(1:3) == 'MP_' .and. pcptype == 'NIL')) then
+         if (pcptype == 'BOURGE' .or. (is_mp .and. is_pcptype_nil)) then
             !Note: 'bourge2' is always called if microphysics scheme is used and pcptyp=nil,
             !       but it is only applied to implicit (convection) precipitation
             call bourge2(zfneige1d, zfip1d, ztplus, zsigw, zpplus, ni, nk-1)
-         else if (pcptype == 'BOURGE3D') then
+         else if (is_pcptype_b3d) then
             call bourge1_3d(zfneige2d, zfip2d, ztplus, zsigw, zpplus, ni, nk-1)
             zfneige1d(1:ni) => zfneige2d(:,nk)
             zfip1d(1:ni)    => zfip2d(:,nk)
          endif
 
-         IF_BOURG3D: if (pcptype == 'BOURGE3D' .and. stcond == 'CONSUN') then
+         IF_BOURG3D: if (is_pcptype_b3d .and. is_consun) then
             !AZR3D: Accumulation des precipitations verglaclacantes en 3D
             !AIP3D: Accumulation des precipitations re-gelees en 3D
             do k = 1,nk-1
@@ -284,11 +318,13 @@ contains
                   sol_mid = max(0.,zfneige2d(i,k)*tempo)
                   liq_mid = max(0.,tempo-sol_mid)
                   tempo    = liq_stra+liq_conv+liq_mid
-                  if (ztplus(i,k) < TCDK) then
-                     zzr3d(i,k) = (1.-zfip2d(i,k))*tempo*dt
-                  else
-                     zzr3d(i,k) = 0.
-                  endif
+!!$                  if (ztplus(i,k) < TCDK) then
+!!$                     zzr3d(i,k) = (1.-zfip2d(i,k))*tempo*dt
+!!$                  else
+!!$                     zzr3d(i,k) = 0.
+!!$                  endif
+                  w1 = MASK_LT(ztplus(i,k), TCDK)  !# ztplus(i,k) < TCDK
+                  zzr3d(i,k) = w1 * ((1.-zfip2d(i,k))*tempo*dt)
                   zazr3d(i,k) = zazr3d(i,k) + zzr3d(i,k)
                   zpl3d(i,k) = zfip2d(i,k)*tempo*dt
                   zaip3d(i,k) = zaip3d(i,k) + zpl3d(i,k)
@@ -300,7 +336,7 @@ contains
          DO_NI: do i = 1,ni
 
             ! Running time maximum hail size (ice P3 microphysics)
-            if (associated(zsw_dhmax) .and. is_p3v5) zsw_dhmax(i) = max(zsw_dhmax(i),a_diag_dhmax(i,nkm1))
+            if (sw_dhmax > 0 .and. w_p3v5 > 0.) zsw_dhmax(i) = max(zsw_dhmax(i),a_diag_dhmax(i,nkm1))
 
             !taux des precipitations de la convection profonde
             zry(i) = ztsc(i) + ztlc(i)
@@ -318,14 +354,14 @@ contains
             zrc(i) = zrlc(i) + zrsc(i)
 
             !Precipitation types from Milbrandt-Yau cloud microphysics scheme:
-            IF_MP: if (stcond(1:3) == 'MP_')  then
+            IF_MP: if (is_mp)  then
 
                !diagnose freezing drizzle/rain based on sfc temperature
                !---override rn/fr partition from my2 [to be removed]
-               if (stcond(1:6) == 'MP_MY2') then
-                  ztls_rn1(i) = ztls_rn1(i) + ztls_fr1(i)
-                  ztls_rn2(i) = ztls_rn2(i) + ztls_fr2(i)
-               endif
+!!$               if (stcond(1:6) == 'MP_MY2') then
+                  ztls_rn1(i) = ztls_rn1(i) + w_my2 * ztls_fr1(i)
+                  ztls_rn2(i) = ztls_rn2(i) + w_my2 * ztls_fr2(i)
+!!$               endif
 
                if  (ztplus(i,nk) < TCDK) then
                   ztls_fr1(i) = ztls_rn1(i)
@@ -333,22 +369,29 @@ contains
                   ztls_rn1(i) = 0.
                   ztls_rn2(i) = 0.
                endif
+!!$               w1 = MASK_LT(ztplus(i,k), TCDK)  !# ztplus(i,k) < TCDK
+!!$               ztls_fr1(i) = (1.-w1) * ztls_fr1(i) + w1 * ztls_rn1(i)
+!!$               ztls_fr2(i) = (1.-w1) * ztls_fr2(i) + w1 * ztls_rn2(i)
+!!$               ztls_rn1(i) = (1.-w1) * ztls_rn1(i)
+!!$               ztls_rn2(i) = (1.-w1) * ztls_rn2(i)
 
                !tls:  rate of liquid precipitation (sum of rain and drizzle)
                ztls(i) = ztls_rn1(i) + ztls_rn2(i) + ztls_fr1(i) + ztls_fr2(i)
 
                !tss:  rate of solid precipitation (sum of all fozen precipitation types)
                ztss(i) = ztss_sn1(i) + ztss_sn2(i) +ztss_sn3(i) + ztss_pe1(i) + ztss_pe2(i)
-               if (is_p3v5) then
-                   ztss(i) = ztss(i) + ztss_ws(i)
-               endif
+               ztss(i) = ztss(i) + w_p3v5 * ztss_ws(i)
 
                !tss_mx:  rate of mixed precipitation (liquid and solid simultaneously [>0.01 mm/h each])
-               if (ztls(i) > 2.78e-9 .and. ztss(i) > 2.78e-9) then   ![note: 2.78e-9 m/s = 0.01 mm/h]
-                  ztss_mx(i) = ztls(i) + ztss(i)
-               else
-                  ztss_mx(i) = 0.
-               endif
+!!$               if (ztls(i) > 2.78e-9 .and. ztss(i) > 2.78e-9) then   ![note: 2.78e-9 m/s = 0.01 mm/h]
+!!$                  ztss_mx(i) = ztls(i) + ztss(i)
+!!$               else
+!!$                  ztss_mx(i) = 0.
+!!$               endif
+               w1 = MASK_GT(ztls(i), 2.78e-9)  !# ztls(i) > 2.78e-9
+               w2 = MASK_GT(ztss(i), 2.78e-9)  !# ztss(i) > 2.78e-9
+               ztss_mx(i) = w1 * w2 * (ztls(i) + ztss(i))
+
 
                !als_rn1:  accumulation of liquid drizzle
                zals_rn1(i) = zals_rn1(i) + ztls_rn1(i) * dt
@@ -369,9 +412,7 @@ contains
                zass_sn2(i) = zass_sn2(i) + ztss_sn2(i) * dt
 
                !ass_ws:  accumulation of wet snow
-               if (is_p3v5) then
-                  zass_ws(i)  = zass_ws(i) + ztss_ws(i) * dt
-               endif
+               zass_ws(i)  = zass_ws(i) + w_p3v5 * ztss_ws(i) * dt
 
                !ass_sn3:  accumulation of graupel
                zass_sn3(i) = zass_sn3(i) + ztss_sn3(i) * dt
@@ -442,17 +483,14 @@ contains
             !pr : accumulation des precipitations totales
             zpr(i) = zpc(i) + zae(i)
 
-            if (stcond == 'CONSUN') then
+            if (is_consun) then
                tempo    = ztls(i) + ztss(i)
                sol_stra = max(0., zfneige1d(i)*tempo)
                liq_stra = max(0., tempo-sol_stra)
                tempo    = ztlc(i) + ztlcm(i) + ztlcs(i) + ztsc(i) + ztscs(i)
                sol_conv = max(0., zfneige1d(i)*tempo)
                liq_conv = max(0., tempo-sol_conv)
-            elseif (any(pcptype == (/ &
-                 'NIL    ', &
-                 'SPS_W19', &
-                 'SPS_FRC'/))) then
+            elseif (is_pcptype_nil .or. is_pcptype_sps) then
                sol_stra = ztss(i)
                liq_stra = ztls(i)
                sol_conv = ztsc(i) + ztscs(i)
@@ -471,13 +509,16 @@ contains
             !AIP: ACCUMULATION DES PRECIPITATIONS RE-GELEES
             !SN : ACCUMULATION DES PRECIPITATIONS de neige
 
-            IF_MP_EXPL: if (stcond(1:3)=='MP_' .and. pcptype(1:3)=='NIL') then
+            zzr(i) = 0.
+            zzrflag(i) = 0.
+            IF_MP_EXPL: if (is_mp .and. is_pcptype_nil) then
 
                tempo    = ztlc(i) + ztlcm(i) + ztlcs(i) + ztsc(i) + ztscs(i)   !total convective (implicit)
                sol_conv = max(0., zfneige1d(i)*tempo)
                liq_conv = max(0., tempo-sol_conv)
                tempo2   = zazr(i)
                !add explicit + diagnostic portion of rain/freezing rain from convective schemes:
+!!$               w1 = MASK_LT(ztplus(i,nk), TCDK)  !# ztplus(i,nk) < TCDK
                if  (ztplus(i,nk) < TCDK) then
                   zazr(i) = zazr(i)                                  &
                        + (ztls_fr1(i)+ztls_fr2(i))*dt           & !from microphysics
@@ -488,6 +529,8 @@ contains
                        + (1.-zfip1d(i))*liq_conv*dt               !from convective schemes
                endif
                if (zazr(i) > tempo2) zzrflag(i) = 1.
+!!$               w1 = MASK_GT(zazr(i), tempo2)
+!!$               zzrflag(i) = (1.-w1) * zzrflag(i) + w1
                !add explicit + diagnostic portion of ice pellets from convective schemes:
                zaip(i) = zaip(i)                                     &
                     + ztss_pe1(i)*dt                            &  !from microphysics
@@ -497,30 +540,25 @@ contains
                zsn(i)  = zsn(i)                                      &
                     + (ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i))*dt  &  !from microphysics
                     + sol_conv*dt                                  !from convective schemes
-               if (is_p3v5) then
-                    zsn(i) = zsn(i) + ztss_ws(i)*dt
-               endif
+               zsn(i) = zsn(i) + w_p3v5 * ztss_ws(i)*dt
                !note: contribution to SN from microphysics is from ice, snow,
                !      and graupel, instantaneous solid-to-liquid ratio for
                !      pcp rate total snow (i+s+g):
-               if (is_p3v5) then
-                  tempo       =  max(ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i)+ztss_ws(i), 1.e-18)
-               else
-                  tempo       =  max(ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i), 1.e-18)
-               endif
+               tempo       =  max(ztss_sn1(i)+ztss_sn2(i)+ztss_sn3(i)+ w_p3v5*ztss_ws(i), 1.e-18)
                ztss_s2l(i) = ztss_snd(i)/tempo
 
             else
 
                !diagnostic partitioning of rain vs. freezing rain:
                tempo =  liq_stra + liq_conv
+!!$               w1 = MASK_LT(ztplus(i,nk), TCDK)  !# ztplus(i,nk) < TCDK
                if  (ztplus(i,nk) < TCDK) then
                   zzr(i) = (1.-zfip1d(i))*tempo*dt
                   zazr(i) = zazr(i) + zzr(i)
                   if (tempo > 0.) zzrflag(i) = 1.
                else
                   zrn(i) = zrn(i) + (1.-zfip1d(i))*tempo*dt
-                  if (pcptype == 'BOURGE3D' .and. tempo > 0.) zzrflag(i) = 1.
+                  if (is_pcptype_b3d .and. tempo > 0.) zzrflag(i) = 1.
                endif
                !diagnostic ice pellets:
                zpl(i) = zfip1d(i)*tempo*dt
@@ -544,13 +582,21 @@ contains
 
       if (llight) then
          if (stcond(1:5)=='MP_P3') then
-            q_grpl(:,:) = a_qi_4(:,:) + a_qi_5(:,:)
-            iiwc(:,:)   = a_qi_1(:,:) + a_qi_2(:,:) + a_qi_3(:,:) +     &
-                 a_qi_4(:,:) + a_qi_5(:,:) + a_qi_6(:,:)
+            do k = 1, nk-1
+               do i = 1, ni
+                  q_grpl(i,k) = a_qi_4(i,k) + a_qi_5(i,k)
+                  iiwc(i,k)   = a_qi_1(i,k) + a_qi_2(i,k) + a_qi_3(i,k) +     &
+                       a_qi_4(i,k) + a_qi_5(i,k) + a_qi_6(i,k)
+               enddo
+            enddo
             call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
          elseif (stcond(1:6)=='MP_MY2') then
-            q_grpl(:,:) = zqgplus(:,:)
-            iiwc(:,:)   = zqiplus(:,:) + zqnplus(:,:) + zqgplus(:,:)
+            do k = 1, nk-1
+               do i = 1, ni
+                  q_grpl(i,k) = zqgplus(i,k)
+                  iiwc(i,k)   = zqiplus(i,k) + zqnplus(i,k) + zqgplus(i,k)
+               enddo
+            enddo
             call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
          endif
       endif
@@ -559,60 +605,78 @@ contains
       !     Energy budget diagnostics
       !     ---------------------------------
 
+      zrtrauw = zrt*RAUW
+      
       ! Compute Q1, Q2 apparent heat source / moisture sink on request
       Q1_BUDGET: if (ebdiag) then
          do k=1,nk
-            presinv(:,nk-(k-1)) = zpplus*zsigt(:,k)
-            t2inv(:,nk-(k-1)) = zt2(:,k)
-            tiinv(:,nk-(k-1)) = zti(:,k)
+            do i = 1, ni
+               presinv(i,nk-(k-1)) = zpplus(i)*zsigt(i,k)
+               t2inv(i,nk-(k-1)) = zt2(i,k)
+               tiinv(i,nk-(k-1)) = zti(i,k)
+            enddo
          enddo
-         istat  = int_profile(zt2i,t2inv,presinv,zpplus*zsigt(:,1),zpplus*zsigt(:,nk))
-         istat1 = int_profile(ztii,tiinv,presinv,zpplus*zsigt(:,1),zpplus*zsigt(:,nk))
+         istat  = int_profile(zt2i,t2inv,presinv,presinv(:,nk),presinv(:,1))
+         istat1 = int_profile(ztii,tiinv,presinv,presinv(:,nk),presinv(:,1))
          if (istat /= INT_OK .or. istat1 /= INT_OK) then
             call physeterror('calcdiag', 'Problem in radiative tendency integrals')
             return
          endif
-         zq1app = CPD*(zt2i+ztii)/GRAV + CHLC*zrt*RAUW + zfc_ag
-         zq2app = CHLC*(zrt*RAUW - zflw)
+         
+         do i = 1, ni
+            zq1app(i) = CPD*(zt2i(i)+ztii(i))/GRAV + CHLC*zrtrauw(i) + zfc_ag(i)
+            zq2app(i) = CHLC*(zrtrauw(i) - zflw(i))
+         enddo
       endif Q1_BUDGET
-      
-      ! Compute physics budget residual
-      en0(:) = 0.
-      if (associated(zcone0)) en0(:) = dble(zcone0(:))
-      pw0(:) = 0.
-      if (associated(zconq0)) pw0(:) = dble(zconq0(:))
-      if (pb_residual(zconephy, zconqphy, en0, pw0, pvars, &
-           delt, nkm1, F_rain=zrt*RAUW, F_shf=zfc_ag, F_wvf=zflw, &
-           F_rad=znetrad) /= PHY_OK) then
-         call physeterror('calcdiag', &
-              'Problem computing physics budget residual')
-         return
-      endif
 
-      ! Compute full-model budget residual
-      en1(:) = 0.
-      if (associated(zcone1)) en1(:) = dble(zcone1(:))
-      pw1(:) = 0.
-      if (associated(zconq1)) pw1(:) = dble(zconq1(:))
-      if (pb_residual(zconetot, zconqtot, en1, pw1, pvars, &
-           delt, nkm1, F_rain=zrt*RAUW, F_shf=zfc_ag, F_wvf=zflw, &
-           F_rad=znetrad) /= PHY_OK) then
-         call physeterror('calcdiag', &
-              'Problem computing full-model budget residual')
-         return
-      endif
-      
-      ! Compute post-physics budget state
-      if (pb_compute(zcone1, zconq1, en1, pw1, pvars, nkm1) /= PHY_OK) then
-         call physeterror('phystepinit', &
-              'Problem computing post-physics budget state')
-         return
-      endif
-      if (associated(zcone1)) zcone1(:) = real(en1(:))
-      if (associated(zconq1)) zconq1(:) = real(pw1(:))
+      IF_CONS: if (lcons) then
+         ! Compute physics budget residual
+         if (conephy > 0 .or. conqphy > 0) then
+            en0(:) = dble(zcone0(:))
+            pw0(:) = dble(zconq0(:))
+            zconephy = 0.
+            if (pb_residual(zconephy, zconqphy, en0, pw0, pvars, &
+                 delt, nkm1, F_rain=zrtrauw, F_shf=zfc_ag, F_wvf=zflw, &
+                 F_rad=znetrad) /= PHY_OK) then
+               call physeterror('calcdiag', &
+                    'Problem computing physics budget residual')
+               return
+            endif
+         endif
 
+         ! Compute full-model budget residual
+         if (conetot > 0 .or. conqtot > 0) then
+            en1(:) = dble(zcone1(:))
+            pw1(:) = dble(zconq1(:))
+            zconetot = 0.
+            if (pb_residual(zconetot, zconqtot, en1, pw1, pvars, &
+                 delt, nkm1, F_rain=zrtrauw, F_shf=zfc_ag, F_wvf=zflw, &
+                 F_rad=znetrad) /= PHY_OK) then
+               call physeterror('calcdiag', &
+                    'Problem computing full-model budget residual')
+               return
+            endif
+         endif
+
+         ! Compute post-physics budget state
+         if (cone1 > 0 .or. conq1 > 0) then
+            if (pb_compute(zcone1, zconq1, en1, pw1, pvars, nkm1) /= PHY_OK) then
+               call physeterror('phystepinit', &
+                    'Problem computing post-physics budget state')
+               return
+            endif
+            if (cone1 > 0) zcone1(:) = real(en1(:))
+            if (conq1 > 0) zconq1(:) = real(pw1(:))
+         endif
+         
+      endif IF_CONS
+   
       ! Compute surface energy budget (
-      zfl(:)   = zfns(:) - zfv_ag(:) - zfc_ag(:)
+      if (ISOUT2('FL', 'AG')) then
+         zfl(:) = zfns(:) - zfv_ag(:) - zfc_ag(:)
+      else
+         zfl = 0.
+      endif
 
       !****************************************************************
       !     Moisture diagnostics
@@ -621,11 +685,15 @@ contains
          prest(:,k) = zpplus(:) * zsigt(:,k) 
       enddo
       ! Calculate HRL (liquid), including diag level nk
-      call mfohr4(zhrl, zhuplus, ztplus, prest, ni, nkm1, ni, .false.)
-      call mfohr4(zhrl(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.false.)
+      if (hrl > 0 .and. ISOUT1('HRL')) then
+         call mfohr4(zhrl, zhuplus, ztplus, prest, ni, nkm1, ni, .false.)
+         call mfohr4(zhrl(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.false.)
+      endif
       ! Calculate HRI or HRL (ice or liquid), including diag level nk
-      call mfohr4(zhrli, zhuplus, ztplus, prest, ni, nkm1, ni, .true.)
-      call mfohr4(zhrli(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.true.)
+      if (hrli > 0 .and. ISOUT1('HRLI')) then
+         call mfohr4(zhrli, zhuplus, ztplus, prest, ni, nkm1, ni, .true.)
+         call mfohr4(zhrli(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.true.)
+      endif
 
       !****************************************************************
       !     AVERAGES
@@ -639,121 +707,142 @@ contains
 
          IF_RESET_0: if (lkount0 .or. lreset) then
 
-            zflwm(:)   = 0.
-            zfshm(:)   = 0.
-            zfcmy(:)   = 0.0
-            zfvmm(:)   = 0.0
-            zfvmy(:)   = 0.0
-            zkshalm(:) = 0.0
-            ziwvm(:)   = 0.0
-            zq1appm(:) = 0.0
-            zq2appm(:) = 0.0
-            ztlwpm(:)  = 0.0
-            zt2im(:)   = 0.0
-            ztiim(:)   = 0.0
-            ztiwpm(:)  = 0.0
-            if (etccdiag) then
-               ztccm(:)  = 0.0
-               ztslm(:)  = 0.0
-               ztsmm(:)  = 0.0
-               ztshm(:)  = 0.0
-               ztzlm(:)  = 0.0
-               ztzmm(:)  = 0.0
-               ztzhm(:)  = 0.0
-            endif
-            zhrsmax(:) = zrhdiag(:)
-            zhrsmin(:) = zrhdiag(:)
-            zhusavg(:) = 0.0
-            ztdiagavg(:)= 0.0
-            zp0avg(:)  = 0.0
-            zuvsavg(:) = 0.0
-            zuvsmax(:) = uvs(:)
+            do i = 1, ni
+               zflwm(i)   = 0.
+               zfshm(i)   = 0.
+               zfcmy(i)   = 0.0
+               zfvmm(i)   = 0.0
+               zfvmy(i)   = 0.0
+               zkshalm(i) = 0.0
+               ziwvm(i)   = 0.0
+               zq1appm(i) = 0.0
+               zq2appm(i) = 0.0
+               ztlwpm(i)  = 0.0
+               zt2im(i)   = 0.0
+               ztiim(i)   = 0.0
+               ztiwpm(i)  = 0.0
+               ztccm(i)  = 0.0
+               ztslm(i)  = 0.0
+               ztsmm(i)  = 0.0
+               ztshm(i)  = 0.0
+               ztzlm(i)  = 0.0
+               ztzmm(i)  = 0.0
+               ztzhm(i)  = 0.0
+               zhrsmax(i) = zrhdiag(i)
+               zhrsmin(i) = zrhdiag(i)
+               zhusavg(i) = 0.0
+               ztdiagavg(i)= 0.0
+               zp0avg(i)  = 0.0
+               zuvsavg(i) = 0.0
+               zuvsmax(i) = uvs(i)
+               zkmidm(i) = 0.0
+            enddo
 
             !minimum and maximum temperature and temp. tendencies
-            zttmin(:,:) = ztplus(:,:)
-            zttmax(:,:) = ztplus(:,:)
-            ztadvmin(:,:) = ztadv(:,:)
-            ztadvmax(:,:) = ztadv(:,:)
+            do k = 1, nk
+               do i = 1, ni
+                  zttmin(i,k) = ztplus(i,k)
+                  zttmax(i,k) = ztplus(i,k)
+                  ztadvmin(i,k) = ztadv(i,k)
+                  ztadvmax(i,k) = ztadv(i,k)
+               enddo
+            enddo
 
             if (llinoz .and. out_linoz) then
-               ! 2D Ozone
-               zo3tcm  (:) = 0.0
-               zo3ctcm (:) = 0.0
-               ! 3D Ozone
-               zo3avg  (:,:) = 0.0
-               zo3ccolm(:,:) = 0.0
-               zo3colm (:,:) = 0.0
-               zo1chmtdm(:,:) = 0.0
-               zo4chmtdm(:,:) = 0.0
-               zo6chmtdm(:,:) = 0.0
-               zo7chmtdm(:,:) = 0.0
-               zo3chmtdm(:,:) = 0.0
+               do i = 1, ni
+                  ! 2D Ozone
+                  zo3tcm(i) = 0.0
+                  zo3ctcm(i) = 0.0
+               enddo
+               do k = 1, nk
+                  do i = 1, ni
+                     ! 3D Ozone
+                     zo3avg (i,k) = 0.0
+                     zo3ccolm(i,k) = 0.0
+                     zo3colm(i,k) = 0.0
+                     zo1chmtdm(i,k) = 0.0
+                     zo4chmtdm(i,k) = 0.0
+                     zo6chmtdm(i,k) = 0.0
+                     zo7chmtdm(i,k) = 0.0
+                     zo3chmtdm(i,k) = 0.0
+                  enddo
+               enddo
             end if
 
             if (llingh .and. out_linoz) then
                ! 2D GHG
-               zch4tcm (:) = 0.0
-               zn2otcm (:) = 0.0
-               zf11tcm (:) = 0.0
-               zf12tcm (:) = 0.0
+               do i = 1, ni
+                  zch4tcm(i) = 0.0
+                  zn2otcm(i) = 0.0
+                  zf11tcm(i) = 0.0
+                  zf12tcm(i) = 0.0
+               enddo
                ! 3D GHG
-               zch4avg (:,:) = 0.0
-               zn2oavg (:,:) = 0.0
-               zf11avg (:,:) = 0.0
-               zf12avg (:,:) = 0.0
-               zch4colm(:,:) = 0.0
-               zn2ocolm(:,:) = 0.0
-               zf11colm(:,:) = 0.0
-               zf12colm(:,:) = 0.0
-               zch4chmtdm(:,:) = 0.0
-               zn2ochmtdm(:,:) = 0.0
-               zf11chmtdm(:,:) = 0.0
-               zf12chmtdm(:,:) = 0.0
+               do k = 1, nk
+                  do i = 1, ni
+                     zch4avg(i,k) = 0.0
+                     zn2oavg(i,k) = 0.0
+                     zf11avg(i,k) = 0.0
+                     zf12avg(i,k) = 0.0
+                     zch4colm(i,k) = 0.0
+                     zn2ocolm(i,k) = 0.0
+                     zf11colm(i,k) = 0.0
+                     zf12colm(i,k) = 0.0
+                     zch4chmtdm(i,k) = 0.0
+                     zn2ochmtdm(i,k) = 0.0
+                     zf11chmtdm(i,k) = 0.0
+                     zf12chmtdm(i,k) = 0.0
+                  enddo
+               enddo
             end if
 
-            zccnm(:,1:nk-1)  = 0.0
-            ztim(:,1:nk-1)   = 0.0
-            zt2m(:,1:nk-1)   = 0.0
-            ztgwdm(:,1:nk-1) = 0.0
-            zutofdm(:,1:nk-1) = 0.0
-            zvtofdm(:,1:nk-1) = 0.0
-            zttofdm(:,1:nk-1) = 0.0
-            zugwdm(:,1:nk-1) = 0.0
-            zvgwdm(:,1:nk-1) = 0.0
-            zugnom(:,1:nk-1) = 0.0
-            zvgnom(:,1:nk-1) = 0.0
-            ztgnom(:,1:nk-1) = 0.0
-            zudifvm(:,1:nk-1) = 0.0
-            zvdifvm(:,1:nk-1) = 0.0
-            ztdifvm(:,1:nk-1) = 0.0
-            zqdifvm(:,1:nk-1) = 0.0
-            ztadvm(:,1:nk-1)  = 0.0
-            zuadvm(:,1:nk-1)  = 0.0
-            zvadvm(:,1:nk-1)  = 0.0
-            zqadvm(:,1:nk-1)  = 0.0
-            zqmetoxm(:,1:nk-1) = 0.0
-            zhushalm(:,1:nk-1) = 0.0
-            ztshalm (:,1:nk-1) = 0.0
-            zlwcm(:,1:nk-1)    = 0.0
-            ziwcm(:,1:nk-1)    = 0.0
-            zlwcradm(:,1:nk-1) = 0.0
-            ziwcradm(:,1:nk-1) = 0.0
-            zcldradm(:,1:nk-1) = 0.0
-            ztphytdm(:,1:nk-1) = 0.0
-            zhuphytdm(:,1:nk-1)= 0.0
-            zuphytdm(:,1:nk-1) = 0.0
-            zvphytdm(:,1:nk-1) = 0.0
-            zzctem(:,1:nk-1)  = 0.0
-            zzstem(:,1:nk-1)  = 0.0
-            zzcqem(:,1:nk-1)  = 0.0
-            zzcqcem(:,1:nk-1) = 0.0
-            zzsqem(:,1:nk-1)  = 0.0
-            zzsqcem(:,1:nk-1) = 0.0
-            if (associated(zmqem)) zmqem(:,1:nk-1) = 0.0
-            if (associated(zmtem)) zmtem(:,1:nk-1) = 0.0
-            if (associated(zumim)) zumim(:,1:nk-1) = 0.0
-            if (associated(zvmim)) zvmim(:,1:nk-1) = 0.0
-            if (associated(zkmidm)) zkmidm(:) = 0.0
+            !#TODO: split by scheme and avoid computation if scheme not active
+            do k = 1, nk-1
+               do i = 1, ni
+                  zccnm(i,k)  = 0.0
+                  ztim(i,k)   = 0.0
+                  zt2m(i,k)   = 0.0
+                  ztgwdm(i,k) = 0.0
+                  zutofdm(i,k) = 0.0
+                  zvtofdm(i,k) = 0.0
+                  zttofdm(i,k) = 0.0
+                  zugwdm(i,k) = 0.0
+                  zvgwdm(i,k) = 0.0
+                  zugnom(i,k) = 0.0
+                  zvgnom(i,k) = 0.0
+                  ztgnom(i,k) = 0.0
+                  zudifvm(i,k) = 0.0
+                  zvdifvm(i,k) = 0.0
+                  ztdifvm(i,k) = 0.0
+                  zqdifvm(i,k) = 0.0
+                  ztadvm(i,k)  = 0.0
+                  zuadvm(i,k)  = 0.0
+                  zvadvm(i,k)  = 0.0
+                  zqadvm(i,k)  = 0.0
+                  zqmetoxm(i,k) = 0.0
+                  zhushalm(i,k) = 0.0
+                  ztshalm(i,k)  = 0.0
+                  zlwcm(i,k)    = 0.0
+                  ziwcm(i,k)    = 0.0
+                  zlwcradm(i,k) = 0.0
+                  ziwcradm(i,k) = 0.0
+                  zcldradm(i,k) = 0.0
+                  ztphytdm(i,k) = 0.0
+                  zhuphytdm(i,k)= 0.0
+                  zuphytdm(i,k) = 0.0
+                  zvphytdm(i,k) = 0.0
+                  zzctem(i,k)  = 0.0
+                  zzstem(i,k)  = 0.0
+                  zzcqem(i,k)  = 0.0
+                  zzcqcem(i,k) = 0.0
+                  zzsqem(i,k)  = 0.0
+                  zzsqcem(i,k) = 0.0
+                  zmqem(i,k) = 0.0
+                  zmtem(i,k) = 0.0
+                  zumim(i,k) = 0.0
+                  zvmim(i,k) = 0.0
+               enddo
+            enddo
 
             !#Note: all convec str in the if below must have same len
             if (any(convec == (/ &
@@ -761,64 +850,72 @@ contains
                  'KFC2    ', &
                  'BECHTOLD'  &
                  /))) then
-               zabekfcm(:)  = 0.0
-               zcapekfcm(:) = 0.0
-               zcinkfcm(:)  = 0.0
-               zwumkfcm(:)  = 0.0
-               zzbaskfcm(:) = 0.0
-               zztopkfcm(:) = 0.0
-               zkkfcm(:)    = 0.0
-               ztfcpm(:,:)   = 0.0
-               zhufcpm(:,:)  = 0.0
-               zqckfcm(:,:)  = 0.0
-               zumfkfcm(:,:) = 0.0
-               zdmfkfcm(:,:) = 0.0
-               zudcm(:,:)   = 0.0
-               zvdcm(:,:)   = 0.0
+               do i = 1, ni
+                  zabekfcm(i)  = 0.0
+                  zcapekfcm(i) = 0.0
+                  zcinkfcm(i)  = 0.0
+                  zwumkfcm(i)  = 0.0
+                  zzbaskfcm(i) = 0.0
+                  zztopkfcm(i) = 0.0
+                  zkkfcm(i)    = 0.0
+               enddo
 
-               if (cmt_comp_diag) then
-                  zufcp1m(:,:) = 0.0
-                  zufcp2m(:,:) = 0.0
-                  zufcp3m(:,:) = 0.0
-                  zsufcpm(:,:) = 0.0
-                  zvfcp1m(:,:) = 0.0
-                  zvfcp2m(:,:) = 0.0
-                  zvfcp3m(:,:) = 0.0
-                  zsvfcpm(:,:) = 0.0
-               endif
+               do k = 1, nk
+                  do i = 1, ni
+                     ztfcpm(i,k)   = 0.0
+                     zhufcpm(i,k)  = 0.0
+                     zqckfcm(i,k)  = 0.0
+                     zumfkfcm(i,k) = 0.0
+                     zdmfkfcm(i,k) = 0.0
+                     zudcm(i,k) = 0.0
+                     zvdcm(i,k) = 0.0
+                     zuscm(i,k) = 0.0
+                     zvscm(i,k) = 0.0
+                     zufcp1m(i,k) = 0.0
+                     zufcp2m(i,k) = 0.0
+                     zufcp3m(i,k) = 0.0
+                     zsufcpm(i,k) = 0.0
+                     zvfcp1m(i,k) = 0.0
+                     zvfcp2m(i,k) = 0.0
+                     zvfcp3m(i,k) = 0.0
+                     zsvfcpm(i,k) = 0.0
+                  enddo
+               enddo
             
-               if (associated(zuscm)) zuscm(:,:) = 0.0
-               if (associated(zvscm)) zvscm(:,:) = 0.0
             endif
 
-            if (fluvert /= 'NIL') then
-               zsumf(:) = 0.
-               zsvmf(:) = 0.
-               zfqm(:)  = 0.
+            if (.not.is_fluvert_nil) then
+               do i = 1, ni
+                  zsumf(i) = 0.
+                  zsvmf(i) = 0.
+                  zfqm(i)  = 0.
+               enddo
             endif
 
             ! Reset conservation averages
-            if (associated(zconecndm)) then
-               zconedynm(:) = 0.
-               zconecndm(:) = 0.
-               zconedcm(:) = 0.
-               zconemcm(:) = 0.
-               zconemom(:) = 0.
-               zconepblm(:) = 0.
-               zconephym(:) = 0.
-               zconeradm(:) = 0.
-               zconescm(:) = 0.
-               zconetotm(:) = 0.
-               zconqdynm(:) = 0.
-               zconqcndm(:) = 0.
-               zconqdcm(:) = 0.
-               zconqmcm(:) = 0.
-               zconqmom(:) = 0.
-               zconqpblm(:) = 0.
-               zconqphym(:) = 0.
-               zconqradm(:) = 0.
-               zconqscm(:) = 0.
-               zconqtotm(:) = 0.
+            if (lcons) then
+               do i = 1, ni
+                  zconedynm(i) = 0.
+                  zconecndm(i) = 0.
+                  zconedcm(i) = 0.
+                  zconemcm(i) = 0.
+                  zconemom(i) = 0.
+                  zconepblm(i) = 0.
+                  zconephym(i) = 0.
+                  zconeradm(i) = 0.
+                  zconescm(i)  = 0.
+                  zconetotm(i) = 0.
+                  zconqdynm(i) = 0.
+                  zconqcndm(i) = 0.
+                  zconqdcm(i)  = 0.
+                  zconqmcm(i)  = 0.
+                  zconqmom(i)  = 0.
+                  zconqpblm(i) = 0.
+                  zconqphym(i) = 0.
+                  zconqradm(i) = 0.
+                  zconqscm(i) = 0.
+                  zconqtotm(i) = 0.
+               enddo
             endif
 
          endif IF_RESET_0
@@ -829,109 +926,61 @@ contains
       IF_ACCUM_1: if (laccum .and. .not.lkount0) then
 
          do i = 1, ni
-            zflwm    (i) = zflwm   (i) + zflw(i) 
-            zfshm    (i) = zfshm   (i) + zfsh(i) 
-            zfcmy    (i) = zfcmy   (i) + zfc_ag(i)
-            zfvmm    (i) = zfvmm   (i) + zfvap_ag(i)
-            zfvmy    (i) = zfvmy   (i) + zfv_ag(i)
-            zkshalm  (i) = zkshalm (i) + zkshal(i)
-            ziwvm    (i) = ziwvm   (i) + ziwv  (i)
-            zq1appm  (i) = zq1appm (i) + zq1app(i)
-            zq2appm  (i) = zq2appm (i) + zq2app(i)
-            ztlwpm   (i) = ztlwpm  (i) + ztlwp (i)
-            zt2im    (i) = zt2im   (i) + zt2i  (i)
-            ztiim    (i) = ztiim   (i) + ztii  (i)
-            ztiwpm   (i) = ztiwpm  (i) + ztiwp (i)
-            if (etccdiag) then
-               ztccm(i) = ztccm(i) + ztcc(i)
-               ztslm(i) = ztslm(i) + ztcsl(i)
-               ztsmm(i) = ztsmm(i) + ztcsm(i)
-               ztshm(i) = ztshm(i) + ztcsh(i)
-               ztzlm(i) = ztzlm(i) + ztczl(i)
-               ztzmm(i) = ztzmm(i) + ztczm(i)
-               ztzhm(i) = ztzhm(i) + ztczh(i)
-            endif
+            dummy1Dni(i) = 0.
+            zflwm    (i) = (zflwm   (i) + zflw(i) ) * moyhri
+            zfshm    (i) = (zfshm   (i) + zfsh(i) ) * moyhri
+            zfcmy    (i) = (zfcmy   (i) + zfc_ag(i)) * moyhri
+            zfvmm    (i) = (zfvmm   (i) + zfvap_ag(i)) * moyhri
+            zfvmy    (i) = (zfvmy   (i) + zfv_ag(i)) * moyhri
+            zkshalm  (i) = (zkshalm (i) + zkshal(i)) * moyhri
+            ziwvm    (i) = (ziwvm   (i) + ziwv  (i)) * moyhri
+            zq1appm  (i) = (zq1appm (i) + zq1app(i)) * moyhri
+            zq2appm  (i) = (zq2appm (i) + zq2app(i)) * moyhri
+            ztlwpm   (i) = (ztlwpm  (i) + ztlwp (i)) * moyhri
+            zt2im    (i) = (zt2im   (i) + zt2i  (i)) * moyhri
+            ztiim    (i) = (ztiim   (i) + ztii  (i)) * moyhri
+            ztiwpm   (i) = (ztiwpm  (i) + ztiwp (i)) * moyhri
+            ztccm(i) = (w_etccdiag * (ztccm(i) + ztcc(i))) * moyhri
+            ztslm(i) = (w_etccdiag * (ztslm(i) + ztcsl(i))) * moyhri
+            ztsmm(i) = (w_etccdiag * (ztsmm(i) + ztcsm(i))) * moyhri
+            ztshm(i) = (w_etccdiag * (ztshm(i) + ztcsh(i))) * moyhri
+            ztzlm(i) = (w_etccdiag * (ztzlm(i) + ztczl(i))) * moyhri
+            ztzmm(i) = (w_etccdiag * (ztzmm(i) + ztczm(i))) * moyhri
+            ztzhm(i) = (w_etccdiag * (ztzhm(i) + ztczh(i))) * moyhri
             zhrsmax  (i) = max(zhrsmax  (i) , zrhdiag (i))
             zhrsmin  (i) = min(zhrsmin  (i) , zrhdiag (i))
-            zhusavg  (i) =     zhusavg  (i) + zqdiag  (i)
-            ztdiagavg(i) =     ztdiagavg(i) + ztdiag  (i)
-            zp0avg   (i) =     zp0avg   (i) + zpplus  (i)
-            zuvsavg  (i) =     zuvsavg  (i) + uvs     (i)
+            zhusavg  (i) = (    zhusavg  (i) + zqdiag  (i)) * moyhri
+            ztdiagavg(i) = (    ztdiagavg(i) + ztdiag  (i)) * moyhri
+            zp0avg   (i) = (    zp0avg   (i) + zpplus  (i)) * moyhri
+            zuvsavg  (i) = (    zuvsavg  (i) + uvs     (i)) * moyhri
             zuvsmax  (i) = max(zuvsmax  (i) , uvs     (i))
-            if (lavg) then
-               zflwm    (i) = zflwm    (i) * moyhri
-               zfshm    (i) = zfshm    (i) * moyhri
-               zfcmy    (i) = zfcmy    (i) * moyhri
-               zfvmm    (i) = zfvmm    (i) * moyhri
-               zfvmy    (i) = zfvmy    (i) * moyhri
-               zkshalm  (i) = zkshalm  (i) * moyhri
-               ziwvm    (i) = ziwvm    (i) * moyhri
-               zq1appm  (i) = zq1appm  (i) * moyhri
-               zq2appm  (i) = zq2appm  (i) * moyhri
-               ztlwpm   (i) = ztlwpm   (i) * moyhri
-               zt2im    (i) = zt2im    (i) * moyhri
-               ztiim    (i) = ztiim    (i) * moyhri
-               ztiwpm   (i) = ztiwpm   (i) * moyhri
-               if (etccdiag) then
-                  ztccm(i) = ztccm(i) * moyhri
-                  ztslm(i) = ztslm(i) * moyhri
-                  ztsmm(i) = ztsmm(i) * moyhri
-                  ztshm(i) = ztshm(i) * moyhri
-                  ztzlm(i) = ztzlm(i) * moyhri
-                  ztzmm(i) = ztzmm(i) * moyhri
-                  ztzhm(i) = ztzhm(i) * moyhri
-               endif
-               zhusavg  (i) = zhusavg  (i) * moyhri
-               ztdiagavg(i) = ztdiagavg(i) * moyhri
-               zp0avg   (i) = zp0avg   (i) * moyhri
-               zuvsavg  (i) = zuvsavg  (i) * moyhri
-            endif
-         end do
+         enddo
 
          ! Compute conservation averages on request
-         CONSERVE_RESIDUAL_AVERAGING: if (associated(zconecndm)) then
-            zconedynm(:) = zconedynm(:) + zconedyn(:)
-            zconecndm(:) = zconecndm(:) + zconecnd(:)
-            zconedcm(:) = zconedcm(:) + zconedc(:)
-            zconemcm(:) = zconemcm(:) + zconemc(:)
-            zconemom(:) = zconemom(:) + zconemo(:)
-            zconepblm(:) = zconepblm(:) + zconepbl(:)
-            zconephym(:) = zconephym(:) + zconephy(:)
-            zconeradm(:) = zconeradm(:) + zconerad(:)
-            zconescm(:) = zconescm(:) + zconesc(:)
-            zconetotm(:) = zconetotm(:) + zconetot(:)
-            zconqdynm(:) = zconqdynm(:) + zconqdyn(:)
-            zconqcndm(:) = zconqcndm(:) + zconqcnd(:)
-            zconqdcm(:) = zconqdcm(:) + zconqdc(:)
-            zconqmcm(:) = zconqmcm(:) + zconqmc(:)
-            zconqmom(:) = zconqmom(:) + zconqmo(:)
-            zconqpblm(:) = zconqpblm(:) + zconqpbl(:)
-            zconqphym(:) = zconqphym(:) + zconqphy(:)
-            zconqradm(:) = zconqradm(:) + zconqrad(:)
-            zconqscm(:) = zconqscm(:) + zconqsc(:)
-            zconqtotm(:) = zconqtotm(:) + zconqtot(:)
-            if (lavg) then
-               zconedynm(:) = zconedynm(:) * moyhri
-               zconecndm(:) = zconecndm(:) * moyhri
-               zconedcm(:) = zconedcm(:) * moyhri
-               zconemcm(:) = zconemcm(:) * moyhri
-               zconemom(:) = zconemom(:) * moyhri
-               zconepblm(:) = zconepblm(:) * moyhri
-               zconephym(:) = zconephym(:) * moyhri
-               zconeradm(:) = zconeradm(:) * moyhri
-               zconescm(:) = zconescm(:) * moyhri
-               zconetotm(:) = zconetotm(:) * moyhri
-               zconqdynm(:) = zconqdynm(:) * moyhri
-               zconqcndm(:) = zconqcndm(:) * moyhri
-               zconqdcm(:) = zconqdcm(:) * moyhri
-               zconqmcm(:) = zconqmcm(:) * moyhri
-               zconqmom(:) = zconqmom(:) * moyhri
-               zconqpblm(:) = zconqpblm(:) * moyhri
-               zconqphym(:) = zconqphym(:) * moyhri
-               zconqradm(:) = zconqradm(:) * moyhri
-               zconqscm(:) = zconqscm(:) * moyhri
-               zconqtotm(:) = zconqtotm(:) * moyhri
-            endif
+         CONSERVE_RESIDUAL_AVERAGING: if (lcons) then
+            do i = 1, ni
+               dummy1Dni(i) = 0.
+               zconedynm(i) = (zconedynm(i) + zconedyn(i)) * moyhri
+               zconecndm(i) = (zconecndm(i) + zconecnd(i)) * moyhri
+               zconedcm(i)  = (zconedcm(i)  + zconedc(i))  * moyhri
+               zconemcm(i)  = (zconemcm(i)  + zconemc(i))  * moyhri
+               zconemom(i)  = (zconemom(i)  + zconemo(i))  * moyhri
+               zconepblm(i) = (zconepblm(i) + zconepbl(i)) * moyhri
+               zconephym(i) = (zconephym(i) + zconephy(i)) * moyhri
+               zconeradm(i) = (zconeradm(i) + zconerad(i)) * moyhri
+               zconescm(i)  = (zconescm(i)  + zconesc(i))  * moyhri
+               zconetotm(i) = (zconetotm(i) + zconetot(i)) * moyhri
+               zconqdynm(i) = (zconqdynm(i) + zconqdyn(i)) * moyhri
+               zconqcndm(i) = (zconqcndm(i) + zconqcnd(i)) * moyhri
+               zconqdcm(i)  = (zconqdcm(i)  + zconqdc(i))  * moyhri
+               zconqmcm(i)  = (zconqmcm(i)  + zconqmc(i))  * moyhri
+               zconqmom(i)  = (zconqmom(i)  + zconqmo(i))  * moyhri
+               zconqpblm(i) = (zconqpblm(i) + zconqpbl(i)) * moyhri
+               zconqphym(i) = (zconqphym(i) + zconqphy(i)) * moyhri
+               zconqradm(i) = (zconqradm(i) + zconqrad(i)) * moyhri
+               zconqscm(i)  = (zconqscm(i)  + zconqsc(i))  * moyhri
+               zconqtotm(i) = (zconqtotm(i) + zconqtot(i)) * moyhri
+            enddo
          endif CONSERVE_RESIDUAL_AVERAGING
 
          !# minimum and maximum temperature and temp.tendencies
@@ -947,200 +996,138 @@ contains
          IF_LINOZ: if (llinoz .and. out_linoz) then
 
             do i = 1, ni
-
-               zo3tcm  (i) = zo3tcm  (i) + zo3tc  (i)
-               zo3ctcm (i) = zo3ctcm (i) + zo3ctc (i)
-
-               if (lavg) then
-                  zo3tcm  (i) = zo3tcm  (i) * moyhri
-                  zo3ctcm (i) = zo3ctcm (i) * moyhri
-               end if
-
+               zo3tcm  (i) = (zo3tcm  (i) + zo3tc  (i)) * moyhri
+               zo3ctcm (i) = (zo3ctcm (i) + zo3ctc (i)) * moyhri
             end do
 
             do k = 1, nk-1
                do i = 1, ni
+                  dummy2Dnk(i,k) = 0.
+                  zo3avg  (i,k) = (zo3avg  (i,k) + zo3lplus (i,k)) * moyhri
 
-                  zo3avg  (i,k) = zo3avg  (i,k) + zo3lplus (i,k)
+                  zo3ccolm (i,k) = (zo3ccolm (i,k) + zo3ccol (i,k)) * moyhri
+                  zo3colm  (i,k) = (zo3colm  (i,k) + zo3col  (i,k)) * moyhri
 
-                  zo3ccolm (i,k) = zo3ccolm (i,k) + zo3ccol (i,k)
-                  zo3colm  (i,k) = zo3colm  (i,k) + zo3col  (i,k)
-
-                  zo1chmtdm  (i,k) =  zo1chmtdm (i,k) +  zo1chmtd (i,k)
-                  zo4chmtdm  (i,k) =  zo4chmtdm (i,k) +  zo4chmtd (i,k)
-                  zo6chmtdm  (i,k) =  zo6chmtdm (i,k) +  zo6chmtd (i,k)
-                  zo7chmtdm  (i,k) =  zo7chmtdm (i,k) +  zo7chmtd (i,k)
-                  zo3chmtdm  (i,k) =  zo3chmtdm (i,k) +  zo3chmtd (i,k)
-
-                  if (lavg) then
-                     zo3avg  (i,k) = zo3avg  (i,k) * moyhri
-
-                     zo3ccolm (i,k) = zo3ccolm (i,k) * moyhri
-                     zo3colm  (i,k) = zo3colm  (i,k) * moyhri
-
-                     zo1chmtdm  (i,k) =  zo1chmtdm (i,k) * moyhri
-                     zo4chmtdm  (i,k) =  zo4chmtdm (i,k) * moyhri
-                     zo6chmtdm  (i,k) =  zo6chmtdm (i,k) * moyhri
-                     zo7chmtdm  (i,k) =  zo7chmtdm (i,k) * moyhri
-                     zo3chmtdm  (i,k) =  zo3chmtdm (i,k) * moyhri
-                  endif
-
+                  zo1chmtdm  (i,k) = ( zo1chmtdm (i,k) +  zo1chmtd (i,k)) * moyhri
+                  zo4chmtdm  (i,k) = ( zo4chmtdm (i,k) +  zo4chmtd (i,k)) * moyhri
+                  zo6chmtdm  (i,k) = ( zo6chmtdm (i,k) +  zo6chmtd (i,k)) * moyhri
+                  zo7chmtdm  (i,k) = ( zo7chmtdm (i,k) +  zo7chmtd (i,k)) * moyhri
+                  zo3chmtdm  (i,k) = ( zo3chmtdm (i,k) +  zo3chmtd (i,k)) * moyhri
                end do
             end do
+            
          end if IF_LINOZ
 
          IF_LINGH: if (llingh .and. out_linoz) then
             ! 2D
             do i = 1, ni
-
-               zch4tcm (i) = zch4tcm (i) + zch4tc (i)
-               zn2otcm (i) = zn2otcm (i) + zn2otc (i)
-               zf11tcm (i) = zf11tcm (i) + zf11tc (i)
-               zf12tcm (i) = zf12tcm (i) + zf12tc (i)
-
-               if (lavg) then
-                  zch4tcm (i) = zch4tcm (i) * moyhri
-                  zn2otcm (i) = zn2otcm (i) * moyhri
-                  zf11tcm (i) = zf11tcm (i) * moyhri
-                  zf12tcm (i) = zf12tcm (i) * moyhri
-               end if
-
+               dummy1Dni(i) = 0.
+               zch4tcm (i) = (zch4tcm (i) + zch4tc (i)) * moyhri
+               zn2otcm (i) = (zn2otcm (i) + zn2otc (i)) * moyhri
+               zf11tcm (i) = (zf11tcm (i) + zf11tc (i)) * moyhri
+               zf12tcm (i) = (zf12tcm (i) + zf12tc (i)) * moyhri
             end do
 
             ! 3D
             do k = 1, nk-1
                do i = 1, ni
-                  zch4avg (i,k) = zch4avg (i,k) + zch4lplus (i,k)
-                  zn2oavg (i,k) = zn2oavg (i,k) + zn2olplus (i,k)
-                  zf11avg (i,k) = zf11avg (i,k) + zf11lplus (i,k)
-                  zf12avg (i,k) = zf12avg (i,k) + zf12lplus (i,k)
+                  dummy2Dnk(i,k) = 0.
+                  zch4avg (i,k) = (zch4avg (i,k) + zch4lplus (i,k)) * moyhri
+                  zn2oavg (i,k) = (zn2oavg (i,k) + zn2olplus (i,k)) * moyhri
+                  zf11avg (i,k) = (zf11avg (i,k) + zf11lplus (i,k)) * moyhri
+                  zf12avg (i,k) = (zf12avg (i,k) + zf12lplus (i,k)) * moyhri
 
-                  zch4colm (i,k) = zch4colm (i,k) + zch4col (i,k)
-                  zn2ocolm (i,k) = zn2ocolm (i,k) + zn2ocol (i,k)
-                  zf11colm (i,k) = zf11colm (i,k) + zf11col (i,k)
-                  zf12colm (i,k) = zf12colm (i,k) + zf12col (i,k)
+                  zch4colm (i,k) = (zch4colm (i,k) + zch4col (i,k)) * moyhri
+                  zn2ocolm (i,k) = (zn2ocolm (i,k) + zn2ocol (i,k)) * moyhri
+                  zf11colm (i,k) = (zf11colm (i,k) + zf11col (i,k)) * moyhri
+                  zf12colm (i,k) = (zf12colm (i,k) + zf12col (i,k)) * moyhri
 
-                  zch4chmtdm (i,k) = zch4chmtdm (i,k) + zch4chmtd (i,k)
-                  zn2ochmtdm (i,k) = zn2ochmtdm (i,k) + zn2ochmtd (i,k)
-                  zf11chmtdm (i,k) = zf11chmtdm (i,k) + zf11chmtd (i,k)
-                  zf12chmtdm (i,k) = zf12chmtdm (i,k) + zf12chmtd (i,k)
-
-                  if (lavg) then
-                     zch4avg (i,k) = zch4avg (i,k) * moyhri
-                     zn2oavg (i,k) = zn2oavg (i,k) * moyhri
-                     zf11avg (i,k) = zf11avg (i,k) * moyhri
-                     zf12avg (i,k) = zf12avg (i,k) * moyhri
-
-                     zch4colm (i,k) = zch4colm (i,k) * moyhri
-                     zn2ocolm (i,k) = zn2ocolm (i,k) * moyhri
-                     zf11colm (i,k) = zf11colm (i,k) * moyhri
-                     zf12colm (i,k) = zf12colm (i,k) * moyhri
-
-                     zch4chmtdm (i,k) = zch4chmtdm (i,k) * moyhri
-                     zn2ochmtdm (i,k) = zn2ochmtdm (i,k) * moyhri
-                     zf11chmtdm (i,k) = zf11chmtdm (i,k) * moyhri
-                     zf12chmtdm (i,k) = zf12chmtdm (i,k) * moyhri
-                  endif
-                  
+                  zch4chmtdm (i,k) = (zch4chmtdm (i,k) + zch4chmtd (i,k)) * moyhri
+                  zn2ochmtdm (i,k) = (zn2ochmtdm (i,k) + zn2ochmtd (i,k)) * moyhri
+                  zf11chmtdm (i,k) = (zf11chmtdm (i,k) + zf11chmtd (i,k)) * moyhri
+                  zf12chmtdm (i,k) = (zf12chmtdm (i,k) + zf12chmtd (i,k)) * moyhri
                end do
             end do
          end if IF_LINGH
 
+         !#TODO: split by scheme and avoid computation if scheme not active
+         !#TODO: Make it conditional to reqested var
          do k = 1, nk-1
             do i = 1, ni
+               dummy2Dnk(i,k) = 0.
+               zccnm   (i,k) = (zccnm   (i,k) + zftot(i,k)) * moyhri
+               ztim    (i,k) = (ztim    (i,k) + zti  (i,k)) * moyhri
+               zt2m    (i,k) = (zt2m    (i,k) + zt2  (i,k)) * moyhri
 
-               zccnm   (i,k) = zccnm   (i,k) + zftot(i,k)
-               ztim    (i,k) = ztim    (i,k) + zti  (i,k)
-               zt2m    (i,k) = zt2m    (i,k) + zt2  (i,k)
-               ztgwdm (i,k)  = ztgwdm (i,k)  + ztgwd(i,k)
-               zutofdm (i,k) = zutofdm (i,k) + zutofd(i,k)
-               zvtofdm (i,k) = zvtofdm (i,k) + zvtofd(i,k)
-               zttofdm (i,k) = zttofdm (i,k) + zttofd(i,k)
-               zugwdm  (i,k) = zugwdm  (i,k) + zugwd(i,k)
-               zvgwdm  (i,k) = zvgwdm  (i,k) + zvgwd(i,k)
-               zugnom  (i,k) = zugnom  (i,k) + zugno(i,k)
-               zvgnom  (i,k) = zvgnom  (i,k) + zvgno(i,k)
-               ztgnom  (i,k) = ztgnom  (i,k) + ztgno(i,k)
-               zudifvm (i,k) = zudifvm (i,k) + zudifv(i,k)
-               zvdifvm (i,k) = zvdifvm (i,k) + zvdifv(i,k)
-               ztdifvm (i,k) = ztdifvm (i,k) + ztdifv(i,k)
-               zqdifvm (i,k) = zqdifvm (i,k) + zqdifv(i,k)
-               ztadvm  (i,k) = ztadvm  (i,k) + ztadv (i,k)
-               zuadvm  (i,k) = zuadvm  (i,k) + zuadv (i,k)
-               zvadvm  (i,k) = zvadvm  (i,k) + zvadv (i,k)
-               zqadvm  (i,k) = zqadvm  (i,k) + zqadv (i,k)
-               zqmetoxm(i,k) = zqmetoxm(i,k) + zqmetox(i,k)
-               zhushalm(i,k) = zhushalm(i,k) + zhushal(i,k)
-               ztshalm (i,k) = ztshalm (i,k) + ztshal(i,k)
-               zlwcm   (i,k) = zlwcm   (i,k) + zlwc(i,k)
-               ziwcm   (i,k) = ziwcm   (i,k) + ziwc(i,k)
-               zlwcradm(i,k) = zlwcradm(i,k) + zlwcrad(i,k)
-               ziwcradm(i,k) = ziwcradm(i,k) + ziwcrad(i,k)
-               zcldradm(i,k) = zcldradm(i,k) + zcldrad(i,k)
-               ztphytdm(i,k) = ztphytdm(i,k) + ztphytd(i,k)
-               zhuphytdm(i,k)= zhuphytdm(i,k)+ zhuphytd(i,k)
-               zuphytdm(i,k) = zuphytdm(i,k) + zuphytd(i,k)
-               zvphytdm(i,k) = zvphytdm(i,k) + zvphytd(i,k)
-               zzctem(i,k)   = zzctem(i,k)   + zcte(i,k)
-               zzstem(i,k)   = zzstem(i,k)   + zste(i,k)
-               zzcqem(i,k)   = zzcqem(i,k)   + zcqe(i,k)
-               zzsqem(i,k)   = zzsqem(i,k)   + zsqe(i,k)
-               zzcqcem(i,k)  = zzcqcem(i,k)  + zcqce(i,k)
-               zzsqcem(i,k)  = zzsqcem(i,k)  + zsqce(i,k)
+               zudifvm (i,k) = (zudifvm (i,k) + zudifv(i,k)) * moyhri
+               zvdifvm (i,k) = (zvdifvm (i,k) + zvdifv(i,k)) * moyhri
+               ztdifvm (i,k) = (ztdifvm (i,k) + ztdifv(i,k)) * moyhri
+               zqdifvm (i,k) = (zqdifvm (i,k) + zqdifv(i,k)) * moyhri
+               
+               ztadvm  (i,k) = (ztadvm  (i,k) + ztadv (i,k)) * moyhri
+               zuadvm  (i,k) = (zuadvm  (i,k) + zuadv (i,k)) * moyhri
+               zvadvm  (i,k) = (zvadvm  (i,k) + zvadv (i,k)) * moyhri
+               zqadvm  (i,k) = (zqadvm  (i,k) + zqadv (i,k)) * moyhri
+               
+               zqmetoxm(i,k) = (zqmetoxm(i,k) + zqmetox(i,k)) * moyhri
+               
+               zhushalm(i,k) = (zhushalm(i,k) + zhushal(i,k)) * moyhri
+               ztshalm (i,k) = (ztshalm (i,k) + ztshal(i,k)) * moyhri
+               
+               zlwcm   (i,k) = (zlwcm   (i,k) + zlwc(i,k)) * moyhri
+               ziwcm   (i,k) = (ziwcm   (i,k) + ziwc(i,k)) * moyhri
+               zlwcradm(i,k) = (zlwcradm(i,k) + zlwcrad(i,k)) * moyhri
+               ziwcradm(i,k) = (ziwcradm(i,k) + ziwcrad(i,k)) * moyhri
+               zcldradm(i,k) = (zcldradm(i,k) + zcldrad(i,k)) * moyhri
+               
+               ztphytdm(i,k) = (ztphytdm(i,k) + ztphytd(i,k)) * moyhri
+               zhuphytdm(i,k)= (zhuphytdm(i,k)+ zhuphytd(i,k)) * moyhri
+               zuphytdm(i,k) = (zuphytdm(i,k) + zuphytd(i,k)) * moyhri
+               zvphytdm(i,k) = (zvphytdm(i,k) + zvphytd(i,k)) * moyhri
 
-               if (associated(zmqem).and.associated(zmqe)) zmqem(i,k) = zmqem(i,k) + zmqe(i,k) 
-               if (associated(zmtem).and.associated(zmte)) zmtem(i,k) = zmtem(i,k) + zmte(i,k) 
-               if (associated(zumim).and.associated(zumid)) zumim(i,k) = zumim(i,k) + zumid(i,k) 
-               if (associated(zvmim).and.associated(zvmid)) zvmim(i,k) = zvmim(i,k) + zvmid(i,k) 
-
-
-               IF_AVG_1: if (lavg) then
-                  zccnm   (i,k) = zccnm   (i,k) * moyhri
-                  ztim    (i,k) = ztim    (i,k) * moyhri
-                  zt2m    (i,k) = zt2m    (i,k) * moyhri
-                  ztgwdm (i,k) = ztgwdm (i,k) * moyhri
-                  zutofdm (i,k) = zutofdm (i,k) * moyhri
-                  zvtofdm (i,k) = zvtofdm (i,k) * moyhri
-                  zttofdm (i,k) = zttofdm (i,k) * moyhri
-                  zugwdm  (i,k) = zugwdm  (i,k) * moyhri
-                  zvgwdm  (i,k) = zvgwdm  (i,k) * moyhri
-                  zugnom  (i,k) = zugnom  (i,k) * moyhri
-                  zvgnom  (i,k) = zvgnom  (i,k) * moyhri
-                  ztgnom  (i,k) = ztgnom  (i,k) * moyhri
-                  zudifvm (i,k) = zudifvm (i,k) * moyhri
-                  zvdifvm (i,k) = zvdifvm (i,k) * moyhri
-                  ztdifvm (i,k) = ztdifvm (i,k) * moyhri
-                  zqdifvm (i,k) = zqdifvm (i,k) * moyhri
-                  ztadvm  (i,k) = ztadvm  (i,k) * moyhri
-                  zuadvm  (i,k) = zuadvm  (i,k) * moyhri
-                  zvadvm  (i,k) = zvadvm  (i,k) * moyhri
-                  zqadvm  (i,k) = zqadvm  (i,k) * moyhri
-                  zqmetoxm(i,k) = zqmetoxm(i,k) * moyhri
-                  zzctem  (i,k) = zzctem  (i,k) * moyhri
-                  zzcqem  (i,k) = zzcqem  (i,k) * moyhri
-                  zzcqcem (i,k) = zzcqcem (i,k) * moyhri
-                  zzstem  (i,k) = zzstem  (i,k) * moyhri
-                  zzsqem  (i,k) = zzsqem  (i,k) * moyhri
-                  zzsqcem (i,k) = zzsqcem (i,k) * moyhri
-                  zhushalm(i,k) = zhushalm(i,k) * moyhri
-                  ztshalm (i,k) = ztshalm (i,k) * moyhri
-                  zlwcm   (i,k) = zlwcm   (i,k) * moyhri
-                  ziwcm   (i,k) = ziwcm   (i,k) * moyhri
-                  zlwcradm(i,k) = zlwcradm(i,k) * moyhri
-                  ziwcradm(i,k) = ziwcradm(i,k) * moyhri
-                  zcldradm(i,k) = zcldradm(i,k) * moyhri
-                  ztphytdm(i,k) = ztphytdm(i,k) * moyhri
-                  zhuphytdm(i,k)= zhuphytdm(i,k)* moyhri
-                  zuphytdm(i,k) = zuphytdm(i,k) * moyhri
-                  zvphytdm(i,k) = zvphytdm(i,k) * moyhri
-                  if (associated(zmqem).and.associated(zmqe)) zmqem(i,k) = zmqem(i,k) * moyhri 
-                  if (associated(zmtem).and.associated(zmte)) zmtem(i,k) = zmtem(i,k) * moyhri
-                  if (associated(zumim).and.associated(zumid)) zumim(i,k) = zumim(i,k)* moyhri
-                  if (associated(zvmim).and.associated(zvmid)) zvmim(i,k) = zvmim(i,k)* moyhri
-               endif IF_AVG_1
-
+               !#deep
+               zzctem(i,k)   = (zzctem(i,k)   + zcte(i,k)) * moyhri
+               zzstem(i,k)   = (zzstem(i,k)   + zste(i,k)) * moyhri
+               zzcqem(i,k)   = (zzcqem(i,k)   + zcqe(i,k)) * moyhri
+               zzsqem(i,k)   = (zzsqem(i,k)   + zsqe(i,k)) * moyhri
+               zzcqcem(i,k)  = (zzcqcem(i,k)  + zcqce(i,k)) * moyhri
+               zzsqcem(i,k)  = (zzsqcem(i,k)  + zsqce(i,k)) * moyhri
             end do
          end do
+         
+         if (tofd /= 'NIL') then
+            do k = 1, nk-1
+               do i = 1, ni
+                  zutofdm (i,k) = (zutofdm (i,k) + zutofd(i,k)) * moyhri
+                  zvtofdm (i,k) = (zvtofdm (i,k) + zvtofd(i,k)) * moyhri
+                  zttofdm (i,k) = (zttofdm (i,k) + zttofd(i,k)) * moyhri
+               enddo
+            enddo
+         endif
+
+         if (gwdrag /= 'NIL') then
+            do k = 1, nk-1
+               do i = 1, ni
+                  ztgwdm (i,k)  = (ztgwdm (i,k)  + ztgwd(i,k)) * moyhri
+                  zugwdm  (i,k) = (zugwdm  (i,k) + zugwd(i,k)) * moyhri
+                  zvgwdm  (i,k) = (zvgwdm  (i,k) + zvgwd(i,k)) * moyhri
+                  zugnom  (i,k) = (zugnom  (i,k) + zugno(i,k)) * moyhri
+                  zvgnom  (i,k) = (zvgnom  (i,k) + zvgno(i,k)) * moyhri
+                  ztgnom  (i,k) = (ztgnom  (i,k) + ztgno(i,k)) * moyhri
+               enddo
+            enddo
+         endif
+
+         if (mqem > 0) then
+            do k = 1, nk-1
+               do i = 1, ni
+                  zmqem(i,k) = (zmqem(i,k) + zmqe(i,k) ) * moyhri
+                  zmtem(i,k) = (zmtem(i,k) + zmte(i,k) ) * moyhri
+                  zumim(i,k) = (zumim(i,k) + zumid(i,k) ) * moyhri
+                  zvmim(i,k) = (zvmim(i,k) + zvmid(i,k) ) * moyhri
+               enddo
+            enddo
+         endif
 
          !# Note: all convec str in the if below must have same len
          if (any(convec == (/ &
@@ -1150,86 +1137,55 @@ contains
               /))) then
             do k = 1, nk-1
                do i = 1, ni
-                  ztfcpm  (i,k) = ztfcpm  (i,k) + ztfcp (i,k)
-                  zhufcpm (i,k) = zhufcpm (i,k) + zhufcp(i,k)
-                  zqckfcm (i,k) = zqckfcm (i,k) + zqckfc(i,k)
-                  zumfkfcm(i,k) = zumfkfcm(i,k) + zumfkfc(i,k)
-                  zdmfkfcm(i,k) = zdmfkfcm(i,k) + zdmfkfc(i,k)
+                  ztfcpm  (i,k) = (ztfcpm  (i,k) + ztfcp (i,k)) * moyhri
+                  zhufcpm (i,k) = (zhufcpm (i,k) + zhufcp(i,k)) * moyhri
+                  zqckfcm (i,k) = (zqckfcm (i,k) + zqckfc(i,k)) * moyhri
+                  zumfkfcm(i,k) = (zumfkfcm(i,k) + zumfkfc(i,k)) * moyhri
+                  zdmfkfcm(i,k) = (zdmfkfcm(i,k) + zdmfkfc(i,k)) * moyhri
+                  zudcm(i,k)    = (zudcm(i,k)   + zufcp(i,k)) * moyhri
+                  zvdcm(i,k)    = (zvdcm(i,k)   + zvfcp(i,k)) * moyhri
                enddo
             enddo
-            zudcm(:,1:nk-1)   = zudcm(:,1:nk-1)   + zufcp(:,1:nk-1)
-            zvdcm(:,1:nk-1)   = zvdcm(:,1:nk-1)   + zvfcp(:,1:nk-1)
             if (cmt_comp_diag) then
-               zufcp1m(:,1:nk-1) = zufcp1m(:,1:nk-1) + zufcp1(:,1:nk-1)
-               zufcp2m(:,1:nk-1) = zufcp2m(:,1:nk-1) + zufcp2(:,1:nk-1)
-               zufcp3m(:,1:nk-1) = zufcp3m(:,1:nk-1) + zufcp3(:,1:nk-1)
-               zsufcpm(:,1:nk-1) = zsufcpm(:,1:nk-1) + zsufcp(:,1:nk-1)
-               zvfcp1m(:,1:nk-1) = zvfcp1m(:,1:nk-1) + zvfcp1(:,1:nk-1)
-               zvfcp2m(:,1:nk-1) = zvfcp2m(:,1:nk-1) + zvfcp2(:,1:nk-1)
-               zvfcp3m(:,1:nk-1) = zvfcp3m(:,1:nk-1) + zvfcp3(:,1:nk-1)
-               zsvfcpm(:,1:nk-1) = zsvfcpm(:,1:nk-1) + zsvfcp(:,1:nk-1)
+               do k = 1, nk-1
+                  do i = 1, ni
+                     zufcp1m(i,k) = (zufcp1m(i,k) + zufcp1(i,k)) * moyhri
+                     zufcp2m(i,k) = (zufcp2m(i,k) + zufcp2(i,k)) * moyhri
+                     zufcp3m(i,k) = (zufcp3m(i,k) + zufcp3(i,k)) * moyhri
+                     zsufcpm(i,k) = (zsufcpm(i,k) + zsufcp(i,k)) * moyhri
+                     zvfcp1m(i,k) = (zvfcp1m(i,k) + zvfcp1(i,k)) * moyhri
+                     zvfcp2m(i,k) = (zvfcp2m(i,k) + zvfcp2(i,k)) * moyhri
+                     zvfcp3m(i,k) = (zvfcp3m(i,k) + zvfcp3(i,k)) * moyhri
+                     zsvfcpm(i,k) = (zsvfcpm(i,k) + zsvfcp(i,k)) * moyhri
+                  enddo
+               enddo
             endif
-            if (associated(ztusc) .and. associated(zuscm)) &
-                 zuscm(:,1:nk-1) = zuscm(:,1:nk-1) + ztusc(:,1:nk-1)
-            if (associated(ztvsc) .and. associated(zvscm)) &
-                 zvscm(:,1:nk-1) = zvscm(:,1:nk-1) + ztvsc(:,1:nk-1)
-            IF_AVG_2: if (lavg) then
-               ztfcpm(:,1:nk-1)   = ztfcpm(:,1:nk-1)   * moyhri
-               zhufcpm(:,1:nk-1)  = zhufcpm(:,1:nk-1)  * moyhri
-               zqckfcm(:,1:nk-1)  = zqckfcm(:,1:nk-1)  * moyhri
-               zumfkfcm(:,1:nk-1) = zumfkfcm(:,1:nk-1) * moyhri
-               zdmfkfcm(:,1:nk-1) = zdmfkfcm(:,1:nk-1) * moyhri
-               zudcm(:,1:nk-1)    = zudcm(:,1:nk-1) * moyhri
-               zvdcm(:,1:nk-1)    = zvdcm(:,1:nk-1) * moyhri
-               if (cmt_comp_diag) then
-                  zufcp1m(:,1:nk-1) = zufcp1m(:,1:nk-1) * moyhri
-                  zufcp2m(:,1:nk-1) = zufcp2m(:,1:nk-1) * moyhri
-                  zufcp3m(:,1:nk-1) = zufcp3m(:,1:nk-1) * moyhri
-                  zsufcpm(:,1:nk-1) = zsufcpm(:,1:nk-1) * moyhri
-                  zvfcp1m(:,1:nk-1) = zvfcp1m(:,1:nk-1) * moyhri
-                  zvfcp2m(:,1:nk-1) = zvfcp2m(:,1:nk-1) * moyhri
-                  zvfcp3m(:,1:nk-1) = zvfcp3m(:,1:nk-1) * moyhri
-                  zsvfcpm(:,1:nk-1) = zsvfcpm(:,1:nk-1) * moyhri
-               endif
-               if (associated(zuscm)) zuscm(:,1:nk-1) = zuscm(:,1:nk-1) * moyhri
-               if (associated(zvscm)) zvscm(:,1:nk-1) = zvscm(:,1:nk-1) * moyhri
-            endif IF_AVG_2
-
+            
+            if (tusc > 0 .and. uscm > 0) &
+                 zuscm(:,1:nk-1) = (zuscm(:,1:nk-1) + ztusc(:,1:nk-1)) * moyhri
+            if (tvsc > 0 .and. vscm > 0) &
+                 zvscm(:,1:nk-1) = (zvscm(:,1:nk-1) + ztvsc(:,1:nk-1)) * moyhri
+            
             do i=1, ni
-               zabekfcm  (i) = zabekfcm(i) + zabekfc(i)
-               zcapekfcm (i) = zcapekfcm(i) + zcapekfc(i)
-               zcinkfcm (i) = zcinkfcm(i) + zcinkfc(i)
-               zwumkfcm  (i) = zwumkfcm(i) + zwumaxkfc(i)
-               zzbaskfcm (i) = zzbaskfcm(i) + zzbasekfc(i)
-               zztopkfcm (i) = zztopkfcm(i) + zztopkfc(i)
-               zkkfcm    (i) = zkkfcm(i) + zkkfc(i)
-               if (associated(zkmidm)) zkmidm(i) = zkmidm(i) + zkmid(i)
-
-               if (lavg) then
-                  zabekfcm (i) = zabekfcm (i) * moyhri
-                  zcapekfcm (i) = zcapekfcm (i) * moyhri
-                  zcinkfcm (i) = zcinkfcm (i) * moyhri
-                  zwumkfcm(i) = zwumkfcm(i) * moyhri
-                  zzbaskfcm(i) = zzbaskfcm(i) * moyhri
-                  zztopkfcm(i) = zztopkfcm(i) * moyhri
-                  zkkfcm(i) = zkkfcm(i) * moyhri
-                  if (associated(zkmidm)) zkmidm(i) = zkmidm(i) * moyhri
-               endif
-
+               dummy1Dni(i) = 0.
+               zabekfcm  (i) = (zabekfcm(i) + zabekfc(i)) * moyhri
+               zcapekfcm (i) = (zcapekfcm(i) + zcapekfc(i)) * moyhri
+               zcinkfcm  (i) = (zcinkfcm(i) + zcinkfc(i)) * moyhri
+               zwumkfcm  (i) = (zwumkfcm(i) + zwumaxkfc(i)) * moyhri
+               zzbaskfcm (i) = (zzbaskfcm(i) + zzbasekfc(i)) * moyhri
+               zztopkfcm (i) = (zztopkfcm(i) + zztopkfc(i)) * moyhri
+               zkkfcm    (i) = (zkkfcm(i) + zkkfc(i)) * moyhri
+               if (kmidm > 0) zkmidm(i) = (zkmidm(i) + zkmid(i)) * moyhri
             end do
          endif
 
-         if (fluvert /= 'NIL') then
+         if (.not.is_fluvert_nil) then
             do i=1,ni
-               zsumf(i) = zsumf(i) + zustress(i)
-               zsvmf(i) = zsvmf(i) + zvstress(i)
-               zfqm(i) = zfqm(i) + zfq(i)
+               dummy1Dni(i) = 0.
+               zsumf(i) = (zsumf(i) + zustress(i)) * moyhri
+               zsvmf(i) = (zsvmf(i) + zvstress(i)) * moyhri
+               zfqm(i)  = (zfqm(i) + zfq(i)) * moyhri
             enddo
-            if (lavg) then
-               zsumf(:) = zsumf(:) * moyhri
-               zsvmf(:) = zsvmf(:) * moyhri
-               zfqm(:)  = zfqm(:)  * moyhri
-            endif
          endif
 
       endif IF_ACCUM_1
@@ -1241,50 +1197,45 @@ contains
       !Set accumulators to zero at the beginning and after every acchr hours,
       !and by default (acchr=0) as the model step goes through 0.
       IF_RESET_ACCUMULATORS: if (lkount0 .or. lacchr) then
-         zrainaf(:) = 0.
-         zsnowaf(:) = 0.
-         if (radia /= 'NIL' .or. fluvert == 'SURFACE') then
-            zeiaf(:) = 0.
-            zevaf(:) = 0.
-            zfiaf(:) = 0.
-            zfsaf(:) = 0.
-            zivaf(:) = 0.
-            zntaf(:) = 0.
-            zflusolaf(:) = 0.
-         endif
-         if (radia(1:8) == 'CCCMARAD') then
-            zclbaf(:) = 0.
-            zcltaf(:) = 0.
-            zcstaf(:) = 0.
-            zcsbaf(:) = 0.
-            zfsdaf(:) = 0.
-            zfsfaf(:) = 0.
-            zfsiaf(:) = 0.
-            zfsvaf(:) = 0.
-            zparraf(:) = 0.
-            zsiaf(:) = 0.
-            zfnsaf(:) = 0.
-         endif
-         if (fluvert /= 'NIL') then
-            zflaf(:) = 0.
-            zfcaf(:) = 0.
-            zfvaf(:) = 0.
-         endif
-         if (llight) then
-            zafoudre(:) = 0.
-         endif
+         do i = 1, ni
+            zrainaf(i) = 0.
+            zsnowaf(i) = 0.
+            zeiaf(i) = 0.
+            zevaf(i) = 0.
+            zfiaf(i) = 0.
+            zfsaf(i) = 0.
+            zivaf(i) = 0.
+            zntaf(i) = 0.
+            zflusolaf(i) = 0.
+            zclbaf(i) = 0.
+            zcltaf(i) = 0.
+            zcstaf(i) = 0.
+            zcsbaf(i) = 0.
+            zfsdaf(i) = 0.
+            zfsfaf(i) = 0.
+            zfsiaf(i) = 0.
+            zfsvaf(i) = 0.
+            zparraf(i) = 0.
+            zsiaf(i) = 0.
+            zfnsaf(i) = 0.
+            zflaf(i) = 0.
+            zfcaf(i) = 0.
+            zfvaf(i) = 0.
+            zafoudre(i) = 0.
+         enddo
       endif IF_RESET_ACCUMULATORS
 
       IF_KOUNT_NOT_0b: if (.not.lkount0) then
 !VDIR NODEP
          DO_NI_ACC: do i = 1,ni
+            dummy1Dni(i) = 0.
 
             !# Accumulation of precipitation (in m)
 
             zrainaf(i) = zrainaf(i) + zrainrate(i)*dt
             zsnowaf(i) = zsnowaf(i) + zsnowrate(i)*dt
 
-            if (radia /= 'NIL' .or. fluvert == 'SURFACE') then
+            if (is_radia .or. is_fluvert_sfc) then
                zeiaf    (i) = zeiaf (i) + zei  (i) * dt
                zevaf    (i) = zevaf (i) + zev  (i) * dt
                zfiaf    (i) = zfiaf (i) + zfdsi(i) * dt
@@ -1295,7 +1246,7 @@ contains
             endif
 
             !# Accumulation of sfc and toa net clear sky fluxes, available with cccmarad
-            if (radia(1:8) == 'CCCMARAD') then
+            if (is_radia) then
                zclbaf    (i) = zclbaf (i) + zclb  (i) * dt
                zcltaf    (i) = zcltaf (i) + zclt  (i) * dt
                zcstaf    (i) = zcstaf (i) + zcstt (i) * dt
@@ -1309,7 +1260,7 @@ contains
                zfnsaf (i) = zfnsaf (i) + zfns(i) * dt
             endif
 
-            if (fluvert /= 'NIL') then
+            if (.not.is_fluvert_nil) then
                zflaf (i) = zflaf (i) + zfl  (i) * dt
                zfcaf (i) = zfcaf (i) + zfc_ag(i) * dt
                zfvaf (i) = zfvaf (i) + zfv_ag(i) * dt
@@ -1324,11 +1275,13 @@ contains
       endif IF_KOUNT_NOT_0B
 
       !# For output purpose, diag level values needs to be copied into nk level of corresponding dyn var
-      zhuplus(:,nk) = zqdiag
-      ztplus(:,nk)  = ztdiag
-      zuplus(:,nk)  = zudiag
-      zvplus(:,nk)  = zvdiag
-
+      do i = 1,ni
+         zhuplus(i,nk) = zqdiag(i)
+         ztplus(i,nk)  = ztdiag(i)
+         zuplus(i,nk)  = zudiag(i)
+         zvplus(i,nk)  = zvdiag(i)
+      enddo
+      
       if (timings_L) call timing_stop_omp(470)
       call msg_toall(MSG_DEBUG, 'calcdiag [END]')
       !----------------------------------------------------------------

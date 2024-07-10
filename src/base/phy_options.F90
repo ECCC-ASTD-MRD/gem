@@ -35,10 +35,12 @@ module phy_options
    logical           :: ebdiag       = .false.
    logical           :: ecdiag       = .false.
    logical           :: etccdiag     = .false.
+   logical           :: etccdiagout  = .false.
    logical           :: impflx       = .false.
    logical           :: inincr       = .false.
    integer           :: kntrad       = 1
    integer           :: kntraduv     = -1
+   logical           :: lcons        = .false.
    logical           :: llight       = .false.
    logical           :: llinoz       = .false.
    logical           :: llingh       = .false.
@@ -65,11 +67,6 @@ module phy_options
    integer           :: acchr        = 0
    namelist /physics_cfgs/ acchr
    namelist /physics_cfgs_p/ acchr
-
-   !# Boundary layer cloud advect. is active if .true.
-   logical           :: advecqtbl     = .false.
-   namelist /physics_cfgs/ advecqtbl
-   namelist /physics_cfgs_p/ advecqtbl
    
    !# Turbulent kinetic energy advect. is active if .true.
    logical           :: advectke     = .false.
@@ -91,6 +88,11 @@ module phy_options
         'NIL ', &
         'TEND'  &
         /)
+
+   !# Account for time-evolution of critical RH in condensation
+   logical        :: cond_drhc       = .false.
+   namelist /physics_cfgs/ cond_drhc
+   namelist /physics_cfgs_p/ cond_drhc
 
    !# Evaporation parameter for Sunqvist gridscale condensation
    real           :: cond_evap       = 2.e-4
@@ -119,7 +121,17 @@ module phy_options
    real           :: cond_hu0max       = 0.975
    namelist /physics_cfgs/ cond_hu0max
    namelist /physics_cfgs_p/ cond_hu0max
-   
+
+   !# Distribution of subgrid-scale moisture variance assumed for cloud fraction
+   character(len=16) :: cond_sgspdf = 'NIL'
+   namelist /physics_cfgs/ cond_sgspdf
+   namelist /physics_cfgs_p/ cond_sgspdf
+   character(len=*), parameter :: COND_SGSPDF_OPT(3) = (/ &
+        'NIL       ', &
+        'UNIFORM   ', &
+        'TRIANGULAR' &
+        /)
+
    !# Activate computing of all diags, requested for output or not.
    logical           :: debug_alldiag_L     = .false.
    namelist /physics_cfgs/ debug_alldiag_L
@@ -382,11 +394,16 @@ module phy_options
    namelist /physics_cfgs/ nsloflux
    namelist /physics_cfgs_p/ nsloflux
    
-   !# Vectoc lenght physics memory space folding for openMP
+   !# Vector length physics memory space folding for openMP
    integer           :: p_runlgt     = -1
    namelist /physics_cfgs/ p_runlgt
    namelist /physics_cfgs_p/ p_runlgt
 
+   !# Coefficient controlling strength of TKE diffusion
+   real              :: pbl_ae      = 0.35
+   namelist /physics_cfgs/ pbl_ae
+   namelist /physics_cfgs_p/ pbl_ae
+   
    !# Time-averaging of transfer coefficient for momentum to reduce 2-dt 
    !# oscillations in fluxes
    logical           :: pbl_cmu_timeavg = .false.
@@ -495,6 +512,11 @@ module phy_options
         'LOCK06'  &
         /)
 
+   !# Use prognostic equations for subgrid-scale variances of conserved variables
+   logical           :: pbl_progvar = .false.
+   namelist /physics_cfgs/ pbl_progvar
+   namelist /physics_cfgs_p/ pbl_progvar
+   
    !# Use the mixing length to average the Richardson number profile of (potentially)
    !# many layers to derive a "background" Ri estimate
    logical           :: pbl_ribkg    = .false.

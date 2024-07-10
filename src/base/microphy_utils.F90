@@ -21,10 +21,12 @@ module microphy_utils
   save
   
   ! Public procedures
-  public :: mp_init            !Initialize microphysics scheme
+  public :: mp_init            !Initialization before bus creation
   public :: mp_phybusinit      !Define bus requirements
   public :: mp_lwc             !Compute liquid water content
   public :: mp_iwc             !Compute ice water content
+  public :: mp_post_init       !Initialization after bus creation
+  public :: mp_todiffuse       !List of bus entries for vertical diffusion
   public :: nil_phybusinit     !Define bus requirements stcond=nil
   public :: nil_lwc            !Compute liquid water content stcond=nil
   public :: nil_iwc            !Compute ice water content stcond=nil
@@ -58,9 +60,17 @@ module microphy_utils
      end function iwc
   end interface
   procedure(iwc), pointer :: mp_iwc => nil_iwc
- 
-contains
 
+  ! Module parameters
+  integer, parameter :: NMAX_DIFFUSE=256
+  
+  ! Module variables
+  integer :: ndlist
+  integer, dimension(NMAX_DIFFUSE), target :: dlist
+  
+contains
+  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   ! Initialize procedure pointers and run scheme-specific bootstrap
   function mp_init(F_input_path) result(F_istat)
     use microphy_consun
@@ -145,8 +155,74 @@ contains
     ! Successful completion
     F_istat = PHY_OK
   end function mp_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! Perform initialization after bus creation
+  function mp_post_init() result(F_istat)
+    use phy_options, only: fluvert
+    use phymem, only: phymeta, phymem_find, phymem_getmeta
+    use phy_status, only: PHY_OK
+    implicit none
+    integer :: F_istat                            !Return status (PHY_OK on success)
+    
+#include <rmn/msg.h>
+    
+    ! Internal parameters
+    character(len=*), dimension(6), parameter :: DIFF_FLAGS=(/ &
+         'CLOUD_  ', &
+         'RAIN_   ', &
+         'SNOW_   ', &
+         'GRAUPEL_', &
+         'HAIL_   ', &
+         'ICE_    '/)
+    
+    ! Internal variables
+    integer :: nmatch, i
+    integer, dimension(NMAX_DIFFUSE) :: idxvlist
+    character(len=1024) :: msg_S
+    type(phymeta), pointer :: pmeta
+
+    ! Initialization
+    F_istat = PHY_ERROR
+
+    ! Create list of bus indexes for diffusion
+    ndlist = 0
+    if (fluvert == 'RPNINT') then
+       do i=1,size(DIFF_FLAGS)
+          nmatch = phymem_find(idxvlist, F_name=':P', F_endmatch=.true., &
+               F_flagstr=trim(DIFF_FLAGS(i)), F_shortflag=.true., F_quiet=.true.)          
+          dlist(ndlist+1:ndlist+nmatch) = idxvlist(1:nmatch)
+          ndlist = ndlist+nmatch
+       enddo
+       msg_S = ''
+       if (ndlist > 0) then
+          do i=1,ndlist
+             if (phymem_getmeta(pmeta, dlist(i)) /= PHY_OK) then
+                call physeterror('microphy_utils::mp_init', &
+                     'Cannot retrieve diffusion metadata')
+                return
+             endif
+             msg_S = trim(msg_S)//' '//trim(pmeta%vname)
+          enddo
+       endif
+       call msg(MSG_INFO, '(mp_init) For PBL diffusion: '//trim(msg_S))
+    endif
+
+    ! Successful completion
+    F_istat = PHY_OK
+  end function mp_post_init
   
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
+  ! Provide list of microphysics fields for PBL diffusion
+  function mp_todiffuse(F_difflist) result(F_istat)
+    implicit none
+    integer, dimension(:), pointer :: F_difflist !List of fields to diffuse
+    integer :: F_istat                          !Function return status
+    F_difflist => dlist(1:ndlist)
+    F_istat = PHY_OK
+  end function mp_todiffuse
   
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
   ! Define bus requirements
   function nil_phybusinit() result(F_istat)
      implicit none
@@ -154,6 +230,7 @@ contains
      F_istat = PHY_OK
   end function nil_phybusinit
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   ! Compute total water mass
   function nil_lwc(F_qltot, F_pvars) result(F_istat)
      use phymem, only: phyvar
@@ -167,6 +244,7 @@ contains
      return
   end function nil_lwc
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   ! Compute total ice mass
   function nil_iwc(F_qitot, F_pvars) result(F_istat)
      use phymem, only: phyvar

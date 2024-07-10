@@ -215,6 +215,7 @@ contains
       m_istat = RMN_ERR
 
       istat = clib_toupper(cond_conserve)
+      istat = clib_toupper(cond_sgspdf)
       istat = clib_toupper(fluvert)
       istat = clib_toupper(gwdrag)
       !#TODO: indiag_list_s?

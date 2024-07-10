@@ -122,9 +122,9 @@ contains
       if (associated(phyoutlist_S)) then
          i = 1
          do while (i <= nphyoutlist .and. .not.thermal_stress)
-            if (any(phyoutlist_S(i) == (/'dxsu','dxhd','gxsu','gxhd','gtsu', &
-                 'gthd','rtsu','rthd','qssu','qssk','qlsk','qsrd','qlrd',  &
-                 'qwsl','qlwl'/))) thermal_stress = .true.
+            if (any(phyoutlist_S(i) == (/'DXSU','DXHD','GXSU','GXHD','GTSU', &
+                 'GTHD','RTSU','RTHD','QSSU','QSSK','QLSK','QSRD','QLRD',  &
+                 'QWSL','QLWL'/))) thermal_stress = .true.
             i = i+1
          enddo
       endif

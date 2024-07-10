@@ -37,16 +37,16 @@ Finalize
 
 # Steps to be done in a GEM dev env.
 
-# Update MANIFEST for VERSION
+# Update MANIFEST for VERSION (do not reload env after this)
 ```
 emacs src/rpnphy/MANIFEST
 ```
 
 # Create nml_ref
 ```
-cado cmake
-cado build
-cado work
+make cmake
+make -j6 && make work
+which prphynml || export PATH=${PATH}:${gem_DIR}/${GEM_WORK}/bin
 component=rpnphy
 MYVERSION=$(grep VERSION src/${component}/MANIFEST | cut -d: -f2)
 MYVERSION=${MYVERSION# *}
@@ -97,12 +97,14 @@ Move patch from GEM dev to rpnphy depot
 
 # Steps to be done in a GEM dev env.
 
-# WARNING: need to "squash the merges" beforehand
-# Checck if there are merge commits
+# WARNING: we need to "squash the merges" before proceeding
+# Check if there are merge commits
 ```
 FROM=${ATM_MODEL_VERSION:-__scrap__}
 git rev-list --min-parents=2 --count ${FROM}..HEAD
 ```
+# If >0 then need rebase to linearize history.  Good luck.
+
 
 ```
 FROM=${ATM_MODEL_VERSION:-__scrap__}
@@ -114,11 +116,21 @@ git format-patch -o patches/${component} \
     ${FROM}..HEAD
 ``` 
 
+# You might want to do your modelutils update before leaving GEM env
+#   open src/modelutils/README_librarian.md and follow instructions
 
 # Steps to be done in the rpnphy clone
 
 ```
-mydir=
+mydir=     #<- should be the ${gem_DIR} of the dev directory above
+cd ..      #create the clone outside your gem experiment
+git clone git@gitlab.science.gc.ca:MIG/rpnphy.git
+cd rpnphy
+rpnphy_version=$(grep ^VERSION MANIFEST | cut -d: -f2)
+rpnphy_version=${rpnphy_version# *}
+phybranch=${rpnphy_version%.*}
+phybranch=rpnphy_${phybranch:-6.3}-branch
+git checkout ${phybranch}
 component=rpnphy
 for item in ${mydir}/patches/${component}/*.patch ; do
     if [[ -s ${item} ]] ; then
@@ -133,8 +145,11 @@ for item in ${mydir}/patches/${component}/*.patch ; do
 done
 ```
 
-# commit & tag & push
-
+# Tag & push
+```
+git tag rpnphy_${rpnphy_version}
+git push origin ${phybranch} rpnphy_${rpnphy_version}
+```
 
 Documentation
 =============

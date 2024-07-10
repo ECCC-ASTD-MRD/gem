@@ -1,6 +1,23 @@
 #undef PHYMKPTR1
 #include "phymkptr.hf"
 
+#ifdef PHYPTRASSIGNLOCAL
+   
+#undef MKPTR1DNI
+#undef MKPTR1D
+#undef MKPTR1DK
+#undef MKPTR2DNKL
+#undef MKPTR2D
+#undef MKPTR2Dm1
+#define MKPTR1DNI(PNAME,IDXV,VARS)       if (IDXV>0) then ; PNAME(1:VARS(IDXV)%meta%ni) => VARS(IDXV)%data(1:VARS(IDXV)%meta%ni) ; else ; PNAME => dummy1Dni ; endif
+#define MKPTR1D(PNAME,IDXV,VARS)         MKPTR1DNI(PNAME,IDXV,VARS)
+#define MKPTR1DK(PNAME,IDXV,KL,VARS)     if (IDXV>0) then ; PNAME(1:VARS(IDXV)%meta%ni) => VARS(IDXV)%data(PHYMEMPTRI12D(VARS(IDXV)%meta,KL):) ; else ; PNAME => dummy1Dni ; endif
+#define MKPTR2DNKL(PNAME,IDXV,VARS)      if (IDXV>0) then ; PNAME(1:VARS(IDXV)%meta%ni,1:PHYMEMPTRNKTOT(VARS(IDXV)%meta)) => VARS(IDXV)%data(:) ; else ; PNAME => dummy2Dnk ; endif
+#define MKPTR2D(PNAME,IDXV,VARS)         MKPTR2DNKL(PNAME,IDXV,VARS)
+#define MKPTR2Dm1(PNAME,IDXV,VARS)       if (IDXV>0) then ; PNAME(1:VARS(IDXV)%meta%ni,1:max(1,VARS(IDXV)%meta%nk-1)) => VARS(IDXV)%data(:) ; else ; PNAME => dummy2Dnk(:,1:nk-1) ; endif
+
+#endif
+
    MKPTR2Dm1(a_qi_1, qi_1, pvars)
    MKPTR2Dm1(a_qi_2, qi_2, pvars)
    MKPTR2Dm1(a_qi_3, qi_3, pvars)
