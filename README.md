@@ -10,14 +10,16 @@ Environment and Climate Change Canada.
 There are several branches in this repository: **please make sure** you use
 the proper branch and its corresponding README file, according to your needs:
 
-- [master branch](https://github.com/ECCC-ASTD-MRD/gem/tree/master): current development version of GEM, presently 5.2, 
+- [master branch](https://github.com/ECCC-ASTD-MRD/gem/tree/master): current stable version of GEM, presently 5.2, 
 [README-install.md](https://github.com/ECCC-ASTD-MRD/gem/blob/master/README-install.md)
 - [5.1
 branch](https://github.com/ECCC-ASTD-MRD/gem/tree/5.1-branch):
 stable version, used in production at the Canadian Meteorological Centre,
 [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.1-branch/README.md)
 - [5.2 branch](https://github.com/ECCC-ASTD-MRD/gem/tree/5.2-branch):
-  development version, [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.2-branch/README.md)
+  stable version, [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.2-branch/README.md)
+- [5.3 branch](https://github.com/ECCC-ASTD-MRD/gem/tree/5.3-branch):
+  current development version, [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.3-branch/README.md)
 - [benchmarks
 branch](https://github.com/ECCC-ASTD-MRD/gem/tree/benchmarks): for
 the latest benchmarks, see
