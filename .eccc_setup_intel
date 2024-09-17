@@ -50,9 +50,6 @@ if  [[ ${ORDENV_DIST} = "rhel" ]]; then
     fi
 fi
 
-# We need a more recent version of cmake than the one available by default
-. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
-
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then
     echo ""
