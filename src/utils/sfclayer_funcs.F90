@@ -18,16 +18,14 @@ module sfclayer_funcs
   implicit none
   private
 
-  public :: stability_function
-
 #include <rmnlib_basics.hf>
 
-  ! Stability function interface prototype
+  ! Stability function interface prototypes
   abstract interface
-     subroutine stability_function(F_fm, F_fh, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
+     subroutine int_stability_function(F_fmi, F_fhi, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
           F_zm, F_zh, F_dfm, F_dfh)
-       real, intent(out) :: F_fm                        !integrated stability function for momentum
-       real, intent(out) :: F_fh                        !integrated stability function for heat
+       real, intent(out) :: F_fmi                        !integrated stability function for momentum
+       real, intent(out) :: F_fhi                        !integrated stability function for heat
        real, intent(in) :: F_lzz0                       !neutral (log) stability function for momentum
        real, intent(in) :: F_lzz0t                      !neutral (log) stability function for heat
        real, intent(in) :: F_ilmo                       !inverse of Obukhov length (1/m)
@@ -37,6 +35,16 @@ module sfclayer_funcs
        real, intent(in), dimension(2) :: F_zh           !heights for heat function calculation as (/high,low/)
        real, intent(out), optional :: F_dfm             !derivative of momentum stability function wrt ilmo
        real, intent(out), optional :: F_dfh             !derivative of heat stability function wrt ilmo
+     end subroutine int_stability_function
+  end interface
+  abstract interface
+     subroutine stability_function(F_fm, F_fh, F_ilmo, F_h, F_beta, F_z)
+       real, intent(out) :: F_fm                        !Stability function for momentum
+       real, intent(out) :: F_fh                        !Stability function for heat
+       real, intent(in) :: F_ilmo                       !inverse of Obukhov length (1/m)
+       real, intent(in) :: F_h                          !height of the PBL (m)
+       real, intent(in) :: F_beta                       !Prandtl number for a neutral profile
+       real, intent(in) :: F_z                          !height at which to evaluate functions (m)
      end subroutine stability_function
   end interface
 
@@ -44,11 +52,23 @@ module sfclayer_funcs
   public :: sf_get
 
   ! Stability functions
-  public :: sf_stable_delage97, &
+  public :: &
+       isf_stable_delage97, &
+       sf_stable_delage97, &
+       isf_stable_lock07, &
        sf_stable_lock07, &
+       isf_stable_beljaars91, &
        sf_stable_beljaars91, &
+       isf_unstable_delage92, &
        sf_unstable_delage92, &
+       isf_unstable_dyer74, &
        sf_unstable_dyer74
+
+  ! Derived types
+  type, public :: stabfunc
+     procedure(stability_function), nopass, pointer :: sf=>null()
+     procedure(int_stability_function), nopass, pointer :: isf=>null()
+  end type stabfunc
 
   ! Public parameters
   integer, parameter, public :: SF_OK    = RMN_OK       !return code for success
@@ -82,7 +102,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function sf_get(func, stability, val) result(status)
     ! Obtain the stability function pointer as requested
-    procedure(stability_function), pointer :: func      !retrieved stability function
+    type(stabfunc) :: func                              !retrieved stability functions
     character(len=*), intent(in) :: stability           !stability branch to get (stable or unstable)
     character(len=*), intent(in) :: val                 !value of the function
     integer :: status                                   !return status of the operation
@@ -90,23 +110,28 @@ contains
     if (stability == 'stable') then
        select case (val)
        case ('DELAGE97')
-          func => sf_stable_delage97
+          func%isf => isf_stable_delage97
+          func%sf => sf_stable_delage97
        case ('LOCK07')
-          func => sf_stable_lock07
+          func%isf => isf_stable_lock07
+          func%sf => sf_stable_lock07
        case ('BELJAARS91')
-          func => sf_stable_beljaars91
+          func%isf => isf_stable_beljaars91
+          func%sf => sf_stable_beljaars91
        case DEFAULT
-          nullify(func)
+          nullify(func%isf, func%sf)
           return
        end select
     else if (stability == 'unstable') then
        select case (val)
        case ('DELAGE92')
-          func => sf_unstable_delage92
+          func%isf => isf_unstable_delage92
+          func%sf => sf_unstable_delage92
        case ('DYER74')
-          func => sf_unstable_dyer74
+          func%isf => isf_unstable_dyer74
+          func%sf => sf_unstable_dyer74
        case DEFAULT
-          nullify(func)
+          nullify(func%isf, func%sf)
           return
        end select
     else
@@ -116,11 +141,11 @@ contains
   end function sf_get
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine sf_stable_delage97(F_fm, F_fh, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
+  subroutine isf_stable_delage97(F_fmi, F_fhi, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
        F_zm, F_zh, F_dfm, F_dfh)
-    ! Stability functions from Delage (1997; BLM)
+    ! Integrated stability functions from Delage (1997; BLM)
     real, intent(in) :: F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, F_zm(2), F_zh(2)
-    real, intent(out) :: F_fm, F_fh
+    real, intent(out) :: F_fmi, F_fhi
     real, intent(out), optional :: F_dfm, F_dfh
     integer :: j
     real :: hi,a,b,c,d
@@ -142,7 +167,7 @@ contains
                -(d**2*hi/(4*c**1.5))*ASIN((b-2*c*F_zm(j))/d) )
        endif
     enddo
-    F_fm = sfadjust(F_lzz0, sf, 1.)
+    F_fmi = sfadjust(F_lzz0, sf, 1.)
     if (present(F_dfm)) F_dfm = sfderiv(dsf, 1.)
 
     ! Stability function for heat
@@ -156,16 +181,32 @@ contains
                -(d**2*hi/(4*c**1.5))*ASIN((b-2*c*F_zh(j))/d) )
        endif
     enddo
-    F_fh = sfadjust(F_lzz0t, sf, F_beta)
+    F_fhi = sfadjust(F_lzz0t, sf, F_beta)
     if (present(F_dfh)) F_dfh = sfderiv(dsf, F_beta)
+  end subroutine isf_stable_delage97
+
+  subroutine sf_stable_delage97(F_fm, F_fh, F_ilmo, F_h, F_beta, F_z)
+    ! Stability functions from Delage (1997; BLM)
+    real, intent(in) :: F_ilmo, F_h, F_beta, F_z
+    real, intent(out) :: F_fm, F_fh
+    real :: a, b, c, d, hi
+    
+    hi = 1./F_h
+    d = 4*D97_AS*F_beta*F_ilmo
+    c = d*hi - hi**2
+    b = d - 2*hi
+    a =  SQRT(1 + b*F_z - c*F_z**2)
+    F_fm = 0.5 * (1. - F_z*hi + a)
+    F_fh = F_beta * F_fm
+
   end subroutine sf_stable_delage97
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine sf_stable_lock07(F_fm, F_fh, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
+  subroutine isf_stable_lock07(F_fmi, F_fhi, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
        F_zm, F_zh, F_dfm, F_dfh)
-    ! Stability functions from Lock (2007; UKMO Tech Report)
+    ! Integrated stability functions from Lock (2007; UKMO Tech Report)
     real, intent(in) :: F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, F_zm(2), F_zh(2)
-    real, intent(out) :: F_fm, F_fh
+    real, intent(out) :: F_fmi, F_fhi
     real, intent(out), optional :: F_dfm, F_dfh
     integer :: j
     real :: a
@@ -177,7 +218,7 @@ contains
        sf(j) = a*F_zm(j)*F_ilmo
        if (present(F_dfm)) dsf(j) = a*F_zm(j)*F_ilmo
     enddo
-    F_fm = sfadjust(F_lzz0, sf, 1.)
+    F_fmi = sfadjust(F_lzz0, sf, 1.)
     if (present(F_dfm)) F_dfm = sfderiv(dsf, 1.)
 
     ! Stability function for heat
@@ -186,16 +227,28 @@ contains
        sf(j) = (1.+ 0.5*a*F_zh(j)*F_ilmo)**2
        if (present(F_dfh)) dsf(j) = a*F_zh(j)*F_ilmo*(1.+ 0.5*a*F_zh(j)*F_ilmo)
     enddo
-    F_fh = sfadjust(F_lzz0t, sf, F_beta)
+    F_fhi = sfadjust(F_lzz0t, sf, F_beta)
     if (present(F_dfh)) F_dfh = sfderiv(dsf, F_beta)
+  end subroutine isf_stable_lock07
+
+  subroutine sf_stable_lock07(F_fm, F_fh, F_ilmo, F_h, F_beta, F_z)
+    ! Stability functions from Lock (2007; UKMO Tech Report)
+    real, intent(in) :: F_ilmo, F_h, F_beta, F_z
+    real, intent(out) :: F_fm, F_fh
+    real :: zeta
+
+    zeta = F_z * F_ilmo
+    F_fm = 1. + L07_AM*zeta
+    F_fh = F_beta * (1. + L07_AH*zeta*(1. + L07_AH*zeta/2.))
+    
   end subroutine sf_stable_lock07
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine sf_stable_beljaars91(F_fm, F_fh, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
+  subroutine isf_stable_beljaars91(F_fmi, F_fhi, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
        F_zm, F_zh, F_dfm, F_dfh)
-    ! Stability functions from Beljaars and Holtslag (1991; JAM)
+    ! Integrated stability functions from Beljaars and Holtslag (1991; JAM)
     real, intent(in) :: F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, F_zm(2), F_zh(2)
-    real, intent(out) :: F_fm, F_fh
+    real, intent(out) :: F_fmi, F_fhi
     real, intent(out), optional :: F_dfm, F_dfh
     integer :: j
     real :: a,b,c,d
@@ -214,7 +267,7 @@ contains
             + b*F_zm(j)*F_ilmo*EXP(-d*F_zm(j)*F_ilmo) &
             - d*F_zm(j)*F_ilmo*b*(F_zm(j)*F_ilmo-c/d)*EXP(-d*F_zm(j)*F_ilmo)
     enddo
-    F_fm = sfadjust(F_lzz0, sf, 1.)
+    F_fmi = sfadjust(F_lzz0, sf, 1.)
     if (present(F_dfm)) F_dfm = sfderiv(dsf, 1.)
  
     ! Stability function for heat
@@ -225,16 +278,33 @@ contains
             + b*F_zh(j)*F_ilmo*EXP(-d*F_zh(j)*F_ilmo) &
             - d*F_zh(j)*F_ilmo*b*(F_zh(j)*F_ilmo-c/d)*EXP(-d*F_zh(j)*F_ilmo)
     enddo
-    F_fh = sfadjust(F_lzz0t, sf, F_beta)
+    F_fhi = sfadjust(F_lzz0t, sf, F_beta)
     if (present(F_dfh)) F_dfh = sfderiv(dsf, F_beta)
+  end subroutine isf_stable_beljaars91
+
+  subroutine sf_stable_beljaars91(F_fm, F_fh, F_ilmo, F_h, F_beta, F_z)
+    ! Stability functions from Beljaars and Holtslag (1991; JAM)
+    real, intent(in) :: F_ilmo, F_h, F_beta, F_z
+    real, intent(out) :: F_fm, F_fh
+    real :: a, b, c, d, zeta
+    
+    a = BH91_A
+    b = BH91_B
+    c = BH91_C
+    d = BH91_D
+    zeta = F_z * F_ilmo
+    F_fm = 1. + a*zeta + b*zeta*EXP(-d*zeta) - b*d*zeta*(zeta - c/d)*EXP(-d*zeta)
+    F_fh = F_beta * (1. + a*zeta*sqrt(1 + a*b*zeta) + b*zeta*EXP(-d*zeta) &
+         - b*d*zeta*(zeta - c/d)*EXP(-d*zeta))
+    
   end subroutine sf_stable_beljaars91
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine sf_unstable_delage92(F_fm, F_fh, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
+  subroutine isf_unstable_delage92(F_fmi, F_fhi, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
        F_zm, F_zh, F_dfm, F_dfh)
-    ! Stability functions from Delage and Girard (1992; BLM)
+    ! Integrated stability functions from Delage and Girard (1992; BLM)
     real, intent(in) :: F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, F_zm(2), F_zh(2)
-    real, intent(out) :: F_fm, F_fh
+    real, intent(out) :: F_fmi, F_fhi
     real, intent(out), optional :: F_dfm, F_dfh
     integer :: j
     real :: a
@@ -247,7 +317,7 @@ contains
             +DG92_RAC3*ATAN((a**2-1)/(DG92_RAC3*a))
        if (present(F_dfm)) dsf(j) = (1./a) - 1
     enddo
-    F_fm = sfadjust(F_lzz0, sf, 1.)
+    F_fmi = sfadjust(F_lzz0, sf, 1.)
     if (present(F_dfm)) F_dfm = sfderiv(dsf, 1.)
  
     ! Stability function for heat
@@ -256,16 +326,29 @@ contains
        sf(j) = -1.5*LOG(a**2+a+1)+DG92_RAC3*ATAN((2*a+1)/DG92_RAC3)
        if (present(F_dfh)) dsf(j) = (1./a) - 1
     enddo
-    F_fh = sfadjust(F_lzz0t, sf, F_beta)
+    F_fhi = sfadjust(F_lzz0t, sf, F_beta)
     if (present(F_dfh)) F_dfh = sfderiv(dsf, F_beta)
+  end subroutine isf_unstable_delage92
+
+  subroutine sf_unstable_delage92(F_fm, F_fh, F_ilmo, F_h, F_beta, F_z)
+    ! Stability functions from Delage and Girard (1992; BLM)
+    real, intent(in) :: F_ilmo, F_h, F_beta, F_z
+    real, intent(out) :: F_fm, F_fh
+    real :: a, zeta
+
+    zeta = F_z * F_ilmo
+    a = (1. - F_beta*DG92_CI*zeta)**(0.16666666)
+    F_fm = 1./a
+    F_fh = F_beta * (1./a**2)
+    
   end subroutine sf_unstable_delage92
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine sf_unstable_dyer74(F_fm, F_fh, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
+  subroutine isf_unstable_dyer74(F_fmi, F_fhi, F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, &
        F_zm, F_zh, F_dfm, F_dfh)
-    ! Stability functions from Dyer (1974; BLM)
+    ! Integrated stability functions from Dyer (1974; BLM)
     real, intent(in) :: F_lzz0, F_lzz0t, F_ilmo, F_h, F_beta, F_zm(2), F_zh(2)
-    real, intent(out) :: F_fm, F_fh
+    real, intent(out) :: F_fmi, F_fhi
     real, intent(out), optional :: F_dfm, F_dfh
     integer :: j
     real :: a
@@ -277,7 +360,7 @@ contains
        sf(j) = - 2.*LOG(a+1) - LOG(a**2+1) + 2.*ATAN(a)
        if (present(F_dfm)) dsf = (1./a) - 1
     enddo
-    F_fm = sfadjust(F_lzz0, sf, 1.)
+    F_fmi = sfadjust(F_lzz0, sf, 1.)
     if (present(F_dfm)) F_dfm = sfderiv(dsf, 1.)
 
     ! Stability function for heat
@@ -286,8 +369,21 @@ contains
        sf(j) = - 2.*LOG(a+1)
        if (present(F_dfh)) dsf = (1./a) - 1
     enddo
-    F_fh = sfadjust(F_lzz0t, sf, F_beta)
+    F_fhi = sfadjust(F_lzz0t, sf, F_beta)
     if (present(F_dfh)) F_dfh = sfderiv(dsf, F_beta)
+  end subroutine isf_unstable_dyer74
+
+  subroutine sf_unstable_dyer74(F_fm, F_fh, F_ilmo, F_h, F_beta, F_z)
+    ! Stability functions from Dyer (1974; BLM)
+    real, intent(in) :: F_ilmo, F_h, F_beta, F_z
+    real, intent(out) :: F_fm, F_fh
+    real :: a, zeta
+
+    zeta = F_z * F_ilmo
+    a = (1. - 16.*zeta)**0.25
+    F_fm = 1./a
+    F_fh = F_beta * (1./a**2)
+    
   end subroutine sf_unstable_dyer74
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

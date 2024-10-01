@@ -20,6 +20,7 @@
 !
         use tdpack
         use svs_configs
+        use sfc_options
       implicit none
 !!!#include <arch_specific.hf>
 !
@@ -145,6 +146,14 @@
                 f2_k(k) =  min( 1.0,  max( 1.E-5  ,  &
                      max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) ) )
              ENDDO
+
+             ! if svs_gexp > 0, use f2 formulation that is consistent with photosynthesis code
+             ! this is a bugfix - the if statement should be eventually removed
+             if ( svs_gexp .GT. 0. ) then
+                DO K=1,NL_SVS
+                  f2_k(k) = 1.0 - ( 1.0 - f2_k(k) ) ** svs_gexp
+                ENDDO
+             end if
 
              ! root fraction weighted mean
              ! k=1

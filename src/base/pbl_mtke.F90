@@ -9,7 +9,7 @@ contains
   subroutine moistke(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
        fngauss,fnnonloc,gama,gamaq,gamal,hpbl,lh,hpar, &
        wthl_ng,wqw_ng,uw_ng,vw_ng, &
-       u,v,t,tve,q,qe,ps,s,se,sw, &
+       u,v,t,tve,q,qe,ps,st,s,se, &
        z,z0,gzmom,frv,wstar,fbsurf,turbreg, &
        mrk2,vcoef,dxdy,tau,kount,trnch,n,nk)
     use, intrinsic :: iso_fortran_env, only: INT64
@@ -47,9 +47,9 @@ contains
     real, dimension(n,nk), intent(in) :: t            !dry air temperature (K)
     real, dimension(n,nk), intent(in) :: tve          !virt. temperature on e-lev (K)
     real, dimension(n,nk), intent(in) :: q            !specific humidity (kg/kg)
-    real, dimension(n,nk), intent(in) :: s            !sigma for full levels
-    real, dimension(n,nk), intent(in) :: se           !sigma for e-lev
-    real, dimension(n,nk), intent(in) :: sw           !sigma for working levels
+    real, dimension(n,nk), intent(in) :: st           !sigma for thermo levels
+    real, dimension(n,nk), intent(in) :: s            !sigma for momentum levels
+    real, dimension(n,nk), intent(in) :: se           !sigma for energy levels
     real, dimension(n,ens_nc2d), intent(in) :: mrk2   !Markov chains for stochastic parameters
     real, dimension(*), intent(in) :: vcoef           !coefficients for vertical interpolation
     real, dimension(n,nk), intent(in) :: z            !height of e-levs (m)
@@ -159,7 +159,7 @@ contains
     ! Estimate boundary layer cloud properties and nonlocal fluxes
     call blcloud(u,v,t,tve,q,qc,fnn,frac,fngauss,fnnonloc,w_cld, &
          wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz, &
-         hpar,frv,z0,fbsurf,gzmom,z,s,sw,ps,shr2,rig, &
+         hpar,frv,z0,fbsurf,gzmom,z,s,st,ps,shr2,rig, &
          buoy,tau,vcoef,n,nk,size(w_cld,dim=3))
 
     ! Output Richardson number time series
@@ -175,10 +175,32 @@ contains
        end do
     end do
 
+    ! Determine turbulence regime
+    slk(:) = nk
+    if (pbl_turbsl_depth > 0.) &
+         stat = neark(se,ps,pbl_turbsl_depth,n,nk,slk) !determine "surface layer" vertical index
+    if (kount == 0) then
+       INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
+          do k=1,nk
+             do j=1,n
+                if (k <= slk(j)) then
+                   if (rig(j,k) > ricmin(j)) then
+                      turbreg(j,k) = LAMINAR
+                   else
+                      turbreg(j,k) = TURBULENT
+                   endif
+                else
+                   turbreg(j,k) = TURBULENT
+                endif
+             enddo
+          enddo
+       endif INIT_TURB
+    endif
+
     ! Compute mixing and dissipation length scales
     mlen(:) = ens_spp_get('longmel', mrk2, default=ilongmel)
     stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, zero, fnn, z, gzmom, z, &
-         s, se, ps, enold, buoy, rig, w_cld, f_cs, turbreg, z0, &
+         st, s, se, ps, enold, buoy, rig, w_cld, f_cs, turbreg, z0, &
          hpbl, lh, hpar, vcoef, mrk2, dxdy, tau, kount)
     if (stat /= PHY_OK) then
        call physeterror('moistke', 'error returned by mixing length calculation')
@@ -195,28 +217,6 @@ contains
     rif = pri*rig
     c1 = 2*BLCONST_CK*pri*ICAB
     CALL series_xst(rif, 'RF', trnch)
-
-    ! Determine turbulence regime
-    slk(:) = nk
-    if (pbl_turbsl_depth > 0.) &
-         stat = neark(se,ps,pbl_turbsl_depth,n,nk,slk) !determine "surface layer" vertical index
-    if (kount == 0) then
-       INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
-          do k=1,nk
-             do j=1,n
-                if (k <= slk(j)) then
-                   if (rif(j,k) > ricmin(j)) then
-                      turbreg(j,k) = LAMINAR
-                   else
-                      turbreg(j,k) = TURBULENT
-                   endif
-                else
-                   turbreg(j,k) = TURBULENT
-                endif
-             enddo
-          enddo
-       endif INIT_TURB
-    endif
 
     ! Apply Richardson number hysteresis and update regime
     do k=1,nk

@@ -226,7 +226,6 @@ PVAR  (topthw    , TOPTHW    , W3  , P0  , LVLA , "VD=Total optical thickness of
 
 
 PVAR  (icw       , ICW       , IE  , U0  , LVLA , "VD=Integrated cloud water/ice                                  ; MIN=0;")
-PVAR  (ilmo      , ILMO      , IO  , P0  , nag  , "VD=(length of Monin-Obukhov)**-1                               ;")
 PVAR  (c1pbl     , C1BL      , C1BL, U0  , LVLE , "VD=C1 coef for in second-order moment closure                  ;")
 PVARC (c1slop    , C1SL      , C1SL, P0  , LVLA , "VD=C1 for radslope                                             ;                         ", radslope)
 PVARC (c2slop    , C2SL      , C2SL, P0  , LVLA , "VD=C2 for radslope                                             ;                         ", radslope)
@@ -446,6 +445,7 @@ PVAROC(flwm      , FLWM      , FLWM, P0  , LVLA , "VD=FLW average over last moyh
 PVAR  (fsh       , FSH       , FSH , U0  , LVLA , "VD=Spec hum flux from sfc used by atm                          ;")
 PVAROC(fshm      , FSHM      , FSHM, P0  , LVLA , "VD=FSH average over last moyhr hours                           ;                         ", lmoyhr)
 PVAROC(fvmy      , FVMY      , AZ  , P0  , LVLA , "VD=FV average over last moyhr hours                            ;                         ", lmoyhr)
+PVAR  (ilmo      , ILMO      , IO  , P0  , nag  , "VD=(length of Monin-Obukhov)**-1                               ;")
 
 ! Sub-Section TOFD scheme
 PVAR  (utofd     , UTOFD     , UFD , U0  , LVLM , "VD=U tendency due to turb. orog. form drag                     ;")
@@ -648,6 +648,17 @@ PVAR  (sqe       , SQE       , SQE , U0  , LVLT , "VD=Cond. Q tendency          
 PVAROC(zsqem     , ZSQEM     , W9  , P0  , LVLT , "VD=HU strat. tend. avge over last moyhr hrs                    ;                         ", lmoyhr)
 PVAR  (ste       , STE       , STE , U0  , LVLT , "VD=Cond. T tendency                                            ;")
 PVAROC(zstem     , ZSTEM     , W7  , P0  , LVLT , "VD=T strat. tend. avge over last moyhr hrs                     ;                         ", lmoyhr)
+
+! Sub-Section statistical condensation
+PVARC (qccondr   , QCCONDR   , CCRA, U0  , LVLT , "VD=Condensation Qc tendency after radiation scheme             ;                         ", ls2)
+PVARC (qccondc1  , QCCONDC1  , CCCB, U0  , LVLT , "VD=Condensation Qc tendency before microphysics scheme         ;                         ", ls2)
+PVARC (qccondc2  , QCCONDC2  , CCCA, U0  , LVLT , "VD=Condensation Qc tendency after microphysics scheme          ;                         ", ls2)
+PVARC (qcondr    , QCONDR    , CQRA, U0  , LVLT , "VD=Condensation Q tendency after radiation scheme              ;                         ", ls2)
+PVARC (qcondc1   , QCONDC1   , CQCB, U0  , LVLT , "VD=Condensation Q tendency before microphysics scheme          ;                         ", ls2)
+PVARC (qcondc2   , QCONDC2   , CQCA, U0  , LVLT , "VD=Condensation Q tendency after microphysics scheme           ;                         ", ls2)
+PVARC (tcondr    , TCONDR    , CTRA, U0  , LVLT , "VD=Condensation T tendency after radiation scheme              ;                         ", ls2)
+PVARC (tcondc1   , TCONDC1   , CTCB, U0  , LVLT , "VD=Condensation T tendency before microphysics scheme          ;                         ", ls2)
+PVARC (tcondc2   , TCONDC2   , CTCA, U0  , LVLT , "VD=Condensation T tendency after microphysics scheme           ;                         ", ls2)
 
 !Sub-Section consun
 PVAR  (f12       , F12       , 12  , U0  , LVLT , "VD=Cloud to rain coll tend (condensation)                      ;")
@@ -930,10 +941,7 @@ PVARO (hrl       , HRL       , HRL , U0  , LVLT , "VD=Relative hum with respect 
 PVARO (hrli      , HRLI      , HRLI, U0  , LVLT , "VD=Relative hum with respect to ice or liquid                  ; MIN=0;")
 PVAROC(ttmax     , TTMAX     , T9  , P0  , LVLT , "VD=Max temperature over last moyhr hrs                         ;                         ", lmoyhr)
 PVAROC(ttmin     , TTMIN     , T5  , P0  , LVLT , "VD=Min temperature over last moyhr hrs                         ;                         ", lmoyhr)
-PVAR  (qcpostcnd , QCPOSTCND , QCCN, P0  , LVLT , "VD=Condensate after gridscale condensation                     ;")
-PVAR  (hupostcnd , HUPOSTCND , QPCN, P0  , LVLT , "VD=Humidity after gridscale condensation                       ;")
 PVARC (hupostshal, HUPOSTSHAL, QPSC, P0  , LVLT , "VD=Humidity after shallow convection                           ;                         ", lshbkf)
-PVAR  (tpostcnd  , TPOSTCND  , TPCN, P0  , LVLT , "VD=Temperature after gridscale condensation                    ;")
 PVARC (tpostshal , TPOSTSHAL , TPSC, P0  , LVLT , "VD=Temperature after shallow convection                        ;                         ", lshbkf)
 PVAR  (thetaa    , THETAA    , N1  , U0  , LVLA , "VD=First-level pot. temp. at time minus                        ;")
 PVAR  (thetaap   , THETAAP   , THAP, U0  , LVLA , "VD=First-level pot. temp. at time plus                         ;")

@@ -4034,41 +4034,61 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
   end function my2_phybusinit
 
   ! Compute total water mass
-  function my2_lwc(F_qltot, F_pvars) result(F_istat)
+  function my2_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+    type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+    logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
     integer :: F_istat                                  !Return status
     integer :: ni, nkm1
-    real, dimension(:,:), pointer :: zqcp, zqrp
+    real, dimension(:,:), pointer, contiguous :: zqc, zqr
+    logical :: my_tminus
     F_istat = PHY_ERROR
+    my_tminus = .false.
+    if (present(F_tminus)) my_tminus = F_tminus
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_pvars)
-    MKPTR2Dm1(zqrp, qrplus, F_pvars)
-    F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
+    if (my_tminus) then
+       MKPTR2Dm1(zqc, qcmoins, F_pvars)
+       MKPTR2Dm1(zqr, qrmoins, F_pvars)
+    else
+       MKPTR2Dm1(zqc, qcplus, F_pvars)
+       MKPTR2Dm1(zqr, qrplus, F_pvars)
+    endif
+    F_qltot(:,:) = zqc(:,:) + zqr(:,:)
     F_istat = PHY_OK
     return
   end function my2_lwc
 
   ! Compute total water mass
-  function my2_iwc(F_qitot, F_pvars) result(F_istat)
+  function my2_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+    type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+    logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
     integer :: F_istat                                  !Return status
     integer :: ni, nkm1
-    real, dimension(:,:), pointer :: zqip, zqnp, zqgp, zqhp
+    real, dimension(:,:), pointer, contiguous :: zqi, zqn, zqg, zqh
+    logical :: my_tminus
     F_istat = PHY_ERROR
+    my_tminus = .false.
+    if (present(F_tminus)) my_tminus = F_tminus
     ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
-    MKPTR2Dm1(zqip, qiplus, F_pvars)
-    MKPTR2Dm1(zqnp, qnplus, F_pvars)
-    MKPTR2Dm1(zqgp, qgplus, F_pvars)
-    MKPTR2Dm1(zqhp, qhplus, F_pvars)
-    F_qitot(:,:) = zqip(:,:) + zqnp(:,:) + zqgp(:,:) + zqhp(:,:)
+    if (my_tminus) then
+       MKPTR2Dm1(zqi, qimoins, F_pvars)
+       MKPTR2Dm1(zqn, qnmoins, F_pvars)
+       MKPTR2Dm1(zqg, qgmoins, F_pvars)
+       MKPTR2Dm1(zqh, qhmoins, F_pvars)
+    else
+       MKPTR2Dm1(zqi, qiplus, F_pvars)
+       MKPTR2Dm1(zqn, qnplus, F_pvars)
+       MKPTR2Dm1(zqg, qgplus, F_pvars)
+       MKPTR2Dm1(zqh, qhplus, F_pvars)
+    endif
+    F_qitot(:,:) = zqi(:,:) + zqn(:,:) + zqg(:,:) + zqh(:,:)
     F_istat = PHY_OK
     return
   end function my2_iwc
