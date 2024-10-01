@@ -204,7 +204,7 @@ contains
    
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    integer function ml_compute(zn, zd, pri, mlen, t, qe, lwc, iwc, fn, gzt, gzm, gze, &
-        s, se, ps, enold, buoy, rig, w_cld, f_cs, turbreg, z0, &
+        st, s, se, ps, enold, buoy, rig, w_cld, f_cs, turbreg, z0, &
         hpbl, lh, hpar, vcoef, mrk2, dxdy, tau, kount, znt) result(stat)
      use phy_options, only: ilongmel, pbl_diss, pbl_mlturb_diss, timings_L, advectke, &
           pbl_slblend_layer
@@ -224,8 +224,9 @@ contains
      real, dimension(:,:), intent(in) :: gzt               !height AGL of thermodynamic levels (m)
      real, dimension(:,:), intent(in) :: gzm               !height AGL of momentum levels (m)
      real, dimension(:,:), intent(in) :: gze               !height AGL of energy levels (m)
-     real, dimension(:,:), intent(in) :: s                 !sigma values for full momentum levels
-     real, dimension(:,:), intent(in) :: se                !sigma values for half (energy) levels
+     real, dimension(:,:), intent(in) :: st                !sigma values for thermodynamic levels
+     real, dimension(:,:), intent(in) :: s                 !sigma values for momentum levels
+     real, dimension(:,:), intent(in) :: se                !sigma values for energy levels
      real, dimension(:), intent(in) :: ps                  !surface pressure (Pa)
      real, dimension(:,:), intent(in) :: enold             !TKE from previous time step (m2/s2)
      real, dimension(:,:), intent(in) :: buoy              !buoyancy frequency squared (/s2)
@@ -307,11 +308,11 @@ contains
      pri(:,:) = fm(:,:) / fh(:,:)
      
      ! Mixing length estimate based on regime-dependent Bougeault and Lacarrere (1989)
-     if (any(mlen(:) == ML_TURBOUJO)) then
+     if (any(mlen(:) == ML_TURBOUJO)) then        
         where (nint(turbreg(:,:)) /= LAMINAR)
            boujo_valid(:,:) = .true.
         endwhere
-        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, gze, s, ps, &
+        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, gzt, gze, s, ps, &
              mask=boujo_valid, init=.false.) /= PHY_OK) then
            call physeterror('ml_compute', 'error returned by B-L mixing length estimate')
            return
@@ -365,7 +366,7 @@ contains
               endif
            enddo
         enddo
-        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, gze, s, ps, &
+        if (ml_calc_boujo(zn_boujo, tv, enold, w_cld, gzt, gze, s, ps, &
              mask=boujo_valid, init=.false.) /= PHY_OK) then
            call physeterror('ml_compute', 'error returned by B-L mixing length estimate')
            return           
@@ -406,7 +407,7 @@ contains
      ! Mixing length estimate based on a moist form of Bougeault and Lacarrere (1989)
      if (any(mlen(:) == ML_MBOUJO)) then
         if (ml_calc_mboujo(zn_mboujo, znt_mboujo, te, tv, qe, lwc, iwc, fn, enold, buoy, rig, &
-             gzt, gzm, se, ps, z0, vcoef, init=.false., znup=znu, zndown=znd) /= PHY_OK) then
+             gzt, gze, se, ps, z0, vcoef, init=.false., znup=znu, zndown=znd) /= PHY_OK) then
            call physeterror('mixing_length', 'error returned by moist B-L mixing length estimate')
            return           
         endif 
@@ -698,13 +699,13 @@ contains
    end function ml_blend
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ml_calc_blac(zn,rig,w_cld,zz,z0,fm,hpbl,lh,dxdy,przn) result(stat)
+   integer function ml_calc_blac(zn,rig,w_cld,gze,z0,fm,hpbl,lh,dxdy,przn) result(stat)
       ! Compute the Blackadar (1962) mixing length scale
 
       ! Argument declaration
       real, dimension(:,:), intent(in) :: rig             !gradient Richardson number
       real, dimension(:,:,:), intent(in) :: w_cld         !Cu cloud velocity scale profile (1 L_heat; 2 L_momentum; 3 L_dissipation)
-      real, dimension(:,:), intent(in) :: zz              !height of e-levs (m)
+      real, dimension(:,:), intent(in) :: gze             !height of e-levs (m)
       real, dimension(:,:), intent(in) :: fm              !momentum stability function
       real, dimension(:), intent(in) :: z0                !roughness length for momentum (m)
       real, dimension(:), intent(in) :: hpbl              !height of the PBL (m)
@@ -728,7 +729,7 @@ contains
       endif
       
       ! Initialization
-      nk = size(zz,dim=2)
+      nk = size(gze,dim=2)
 
       ! Compute asymptotic mixing length
       select case (mlblac_max)
@@ -737,8 +738,8 @@ contains
             where (rig(:,k) >= 0.)
                lmda_t(:) = min(max(ML_LMDAS,0.3*hpbl(:)),ML_LMDA)
                lmda(:,k) = min(max(lmda_t(:),sqrt(2.)*lh(:)),ML_LMDA)
-               my_przn(:,k) = ( 1. + KARMAN*(zz(:,k)+z0(:))/lmda_t(:) ) &
-                    / ( 1. + KARMAN*(zz(:,k)+z0(:))/lmda(:,k) )
+               my_przn(:,k) = ( 1. + KARMAN*(gze(:,k)+z0(:))/lmda_t(:) ) &
+                    / ( 1. + KARMAN*(gze(:,k)+z0(:))/lmda(:,k) )
             elsewhere
                lmda(:,k) = ML_LMDA
                my_przn(:,k) = 1.
@@ -760,11 +761,11 @@ contains
       select case (mlblac_max)
       case ('BLAC62')
          do k=1,nk
-            zn(:,k) = min(KARMAN*(zz(:,k)+z0(:)),lmda(:,k))
+            zn(:,k) = min(KARMAN*(gze(:,k)+z0(:)),lmda(:,k))
          enddo
       case DEFAULT
          do k=1,nk
-            zn(:,k) = KARMAN*(zz(:,k)+z0(:))/(1.+KARMAN*(zz(:,k)+z0(:))/lmda(:,k))
+            zn(:,k) = KARMAN*(gze(:,k)+z0(:))/(1.+KARMAN*(gze(:,k)+z0(:))/lmda(:,k))
          enddo
       end select
       zn = zn / fm
@@ -782,7 +783,7 @@ contains
    end function ml_calc_blac
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   integer function ml_calc_boujo(zn,th,en,w_cld,zz,sigma,ps,mask,init) result(stat)
+   integer function ml_calc_boujo(zn,th,en,w_cld,gzt,gze,sigma,ps,mask,init) result(stat)
       ! Compute the Bougeault and Lacarrere (1989) length scales
       use integrals, only: int_solve, INT_ERR, INT_DIR_UP, INT_DIR_DOWN
 
@@ -790,8 +791,9 @@ contains
       real, dimension(:,:), intent(in) :: th                !virtual potential temperature on e-levs (K)
       real, dimension(:,:), intent(in) :: en                !turbulent kinetic energy (m2/s2)
       real, dimension(:,:,:), intent(in) :: w_cld           !Cu cloud velocity scale profile (1 L_heat; 2 L_momentum; 3 L_dissipation)
-      real, dimension(:,:), intent(in) :: zz                !height of e-levs (m)
-      real, dimension(:,:), intent(in) :: sigma             !coordinate values for e-levs
+      real, dimension(:,:), intent(in) :: gzt               !height of thermo levels (m)
+      real, dimension(:,:), intent(in) :: gze               !height of e-levs (m)
+      real, dimension(:,:), intent(in) :: sigma             !coordinate values for momentum levels
       real, dimension(:), intent(in) :: ps                  !surface pressure (Pa)
       logical, dimension(:,:), intent(in), optional :: mask !calculation mask [.true.]
       logical, intent(in), optional :: init                 !initialize the mixing length [.true.]
@@ -874,8 +876,8 @@ contains
             indx(j) = nc
             a(nc) = min(en(j,ki),4.)*th(j,slk(j))*gravinv
             y(nc,:) = th(j,:) - th(j,ki)
-            zcoord(nc,:) = zz(j,:)
-            zdep(nc) = zz(j,ki)
+            zcoord(nc,:) = gzt(j,:)
+            zdep(nc) = gze(j,ki)
          end do
 
          ! Solve integral equation in both vertical directions
@@ -903,7 +905,7 @@ contains
             if (nc < 0) cycle
             ! Compute "average" mixing length
             zn(j,ki) = min(lup(nc,ki),ldown(nc,ki))
-            zn(j,ki) = min(zn(j,ki),zz(j,ki))
+            zn(j,ki) = min(zn(j,ki),gze(j,ki))
             zn(j,ki) = max(zn(j,ki),ML_MIN)
             ! Adjust mixing length for non-local cloud effects (Lock and Mailhot 2006)
             zn(j,ki) = (zn(j,ki)**3 + w_cld(j,ki,2)**3)**(1./3.)
@@ -922,11 +924,13 @@ contains
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     integer function ml_calc_mboujo(zn, znt, tt, th, qv, lwc, iwc, fn, en, buoy, rig, &
-         gzt, gzm, sigt, ps, z0, vcoef, mask, init, znup, zndown) result(stat)
+         gzt, gze, sigt, ps, z0, vcoef, mask, init, znup, zndown) result(stat)
       ! Compute a moist version of the Bougeault and Lacarrere (1989) length scales
       use integrals, only: int_solve, INT_ERR, INT_DIR_UP, INT_DIR_DOWN
       use tdpack, only: fqsmx, CPD, DELTA, CAPPA
-      use pbl_ri_utils, only: thermco, compute_conserved, icefrac, PBL_RI_CK
+      use pbl_ri_utils, only: PBL_RI_CK
+      use microphy_utils, only: mp_icefrac
+      use cons_thlqw, only: thlqw_compute, thlqw_thermco
 
       ! Argument declaration
       real, dimension(:,:), intent(in) :: tt                !dry air temperature on thermo levs (K)
@@ -939,7 +943,7 @@ contains
       real, dimension(:,:), intent(in) :: buoy              !buoyancy frequency squared (/s2)
       real, dimension(:,:), intent(in) :: rig               !gradient Richardson number
       real, dimension(:,:), intent(in) :: gzt               !height of thermo levs (m)
-      real, dimension(:,:), intent(in) :: gzm               !height of momentum levs (m)
+      real, dimension(:,:), intent(in) :: gze               !height of energy levs (m)
       real, dimension(:,:), intent(in) :: sigt              !coordinate values for thermo levs
       real, dimension(:), intent(in) :: ps                  !surface pressure (Pa)
       real, dimension(:), intent(in) :: z0                  !roughness length for momentum (m)
@@ -999,8 +1003,11 @@ contains
       myInit = .true.
       if (present(init)) myInit = init
       exner(:,:) = sigt(:,:)**CAPPA
-      call icefrac(fice, tt, lwc, iwc, n, nk)
-      call compute_conserved(thl, qw, tt, qv, lwc, iwc, sigt, n, nk)
+      if (mp_icefrac(fice, tt, lwc, iwc, n, nk) /= PHY_OK) then
+         call physeterror('mixing_length::ml_calc_mboujo', 'Problem computing ice fraction')
+         return
+      end if
+      call thlqw_compute(thl, qw, tt, qv, lwc, iwc, sigt, n, nk)
 
       ! Compute parcel properties at momentum departure levels
       call vint_thermo2mom1(thlm, thl, vcoef, n, nk)
@@ -1015,7 +1022,7 @@ contains
             thlp(:,k) = thlm(:,ki)
             qwp(:,k) = qwm(:,ki)
          enddo
-         call thermco(thlp, qwp, tt, lwc, iwc, fn, sigt, ps, &
+         call thlqw_thermco(thlp, qwp, tt, lwc, iwc, sigt, ps, &
               n, nk, F_ccoef=ccoef, F_leff=leff)
 
          ! Prepare integral equation components
@@ -1039,7 +1046,7 @@ contains
                y(nc,k) = th(j,k) - thvp    
             enddo
             zcoord(nc,:) = gzt(j,:)
-            zdep(nc) = gzm(j,ki)
+            zdep(nc) = gze(j,ki)
          end do
 
          ! Solve integral equation in both vertical directions
@@ -1074,7 +1081,7 @@ contains
          if (present(zndown)) then
             do j=1,n
                zndown(j,ki) = ldown(indx(j),ki)
-               zndown(j,ki) = min(zndown(j,ki), gzm(j,ki))
+               zndown(j,ki) = min(zndown(j,ki), gze(j,ki))
                zndown(j,ki) = max(zndown(j,ki), ML_MIN)
             enddo
          endif
@@ -1082,7 +1089,7 @@ contains
          ! Use LH blending for stable length scales
          do j=1,n
             if (buoy(j,ki) > 0.) then
-!!$               lmin = 1. / (1./75. + 1./(0.5*PBL_RI_CK*KARMAN*gzm(j,ki))) / PBL_RI_CK
+!!$               lmin = 1. / (1./75. + 1./(0.5*PBL_RI_CK*KARMAN*gze(j,ki))) / PBL_RI_CK
 !!$               lsh = LH_CH * sqrt(en(j,ki)) / sqrt(buoy(j,ki)) / PBL_RI_CK
 !!$               lsm = lsh * min(1. + 2.*rig(j,ki), 3.)
 !!$               znt(j,ki) = sqrt(1. / (1./(zn(j,ki)**2+lmin**2) + 1./lsh**2))
@@ -1093,9 +1100,7 @@ contains
 !!$                    (1 + 2*5*rig(j,ki) * sqrt(1 + 1*rig(j,ki)))
 !!$
                !MT20 proposal for stable-case mixing length
-!               zn(j,ki) = (1. / (1./(0.4*gzm(j,ki)) + 1./10.)) * &
-!                    MT_CM / PBL_RI_CK
-               zn(j,ki) = (1. / (1./(KARMAN*(gzm(j,ki)+z0(j))) + 1./10.)) * &
+               zn(j,ki) = (1. / (1./(KARMAN*(gze(j,ki)+z0(j))) + 1./15.)) * &
                     MT_CM / PBL_RI_CK
                znt(j,ki) = (1. / (1./(0.76/sqrt(buoy(j,ki))*sqrt(en(j,ki))) + 1./zn(j,ki))) * &
                     MT_CM / PBL_RI_CK

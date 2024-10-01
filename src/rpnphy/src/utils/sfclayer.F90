@@ -42,16 +42,15 @@ module sfclayer
   logical, save :: tdiaglim_default = .false.               !Default value for inversion limiter
   logical, save :: z0ref = .true.                           !Use a reference roughness (max of z0m and z0t)
 
-  ! Private procedures
-  procedure(stability_function), pointer, save :: &
-       sf_stable => sf_stable_delage97, &                   !Stability functions (stable surface layer)
-       sf_unstable => sf_unstable_delage92                  !Stability functions (unstable surface layer)
+  ! Private procedures to define stability functions
+  type(stabfunc), save :: sf_stable, sf_unstable
 
   ! Public subprograms
   public :: sl_put          !Set module variables
   public :: sl_get          !Retrieve module variables/parameters
   public :: sl_prelim       !Preliminary surface layer diagnostics
   public :: sl_sfclayer     !Surface layer parameterization
+  public :: sl_stabfunc     !Retrieve stability function values
   public :: sl_adjust       !Adjust diagnostic values
 
   ! Generic procedures
@@ -287,7 +286,7 @@ contains
   function sl_sfclayer(t_air,q_air,spd_air,dir_air,hghtm_air,hghtt_air,t_sfc,q_sfc,z0m,z0t,lat,fcor, &
        coefm,coeft,rib,flux_t,flux_q,ilmo,ue,h,lzz0m,lzz0t,stabm,stabt,spdlim, &
        t_diag,q_diag,u_diag,v_diag,hghtm_diag,hghtm_diag_row,hghtt_diag, &
-       hghtt_diag_row,tdiaglim,L_min,optz0,z0mloc,z0t_optz0) result(status)
+       hghtt_diag_row,tdiaglim,L_min,L_minv,optz0,z0mloc,z0t_optz0) result(status)
     ! Surface layer parameterization
 
     ! Input arguments
@@ -305,6 +304,7 @@ contains
     real, dimension(:), intent(in) :: fcor                      !Coriolis factor (/s)
     logical, intent(in), optional :: tdiaglim                   !Limit temperature inversion in lowest layer [get 'tdiaglim']
     real, intent(in), optional :: L_min                         !Minimum stable Obukhov length [none]
+    real, dimension(:), intent(in), optional :: L_minv          !Vector of minimum stable Obukhov lengths [none]
     integer, intent(in), optional :: optz0                      !Alternative roughness length adjustment [0]
     real, intent(in), optional :: hghtm_diag                    !Diagnostic level height for momentum (m) [10.]
     real, dimension(:), intent(in), optional :: hghtm_diag_row  !Diagnostic heights for momentum (m; supercedes hghtm_diag)
@@ -340,7 +340,8 @@ contains
     real :: my_L_min
     real, dimension(size(t_air)) :: my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q, &
          my_ilmo,my_ue,my_h,my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_t_diag,my_q_diag, &
-         my_u_diag,my_v_diag,my_hghtm_diag,my_hghtt_diag,my_spdlim, my_z0mloc, my_z0t_optz0
+         my_u_diag,my_v_diag,my_hghtm_diag,my_hghtt_diag,my_spdlim, my_z0mloc, &
+         my_z0t_optz0,my_L_minv
     logical :: my_tdiaglim
 
     ! Initialize return value
@@ -359,14 +360,22 @@ contains
     if (present(tdiaglim)) my_tdiaglim = tdiaglim
     my_L_min = DEFAULT_L_MIN
     if (present(L_min)) my_L_min = L_min
+    my_L_minv = DEFAULT_L_MIN
+    if (present(L_minv)) my_L_minv(:) = L_minv(:)
     my_z0mloc(:) = z0m(:)
     if (present(z0mloc)) my_z0mloc(:) = z0mloc(:)
 
-
+    ! Initialize stability functions if required
+    if (stabfunc_init() /= SL_OK) then
+       call msg_toall(MSG_ERROR,'(sl_sfclayer) could not initialize default stability functions')
+       return
+    endif
+    
     ! Compute surface fluxes on request
     call flxsurf(my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q,my_ilmo,my_ue, &
          fcor,t_air,q_air,hghtm_air,hghtt_air,spd_air,t_sfc,q_sfc,my_h,z0m,z0t,my_L_min, &
-         my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_spdlim,size(t_air),my_optz0,my_z0mloc,my_z0t_optz0)
+         my_L_minv,my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_spdlim,size(t_air),my_optz0, &
+         my_z0mloc,my_z0t_optz0)
 
     ! Diagnostic level calculations
     if (any((/present(hghtm_diag),present(hghtt_diag),present(hghtm_diag_row),present(hghtt_diag_row)/))) then
@@ -418,6 +427,50 @@ contains
 
   end function sl_sfclayer
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function sl_stabfunc(hght, ilmo, h, fm, fh) result(status)
+    ! Compute value of the surface layer stability functions at a given level
+
+    ! Input arguments
+    real, dimension(:), intent(in) :: hght              !Height at which to compute stability functions (m)
+    real, dimension(:), intent(in) :: ilmo              !Inverse of the Obukhov length (1/m)
+    real, dimension(:), intent(in) :: h                 !PBL height estimate from the surface layer (m)
+
+    ! Output arguments
+    integer :: status                                   !Return status of function
+    real, dimension(:), intent(out), optional :: fm     !Stability function for momentum
+    real, dimension(:), intent(out), optional :: fh     !Stability function for heat
+
+    ! Internal variables
+    integer :: i
+    real, dimension(size(hght)) :: my_fm, my_fh
+
+    ! Initialize return value
+    status = SL_ERROR
+
+    ! Initialize stability functions if required
+    if (stabfunc_init() /= SL_OK) then
+       call msg_toall(MSG_ERROR,'(sl_stabfunc) could not initialize default stability functions')
+       return
+    endif
+
+    ! Set stability function values
+    do i=1,size(hght)
+       if (ilmo(i) > 0.) then
+          call sf_stable%sf(my_fm(i), my_fh(i), ilmo(i), h(i), beta, hght(i))
+       else
+          call sf_unstable%sf(my_fm(i), my_fh(i), ilmo(i), h(i), beta, hght(i))
+       endif
+    enddo
+
+    ! Fill requested outputs
+    if (present(fm)) fm = my_fm
+    if (present(fh)) fh = my_fh
+
+    ! Successful completion of the subprogram
+    status = SL_OK
+  end function sl_stabfunc
+    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function sl_prelim(t_air,q_air,u_air,v_air,p_sfc,hghtm_air,spd_air,dir_air,tv_air,rho_air, &
                      min_wind_speed,min_wind_reduc) result(status)
@@ -517,10 +570,33 @@ contains
  end function sl_adjust
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ function stabfunc_init() result(status)
+   ! Set default values for surface layer stability functions
+   
+   ! Output arguments
+   integer :: status                                           !Return status of function
+
+   ! Initialize return values
+   status = SL_ERROR
+
+   ! Sret defaults if required
+   if (.not.associated(sf_stable%sf) .or. .not.associated(sf_stable%isf)) then
+      if (sl_put('sl_stabfunc_stab', 'DELAGE97') /= SL_OK) return
+   endif
+   if (.not.associated(sf_unstable%sf) .or. .not.associated(sf_unstable%isf)) then
+      if (sl_put('sl_stabfunc_unstab', 'DELAGE92') /= SL_OK) return
+   endif
+
+   ! Successful completion of subprogram
+   status=SL_OK
+
+ end function stabfunc_init
+ 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine flxsurf(cmu, ctu, rib, ftemp, fvap, ilmo, &
        ue, fcor, ta , qa , zu, zt, vmod, tg , qg , h , z0 , z0t,  &
-       lmin, lzz0, lzz0t, fm, fh, va, n, optz0, z0loc, optz0_z0t)
-    use sfclayer_funcs, only: stability_function, D97_AS, SF_MOMENTUM, SF_HEAT
+       lmin, lminv, lzz0, lzz0t, fm, fh, va, n, optz0, z0loc, optz0_z0t)
+    use sfclayer_funcs, only: D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
     ! Represent surface layer similarity state, turbulent tranfer coefficients and fluxes
 
@@ -537,6 +613,7 @@ contains
     real, dimension(:), intent(in) :: z0t                       !Thermal roughness length (m)
     real, dimension(:), intent(in) :: fcor                      !Coriolis factor (/s)
     real, intent(in) :: lmin                                    !Minimum stable Obukhov length [none]
+    real, dimension(:), intent(in) :: lminv                     !Vector of minimum stable Obukhov lengths [none]
     integer, intent(in) :: optz0                                !Alternative roughness length adjustment [0]
     real, dimension(:), intent(in) :: z0loc                     !Local momentum roughness length (m) for compz0() calc.
 
@@ -566,20 +643,24 @@ contains
     ! Internal variables
     integer :: j, it, itmax
     real :: cm, ct, zp
-    real :: ilmoj, fmj, fhj, hj, z0j, z0tj, zuj, ztj, vaj, fcorj
+    real :: ilmoj, fmij, fhij, hj, z0j, z0tj, zuj, ztj, vaj, fcorj
     real :: z0rmj, z0rtj, lzz0j, lzz0tj, ribj, z0locj
     real(REAL64) :: dthv, tva, tvs
-    real :: ilmax, vlmin, hc, ribc, ilmm
+    real :: vlmin, hc, ribc, ilmm
     real :: am, ah, dfm, dfh, g, dg
-    real, dimension(n) :: z0rt, z0rm  !#, lz0,lz0t
+    real, dimension(n) :: z0rt, z0rm, ilmax
     real, dimension(2) :: ff_zm, ff_zh
-    procedure(stability_function), pointer :: sf
+    type(stabfunc) :: sf
 
     ! Setup for numerical solution
     itmax  = 3
-    ilmax = -1.
+    ilmax(:) = -1.
     if (lmin > 0.) then
-       ilmax = 1./lmin
+       ilmax(:) = 1./lmin
+       itmax = 5
+    endif
+    if (any(lminv > 0.)) then
+       ilmax(:) = 1./lminv(:)
        itmax = 5
     endif
 
@@ -623,15 +704,15 @@ contains
        dthv   = tva - tvs
        vlmin  = 0.
        ! Apply Obukhov length limiter under stable conditions
-       if (lmin > 0. .and. dthv > 0.) then
-          ilmm = sign(ilmax, real(dthv))
+       if (ilmax(j) > 0. .and. dthv > 0.) then
+          ilmm = sign(ilmax(j), real(dthv))
           hc = pblheight(zuj, z0j, vaj, ilmm, fcorj, lzz0j)
-          sf => sf_stable
+          sf = sf_stable
           ff_zm = (/zuj+z0rmj, z0j/)
           ff_zh = (/ztj+z0rtj, z0tj/)
-          call sf(fmj, fhj, lzz0j, lzz0tj, ilmm, hc, beta, &
+          call sf%isf(fmij, fhij, lzz0j, lzz0tj, ilmm, hc, beta, &
                F_zm=ff_zm, F_zh=ff_zh)
-          ribc = zp * ilmm * fhj / fmj**2
+          ribc = zp * ilmm * fhij / fmij**2
           ! Wind speed is adjusted to keep Obukhov length above the minimum
           vlmin = sqrt( max(0.d0, 1./ribc * GRAV * zp * dthv/(tvs + 0.5*dthv)) )
        endif
@@ -652,16 +733,16 @@ contains
           am = -min(0.7 + log(1.-ribj), lzz0j-1.)
           ah = -min(0.7 + log(1.-ribj), lzz0tj-1.)
        endif
-       fmj = lzz0j + am
-       fhj = beta * (lzz0tj + ah)
-       ilmoj = ribj * fmj * fmj / (zp*fhj)
+       fmij = lzz0j + am
+       fhij = beta * (lzz0tj + ah)
+       ilmoj = ribj * fmij * fmij / (zp*fhij)
 
        ! Find the (inverse) Obukhov length (byproducts: PBL height, integrated stability functions)
        ITERATIONS: do it=1,itmax
 
           ! Update roughness and neutral stability functions on request
           if(optz0 > 0) then
-             call compz0_a(optz0, z0j, z0locj, z0tj, fmj, vaj, fcorj, 1)
+             call compz0_a(optz0, z0j, z0locj, z0tj, fmij, vaj, fcorj, 1)
              lzz0j = log((z0rmj + zuj) / z0j)
              lzz0tj = log((z0rtj + ztj) / z0tj)
           endif
@@ -670,17 +751,17 @@ contains
           ilmoj = sign(max(abs(ilmoj), EPSLN), ilmoj)
 
           ! Estimate PBL height based on surface layer properties
-          hj  = pblheight(zuj, z0j, vaj, ilmoj, fcorj, fmj)
+          hj  = pblheight(zuj, z0j, vaj, ilmoj, fcorj, fmij)
 
           ! Update stability functions using appropriate stability branch
           if (ilmoj > 0.) then
-             sf => sf_stable
+             sf = sf_stable
           else
-             sf => sf_unstable
+             sf = sf_unstable
           endif
           ff_zm = (/zuj+z0rmj, z0j/)
           ff_zh = (/ztj+z0rtj, z0tj/)
-          call sf(fmj, fhj, lzz0j, lzz0tj, ilmoj, hj, beta, &
+          call sf%isf(fmij, fhij, lzz0j, lzz0tj, ilmoj, hj, beta, &
                F_zm=ff_zm, F_zh=ff_zh, &
                F_dfm=dfm, F_dfh=dfh)
           ! Use Newton-Raphson iterations to solve the equation
@@ -693,25 +774,25 @@ contains
           !   dg  = derivative of g w.r.t. ilmo
           !       = -fh/(fm^2)*zp*(1+dfh/fh-2*dfm/fm)
           if (it < itmax) then
-             g = ribj - fhj / (fmj * fmj) * zp * ilmoj
-             dg = -fhj / (fmj*fmj) * zp * (1. + dfh/fhj - 2.*dfm/fmj)
+             g = ribj - fhij / (fmij * fmij) * zp * ilmoj
+             dg = -fhij / (fmij*fmij) * zp * (1. + dfh/fhij - 2.*dfm/fmij)
              dg = sign(max(abs(dg),EPSLN),dg)
              ilmoj = ilmoj - g/dg
           endif
 
        enddo ITERATIONS
-
+       
        ! Diagnose surface layer properties
-       fm(j) = fmj                              !Integrated momentum stability function
-       fh(j) = fhj                              !Integrated heat stability function
+       fm(j) = fmij                             !Integrated momentum stability function
+       fh(j) = fhij                             !Integrated heat stability function
        rib(j) = ribj                            !Bulk Richardson number
        ilmo(j) = ilmoj                          !Inverse Obukhov length
        h(j) = hj                                !Boundary layer height estimate
        va(j) = vaj                              !Adjusted first-level wind speed
 
        ! Diagnose turbulent surface exhange properties
-       cm = karman / fmj                        !Momentum exchange coefficient
-       ct = karman / fhj                        !Heat exchange coefficient
+       cm = karman / fmij                       !Momentum exchange coefficient
+       ct = karman / fhij                       !Heat exchange coefficient
        ue(j) = cm * vaj                         !Friction velocity
        cmu(j) = cm * ue(j)                      !Momentum exchange coefficient * ustar
        ctu(j) = ct * ue(j)                      !Heat exchange coefficient * ustar
@@ -738,7 +819,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine diasurf(uz, vz, tz, qz, ni, angi, tg, qg, z0, z0t, ilmo, za, &
        h, ue, ftemp, fvap, zu, zt, lat)
-    use sfclayer_funcs, only: stability_function, D97_AS, SF_MOMENTUM, SF_HEAT
+    use sfclayer_funcs, only: D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
     ! Compute state variables at the diagnostic level
 
@@ -773,7 +854,7 @@ contains
     real :: fh, fm, h1, h2, h3, hh, ct, ctu, cm, vits, dang, ang, hi
     real, dimension(ni) :: lzz0t, lzz0
     real, dimension(2) :: ff_zm, ff_zh
-    procedure(stability_function), pointer :: sf
+    type(stabfunc) :: sf
 
     ! Initialize neutral stability functions
     do j=1,ni
@@ -796,13 +877,13 @@ contains
 
        ! Compute integrated stability functions
        if (ilmo(j) > 0.) then
-          sf => sf_stable
+          sf = sf_stable
        else
-          sf => sf_unstable
+          sf = sf_unstable
        endif
        ff_zm = (/zu(j)+z0(j), z0(j)/)
        ff_zh = (/zt(j)+z0t(j), z0t(j)/)
-       call sf(fm, fh, lzz0(j), lzz0t(j), ilmo(j), hh, beta, &
+       call sf%isf(fm, fh, lzz0(j), lzz0t(j), ilmo(j), hh, beta, &
             F_zm=ff_zm, F_zh=ff_zh)
 
        ! Compute exchange coefficients

@@ -32,7 +32,9 @@ contains
       use microphy_p3v3,  only: mp_p3v3_wrapper_gem => mp_p3_wrapper_gem
       use microphy_kessler, only: kessler
       use microphy_consun, only: consun
+      use microphy_s2, only: s2
       use microphy_my2, only: mp_my2_main
+      use microphy_statcond, only: sc_adjust 
       use phy_options
       use phy_status, only: phy_error_L, PHY_OK
       use phybusidx
@@ -66,7 +68,7 @@ contains
 
       ! Local variables
       integer :: nkm1, istat1, istat2
-      real, dimension(ni,nk-1) :: zfm, zfm1, iwc_total, lttp, lhup, &
+      real, dimension(ni,nk-1) :: iwc_total, lttp, lhup, &
            qtl, qts, fdqc, slw
       real, dimension(ni,N_DIAG_2D) :: diag_2d
       real, dimension(ni,nk-1,N_DIAG_3D) :: diag_3d
@@ -85,15 +87,12 @@ contains
 #include "condensation_ptr.hf"
 
       ! Initialize local variables
-      call init2nan(zfm, zfm1, iwc_total, lttp, lhup, slw)  
+      call init2nan(iwc_total, lttp, lhup, slw)  
       call init2nan(qtl, qts, fdqc)
       call init2nan(l_en0, l_pw0)
 
       ! Startup operations
       if (kount == 0) then
-         zhupostcnd = qqm
-         if (associated(qcm)) zqcpostcnd = qcm
-         ztpostcnd = ttm
          if (.not.any(phyinread_list_s(1:phyinread_n) == 'rhc')) zrhc(:,:) = -1.
       endif
       
@@ -119,15 +118,12 @@ contains
   
       case('CONSUN')
 
-         zfm1 = zqcpostcnd
-         zfm  = qcp
-
          ! Sundqvist-based condensation scheme
          call consun(zste, zsqe, zsqce, a_tls, a_tss, a_fxp, zrhc, &
-              ttp, ztpostcnd, qqp, zhupostcnd, zfm, zfm1, &
+              ttp, ttm, qqp, qqm, qcp, qcm, &
               psp, psm, sigma, dt, &
               zrnflx, zsnoflx, zf12, zfevp, zfice, &
-              zpblsigs, zh, zgztherm, zmrk2, ni, nkm1)
+              zpblsigs, zmrk2, ni, nkm1)
 
          ! Adjust tendencies to impose conservation
          if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
@@ -136,6 +132,20 @@ contains
                  'Cannot correct conservation for '//trim(stcond))
             return
          endif
+
+      case ('S2')
+
+         ! Pre-microphysics condensation adjustment
+         call sc_adjust(ztcondc1, zqcondc1, zqccondc1, pvars, delt, ni, nkm1)
+         
+         ! Sundqvist-based microphysics scheme
+         call s2(zste, zsqe, zsqce, a_tls, a_tss, a_fxp, zrhc, &
+              ttp, ttm, qqp, qqm, qcp, qcm, &
+              psp, psm, sigma, dt, &
+              zrnflx, zsnoflx, zf12, zfevp, zfice, &
+              zmrk2, ni, nkm1)
+
+         ! Post-microphysics condensation adjustment
 
       case('MP_MY2')
          
@@ -253,6 +263,10 @@ contains
          return
       endif
 
+      ! Post-scheme condensation adjustment
+      if (stcond == 'S2') &
+           call sc_adjust(ztcondc1, zqcondc1, zqccondc1, pvars, delt, ni, nkm1)
+      
       ! Compute profile diagnostics <<< should be done outside the model >>>
       istat1 = mp_lwc(qtl, pvars)
       istat2 = mp_iwc(qts, pvars)
@@ -263,11 +277,6 @@ contains
       endif
       call wi_integrate(ttp, qqp, qtl, qts, sigma, psp, zicw, ziwv, ziwv700, &
            ziwp, zlwp2, zslwp, zslwp2, zslwp3, zslwp4, ni, nkm1)
-
-      ! Store post-scheme state information for "accession" calculations on next step
-      zhupostcnd = qqp
-      if (associated(qcp)) zqcpostcnd = qcp
-      ztpostcnd = ttp
 
       call msg_toall(MSG_DEBUG, 'condensation [END]')
       !----------------------------------------------------------------

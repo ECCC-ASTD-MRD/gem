@@ -32,6 +32,7 @@ contains
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
       use ens_perturb, only: ens_spp_get
+      use microphy_statcond, only: sc_adjust
       implicit none
 !!!#include <arch_specific.hf>
       !@Object Apply radiative tendencies
@@ -56,8 +57,9 @@ contains
       integer :: k
       real, dimension(ni) :: tradmult
       real, dimension(ni,nkm1) :: qrad, mtrad
-      real, dimension(:), pointer, contiguous :: zconerad, zconqrad, zps, ztdmaskxdt, znetrad
-      real, dimension(:,:), pointer, contiguous :: ztplus, zqplus, zqcplus, zgztherm, zsigt, ztrad, zmrk2
+      real, dimension(:), pointer, contiguous :: zconerad, zconqrad, ztdmaskxdt, znetrad
+      real, dimension(:,:), pointer, contiguous :: ztplus, &
+           ztrad, zmrk2, zqccondr, zqcondr, ztcondr
       real(REAL64), dimension(ni) :: l_en0, l_pw0
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [BEGIN]')
@@ -67,13 +69,11 @@ contains
       MKPTR1D(zconerad, conerad, pvars)
       MKPTR1D(zconqrad, conqrad, pvars)
       MKPTR1D(znetrad, netrad, pvars)
-      MKPTR1D(zps, pmoins, pvars)
       MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
 
-      MKPTR2Dm1(zgztherm, gztherm, pvars)
-      MKPTR2Dm1(zqcplus, qcplus, pvars)
-      MKPTR2Dm1(zqplus, huplus, pvars)
-      MKPTR2Dm1(zsigt, sigt, pvars)
+      MKPTR2Dm1(zqccondr, qccondr, pvars)
+      MKPTR2Dm1(zqcondr, qcondr, pvars)
+      MKPTR2Dm1(ztcondr, tcondr, pvars)
       MKPTR2Dm1(ztplus, tplus, pvars)
       MKPTR2Dm1(ztrad, trad, pvars)
       
@@ -126,6 +126,10 @@ contains
               'Problem computing final budget for '//trim(radia))
          return
       endif
+
+      ! Condensation adjustment
+      if (stcond == 'S2') &
+           call sc_adjust(ztcondr, zqcondr, zqccondr, pvars, delt, ni, nkm1)
 
       if (timings_L) call timing_stop_omp(422)
       call msg_toall(MSG_DEBUG, 'apply_rad_tendencies [END]')

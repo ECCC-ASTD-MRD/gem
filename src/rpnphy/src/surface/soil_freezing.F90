@@ -1,7 +1,7 @@
 !copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
 
       SUBROUTINE SOIL_FREEZING(DT, TSOIL, VEGL, VEGH, PSN, PSNVH,  &
-                                SOILCONDZ, SOILHCAPZ , TGRS,   &
+                                SOILCONDZ, SOILHCAPZ , TGRS, TVEGS,   &
                                 WSOIL, ISOIL,  &
                                 SNORO, SNODP, TSNO, &
                                 SNVRO, SNVDP, TSNV, &
@@ -19,7 +19,7 @@
 
       REAL DT
 
-      REAL, DIMENSION(N)        :: VEGL, VEGH, PSN, PSNVH, TGRS, TDEEP
+      REAL, DIMENSION(N)        :: VEGL, VEGH, PSN, PSNVH, TGRS, TDEEP,TVEGS
       REAL, DIMENSION(N)        :: SNORO, SNODP, TSNO 
       REAL, DIMENSION(N)        :: SNVRO, SNVDP, TSNV 
       REAL, DIMENSION(N,NL_SVS) :: TSOIL,SOILCONDZ, SOILHCAPZ,WSOIL,ISOIL, WUNFRZ
@@ -33,6 +33,9 @@
       ! Simulate the evolution of soil freezing and thawing 
       ! using the simple heat conduction method proposed by
       ! Hayashi et al. (2007) and Mohammed et al. (2012)
+      ! The upper boundary conditions are taken from the FR schemes and
+      ! the coupling is done as the IFS code (see IFS techincal
+      ! documentation)
       
       !
       !Arguments
@@ -58,6 +61,7 @@
       !          --- Prognostic variables of SVS not modified by SOIL_FREEZING ---
       !
       ! TGRS          bare ground surface temperature from Force Restore
+      ! TVEGS         surface vegetation temperature from Force Restore
       ! SNODP         snow depth for snow over bare ground/low veg
       ! SNORO         snow density for snow over bare ground/low veg
       ! TSNO          deep snow temperature for snow over bare ground/low veg
@@ -82,24 +86,28 @@
       INTEGER I, K
 
 
-      LOGICAL LSNOW_EFFECT ! Swithc to include or not the effect of the snow cover
       INTEGER OPT_SNOW  ! Option to compute the heat flux between the snowpack and the soil
       INTEGER OPT_FRAC    ! Option to compute the snow cover fraction        
       INTEGER OPT_LIQWAT  ! Option to compute the unfrozen redisudal water content     
+      INTEGER OPT_VEGCOND ! Option to compute the skin conductivity from the snow-free vegetation 
+
 
       REAL LAMI, CICE, DAY, MYOMEGA 
+      REAL LAM_VEGL_STAB, LAM_VEGH_STAB,LAM_VEGL_UNSTAB, LAM_VEGH_UNSTAB
       REAL MFAC, RHONEW,Z0
 
       REAL HNET,HNETR,TTEST, TTEST2, UFWC,DFWC, FWCTEST, QLAT
       REAL RTH_GRND, RTH_SNO,RTH_SNV,FAC_SNW
-      REAL HFLUX_GRND, HFLUX_SNO,HFLUX_SNV
+      REAL, DIMENSION(N) :: HFLUX_GRND, HFLUX_SNO,HFLUX_SNV, HFLUX_VEG
       REAL, DIMENSION(N, NL_SVS+1) :: RTH, HFLUX
-      REAL, DIMENSION(N, NL_SVS) :: WC, RFS
+      REAL, DIMENSION(N, NL_SVS) :: WC, RFS, ISOILT
       REAL, DIMENSION(NL_SVS)   :: ZLAYER
 
       REAL, DIMENSION(N)           :: TBTM, DBTM, LAMS, LAMSV, FRAC_SNWL, FRAC_SNWH
       REAL KDIFFU,KDIFFUV 
-      REAL, DIMENSION(N)           :: DAMPD,DAMPDV
+      REAL, DIMENSION(N)           :: DAMPD,DAMPDV,LAM_VEG
+      REAL, DIMENSION(N,SVS_TILESP1)           :: WTG
+
 
 
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -107,21 +115,23 @@
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !
 
-      LSNOW_EFFECT = .TRUE. ! Activate effect of snow cover on soil freezing
-
       OPT_SNOW = 2 ! Option to compute the heat flux between the snowpack and the soil 
                    ! 0: use the deep snow temperature and half the snow depth
                    ! 1: use the deep snow temperature and the full snow depth
                    ! 2: use the deep snow temp. and the max of half the snow depth
-                   !     and the full snow depth minus the damping depth
+                   !     and the full snow depth minus the damping depth (Recommended) 
 
-      OPT_FRAC = 1 ! Option to compute the snow cover fraction
+      OPT_FRAC = 2 ! Option to compute the snow cover fraction
                    ! 1: use a fraction = SWE/1 mm
-                   ! 2: use the formulation of Niu and Yang (2007)
+                   ! 2: use the formulation of Niu and Yang (2007) (Recommended) 
 
       OPT_LIQWAT = 2 ! Option to handle unfrozen liquid water content
                    ! 1: use a constant value of 0.06 (as in VSMB)
-                   ! 2: use a value that depends on soil texture
+                   ! 2: use a value that depends on soil texture (Recommended for large scale simulations) 
+
+      OPT_VEGCOND = 1 ! Option to compute the skin conductivity for the vegetation 
+                   ! 1: same value of 10 for low and high veg. in both stable and unstable conditions (Most recent version of EC Land, Boussetta et al., 2021; Recommended)
+                   ! 2: different values for low and high veg. in stable and unstable conditions (See Trigo et al., JGR, 2015)
 
 
       IF(OPT_SNOW ==0) THEN
@@ -141,13 +151,47 @@
       Z0 = 0.01
       RHONEW=100.0
 
+      ! Define skin conductivity for low and high vegetation (W m-2 K-1)
+      IF(OPT_VEGCOND==1) THEN 
+          ! Effect of stable and unstable stratification are not taken into account 
+          ! Values taken from Tab 1.2 in sup. material of Boussetta et al (2021)
+          LAM_VEGH_STAB = 10 
+          LAM_VEGL_STAB = 10  
+          LAM_VEGH_UNSTAB = 10 
+          LAM_VEGL_UNSTAB = 10  
+      ELSE IF(OPT_VEGCOND ==2) THEN
+          ! Effect of stable and unstable stratification are  taken into account
+          ! Values taken from Tab 3 in Trigo et al. (2015)
+          LAM_VEGH_STAB = 15
+          LAM_VEGL_STAB = 10  
+          LAM_VEGH_UNSTAB = 20 
+          LAM_VEGL_UNSTAB = 10  
+      ENDIF   
+
+      ! Compute layer depth
+      ZLAYER(1) =  DELZ(1)
+      DO K =2, NL_SVS
+        ZLAYER(K) = ZLAYER(K-1) + DELZ(K)
+      ENDDO
+      
       DO  I=1,N
         TBTM(I) = TDEEP(I) ! K
-        DBTM(I) = 5.0  ! m
+        DBTM(I) = ZLAYER(NL_SVS) + 0.5* DELZ(NL_SVS) ! m
 
          ! Snow thermal conductitivy
         LAMS(I) = LAMI * SNORO(I)**1.88
         LAMSV(I) = LAMI * SNVRO(I)**1.88
+
+        ! Vegetation average skin conductivity
+        IF(VEGL(I)+VEGH(I)> 0.) THEN
+            IF(TVEGS(I) > TSOIL(I,1)) THEN ! Stable case
+                 LAM_VEG(I) =(VEGL(I)*LAM_VEGL_STAB+VEGH(I)*LAM_VEGH_STAB)/(VEGL(I)+VEGH(I))
+            ELSE  ! Unstable case
+                 LAM_VEG(I) =(VEGL(I)*LAM_VEGL_UNSTAB+VEGH(I)*LAM_VEGH_UNSTAB)/(VEGL(I)+VEGH(I))
+            ENDIF
+        ELSE
+            LAM_VEG(I) = 1. ! Set default value to make sure code is running           
+        ENDIF
 
         ! Snow cover fraction used for the exchanges with the surface
         IF(OPT_FRAC==1) THEN
@@ -171,6 +215,7 @@
                   RFS(I,K) = WUNFRZ(I,K) ! Residual unfrozen content
             ENDIF
             WC(I,K) = WSOIL(I,K) + ISOIL(I,K) ! Total water content
+            ISOILT(I,K) = ISOIL(I,K)  ! Initialize frozen soil volumetric water (to be updated in the routine) 
         ENDDO
 
         IF(OPT_SNOW ==2) THEN
@@ -193,14 +238,14 @@
 
         ENDIF             
       ENDDO
-      !
-      ! Compute layer depth
-      !
-      ZLAYER(1) =  DELZ(1)
-      DO K =2, NL_SVS
-        ZLAYER(K) = ZLAYER(K-1) + DELZ(K)
-      ENDDO
 
+      ! Compute weights of surface type in SVS:
+      !               - snow-free bare ground WTG_2
+      !               - snow-free vegetation WTG_3
+      !               - snow-covered bare ground and low vegetation WTG_4
+      !               - snow below high-vegetation WTG_5
+
+      CALL WEIGHTS_SVS(VEGH, VEGL,FRAC_SNWL,FRAC_SNWH,N,WTG)
 
       !
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -213,37 +258,51 @@
         ! Treatment of surface layer!
         !
 
-        IF(LSNOW_EFFECT) THEN
-          RTH_GRND = 0.5*DELZ(1)/SOILCONDZ(I,1)  
-          HFLUX_GRND = (TGRS(I) - TSOIL(I,1)) / RTH_GRND
+        ! Upper boundary condition for snow-free bare ground
+        RTH_GRND = 0.5*DELZ(1)/SOILCONDZ(I,1)  
+        HFLUX_GRND(I) = (TGRS(I) - TSOIL(I,1)) / RTH_GRND
 
-          
-          IF(OPT_SNOW ==0 .OR. OPT_SNOW ==1) THEN
-             RTH_SNO = FAC_SNW*SNODP(I)/LAMS(I) + 0.5*DELZ(1)/SOILCONDZ(I,1)
-             HFLUX_SNO = (TSNO(I) - TSOIL(I,1)) / RTH_SNO
-        
-             RTH_SNV = FAC_SNW*SNVDP(I)/LAMSV(I) + 0.5*DELZ(1)/SOILCONDZ(I,1)
-             HFLUX_SNV = (TSNV(I) - TSOIL(I,1)) / RTH_SNV
-          ELSE
-             RTH_SNO = MAX(SNODP(I)/2., SNODP(I)-DAMPD(I))/LAMS(I) + 0.5*DELZ(1)/SOILCONDZ(I,1)
-             HFLUX_SNO = (TSNO(I) - TSOIL(I,1)) / RTH_SNO
-        
+        ! Upper boundary condition for snow-free vegetation
+         HFLUX_VEG(I) = (TVEGS(I) - TSOIL(I,1)) * LAM_VEG(I)              
+
+        ! Upper boundary condition for snow over bare ground and low veg.
+        IF(SNODP(I) > 0.) THEN ! Snow is present
+
+           IF(OPT_SNOW ==0 .OR. OPT_SNOW ==1) THEN
+              RTH_SNO = FAC_SNW*SNODP(I)/LAMS(I) + 0.5*DELZ(1)/SOILCONDZ(I,1)
+           ELSE
+              RTH_SNO = MAX(SNODP(I)/2., SNODP(I)-DAMPD(I))/LAMS(I) + 0.5*DELZ(1)/SOILCONDZ(I,1)
+           ENDIF
+
+           ! Heat flux at the snow/soil interface
+           HFLUX_SNO(I) = (TSNO(I) - TSOIL(I,1)) / RTH_SNO
+
+        ELSE ! No snow 
+           HFLUX_SNO(I) = 0.
+        ENDIF 
+
+        ! Upper boundary condition for snow below high vegetation. 
+        IF(SNVDP(I) > 0.) THEN ! Snow is present
+                
+           IF(OPT_SNOW ==0 .OR. OPT_SNOW ==1) THEN
+              RTH_SNV = FAC_SNW*SNVDP(I)/LAMSV(I) + 0.5*DELZ(1)/SOILCONDZ(I,1)
+           ELSE
              RTH_SNV = MAX(SNVDP(I)/2., SNVDP(I)-DAMPDV(I))/LAMSV(I) + 0.5*DELZ(1)/SOILCONDZ(I,1)
-             HFLUX_SNV = (TSNV(I) - TSOIL(I,1)) / RTH_SNV
-          ENDIF
-                 
-          ! Compute average surface heat flux using fractions
-          HFLUX(I,1) = (1.0-VEGH(I)) * ((1.0-FRAC_SNWL(I)) * HFLUX_GRND + FRAC_SNWL(I) * HFLUX_SNO)    + &
-                               VEGH(I) * ((1.0-FRAC_SNWH(I)) * HFLUX_GRND + FRAC_SNWH(I) * HFLUX_SNV)
-      !  write(*,*) 'Frac',PSN(I), SNODP(I), LAMS(I)
-      !  write(*,*) 'Rth', RTH_GRND,RTH_SNO
-      !  write(*,*) TGRS(I),TSNO(I), TSOIL(I,1)
-      !  write(*,*) 'Flux',HFLUX_GRND,HFLUX_SNO,HFLUX(I,1) 
-        ELSE
-          RTH(I,1) = 0.5*DELZ(1)/SOILCONDZ(I,1)  
-          HFLUX(I,1) = (TGRS(I) - TSOIL(I,1)) / RTH(I,1)
+           ENDIF
 
-        ENDIF
+           ! Heat flux at the snow/soil interface
+           HFLUX_SNV(I) = (TSNV(I) - TSOIL(I,1)) / RTH_SNV
+                   
+        ELSE ! No snow 
+           HFLUX_SNV(I) = 0.
+        ENDIF 
+                
+        ! Compute average surface heat flux using weights for each surface tile
+        HFLUX(I,1) = WTG(I,2) * HFLUX_GRND(I) + WTG(I,3) * HFLUX_VEG(I) + &
+                               WTG(I,4) * HFLUX_SNO(I) + WTG(I,5) * HFLUX_SNV(I) 
+        !
+        !
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!               
         !
         ! Treatment of the following layers
         !
@@ -255,7 +314,7 @@
         ! Treatment of the bottom layer
         ! Use thermal conductivity of the deepest SVS layer
         !
-        RTH(I,NL_SVS+1) = (DBTM(I) - ZLAYER(NL_SVS))/SOILCONDZ(I,NL_SVS)
+        RTH(I,NL_SVS+1) = 0.5* DELZ(NL_SVS)/ SOILCONDZ(I,NL_SVS) + (DBTM(I) - ZLAYER(NL_SVS)) / SOILCONDZ(I,NL_SVS)
         HFLUX(I,NL_SVS+1) = ( TSOIL(I,NL_SVS)- TBTM(I)) / RTH(I,NL_SVS+1)
         !
       ENDDO
@@ -287,12 +346,12 @@
                            ! All energy will be used to freeze water
                            ! because max created ice < max liquid water that can be frozen
                            TSOIL(I,K) = TRPL
-                           ISOIL(I,K) = DFWC + ISOIL(I,K)
+                           ISOILT(I,K) = DFWC + ISOIL(I,K)
                         ELSE ! All available liquid water is frozen and temperature keep decreasing
                            ! Freeze all available water, and remaining energy flux will decrease temperature
                            HNETR  = HNETR +UFWC* RAUW*CHLF*DELZ(K)
                            TSOIL(I,K) =  TRPL + HNETR/(SOILHCAPZ(I,K)*DELZ(K))
-                           ISOIL(I,K) = UFWC + ISOIL(I,K)
+                           ISOILT(I,K) = UFWC + ISOIL(I,K)
                         ENDIF
                      ELSE
                         TSOIL(I,K) = TTEST ! No enough liquid water for freezing, temperature keep decreasing. 
@@ -310,18 +369,18 @@
                   ! Total melting of frozen content and ground heating 
                   ! with the remaining energy
                   HNETR = HNET -ISOIL(I,K) * RAUW*CHLF*DELZ(K)
-                  ISOIL(I,K) = 0.0    
+                  ISOILT(I,K) = 0.0    
                   TSOIL(I,K) = TSOIL(I,K) + HNETR/(SOILHCAPZ(I,K)*DELZ(K))
                ELSE 
                   IF(DFWC.GT.UFWC) THEN
                       !Total freezing of soil layer and ground cooling
                       ! with the remaining energy
                       HNETR = HNET + UFWC * RAUW*CHLF*DELZ(K)
-                      ISOIL(I,K) = ISOIL(I,K) + UFWC
+                      ISOILT(I,K) = ISOIL(I,K) + UFWC
                       TSOIL(I,K) = TSOIL(I,K) + HNETR/(SOILHCAPZ(I,K)*DELZ(K))
                    ELSE
                       ! layer is still partially frozen and T = 0 deg
-                      ISOIL(I,K) = FWCTEST
+                      ISOILT(I,K) = FWCTEST
                       TSOIL(I,K) = TRPL
                    ENDIF
                 ENDIF
@@ -347,14 +406,14 @@
                         IF(DFWC<ISOIL(I,K)) THEN 
                             ! All energy is used to melt ice and some ice remains 
                             TSOIL(I,K) = TRPL
-                            ISOIL(I,K) = ISOIL(I,K)-DFWC
+                            ISOILT(I,K) = ISOIL(I,K)-DFWC
                         ELSE         
                             ! All ice is melted and remaining energy is used to warm the layer above 0 degC
                             ! Remove the energy required to melt the ice 
                             HNETR  = HNETR -ISOIL(I,K)* RAUW*CHLF*DELZ(K) 
                             ! Update the temperature and the ice content
                             TSOIL(I,K) =  TRPL + HNETR/(SOILHCAPZ(I,K)*DELZ(K))
-                            ISOIL(I,K) = 0. 
+                            ISOILT(I,K) = 0. 
                         ENDIF
                      ELSE
                         TSOIL(I,K) = TTEST ! No melting of ice and no contribution from phase change  
@@ -379,11 +438,11 @@
                          IF(TTEST2 .GT. TRPL) THEN 
                               ! Too much energy would be released 
                               QLAT =  (TRPL-TTEST)*SOILHCAPZ(I,K)*DELZ(K) ! Compute the energy which is actually relasead
-                              ISOIL(I,K)  = ISOIL(I,K) + QLAT/(RAUW*CHLF*DELZ(K)) ! Update ice content
+                              ISOILT(I,K)  = ISOIL(I,K) + QLAT/(RAUW*CHLF*DELZ(K)) ! Update ice content
                               TSOIL(I,K) =TRPL
                          ELSE
                               ! All the available liquid water is melting and the temperature reamins below 0 deg 
-                              ISOIL(I,K) = ISOIL(I,K) + UFWC 
+                              ISOILT(I,K) = ISOIL(I,K) + UFWC 
                               TSOIL(I,K) = TTEST2
                          ENDIF
                      ELSE
@@ -396,12 +455,12 @@
 
              ENDIF
 
+           ! Update frozen water content
+           ISOIL(I,K) = ISOILT(I,K)
      
            ! Update liquid water content
            WSOIL(I,K) = WC(I,K) - ISOIL(I,K)
 
-           
-         !  write(*,*) K,TSOIL(I,K), WSOIL(I,K), ISOIL(I,K), WSOIL(I,K)+ISOIL(I,K)
         ENDDO
       ENDDO
 

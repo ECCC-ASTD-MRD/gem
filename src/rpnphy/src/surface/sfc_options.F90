@@ -320,6 +320,18 @@ module sfc_options
    logical           :: lsoil_freezing_svs1 = .false.
    namelist /surface_cfgs/ lsoil_freezing_svs1 
 
+   ! Three options to compute hydraulic conductivity in the presence of ice 
+   ! - No modification of hydraulic conductivity in presence of ice 
+   ! - Correction factor taken from Zhang and Gray (1997). Same as CLASS 3.6
+   ! - Impedance factor taken from SURFEX (Boone et al., 2000)
+   character(len=16) :: soil_ksat_ice    = 'ZHANGGRAY97'
+   namelist /surface_cfgs/ soil_ksat_ice
+   character(len=*), parameter :: SOIL_KSAT_ICE_OPT(3) = (/ &
+        'NONE       ', &
+        'ZHANGGRAY97', &
+        'BOONE2000  ' &
+        /)
+
    !# If .true., SVS1 simulates water ponding at the surface
    logical           :: lwater_ponding_svs1 = .false.
    namelist /surface_cfgs/ lwater_ponding_svs1 
@@ -334,7 +346,22 @@ module sfc_options
    logical           :: svs_dynamic_z0h     = .false.
    namelist /surface_cfgs/ svs_dynamic_z0h 
 
-   
+   !# Exponent in function defining vegetation stress when estimating transpiration
+   !# Transpiration decreases more slowly with soil moisture when svs_gexp is high
+   !# it does not start decreasing until about soil moisture is half way between wilting
+   !# point and field capacity when svs_gexp=10.
+   !# A positive value is expected, but a negative value is used by default to keep this option
+   !# inactive if a value is not provided.
+   !# Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value
+   !# of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when
+   !# the CTEM parameterization is used.
+   !# This behaviour is preserved if the value of the key is less or equal to zero for
+   !# backward compatibility purposes.
+   !# Since this is a bugfix, eventually the default value of the key should be changed
+   !# to a positive value.
+   real              :: svs_gexp = -1.
+   namelist /surface_cfgs/ svs_gexp
+
    !# use hrsurf based on soil texture for SVS if .true.
    logical           :: svs_hrsurf_sltext     = .false.
    namelist /surface_cfgs/ svs_hrsurf_sltext

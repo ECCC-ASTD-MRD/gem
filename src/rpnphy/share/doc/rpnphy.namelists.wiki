@@ -377,6 +377,11 @@ Dry accretion of ice crystals by snow in Sundqvist (factor)
 | 5. || real
 
 |-
+| cond_rhminus ||
+Use time-minus for relative humidity in Sundqvist
+| .false. || logical
+
+|-
 | cond_sgspdf ||
 Distribution of subgrid-scale moisture variance assumed for cloud fraction
 | 'NIL' || character(len=16)
@@ -696,7 +701,7 @@ Vector length physics memory space folding for openMP
 |-
 | pbl_ae ||
 Coefficient controlling strength of TKE diffusion
-| 0.35 || real
+| 0.07 || real
 
 |-
 | pbl_cmu_timeavg ||
@@ -1408,6 +1413,11 @@ Use snow age "XA" to calculate snow albedo if .false.
 | -1. || real
 
 |-
+| soil_ksat_ice ||
+
+| 'ZHANGGRAY97' || character(len=16)
+
+|-
 | soiltext ||
 Soil texture database/calculations for SVS land surface scheme
 * 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)
@@ -1419,6 +1429,23 @@ Soil texture database/calculations for SVS land surface scheme
 | svs_dynamic_z0h ||
 use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true.
 | .false. || logical
+
+|-
+| svs_gexp ||
+Exponent in function defining vegetation stress when estimating transpiration
+Transpiration decreases more slowly with soil moisture when svs_gexp is high
+it does not start decreasing until about soil moisture is half way between wilting
+point and field capacity when svs_gexp=10.
+A positive value is expected, but a negative value is used by default to keep this option
+inactive if a value is not provided.
+Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value
+of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when
+the CTEM parameterization is used.
+This behaviour is preserved if the value of the key is less or equal to zero for
+backward compatibility purposes.
+Since this is a bugfix, eventually the default value of the key should be changed
+to a positive value.
+| -1. || real
 
 |-
 | svs_hrsurf_sltext ||

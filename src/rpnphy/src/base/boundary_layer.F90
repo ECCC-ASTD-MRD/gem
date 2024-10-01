@@ -178,7 +178,7 @@ contains
       call apply_tendencies(zqplus, ztplus, zuplus, zvplus, &
            &                zqdifv, ztdifv, zudifv, zvdifv, &
            &                ztdmaskxdt, ni, nk, nkm1)
-      if (associated(zqcplus) .and. fluvert /= 'RPNINT') &
+      if (associated(zqcplus)) &
            call apply_tendencies(zqcplus, zqcdifv, ztdmaskxdt, ni, nk, nkm1)
       if (diffuw) call apply_tendencies(zwplus, zwdifv, ztdmaskxdt, ni, nk, nkm1)
       

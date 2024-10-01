@@ -350,15 +350,19 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(SKYVIEW ,1,1)), bus(x(VEGTRANS,1,1)),   &   
            bus(x(frootd   ,1,1)), bus(x(acroot ,1,1)), WRMAX, N)
 
-      IF(KOUNT.EQ.1) then
-         DO I=1,N
+      If ( (.not.atm_external) .AND. (kount.EQ.0) ) then
+          ! GEM first timestep
+          ! long-term ... define default value for rcctem in inisurf
+          DO I=1,N
+              STOM_RS(I) = bus(x(RST,I,1))
+          ENDDO
+      else if (atm_external .and. KOUNT.EQ.1) then
+          !SPS first timestep 
+          DO I=1,N
             STOM_RS(I) = bus(x(RST,I,1))
-         ENDDO
-         ! long-term ... define default value for rcctem in inisurf
+          ENDDO
       else
-  
          IF( USE_PHOTO ) THEN
-
             DO I=1,N
                STOM_RS(I) =  bus(x(RCCTEM,I,1))
             END DO
@@ -367,7 +371,6 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                STOM_RS(I) = bus(x(RST,I,1))
             END DO
          ENDIF
-      
       endif
 
 !
@@ -498,7 +501,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                 bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
                 bus(x(psnvha  ,1,1)), bus(x(soilcondz,1,1)), &
                 bus( x(soilhcapz,1,1)), &
-                bus(x(tground, 1,1)), &
+                bus(x(tground, 1,1)), bus(x(tvege,1,1)), &
                 bus(x(wsoil   ,1,1)) , bus(x(isoil   ,1,1)), &
                 bus(x(snoro   ,1,1)) , bus(x(snodpl   ,1,1)), &
                 bus(x(tsnow   ,1,2)) ,  &

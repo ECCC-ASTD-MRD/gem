@@ -235,6 +235,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       real,pointer,dimension(:) ::  zqdiag, ztdiag, ztsurf, ztsrad, zudiag, zvdiag
       real,pointer,dimension(:) ::  zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
       real,pointer,dimension(:) ::  zsnodp
+      real,pointer,dimension(:) ::  zemisr
 
 ! ----* DIAGNOSTIC OUTPUT FIELDS *-------------------------------------
       REAL,DIMENSION(N) :: FSGL, FLGL, HFSL, HEVL, HMFL, HTCL, DRAGL,       &
@@ -340,6 +341,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    ALVS     (1:n) => bus( x(alvis,1,indx_sfc) : )  !Lake average vis. albedo  (inc. ice,snow)
    QSURF    (1:n) => bus( x(qsurf,1,indx_sfc) : )  !Lake average sat. sp. humidity  (inc. ice,snow)
    zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : ) !Lake outflow (kg/m2)
+   zemisr   (1:n) => bus( x(emisr,1,1) : )              !Lake average emissivity
 
 ! Sfc layer variables
    z0h      (1:n) => bus( x(z0t,1,indx_sfc)   : )
@@ -352,7 +354,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    zalfat   (1:n) => bus( x(alfat,1,1)        : )
    zftemp   (1:n) => bus( x(ftemp,1,indx_sfc) : )
    zfvap    (1:n) => bus( x(fvap,1,indx_sfc)  : )
-   ztsurf   (1:n) => bus( x(tsurf,1,1)        : )
+   ztsurf   (1:n) => bus( x(tsurf,1,indx_sfc) : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
    zvdiag   (1:n) => bus( x(vdiag,1,1)        : )
@@ -1240,6 +1242,9 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
           QSURF(I)=FLS(I)*QZEROS(I)+(1.0-FLS(I))*QSURFL(I)
           ALVS(I)=FLS(I)*ALVSSN(I)+(1.0-FLS(I))*ALVSL(I)
           ALIR(I)=FLS(I)*ALIRSN(I)+(1.0-FLS(I))*ALIRL(I)
+!  * Emissivity weighted average of water/ice (0.97) and snow (1.0)
+!    The value of 1.0 for snow is consistent with this version of CLASS
+          ZEMISR(I) = FLS(I) + (1.0-FLS(I))*EMSW
       ENDDO
 !
       DO I=IL1,IL2                                            

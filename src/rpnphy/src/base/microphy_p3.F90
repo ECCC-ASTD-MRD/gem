@@ -11755,21 +11755,30 @@ SUBROUTINE access_lookup_table_coll_3mom_LF(dumzz,dumjj,dumii,dumll,dumj,dumi,in
 !===========================================================================================
 
   ! Compute total water mass
-  function p3_lwc(F_qltot, F_pvars) result(F_istat)
+  function p3_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
     use phymem, only: phyvar
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+    type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+    logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
     integer :: F_istat                                  !Return status
     integer :: ni, nkm1
-    real, dimension(:,:), pointer :: zqcp, zqrp
+    real, dimension(:,:), pointer, contiguous :: zqc, zqr
+    logical :: my_tminus
     F_istat = PHY_ERROR
+    my_tminus = .false.
+    if (present(F_tminus)) my_tminus = F_tminus
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_pvars)
-    MKPTR2Dm1(zqrp, qrplus, F_pvars)
-    F_qltot(:,:) = zqcp(:,:) + zqrp(:,:)
+    if (my_tminus) then
+       MKPTR2Dm1(zqc, qcmoins, F_pvars)
+       MKPTR2Dm1(zqr, qrmoins, F_pvars)
+    else
+       MKPTR2Dm1(zqc, qcplus, F_pvars)
+       MKPTR2Dm1(zqr, qrplus, F_pvars)
+    endif
+    F_qltot(:,:) = zqc(:,:) + zqr(:,:)
     F_istat = PHY_OK
     return
   end function p3_lwc
@@ -11777,27 +11786,38 @@ SUBROUTINE access_lookup_table_coll_3mom_LF(dumzz,dumjj,dumii,dumll,dumj,dumi,in
 !===========================================================================================
 
   ! Compute total ice mass
-  function p3_iwc(F_qitot, F_pvars) result(F_istat)
+  function p3_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
     use phymem, only: phyvar
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+    type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+    logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
     integer :: F_istat                                  !Return status
     integer :: ni, nkm1
-    real, dimension(:,:), pointer :: zqti1p, zqti2p, zqti3p, zqti4p
+    real, dimension(:,:), pointer, contiguous :: zqti1, zqti2, zqti3, zqti4
+    logical :: my_tminus
     F_istat = PHY_ERROR
+    my_tminus = .false.
+    if (present(F_tminus)) my_tminus = F_tminus
     ni = size(F_qitot, dim=1); nkm1 = size(F_qitot, dim=2)
-    MKPTR2Dm1(zqti1p, qti1plus, F_pvars)
-    MKPTR2Dm1(zqti2p, qti2plus, F_pvars)
-    MKPTR2Dm1(zqti3p, qti3plus, F_pvars)
-    MKPTR2Dm1(zqti4p, qti4plus, F_pvars)
+    if (my_tminus) then
+       MKPTR2Dm1(zqti1, qti1moins, F_pvars)
+       MKPTR2Dm1(zqti2, qti2moins, F_pvars)
+       MKPTR2Dm1(zqti3, qti3moins, F_pvars)
+       MKPTR2Dm1(zqti4, qti4moins, F_pvars)
+    else
+       MKPTR2Dm1(zqti1, qti1plus, F_pvars)
+       MKPTR2Dm1(zqti2, qti2plus, F_pvars)
+       MKPTR2Dm1(zqti3, qti3plus, F_pvars)
+       MKPTR2Dm1(zqti4, qti4plus, F_pvars)
+    endif
     F_qitot = 0.
-    if (associated(zqti1p)) F_qitot = F_qitot + zqti1p
-    if (associated(zqti2p)) F_qitot = F_qitot + zqti2p
-    if (associated(zqti3p)) F_qitot = F_qitot + zqti3p
-    if (associated(zqti4p)) F_qitot = F_qitot + zqti4p
+    if (associated(zqti1)) F_qitot = F_qitot + zqti1
+    if (associated(zqti2)) F_qitot = F_qitot + zqti2
+    if (associated(zqti3)) F_qitot = F_qitot + zqti3
+    if (associated(zqti4)) F_qitot = F_qitot + zqti4
     F_istat = PHY_OK
     return
   end function p3_iwc
