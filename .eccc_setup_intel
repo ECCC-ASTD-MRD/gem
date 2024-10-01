@@ -28,7 +28,7 @@ case ${INTEL_SCRIPT_NAME} in
 esac
 
 # Load code-tools 
-. r.load.dot rpn/code-tools/20240514/env/inteloneapi-${COMPILER_VERSION}
+. r.load.dot rpn/code-tools/20240719/env/inteloneapi-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot rpn/libs/20240703-alpha
