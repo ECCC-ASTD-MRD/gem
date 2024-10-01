@@ -50,15 +50,42 @@ module spn_options
    namelist /spn_p/ Spn_trans_shape_S
 
    !# Nudging relaxation timescale - in hours
+   !# Remains constant during the first period defined in
+   !# Spn_relax_periods(1)
    real :: Spn_relax_hours = 10.
    namelist /spn  / Spn_relax_hours
    namelist /spn_p/ Spn_relax_hours
+
+   !# Nudging relaxation timescale after the end of the second period - in hours 
+   !# The second period is given by Spn_relax_periods(2)
+   !# During the period defined by Spn_relax_periods(1) and Spn_relax_periods(2)
+   !# Spn_relax_hours will vary linearly from its initial value to the value
+   !# defined by Spn_relax_hours_end
+   real :: Spn_relax_hours_end = - 1.
+   namelist /spn  / Spn_relax_hours_end
+   namelist /spn_p/ Spn_relax_hours_end
+
+   !# Time periods for time-varying relaxation timescale - in hours
+   real, dimension(2) :: Spn_relax_periods = [120.,240.]
+   namelist /spn  / Spn_relax_periods
+   namelist /spn_p/ Spn_relax_periods
+  
 
    !# The filter will be set to 0. for smaller scales (in km)
    real :: Spn_cutoff_scale_large = 300.
    namelist /spn  / Spn_cutoff_scale_large
    namelist /spn_p/ Spn_cutoff_scale_large
 
+   !# Maximum large-scale filter cutoff (in km)
+   real :: Spn_cutoff_scale_large_max = 300.
+   namelist /spn  / Spn_cutoff_scale_large_max
+   namelist /spn_p/ Spn_cutoff_scale_large_max
+
+   !# Filter cutoff red shift with time (in km/s)
+   real :: Spn_cutoff_scale_rate = 0.
+   namelist /spn  / Spn_cutoff_scale_rate
+   namelist /spn_p/ Spn_cutoff_scale_rate
+   
    !# The filter will be set to 1.0 for larger scales (in km)
    !# Transition between Spn_cutoff_scale_small and Spn_cutoff_scale_large
    !# will have a COS2 shape.
@@ -87,11 +114,55 @@ module spn_options
    namelist /spn  / Spn_wt_pwr
    namelist /spn_p/ Spn_wt_pwr
 
+   !# Skipping application of nudging when nudging weight is below a threshold
+   !# defined with Spn_skip_threshold
+   logical :: Spn_wt_skip_L = .false.
+   namelist /spn  / Spn_wt_skip_L
+   namelist /spn_p/ Spn_wt_skip_L
+
+   !# The threshold value below which application of nudging will be skipped
+   real :: Spn_skip_threshold = 0.01
+   namelist /spn  / Spn_skip_threshold
+   namelist /spn_p/ Spn_skip_threshold
+
+   !# Spectral nudging is not applied beyond this lead time (in hours)
+   real :: Spn_end_hour = -10.0
+   namelist /spn  / Spn_end_hour
+   namelist /spn_p/ Spn_end_hour
+
    !# Availability interval of nudging data for Global Yin-Yang - in sec
    !# Driving(nudging) data is available every Spn_yy_nudge_data_freq sec
    integer :: Spn_yy_nudge_data_freq = -1
    namelist /spn  / Spn_yy_nudge_data_freq
    namelist /spn_p/ Spn_yy_nudge_data_freq
+
+   !# Type of time interpolation of the nudging data
+   !# * 'linear'
+   !# * 'nearest'
+   !# * 'near-cst-p': nearest but consider v-coor to have constant-pressure (vert interpolation only at read time)
+   character(len=32) :: Spn_yy_nudge_data_tint = 'linear'
+   namelist /spn  / Spn_yy_nudge_data_tint
+   namelist /spn_p/ Spn_yy_nudge_data_tint
+   character(len=32), parameter :: Spn_yy_nudge_data_tint_opt(3) = (/ &
+        'linear    ', &
+        'nearest   ', &
+        'near-cst-p' &
+        /)
+  
+   !# Print stats of read fields
+   logical :: Spn_yy_nudge_data_stats_L = .false.
+   namelist /spn  / Spn_yy_nudge_data_stats_L
+   namelist /spn_p/ Spn_yy_nudge_data_stats_L
+
+   !# Nudging specific temperature (.true. or .false.).
+   logical :: Spn_nudge_TT_L = .true.
+   namelist /spn  / Spn_nudge_TT_L
+   namelist /spn_p/ Spn_nudge_TT_L
+
+   !# Nudging specific Hor winds (.true. or .false.).
+   logical :: Spn_nudge_UV_L = .true.
+   namelist /spn  / Spn_nudge_UV_L
+   namelist /spn_p/ Spn_nudge_UV_L   
 
    !# Nudging specific humidity (.true. or .false.).
    logical :: Spn_nudge_HU_L = .false.
@@ -105,6 +176,8 @@ module spn_options
    integer :: Spn_22pil_w, Spn_22pil_e, Spn_interval, Spn_ws
    integer :: Spn_njnh,Spn_nk12,Spn_ni22
    real :: Spn_weight
+   !real(kind=REAL64) :: Spn_relax_time
+   real:: Spn_relax_time
    real, dimension(:), allocatable :: prof
    real(kind=REAL64) , dimension(:,:  ), allocatable :: Spn_flt
    real(kind=REAL64) , dimension(:,:,:), allocatable :: Spn_fft,&
@@ -115,6 +188,7 @@ contains
 !**s/r spn_nml - Read namelist spn
 
       integer function spn_nml (F_unf)
+      use clib_itf_mod, only: clib_tolower
       use lun
       implicit none
 #include <arch_specific.hf>
@@ -123,6 +197,7 @@ contains
 
       character(len=64) :: nml_S
       logical nml_must
+      integer :: istat
 !
 !-------------------------------------------------------------------
 !
@@ -150,9 +225,16 @@ contains
  1003 if (Lun_out >= 0) write (Lun_out, 6007) trim(nml_S)
 
  1000 if (spn_nml < 0 ) return
+      
+      istat = clib_tolower(Spn_yy_nudge_data_tint)
+      if (.not.any(Spn_yy_nudge_data_tint == Spn_yy_nudge_data_tint_opt)) then
+         if (Lun_out >= 0) write (Lun_out, *) "SPN namelist Spn_yy_nudge_data_tint - invalid value"
+         return
+      endif
+
       if ((Lun_out>=0).and.(spn_nml==0)) write (Lun_out, 6004) trim(nml_S)
       spn_nml= 1
-
+      
  6002 format (' Skipping reading of namelist ',A)
  6004 format (' Reading of namelist ',A,' is successful')
  6005 format (' Namelist ',A,' NOT AVAILABLE')

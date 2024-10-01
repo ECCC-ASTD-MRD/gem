@@ -15,7 +15,7 @@
 
 !*s/r spn_calfiltre - compute a filter for spectral nudging
 
-      subroutine spn_calfiltre
+      subroutine spn_calfiltre(F_step)
       use dcst
       use glb_ld
       use glb_pil
@@ -23,31 +23,40 @@
       use spn_options
       use tdpack
       use lun
+      use cstv
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
+      integer :: F_step
+      
       integer i,j,il,jl
       integer ni_trunc, ni_truncx, nj_trunc
       real(kind=REAL64) nix, njx, nkx, nk_cut
-      real(kind=REAL64) WXL, WXS, DX, DY
+      real(kind=REAL64) WXL, WXS, DX, DY, scaleadj, scaledel
 !
 !----------------------------------------------------------------------
 !
       DX = Grd_dx*pi_8*Dcst_rayt_8/(180.*1000.)
       DY = Grd_dy*pi_8*Dcst_rayt_8/(180.*1000.)
-      WXL= Spn_cutoff_scale_large
-      WXS= Spn_cutoff_scale_small
+      scaledel = max(Spn_cutoff_scale_large_max - Spn_cutoff_scale_large, 0.)
+      scaleadj = min( max(F_step*Cstv_dt_8*Spn_cutoff_scale_rate, 0D0), scaledel)
+      WXL= Spn_cutoff_scale_large + scaleadj
+      WXS= Spn_cutoff_scale_small + scaleadj
 
       if (Lun_out > 0) write(Lun_out,1000) WXL,WXS
 
       ni_trunc = int(DX*(G_ni-2*Grd_extension)/WXL)
       nj_trunc = int(DY*(G_nj-2*Grd_extension)/WXL)
       ni_truncx= int(DX*(G_ni-2*Grd_extension)/WXS)
+      
+      if (ni_trunc==0 .or. nj_trunc==0) then
+         if (Lun_out > 0) write(Lun_out,1001)
+         stop
+      end if
 
       nk_cut = float(ni_truncx)/float(ni_trunc)
 
-      allocate (Spn_flt(Spn_22n,G_nj))
       Spn_flt= 0.
       do j=1+Grd_extension,G_nj-Grd_extension
          jl= j-Grd_extension-1
@@ -67,6 +76,8 @@
       end do
       
  1000 format(/' Spn_calfiltre, Large,Small cutoff_scales= ',2f7.2)
+ 1001 format(/' Spn_calfiltre: Error!! Filter configuration leads to 0 wavenumber for truncation. Check Spn_cutoff_scale_large' )
+
 !
 !----------------------------------------------------------------------
 !
