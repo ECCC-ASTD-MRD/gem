@@ -10,6 +10,11 @@ endif()
 
 add_executable(maingemdm maingemdm.F90)
 
+if (${CMAKE_BUILD_TYPE} MATCHES Debug )
+  # Debug: generate linker map file
+  target_link_options(maingemdm PRIVATE "-Wl,-Map=maingemdm.map")
+endif()
+
 target_compile_definitions(maingemdm PUBLIC
   dyn_VERSION="${dyn_VERSION}"
   modelutils_VERSION="${modelutils_VERSION}"
