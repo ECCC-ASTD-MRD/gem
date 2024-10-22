@@ -646,3 +646,9 @@ rm:  physics_cfgs/advecqtbl
 #New:  physics_cfgs/cond_sgspdf
 #New:  physics_cfgs/pbl_ae
 #New:  physics_cfgs/pbl_progvar
+
+#------
+fileVersion: 6.3.0-a9 > 6.3.0-a10
+#New:  physics_cfgs/cond_rhminus
+#New:  surface_cfgs/soil_ksat_ice
+#New:  surface_cfgs/svs_gexp

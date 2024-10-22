@@ -26,7 +26,7 @@ module pbl_mtke_utils
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine baktotq(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,sw,ps,gztherm,tif,fice,&
+  subroutine baktotq(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,st,ps,gztherm,tif,fice,&
        tve,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg,mrk2, &
        vcoef,pblsigs,pblq1,tau,n,nk)
     use tdpack_const, only: CPD, CAPPA, CHLC, CHLF
@@ -41,8 +41,8 @@ contains
     real, dimension(n,nk), intent(in) :: thl             !liquid water potential temperature (K; theta_l)
     real, dimension(n,nk), intent(in) :: qw              !total water mixing ratio (kg/kg; q_tot)
     real, dimension(n,nk), intent(in) :: qc              !PBL cloud water content (kg/kg)
-    real, dimension(n,nk), intent(in) :: s               !sigma for full levels
-    real, dimension(n,nk), intent(in) :: sw              !sigma for working levels
+    real, dimension(n,nk), intent(in) :: s               !sigma for momentum levels
+    real, dimension(n,nk), intent(in) :: st              !sigma for thermo levels
     real, dimension(n),    intent(in) :: ps              !surface pressure (Pa)
     real, dimension(n,nk), intent(in) :: gztherm         !height of thermodynamic levels (m)
     real, dimension(n,nk), intent(in) :: tif             !temperature used for ice fraction (K)
@@ -108,12 +108,12 @@ contains
     TAUINV = 1./TAU
 
     ! Update conserved variables following diffusion
-    exner = sw**CAPPA
+    exner = st**CAPPA
     thl_star = thl + tau*dthl
     qw_star = qw + tau*dqw
 
     ! Compute thermodynamic coefficients from conserved variables
-    call thermco(unused,unused,unused,sw,ps,tif,fice,fnn,thl_star,qw_star,acoef,bcoef,ccoef,alpha,beta,&
+    call thermco(unused,unused,unused,st,ps,tif,fice,fnn,thl_star,qw_star,acoef,bcoef,ccoef,alpha,beta,&
          IMPLICIT_CLOUD,COMPUTE_FROM_STATE,n,nk)
 
     ! Retrive updated cloud water content (qcp) from conserved variables
@@ -135,7 +135,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine blcloud(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
        wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz,&
-       hpar,frv,z0m,fb_surf,gzmom,ze,s,sw,ps,dudz2,ri,&
+       hpar,frv,z0m,fb_surf,gzmom,ze,s,st,ps,dudz2,ri,&
        dthv,tau,vcoef,n,nk,ncld)
     use tdpack_const, only: DELTA, GRAV, RGASD
     use phy_options
@@ -161,8 +161,8 @@ contains
     real, dimension(n), intent(in) :: fb_surf            !surface buoyancy flux
     real, dimension(n,nk), intent(in) :: gzmom           !height of momentum levels (m)
     real, dimension(n,nk), intent(in) :: ze              !height of e-levs (m)
-    real, dimension(n,nk), intent(in) :: s               !sigma for full levels
-    real, dimension(n,nk), intent(in) :: sw              !sigma for working levels
+    real, dimension(n,nk), intent(in) :: s               !sigma for momentum levels
+    real, dimension(n,nk), intent(in) :: st              !sigma for thermo levels
     real, dimension(n), intent(in) :: ps                 !surface pressure (Pa)
     real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation
     real, dimension(n), intent(inout) :: hpar            !height of parcel ascent (m)
@@ -223,7 +223,7 @@ contains
     call ficemxp(ficelocal,unused,unused,t,n,nk)
 
     ! Compute thermodynamic coefficients following Bechtold and Siebsma (JAS 1998)
-    call thermco(t,qv,qc,sw,ps,t,ficelocal,fnn,thl,qw,a,b,c,alpha,beta, &
+    call thermco(t,qv,qc,st,ps,t,ficelocal,fnn,thl,qw,a,b,c,alpha,beta, &
          IMPLICIT_CLOUD,COMPUTE_FROM_CONSERVED,n,nk)
 
     ! Compute layer thicknesses
@@ -290,7 +290,7 @@ contains
   end subroutine blcloud
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine thermco(t,qv,qc,sw,ps,tif,fice,fnn,thl,qw,acoef,bcoef,ccoef,alpha,beta, &
+  subroutine thermco(t,qv,qc,st,ps,tif,fice,fnn,thl,qw,acoef,bcoef,ccoef,alpha,beta, &
        type,inmode,n,nk)
     use tdpack
     use pbl_utils, only: ficemxp
@@ -305,7 +305,7 @@ contains
     real, dimension(n,nk), intent(in) :: t               !dry air temperature (K)
     real, dimension(n,nk), intent(in) :: qv              !specific humidity (kg/kg)
     real, dimension(n,nk), intent(in) :: qc              !PBL cloud water content (kg/kg)
-    real, dimension(n,nk), intent(in) :: sw              !sigma for working levels
+    real, dimension(n,nk), intent(in) :: st              !sigma for thermo levels
     real, dimension(n), intent(in) :: ps                 !surface pressure (Pa)
     real, dimension(n,nk), intent(in) :: tif             !temperature used for ice fraction (K)
     real, dimension(n,nk), intent(in) :: fice            !ice fraction
@@ -346,8 +346,8 @@ contains
 
     ! Precompute pressure and Exner function
     do k=1,nk
-       pres(:,k) = sw(:,k)*ps
-       exner(:,k) = sw(:,k)**CAPPA
+       pres(:,k) = st(:,k)*ps
+       exner(:,k) = st(:,k)**CAPPA
     enddo
     ffice = fice
 

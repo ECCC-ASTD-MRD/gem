@@ -1,42 +1,53 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
-
-module microphy_consun
-  use phymem, only: phyvar
+module microphy_s2
   implicit none
   private
 
   ! Public procedures
-  public :: consun              !Condensation scheme
-  public :: consun_phybusinit   !Define bus requirements
-  public :: consun_lwc          !Compute liquid water content
-  public :: consun_iwc          !Compute ice water content
-  
+  public :: s2                  !Microphysics scheme
+  public :: s2_phybusinit       !Define bus requirements
+  public :: s2_lwc              !Compute liquid water content
+  public :: s2_iwc              !Compute ice water content
+
 #include "phymkptr.hf"
 
 contains
 
-  subroutine consun(stt, sqt, swt, srr, ssr, scf, rhc, &
+!!$  subroutine s2_(F_dtt, F_dhu, F_dqc, F_tt, F_hu, F_qc, F_fn, &
+!!$       F_sigt, F_ps, F_rainrate, F_snowrate, F_prflux, F_iceflux, &
+!!$       F_mrk2, F_tau, F_ni, F_nkm1)
+!!$    use ens_perturb, only: ens_nc2d
+!!$
+!!$    ! Input arguments
+!!$    integer, intent(in) :: F_ni                                 !horizontal dimension
+!!$    integer, intent(in) :: F_nkm1                               !vertical dimension
+!!$    real, intent(in) :: F_tau                                   !time step (s)
+!!$    real, dimension(F_ni,F_nkm1), intent(in) :: F_tt            !dry air temperature (K)
+!!$    real, dimension(F_ni,F_nkm1), intent(in) :: F_hu            !specific humidity (kg/kg)
+!!$    real, dimension(F_ni,F_nkm1), intent(in) :: F_qc            !condensate specific mass (kg/kg)
+!!$    real, dimension(F_ni,F_nkm1), intent(in) :: F_fn            !cloud fraction
+!!$    real, dimension(F_ni,F_nkm1), intent(in) :: F_sigt          !sigma for thermo levels
+!!$    real, dimension(F_ni), intent(in) :: F_ps                   !surface pressure (Pa)
+!!$    real, dimension(F_ni,ens_nc2d), intent(in) :: F_mrk2        !Markov chains for stochastic parameters
+!!$    
+!!$    ! Output arguments
+!!$    real, dimension(F_ni,F_nkm1), intent(out) :: F_dtt          !temperature tendency (K/s)
+!!$    real, dimension(F_ni,F_nkm1), intent(out) :: F_dhu          !humidity tendency (kg/kg/s)
+!!$    real, dimension(F_ni,F_nkm1), intent(out) :: F_dqc          !condensate tendency (kg/kg/s)
+!!$    real, dimension(F_ni), intent(out) :: F_rainrate            !rainfall rate 
+!!$    real, dimension(F_ni), intent(out) :: F_snowrate            !snowfall rate
+!!$    real, dimension(F_ni,F_nkm1), intent(out) :: F_prflux       !total precipitation flux (kg/kg/s/m2)
+!!$    real, dimension(F_ni,F_nkm1), intent(out) :: F_iceflux      !solid precipitation flux (kg/kg/s/m2)
+!!$    ! ******* vars passed in at time-minus *****************
+
+
+  subroutine s2(stt, sqt, swt, srr, ssr, scf, rhc, &
        tp, tm, qp, qm, cwp, cwm, &
        psp, psm, s, tau, &
        prflx, swflx, f12, fevp, icefrac, &
-       pblsigs, mrk2, ni, nlev)
+       mrk2, ni, nlev)
     use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, PI, foqst, fodqs
     use phy_options, only: cond_evap, cond_hmrst, cond_hu0max, cond_hu0min, cond_iceacc, &
-         cond_sgspdf, cond_drhc, cond_rhminus
+         cond_sgspdf, cond_drhc
     use ens_perturb, only: ens_nc2d, ens_spp_get
     implicit none
 !!!#include <arch_specific.hf>
@@ -51,8 +62,7 @@ contains
          psp(ni)         , psm(ni)         , &
          s(ni,*)         , rhc(ni,nlev)    , &
          tau             , f12(ni,nlev)    , fevp(ni,nlev), &
-         icefrac(ni,nlev), mrk2(ni,ens_nc2d), &
-         pblsigs(ni,nlev)
+         icefrac(ni,nlev), mrk2(ni,ens_nc2d)
 
     !@Authors Claude Girard and Gerard Pellerin (1995)
     !@Revision
@@ -272,51 +282,6 @@ contains
        enddo
     enddo
 
-    ! SUNQVIST stratiform condensation scheme
-    ! ------------------------------------------------------------
-
-    ! A) PARAMATER VALUES IN SI UNITS
-
-    HU0MIN(:) = ens_spp_get('hu0min', mrk2, default=cond_hu0min)
-    HU0MAX(:) = ens_spp_get('hu0max', mrk2, default=cond_hu0max)
-    SIGMIN = 0.7
-    SIGMAX = 0.9
-    XBHU(:) = ( HU0MAX(:) - HU0MIN(:) ) / ( SIGMAX - SIGMIN )
-    do jk=1,nlev
-       do il=1,ni
-          ! Set basic profile of rhcrit
-          rhcrit(il,jk) = HU0MIN(il) + XBHU(il) * ( S(il,jk) - SIGMIN )
-          rhcrit(il,jk) = max(HU0MIN(il), min(HU0MAX(il), rhcrit(il,jk)))
-          ! Adjust rhcrit for cold temperatures
-          x = 1.+ 0.15 * max( 0., 238. - TM(il,jk) )
-          x = ( HU0MAX(il) - rhcrit(il,jk) ) * ( 1. - 1. / x )
-          rhcrit(il,jk)= min(rhcrit(il,jk) + x, HU0MAX(il))
-          x = 1. !apply variance-based RHc for full column
-          if (cond_sgspdf == 'TRIANGULAR') then
-             xwrk = max(1. - sqrt(6.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
-          elseif (cond_sgspdf == 'UNIFORM') then
-             xwrk = max(1. - sqrt(3.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
-          else
-             x = 0.  !do not use PBL SGS variance estimate 
-          endif
-          rhcrit(il,jk) = min(x * xwrk + (1. - x) * rhcrit(il,jk), 0.999)
-       enddo
-    enddo
-
-    ! Compute change in critical relative humidity for condensation
-    if (minval(rhc) >= 0. .and. cond_drhc) then
-       do il=1,ni
-          do jk=1,nlev
-             DRHC(il,jk) = (rhcrit(il,jk) - rhc(il,jk)) * rTAU
-             rhc(il,jk) = rhcrit(il,jk)
-          enddo
-       enddo
-    else
-       DRHC(:,:) = 0.
-       rhc(:,:) = rhcrit(:,:)
-    endif
-    xo = 1.e-12
-
     ! SUNQVIST cloud water and precipitation scheme
     ! ------------------------------------------------------------
 
@@ -350,121 +315,23 @@ contains
 
     DO_JK: do jk = 1, nlev
 
-       DO_IL1: do il = 1, ni
-
-          PRESP(il,jk)=S(il,jk)*PSP(il)
-          PRESM(il,jk)=S(il,jk)*PSM(il)
-          HQSAT(il,jk) = foqst(TM(il,jk),PRESM(il,jk))
-          HQSATP(il,jk) = foqst(TP(il,jk),PRESP(il,jk))
-          HLDCP(il) = exp(-(((max(TM(il,jk),tci)-tci)/tscale)**2))
-
-          xwrk= max(((apri*(HLDCP(il)-1.0))+1.0),0.0)
-          HLDCP(il)=(CHLC + (CHLF * xwrk))/CPD
-          xprbt(il)=xwrk
-          temp1 = HQSAT(il,jk)
-          temp2 = TM(il,jk)
-          HSQ= FODQS( temp1 , temp2 )
-
-          HSQ2 = - HQSAT(il,jk) * ( 1. + DELTA * HQSAT(il,jk) )
-          if (cond_rhminus) then
-             HU= QM(il,jk)/HQSAT(il,jk)
-          else
-             HU= QP(il,jk)/HQSATP(il,jk)
-          endif
-          HU = amin1( HU, 1. )
-          HU = amax1( HU, 0. )
-
-          ! Diagnose cloud fraction and PDF-dependent SCF-based parameters (A and B)        
-          if (cond_sgspdf == 'TRIANGULAR') then
-             if (HU <= rhcrit(il,jk)) then
-                SCF(il,jk) = 0.
-             elseif (HU < (5. + rhcrit(il,jk)) / 6.) then
-                xwrk = acos(3./(2.*sqrt(2.)) * (HU-rhcrit(il,jk))/(1.-rhcrit(il,jk)))
-                SCF(il,jk) = 4.*cos(PI/3. + xwrk/3.)**2
-                
-             else
-                SCF(il,jk) = 1. - (3./sqrt(2.) * (1.-HU)/(1.-rhcrit(il,jk)))**(2./3.)
-             endif
-             SCF(il,jk) = max(SCF(il,jk) , 0.)
-             if (SCF(il,jk) < 0.5) then
-                XADIST = 1. - sqrt(2.)/3. * (3.-SCF(il,jk)) * sqrt(SCF(il,jk))
-                XBDIST = (1. - rhcrit(il,jk)) * sqrt(2.)/2. * (1.-SCF(il,jk)) * sqrt(SCF(il,jk))
-             else
-                XADIST = sqrt(2.)/3. * (1.-SCF(il,jk))**1.5
-                XBDIST = SCF(il,jk) * (1.-rhcrit(il,jk)) * sqrt(2.)/2. * sqrt(1.-SCF(il,jk))
-             endif
-          else
-             SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-rhcrit(il,jk)) )
-             SCF(il,jk) = max(SCF(il,jk) , 0.)
-             XADIST = (1.-SCF(il,jk))**2
-             XBDIST = SCF(il,jk) * (2. * (1.-rhcrit(il,jk)) * (1.-SCF(il,jk)))
-          endif
-          
-          ! Full evaporation of any existing condensate when there are no clouds
-          if( SCF(il,jk) .eq. 0. ) then
-             HCONDt = - CWP(il,jk) * rTAU
-          else
-             HCONDt = 0.
-          endif
-
-          ! Closure-based estimate of ratio between accession and moistening (k),
-          ! noting important limits for b=0 (km=1, kc=0) and b=1 (km=0, kc=0)
-          XN = (SCF(il,jk) * (HQSAT(il,jk) * XBDIST + CWM(il,jk)) + xo)
-          XKM = (SCF(il,jk) * (HQSAT(il,jk) * XBDIST - xo) + xo) / XN
-          XKC = (SCF(il,jk) * (HQSAT(il,jk) * CWM(il,jk) * XADIST)) / XN
-
-          ! Compute accessions
-          QM(il,jk) = min( QM(il,jk) , HQSAT(il,jk) )
-          HDTAD(il) = ( TP(il,jk) - TM(il,jk) ) * rTAU
-          HDQAD= ( QP(il,jk) - QM(il,jk) ) * rTAU
-          HDCWAD(il) = ( CWP(il,jk) - CWM(il,jk) ) * rTAU
-          HDPAD = ( PSP(il) - PSM(il) ) / HPS(il) * rTAU
-          HDQSAD = HSQ * HDTAD(il) + HSQ2 * HDPAD
-          HDQSAD = max( HDQSAD, - HQSAT(il,jk) * rTAU )
-          HACCES = ( HDQAD - HU* HDQSAD )
-          HCIMP(il) = 1. / ( 1. + HLDCP(il) * HSQ )
-          HDQMX(il) = ( ( QM(il,jk) - HQSAT(il,jk) ) * rTAU &
-               +  HDQAD- HDQSAD ) * HCIMP(il)
-          
-          ! Compute condensation
-          XCOND = ((1. - XKM * (1. - SCF(il,jk))) * HACCES - XKC * DRHC(il,jk)) / &
-               ( 1. + HU * HLDCP(il)*HSQ )
-          XCOND = amax1( XCOND , - CWP(il,jk) * rTAU )
-
-          ! Add to forced condensate evaporation for total condensation
-          HCONDt = HCONDt + XCOND
-          
-          ! ------------------------------------------------------------
-          ! CORRECT THE above CALCULATIONS OF NET CONDENSATION
-          ! a) IN CASES OF RESIDUAL SUPER-SATURATION (because, in cloudy
-          !    cases, moistening/cond. may have been over/under-estimated
-          !    or super-saturation was present initially)
-          ! b) FOR diagnosed (b=0) CLEAR SITUATION LEADING eventually
-          !    TO SUPER-SATURATION
-          ! ------------------------------------------------------------
-
-          QINCR = HDQMX(il) - HCONDt
-
-          XCOND = amax1( QINCR, 0.0 )
-
-          HCOND(il) = HCONDt + XCOND
-
-          HDPMX(il) = amax1 ( 0. , - QINCR ) * DPRG(il,jk)
-
-       enddo DO_IL1
-
        !-----------------------------------------------------------------------
        ! D) CALCULATIONS
 
        DO_IL2: do il = 1, ni
+          
+          HLDCP(il) = exp(-(((max(TM(il,jk),tci)-tci)/tscale)**2))
+          xwrk = max(((apri*(HLDCP(il)-1.0))+1.0),0.0)
+          HLDCP(il) = (CHLC + (CHLF * xwrk))/CPD
+          PRESM(il,jk) = S(il,jk)*PSM(il)
+          HQSAT(il,jk) = foqst(TM(il,jk),PRESM(il,jk))
+          HSQ = FODQS( HQSAT(il,jk) , TM(il,jk) )
+          HCIMP(il) = 1. / ( 1. + HLDCP(il) * HSQ )
 
           HELDR = HEDR * CPD * HLDCP(il)
           xdet(il) = exp(HELDR*(T0I - 1. / TM(il,jk)))
           xdet1(il) = exp(HEDLDR*(T0I - 1. / TM(il,jk)))
 
-          CONET = amax1( 0. , HSCT(il) / DPRG(il,jk) )
-          HSCT(il) = HSCT(il)+(0.-CONET)*DPRG(il,jk)
-          CONETt(il) = HCOND(il) + CONET/HLDCP(il)
           PRCP = PRCPST(il)
           SNOW = STSNOW(il) 
           COVER = SCF(il,jk) + 1.E-2 
@@ -507,20 +374,19 @@ contains
           HFRCOA = temp1 * HFRCOA + ( 1.- temp1 ) * ICEACC(il)
 
           ! ------------------------------------------------------------
-          ! Fixed part of the equation normalized by 2.*b*Mr
+          ! Fixed part of the equation normalized by b*Mr
 
-          XFIXt(il) = ( CWM(il,jk) + TAU * &
-               (HDCWAD(il) + CONETt(il)))/( HBMRXt(il) )
+          XFIXt(il) = CWP(il,jk) / HBMRXt(il)
 
           ! ------------------------------------------------------------
-          ! Conversion rate times 2*dt
+          ! Conversion rate times dt
 
           COEFt(il) = COEF * HFRCOA * TAU
 
           ! ------------------------------------------------------------
           ! First guess YM is M(t-dt) normalized by b*Mr
 
-          YMt(il) = CWM(il,jk) / HBMRXt(il)
+          YMt(il) = CWP(il,jk) / HBMRXt(il)
 
        enddo DO_IL2
 
@@ -553,16 +419,13 @@ contains
 
           ZDCW = ( ZCWP - CWP(il,jk) ) * rTAU
 
-          XPRADD = DPRG(il,jk) * amax1( CONETt(il) - ZDCW , 0. )
-
-          ! we make sure that no infinitesimal precipitation is generated
-          if (abs(conett(il)-zdcw).le.abs(spacing(zdcw))) xpradd = 0.
+          XPRADD = DPRG(il,jk) * max(-ZDCW , 0.)
 
           SWT(il,jk) = ZDCW
 
           ! Diagnostics for AURAMS
 
-          F12(il,jk) = amax1( CONETt(il) - ZDCW , 0. )
+          F12(il,jk) = amax1( -ZDCW , 0. )
           if (ZCWP.lt.1.0e-09) F12(il,jk)=0.0
           ICEFRAC(il,jk) = max(((apri*(xdet(il)-1.0))+1.0),0.0)
 
@@ -575,8 +438,7 @@ contains
 
           XB = SCF(il,jk)
           XBB = COVBAR(il)
-          XDT = TM(il,jk) - TRPL &
-               + TAU * ( HDTAD(il) + HLDCP(il) * CONETt(il) )
+          XDT = TP(il,jk) - TRPL
           XDT = amax1( XDT , 0. )
           DSNMAX = XDT * DPRG(il,jk) / ( TAU * HDLDCP )
           XN = HKMELT * ( TAU * HDLDCP )
@@ -601,7 +463,7 @@ contains
           PRCP = PRCPST(il)
           XN = STPEVP(il) * TAU / HCIMP(il)
           x = amax1( PRCP , 1.E-16 )
-          x = sqrt ( x )
+          x = sqrt ( x )          
           y = 0.5 * XN * HDPMX(il) / x
           y = XBB * y / ( z + 0.5 * XN * x )
           y = amin1( y , 1. )
@@ -621,8 +483,8 @@ contains
           ! TEMPERATURE AND MOISTURE TENDENCIES, PRECIPITATION FLUXES
           ! ------------------------------------------------------------
 
-          STT(il,jk) = - DTMELT + HCOND(il) * HLDCP(il)
-          SQT(il,jk) = - HCOND(il)
+          STT(il,jk) = - DTMELT
+          SQT(il,jk) = 0.
 
           PRFLX(il,jk+1) =  PRCPST(il)
           SWFLX(il,jk+1) =  STSNOW(il)
@@ -649,51 +511,29 @@ contains
 
     !-----------------------------------------------------------------------
     return
-  end subroutine consun
+  end subroutine s2
 
-  ! External diagnostic liquid-solid partitioning
-  function consun_ice_partition(F_tt, F_qc, F_qliqs, F_qices) result(F_istat)
-    use phy_status, only: PHY_OK
-    use tdpack, only: TCDK
-    ! Compute fractional ice content (Rockel et al. Beitr. Atmos. Phy. 1991)
-    implicit none
-    real, dimension(:,:), intent(in) :: F_tt                  !Dry air temperature (K)
-    real, dimension(:,:), intent(in) :: F_qc                  !Specific total condensate (kg/kg)
-    real, dimension(:,:), intent(out), optional :: F_qliqs    !Liquid condensate (kg/kg)
-    real, dimension(:,:), intent(out), optional :: F_qices    !Solid condensate (kg/kg)
-    integer :: F_istat                                        !Return status
-    real, dimension(size(F_tt,dim=1),size(F_tt,dim=2)) :: wfrac
-    F_istat = PHY_OK
-    where (F_tt(:,:) >= TCDK)
-       wfrac(:,:) = 1.
-    elsewhere
-       wfrac(:,:) = 0.0059 + 0.9941*exp(-0.003102*(F_tt(:,:)-TCDK)**2)
-    endwhere
-    where (wfrac(:,:) < 0.01) wfrac(:,:) = 0.
-    if (present(F_qices)) F_qices = (1.-wfrac) * F_qc
-    if (present(F_qliqs)) F_qliqs = wfrac * F_qc
-    ! End of subprogram
-    return
-  end function consun_ice_partition
-  
-  ! Define bus requirements
-  function consun_phybusinit() result(F_istat)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function s2_phybusinit() result(F_istat)
+    ! Define bus requirements
     use phy_status, only: PHY_OK, PHY_ERROR
     use bus_builder, only: bb_request
     implicit none
-    integer :: F_istat                          !Function return status
+    integer :: F_istat                                  !Function return status
     F_istat = PHY_ERROR
     if (bb_request('CLOUD_MASS') /= PHY_OK) then
-       call physeterror('microphy_consun::consun_phybusinit', &
+       call physeterror('microphy_s2::s2_phybusinit', &
             'Cannot construct bus request list')
        return
     endif
     F_istat = PHY_OK
     return
-  end function consun_phybusinit
+  end function s2_phybusinit
 
-  ! Compute total water mass
-  function consun_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! Compute total water mass
+  function s2_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
+    use phymem, only: phyvar
     use phybusidx
     use phy_status, only: PHY_ERROR
     implicit none
@@ -715,12 +555,14 @@ contains
        MKPTR2Dm1(zqc, qcplus, F_pvars)
        MKPTR2Dm1(zt, tplus, F_pvars)
     endif
-    F_istat = consun_ice_partition(zt, zqc, F_qliqs=F_qltot)
+    F_istat = s2_ice_partition(zt, zqc, F_qliqs=F_qltot)
     return
-  end function consun_lwc
+  end function s2_lwc
   
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Compute total ice mass
-  function consun_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
+  function s2_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
+    use phymem, only: phyvar
     use phybusidx
     use phy_status, only: PHY_ERROR
     implicit none
@@ -742,8 +584,34 @@ contains
        MKPTR2Dm1(zqc, qcplus, F_pvars)
        MKPTR2Dm1(zt, tplus, F_pvars)
     endif
-    F_istat = consun_ice_partition(zt, zqc, F_qices=F_qitot)
+    F_istat = s2_ice_partition(zt, zqc, F_qices=F_qitot)
     return
-  end function consun_iwc
-  
-end module microphy_consun
+  end function s2_iwc
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function s2_ice_partition(F_tt, F_qc, F_qliqs, F_qices) result(F_istat)
+    ! Internal diagnostic liquid-solid partitioning
+    use phy_status, only: PHY_OK
+    use tdpack, only: TCDK
+    ! Compute fractional ice content (Rockel et al. Beitr. Atmos. Phy. 1991)
+    implicit none
+    real, dimension(:,:), intent(in) :: F_tt                  !Dry air temperature (K)
+    real, dimension(:,:), intent(in) :: F_qc                  !Specific total condensate (kg/kg)
+    real, dimension(:,:), intent(out), optional :: F_qliqs    !Liquid condensate (kg/kg)
+    real, dimension(:,:), intent(out), optional :: F_qices    !Solid condensate (kg/kg)
+    integer :: F_istat                                        !Return status
+    real, dimension(size(F_tt,dim=1),size(F_tt,dim=2)) :: wfrac
+    F_istat = PHY_OK
+    where (F_tt(:,:) >= TCDK)
+       wfrac(:,:) = 1.
+    elsewhere
+       wfrac(:,:) = 0.0059 + 0.9941*exp(-0.003102*(F_tt(:,:)-TCDK)**2)
+    endwhere
+    where (wfrac(:,:) < 0.01) wfrac(:,:) = 0.
+    if (present(F_qices)) F_qices = (1.-wfrac) * F_qc
+    if (present(F_qliqs)) F_qliqs = wfrac * F_qc
+    ! End of subprogram
+    return
+  end function s2_ice_partition
+
+end module microphy_s2

@@ -463,6 +463,7 @@ contains
          enddo
       endif
 
+      ! Diagnostic precipitation types
       if (pcptype == 'NIL' .or. & 
            (pcptype == 'BOURGE' .and. .not.mpdiag_for_sfc)) then
          tmp1d = 0.
