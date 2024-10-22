@@ -23,6 +23,7 @@
       use glb_pil
       use HORgrid_options
       use ldnh
+      use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -85,7 +86,7 @@
 
       do k= 2, G_nk
          F_ft1(1:l_ni,1:l_nj,k)= F_ft1(1:l_ni,1:l_nj,k) + &
-                prof(k)*Spn_wrk(1:l_ni,1:l_nj,k)*Spn_weight
+                prof(k)*Spn_relax_time*Spn_wrk(1:l_ni,1:l_nj,k)*Spn_weight
       end do
 
 !

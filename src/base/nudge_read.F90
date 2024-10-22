@@ -34,18 +34,12 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
    use cstv
    use gem_options
    use spn_options
-!!$   use dyn_fisl_options, only: Cstv_Tstr_8  
-!!$   use dynkernel_options, only: Dynamics_Kernel_S
-!!$   use init_options
    use inp_options
-!!$   use gmm_vt1
-!!$   use gmm_pw
    use glb_ld
    use glb_pil
    use HORgrid_options, only: Grd_global_gid, &
         Grd_glbcore_gid, Grd_yinyang_L
    use inp_mod, only: Inp_comm_id
-!!$   use metric
    use path
    use step_options
    use var_gmm
@@ -64,12 +58,11 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
 #include <rmn/msg.h>
    include "rpn_comm.inc"
 
-   !# The following 2 parameters should be promoted to nml options like iau_* ones
+   !# The following parameter should be promoted to nml options like iau_* ones
    !# To turn off nudge_read, just set period(1) > period(2)
    character(len=32), parameter  :: nudg_period_S(2) = (/ &
         "0h   ", &
         "9999h"/)
-   logical, parameter :: nudg_stats_L = .false.
    
    integer, parameter :: STATS_PRECISION = 8
    character(len=2), parameter :: NUDG_PREFIX='N_'
@@ -105,7 +98,8 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
    type(gmm_metadata) :: mymeta
    type(vgrid_descriptor) :: vgridm, vgridt
    integer, pointer :: ip1list_m(:), ip1list_t(:), ip1listref(:)
-
+   logical :: vert_updated_L
+   
    !--------------------------------------------------------------------------
 !!$   * le step number a partir de 0z = lctl_step
 !!$   * le step number a partir du debut (-3h) = step_kount
@@ -139,9 +133,125 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
 
    ptopo_iotype = PTOPO_IODIST
 
-   
+   call nudge_read_init()
 
-   IF_INIT: if (.not.is_init_L) then
+   vert_updated_L = .false.
+   DO_IVAR:  do ivar = 1, nbvar
+      istat = inputio_meta(inputobj%cfg, ivar, iname0_S, iname1_S)
+      
+      nullify(data0, data1)
+      istat = gmm_get(NUDG_PREFIX//trim(iname0_S), data0)
+      if (iname1_S /= '') istat = gmm_get(NUDG_PREFIX//trim(iname1_S), data1)
+      if (.not.associated(data0) .or. &
+           (iname1_S /= '' .and..not.associated(data1))) then
+         call msg(MSG_ERROR, '(nudge_read) Problem getting ptr for: '// &
+              trim(iname0_S)//' '//trim(iname1_S)//' -- Skipping')
+         cycle DO_IVAR
+      end if
+
+      istat = inputio_isvarstep(inputobj, ivar, F_step_kount)
+      IF_READ: if (RMN_IS_OK(istat) .or. F_Lctl_step == nudg_period(1)) then
+
+         call nudge_read_update_vert(vert_updated_L)
+
+         write(msg_S, '(i9,a,i6,i6,a)') F_step_kount*nint(Cstv_dt_8), 's [Step=',F_step_kount,F_lctl_step,']'
+         call msg(MSG_INFO, '(nudge_read) Getting: '//trim(iname0_S)// &
+              ' at t0+'//trim(msg_S))
+                  
+         !# Get interpolted data from file
+         vgrid_S = NUDG_VGRID_T_S
+         if (iname0_S == 'uu') vgrid_S = NUDG_VGRID_M_S
+         nullify(myptr0, myptr1, myptr2d)
+         istat = inputio_get(inputobj, ivar, F_step_kount, myptr0, myptr1, &
+              F_vgrid_S=vgrid_S)
+         if (.not.RMN_IS_OK(istat) .or. .not.associated(myptr0) .or. &
+           (iname1_S /= '' .and..not.associated(myptr1))) then
+            call msg(MSG_ERROR, '(nudge_read) Problem getting data for: '// &
+                 trim(iname0_S)//' '//trim(iname1_S))
+            istat = RMN_ERR
+         end if
+         call handle_error(istat, 'nudge_read', 'Problem getting data for: '// &
+              trim(iname0_S)//' '//trim(iname1_S))
+
+         !# Print input fields statistics
+         if (Spn_yy_nudge_data_stats_L) then
+            if (associated(myptr0)) &
+                 call statfld_dm(myptr0, iname0_S, F_step_kount, 'nudge_read', STATS_PRECISION)
+            if (associated(myptr1)) &
+                 call statfld_dm(myptr1, iname1_S, F_step_kount, 'nudge_read', STATS_PRECISION)
+         end if
+
+         !# Move data to grid with halos; save in GMM
+         if (associated(myptr0)) then
+            data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
+            deallocate(myptr0, stat=istat)
+         end if
+         if (associated(myptr1) .and. associated(data1)) then
+            data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
+            deallocate(myptr1, stat=istat)
+         end if
+
+         !# Adapt units and horizontal positioning
+         lijk = lbound(data0) ; uijk = ubound(data0)
+         if (iname0_S == 'uu') then
+            data0 = data0 * knams_8
+            if (associated(data1)) data1 = data1 * knams_8
+         elseif (iname0_S == 'tt') then
+            data0 = data0 + TCDK
+         end if
+         if (iname0_S == 'p0') data0 = 100.*data0
+
+!!$         if (Grd_yinyang_L .and. (iname0_S == 'hu' .or. &
+!!$              .not.any(iname0_S == Nudg_tracers_S))) then
+         if (Grd_yinyang_L) then ! .and. iname0_S == 'hu') then
+
+            if (iname1_S /= ' ' .and. associated(data1)) then
+               call yyg_xchng_vec_q2q ( data0, data1, l_minx, l_maxx, l_miny, l_maxy, G_nk)
+               ! Exchange halos in the pilot zone
+               if (Glb_pilotcirc_L) then
+                   call rpn_comm_propagate_pilot_circular(data0, &
+                        lijk(1),uijk(1),lijk(2),uijk(2), &
+                        l_ni,l_nj,uijk(3),Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+                   call rpn_comm_propagate_pilot_circular(data1, &
+                        lijk(1),uijk(1),lijk(2),uijk(2), &
+                        l_ni,l_nj,uijk(3),Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
+               else
+                 call rpn_comm_xch_halo(data0,lijk(1),uijk(1),lijk(2),uijk(2), &
+                 l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+                 call rpn_comm_xch_halo(data1,lijk(1),uijk(1),lijk(2),uijk(2),&
+                 l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+               endif
+            else
+               call yyg_int_xch_scal ( data0, uijk(3), .false., 'CUBIC', .true.)
+            end if
+
+         end if
+
+      end if IF_READ
+      
+   end do DO_IVAR
+
+   !# Convert tt 2 vt
+   nullify(data0, data1)
+   istat = gmm_get(NUDG_PREFIX//'tt', data0)
+   istat = gmm_get(NUDG_PREFIX//'hu', data1)
+   call mfottv2(data0, data0, data1, &
+                l_minx, l_maxx, l_miny, l_maxy, G_nk, &
+                1-G_halox, l_ni+G_halox, 1-G_haloy, l_nj+G_haloy, DO_TT2VT)
+!!$   ! or 
+!!$   call mfottvh2(tt, tv, qq, qh, &
+!!$                 l_minx, l_maxx, l_miny, l_maxy, G_nk, &
+!!$                 1-G_halox, l_ni+G_halox, 1-G_haloy, l_nj+G_haloy, DO_TT2VT)
+   
+   call gtmg_stop(50)
+   !--------------------------------------------------------------------------
+   return
+
+contains
+
+   subroutine nudge_read_init()
+      
+      if (is_init_L) return
       is_init_L = .true.
 
       !# Set up input module
@@ -154,12 +264,17 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
          istat = inputio_set_filename(inputobj, NUDG_FILE, NUDG_FILE, &
               ALLOWDIR, INPUT_FILES_ANAL)
       end if
-      step_freq = 1
       step_0 = nudg_period(1) - F_lctl_step + F_step_kount
+      if (spn_yy_nudge_data_tint == 'near-cst-p') then
+         step_freq = nint(max(spn_freq, spn_yy_nudge_data_freq)/Cstv_dt_8)
+         step_0 = step_0 + step_freq/2  !#??? +1 ???
+      else
+         step_freq = nint(spn_freq/Cstv_dt_8)
+      endif
       
       write(incfg0_S, '(a,i4,a,i4,a,a,a)') 'freq=', step_0, ',', step_freq, &
            '; search=', trim(NUDG_FILE), &
-           '; tinterp=linear; hinterp=cubic; vinterp=c-cond; levels=-1'
+           '; tinterp='//spn_yy_nudge_data_tint(1:4)//'; hinterp=cubic; vinterp=c-cond; levels=-1'
 
       incfg_S = 'in=TT;'//trim(incfg0_S)
       call msg(MSG_INFO, '(nudge_read) add input: '//trim(incfg_S))
@@ -247,159 +362,60 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
       istat = vgd_free(vgridt)
       if (associated(ip1list_m)) deallocate(ip1list_m, stat=istat)
       if (associated(ip1list_t)) deallocate(ip1list_t, stat=istat)
+      
+      return
+   end subroutine nudge_read_init
 
-   end if IF_INIT
    
-   !# Update reference surface field for vgrid
-   istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=rfld_S, &
-        F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
-   istat = vgd_free(vgridm)
-   istat = vgrid_wb_get(VGRID_T_S, vgridt, F_altfld_S=altfld_T_S)
-   istat = vgd_free(vgridt)
+   subroutine nudge_read_update_vert(vert_updated_L)
+      logical, intent(inout) :: vert_updated_L
+      integer :: istat
 
-   if (rfld_S /= '') then 
-      nullify(pw_rfld, nudg_rfld)
-      istat = gmm_get(rfld_S, pw_rfld)
-      istat = gmm_get(NUDG_RFLD_S, nudg_rfld)
-      if (associated(nudg_rfld) .and. associated(pw_rfld)) then
-         nudg_rfld(:,:) = pw_rfld(1:l_ni,1:l_nj)
-      end if
+      if (vert_updated_L) return
+      vert_updated_L = .true.
+      
+      !# Update reference surface field for vgrid
+      istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=rfld_S, &
+           F_sfcfld2_S=rfldls_S, F_altfld_S=altfld_M_S)
+      istat = vgd_free(vgridm)
+      istat = vgrid_wb_get(VGRID_T_S, vgridt, F_altfld_S=altfld_T_S)
+      istat = vgd_free(vgridt)
 
-      if (rfldls_S /= '') then
+      if (rfld_S /= '') then 
          nullify(pw_rfld, nudg_rfld)
-         istat = gmm_get(rfldls_S, pw_rfld)
-         istat = gmm_get(NUDG_RFLD_LS_S, nudg_rfld)
+         istat = gmm_get(rfld_S, pw_rfld)
+         istat = gmm_get(NUDG_RFLD_S, nudg_rfld)
          if (associated(nudg_rfld) .and. associated(pw_rfld)) then
             nudg_rfld(:,:) = pw_rfld(1:l_ni,1:l_nj)
          end if
-      end if
-   end if
-   
-   if (altfld_M_S /= '') then
-      nullify(pw_altfld, nudg_altfld)
-      istat = gmm_get(altfld_M_S, pw_altfld)
-      istat = gmm_get(NUDG_ALTFLD_M_S, nudg_altfld)
-      if (associated(pw_altfld) .and. associated(nudg_altfld)) then
-         nudg_altfld(:,:,:) = pw_altfld(1:l_ni,1:l_nj,1:G_nk)
-      endif
-   end if
-   if (altfld_T_S /= '') then
-      nullify(pw_altfld, nudg_altfld)
-      istat = gmm_get(altfld_T_S, pw_altfld)
-      istat = gmm_get(NUDG_ALTFLD_T_S, nudg_altfld)
-      if (associated(pw_altfld) .and. associated(nudg_altfld)) then
-         nudg_altfld(:,:,:) = pw_altfld(1:l_ni,1:l_nj,1:G_nk)
-      endif
-   end if
-   
-   DO_IVAR:  do ivar = 1, nbvar
-      istat = inputio_meta(inputobj%cfg, ivar, iname0_S, iname1_S)
-      
-      nullify(data0, data1)
-      istat = gmm_get(NUDG_PREFIX//trim(iname0_S), data0)
-      if (iname1_S /= '') istat = gmm_get(NUDG_PREFIX//trim(iname1_S), data1)
-      if (.not.associated(data0) .or. &
-           (iname1_S /= '' .and..not.associated(data1))) then
-         call msg(MSG_ERROR, '(nudge_read) Problem getting ptr for: '// &
-              trim(iname0_S)//' '//trim(iname1_S)//' -- Skipping')
-         cycle DO_IVAR
-      end if
 
-      istat = inputio_isvarstep(inputobj, ivar, F_step_kount)
-      IF_READ: if (RMN_IS_OK(istat)) then
-
-         write(msg_S, '(i7)') F_step_kount*nint(Cstv_dt_8)
-         call msg(MSG_INFO, '(nudge_read) Reading: '//trim(iname0_S)// &
-              ' at t0+'//trim(msg_S)//'s')
-
-         !# Get interpolted data from file
-         vgrid_S = NUDG_VGRID_T_S
-         if (iname0_S == 'uu') vgrid_S = NUDG_VGRID_M_S
-         nullify(myptr0, myptr1, myptr2d)
-         istat = inputio_get(inputobj, ivar, F_step_kount, myptr0, myptr1, &
-              F_vgrid_S=vgrid_S)
-         if (.not.RMN_IS_OK(istat) .or. .not.associated(myptr0) .or. &
-           (iname1_S /= '' .and..not.associated(myptr1))) then
-            call msg(MSG_ERROR, '(nudge_read) Problem getting data for: '// &
-                 trim(iname0_S)//' '//trim(iname1_S))
-            istat = RMN_ERR
-         end if
-         call handle_error(istat, 'nudge_read', 'Problem getting data for: '// &
-              trim(iname0_S)//' '//trim(iname1_S))
-
-         !# Print input fields statistics
-         if (nudg_stats_L) then
-            if (associated(myptr0)) &
-                 call statfld_dm(myptr0, iname0_S, F_step_kount, 'nudge_read', STATS_PRECISION)
-            if (associated(myptr1)) &
-                 call statfld_dm(myptr1, iname1_S, F_step_kount, 'nudge_read', STATS_PRECISION)
-         end if
-
-         !# Move data to grid with halos; save in GMM
-         if (associated(myptr0)) then
-            data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
-            deallocate(myptr0, stat=istat)
-         end if
-         if (associated(myptr1) .and. associated(data1)) then
-            data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
-            deallocate(myptr1, stat=istat)
-         end if
-
-         !# Adapt units and horizontal positioning
-         lijk = lbound(data0) ; uijk = ubound(data0)
-         if (iname0_S == 'uu') then
-            data0 = data0 * knams_8
-            if (associated(data1)) data1 = data1 * knams_8
-         elseif (iname0_S == 'tt') then
-            data0 = data0 + TCDK
-         end if
-         if (iname0_S == 'p0') data0 = 100.*data0
-
-!!$         if (Grd_yinyang_L .and. (iname0_S == 'hu' .or. &
-!!$              .not.any(iname0_S == Nudg_tracers_S))) then
-         if (Grd_yinyang_L) then ! .and. iname0_S == 'hu') then
-
-            if (iname1_S /= ' ' .and. associated(data1)) then
-               call yyg_xchng_vec_q2q ( data0, data1, l_minx, l_maxx, l_miny, l_maxy, G_nk)
-               ! Exchange halos in the pilot zone
-               if (Glb_pilotcirc_L) then
-                   call rpn_comm_propagate_pilot_circular(data0, &
-                        lijk(1),uijk(1),lijk(2),uijk(2), &
-                        l_ni,l_nj,uijk(3),Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
-                   call rpn_comm_propagate_pilot_circular(data1, &
-                        lijk(1),uijk(1),lijk(2),uijk(2), &
-                        l_ni,l_nj,uijk(3),Glb_pil_e,Glb_pil_s,G_halox,G_haloy)
-               else
-                 call rpn_comm_xch_halo(data0,lijk(1),uijk(1),lijk(2),uijk(2), &
-                 l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-                 call rpn_comm_xch_halo(data1,lijk(1),uijk(1),lijk(2),uijk(2),&
-                 l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-               endif
-            else
-               call yyg_int_xch_scal ( data0, uijk(3), .false., 'CUBIC', .true.)
+         if (rfldls_S /= '') then
+            nullify(pw_rfld, nudg_rfld)
+            istat = gmm_get(rfldls_S, pw_rfld)
+            istat = gmm_get(NUDG_RFLD_LS_S, nudg_rfld)
+            if (associated(nudg_rfld) .and. associated(pw_rfld)) then
+               nudg_rfld(:,:) = pw_rfld(1:l_ni,1:l_nj)
             end if
-
          end if
+      end if
 
-      end if IF_READ
-      
-   end do DO_IVAR
-
-   !# Convert tt 2 vt
-   nullify(data0, data1)
-   istat = gmm_get(NUDG_PREFIX//'tt', data0)
-   istat = gmm_get(NUDG_PREFIX//'hu', data1)
-!!$   print *,'TT:',minval(data0), maxval(data0)
-!!$   print *,'HU:',minval(data1), maxval(data1)
-   call mfottv2(data0, data0, data1, &
-                l_minx, l_maxx, l_miny, l_maxy, G_nk, &
-                1-G_halox, l_ni+G_halox, 1-G_haloy, l_nj+G_haloy, DO_TT2VT)
-!!$   ! or 
-!!$   call mfottvh2(tt, tv, qq, qh, &
-!!$                 l_minx, l_maxx, l_miny, l_maxy, G_nk, &
-!!$                 1-G_halox, l_ni+G_halox, 1-G_haloy, l_nj+G_haloy, DO_TT2VT)
+      if (altfld_M_S /= '') then
+         nullify(pw_altfld, nudg_altfld)
+         istat = gmm_get(altfld_M_S, pw_altfld)
+         istat = gmm_get(NUDG_ALTFLD_M_S, nudg_altfld)
+         if (associated(pw_altfld) .and. associated(nudg_altfld)) then
+            nudg_altfld(:,:,:) = pw_altfld(1:l_ni,1:l_nj,1:G_nk)
+         endif
+      end if
+      if (altfld_T_S /= '') then
+         nullify(pw_altfld, nudg_altfld)
+         istat = gmm_get(altfld_T_S, pw_altfld)
+         istat = gmm_get(NUDG_ALTFLD_T_S, nudg_altfld)
+         if (associated(pw_altfld) .and. associated(nudg_altfld)) then
+            nudg_altfld(:,:,:) = pw_altfld(1:l_ni,1:l_nj,1:G_nk)
+         endif
+      end if
+      return
+   end subroutine nudge_read_update_vert
    
-   call gtmg_stop(50)
-   !--------------------------------------------------------------------------
-   return
 end subroutine nudge_read
