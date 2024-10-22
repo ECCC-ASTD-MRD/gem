@@ -229,6 +229,10 @@
             return
          end if
       end if
+      
+      if (Spn_relax_hours_end < 0.) then
+         Spn_relax_hours_end = Spn_relax_hours
+      end if
 
       Ctrl_testcases_L = Ctrl_canonical_dcmip_L .or. &
                          Ctrl_canonical_williamson_L

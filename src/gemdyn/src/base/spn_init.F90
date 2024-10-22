@@ -86,7 +86,8 @@
       allocate ( prof(G_nk), &
          Spn_fft(ldnh_maxy ,Spn_12smax,G_ni+2+Ptopo_npex),&
          Spn_fdg(Spn_12smax,Spn_22max ,G_nj  +Ptopo_npey),&
-         Spn_wrk(ldnh_maxx,ldnh_maxy,l_nk) )
+         Spn_wrk(ldnh_maxx,ldnh_maxy,l_nk),&
+         Spn_flt(Spn_22n,G_nj))
       prof=0. ; Spn_fft= 0. ; Spn_fdg= 0. ; Spn_wrk= 0.
      
       Spn_njnh  = ldnh_maxy-ldnh_miny+1
@@ -103,8 +104,8 @@
       end if
 
       Spn_weight= 1.0
-      
-      call spn_calfiltre ()
+
+      call spn_calfiltre (0)
 
       if (trim(Dynamics_Kernel_S)=='DYNAMICS_FISL_P') then
 
@@ -217,9 +218,9 @@
  999  call gem_error ( min(err1,err2),'spn_init',&
           'Wrong choice for Spn_trans_shape_S or transpose problems')
 
-      do k=1,G_nk
-         prof(k) = prof(k) * Cstv_dt_8/(Spn_relax_hours*3600.)
-      end do
+      !do k=1,G_nk
+      !   prof(k) = prof(k) * Cstv_dt_8/(Spn_relax_hours*3600.)
+      !end do
 
       Spn_ON_L= .true.
 
