@@ -579,7 +579,7 @@ contains
       real :: sfc_min_val, sfc_max_val
       real, pointer :: plevels(:)
       real, target :: levels(size(F_ip1list))
-      character(len=32) :: rfld_S
+      character(len=32) :: rfld_S, rfls_S
       !------------------------------------------------------------------
       F_istat = RMN_ERR
 
@@ -613,7 +613,10 @@ contains
               ok_L = (minval(F_sfcfld2) >= sfc_min_val .and. maxval(F_sfcfld2) <= sfc_max_val)
          if (minval(F_sfcfld) < sfc_min_val .or. maxval(F_sfcfld) > sfc_max_val .or. .not.ok_L) then
             call msg(MSG_WARNING,'(vinterp) Cannot Interpolate, provided sfcfld has wrong values: '//trim(F_msg_S))
-            print *,'(vinterp) rfld_S =', rfld_S, F_ispress_L
+            rfls_S = ''
+            if (associated(F_sfcfld2)) &
+               istat = vgd_get(F_vgrid, key='RFLS', value=rfls_S)
+            print *,'(vinterp) rfld_S =', trim(rfld_S), '  ', trim(rfls_S), F_ispress_L
             print *,'(vinterp) ref minmax =', sfc_min_val, sfc_max_val
             print *,'(vinterp) minmax(F_sfcfld) =', minval(F_sfcfld), maxval(F_sfcfld)
             if (associated(F_sfcfld2)) &
