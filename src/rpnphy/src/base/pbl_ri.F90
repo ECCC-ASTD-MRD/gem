@@ -9,7 +9,7 @@ contains
 
   subroutine rpnint(F_en, F_km, F_kt, F_pri, F_rif, F_rig, F_buoy, F_shr2, &
        F_buoyen, F_shren, F_diffen, F_dissen, F_qwvar, F_zn, F_zd, &
-       F_enold, F_uu, F_vv, F_tt, F_hu, F_lwc, F_iwc, F_fbl, &
+       F_enold, F_uu, F_vv, F_tt, F_hu, F_lwc, F_iwc, F_fbl, F_turbreg, &
        F_hpbl, F_lh, F_ps, F_z0m, F_z0t, F_frv, F_wstar, F_qstar, &
        F_hpar, F_tsurf, F_qsurf, F_lat, F_fcor, &
        F_sigm, F_sigt, F_gzm, F_gzt, F_dxdy, F_mrk2, F_vcoef, &
@@ -18,14 +18,16 @@ contains
     use, intrinsic :: iso_fortran_env, only: INT64
     use tdpack, only: GRAV, KARMAN, RGASD
     use phy_options, only: ilongmel, etrmin2, phystepoutlist_s, nphystepoutlist, &
-         pbl_progvar, pbl_ae
+         pbl_progvar, pbl_ae, pbl_turbsl_depth, pbl_ricrit
     use phy_status, only: phy_error_L, PHY_OK
     use mixing_length, only: ml_compute, ML_LMDA
     use ens_perturb, only: ens_nc2d
     use pbl_ri_utils, only: buoyflux, tkestep, tkebudget, kcalc, covareq, covarstep, &
-         compute_conserved, ktosig, K_M, K_T, PBL_RI_CK, PBL_RI_CU, PBL_RI_CW, &
+         ktosig, K_M, K_T, PBL_RI_CK, PBL_RI_CU, PBL_RI_CW, &
          PBL_RI_CE, PBL_RI_CAB
     use pbl_ri_diffuse, only: diffuse, FIELD_IS_TKE, FIELD_ON_TLEV
+    use pbl_utils, only: LAMINAR, TURBULENT
+    use cons_thlqw, only: thlqw_compute
     implicit none
 #include <rmnlib_basics.hf>
 
@@ -57,10 +59,11 @@ contains
     real, dimension(F_ni,F_nkm1), intent(in) :: F_gzm           !height of momentum levels (m)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_gzt           !height of thermo levels (m)
     real, dimension(F_ni,ens_nc2d), intent(in) :: F_mrk2        !Markov chains for stochastic parameters
-    real, dimension(*), intent(in) :: F_vcoef                   !coefficients for vertical interpolation
+    real, pointer, dimension(:,:,:), contiguous :: F_vcoef      !coefficients for vertical interpolation
     real, dimension(F_ni,F_nkm1), intent(in) :: F_lwc           !liquid water content (kg/kg)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_iwc           !ice water content (kg/kg)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_fbl           !PBL cloud fraction
+    real, dimension(F_ni,F_nkm1), intent(inout) :: F_turbreg    !turbulence regime
     real, dimension(F_ni), intent(inout) :: F_hpar              !height of parcel ascent (m)
     real, dimension(F_ni,F_nkm1), intent(inout) :: F_zn         !momentum mixing length (m)
     real, dimension(F_ni,F_nkm1), intent(out) :: F_zd           !dissipation length (m)
@@ -82,9 +85,12 @@ contains
     !          Update TKE and diffusion coefficients for the RPN Integrated PBL scheme
     include "phyinput.inc"
 
+    ! External symbols
+    integer, external :: neark
+    
     ! Local variable declarations
     integer :: stat, i, k
-    integer, dimension(F_ni) :: mlen
+    integer, dimension(F_ni) :: mlen, slk
     real :: dae
     real, dimension(F_ni) :: tke_sfc, zero_sfc
     real, dimension(F_ni,F_nkm1) :: e_star, ke, b_term, c_term, tv, zero, one, qw, thl, &
@@ -108,13 +114,33 @@ contains
     call buoyflux(F_buoy, F_shr2, F_rig, F_uu, F_vv, F_tt, F_hu, &
          F_lwc, F_iwc, F_fbl, F_tsurf, F_qsurf, F_z0m, F_z0t, &
          F_lat, F_fcor, F_sigt, F_gzm, F_gzt, F_ps, F_vcoef, F_ni, F_nkm1)
+
+    ! Determine turbulence regime
+    if (pbl_turbsl_depth > 0.) then
+       stat = neark(F_sigt, F_ps, pbl_turbsl_depth, F_ni, F_nkm1, slk)
+    else
+       slk(:) = F_nkm1
+    endif
+    do k=1,F_nkm1
+       do i=1,F_ni
+          if (k <= slk(i)) then
+             if (F_rig(i,k) > pbl_ricrit(1)) then
+                F_turbreg(i,k) = LAMINAR
+             else
+                F_turbreg(i,k) = TURBULENT
+             endif
+          else
+             F_turbreg(i,k) = TURBULENT
+          endif
+       enddo
+    enddo
     
     ! Compute mixing and dissipation length scales
     mlen = ilongmel
     stat = ml_compute(F_zn, F_zd, F_pri, mlen, F_tt, F_hu, F_lwc, F_iwc, F_fbl, &
-         F_gzt, F_gzm, F_gzm, F_sigm, F_sigt, F_ps, F_enold, F_buoy, F_rig, &
-         zero3d, zero, zero, F_z0m, F_hpbl, F_lh, F_hpar, F_vcoef, F_mrk2, &
-         F_dxdy, F_tau, F_kount)
+         F_gzt, F_gzm, F_gzm, F_sigt, F_sigm, F_sigm, F_ps, F_enold, F_buoy, &
+         F_rig, zero3d, zero, F_turbreg, F_z0m, F_hpbl, F_lh, F_hpar, F_vcoef, &
+         F_mrk2, F_dxdy, F_tau, F_kount)
     if (stat /= PHY_OK) then
        call physeterror('pbl_ri', 'error returned by mixing length calculation')
        return
@@ -148,13 +174,12 @@ contains
     ! Prepare for diffusion term of the TKE equation
     call kcalc(ke, F_zn, F_enold, F_pri, F_vcoef, K_M, F_ni, F_nkm1)
     call ktosig(ke, ke, F_tt, F_hu, F_sigm, F_sigt, F_vcoef, K_M, F_ni, F_nkm1)
-    dae = (2. / pbl_ae - 1.)
     do k=1,F_nkm1
        do i=1,F_ni
-          ke(i,k) = pbl_ae * max(1., (1. + dae*F_rig(i,k))) * ke(i,k)
+          ke(i,k) = pbl_ae * min(1. + max(F_rig(i,k), 0.), 3.) * ke(i,k)
        enddo
     enddo
-
+    
     ! Compute surface boundary condition
     tke_sfc = PBL_RI_CU*F_frv**2 + PBL_RI_CW*F_wstar**2
 
@@ -173,7 +198,7 @@ contains
 
     ! Compute subgrid-scale moisture variance
     SGSVAR: if (pbl_progvar) then
-       call compute_conserved(thl, qw, F_tt, F_hu, F_lwc, F_iwc, F_sigt, F_ni, F_nkm1)
+       call thlqw_compute(thl, qw, F_tt, F_hu, F_lwc, F_iwc, F_sigt, F_ni, F_nkm1)
        if (F_kount == 0) then
           call covareq(F_qwvar, qw, qw, F_en, F_kt, F_zd, F_gzt, &
                F_vcoef, F_ni, F_nkm1)

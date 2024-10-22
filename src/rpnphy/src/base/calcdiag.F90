@@ -118,7 +118,7 @@ contains
       w_my2 = 0.
       if (stcond(1:6) == 'MP_MY2') w_my2 = 1.
       is_mp = (stcond(1:3) == 'MP_')
-      is_consun = (stcond == 'CONSUN')
+      is_consun = (stcond == 'CONSUN' .or. stcond == 'S2')
       is_pcptype_nil = (pcptype(1:3)=='NIL')
       is_pcptype_sps = any(pcptype == (/'SPS_W19', 'SPS_FRC'/))
       is_pcptype_b3d = (pcptype == 'BOURGE3D')

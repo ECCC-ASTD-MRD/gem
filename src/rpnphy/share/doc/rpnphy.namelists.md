@@ -68,6 +68,7 @@
 | cond_hu0max | Max allowed values of modified hu00 (threshold relative humidity<br>for stratiform condensation, Sunqvist gridscale condensation) | 0.975 | real |
 | cond_hu0min | Min allowed values of modified hu00 (threshold relative humidity<br>for stratiform condensation, Sunqvist gridscale condensation) | 0.85 | real |
 | cond_iceacc | Dry accretion of ice crystals by snow in Sundqvist (factor) | 5. | real |
+| cond_rhminus | Use time-minus for relative humidity in Sundqvist | .false. | logical |
 | cond_sgspdf | Distribution of subgrid-scale moisture variance assumed for cloud fraction | 'NIL' | character(len=16) |
 | debug_alldiag_l | Activate computing of all diags, requested for output or not. | .false. | logical |
 | debug_initonly_l | Run only the physics nml+init (skip input and step) | .false. | logical |
@@ -123,7 +124,7 @@
 | p3_subfact | calibration factor for ice sublimation in microphysics (P3) | 1.0 | real |
 | p3_trplmomi | For triple-moment ice in microphysics (P3) | .false. | logical |
 | p_runlgt | Vector length physics memory space folding for openMP | -1 | integer |
-| pbl_ae | Coefficient controlling strength of TKE diffusion | 0.35 | real |
+| pbl_ae | Coefficient controlling strength of TKE diffusion | 0.07 | real |
 | pbl_cmu_timeavg | Time-averaging of transfer coefficient for momentum to reduce 2-dt<br>oscillations in fluxes | .false. | logical |
 | pbl_conserve | Conservation corrections for PBL scheme<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
 | pbl_cucloud | Include the turbulent effects of trade wind cumulus clouds | .true. | logical |
@@ -253,8 +254,10 @@
 | sl_z0ref | Use a reference roughness for surface layer calculations | .false. | logical |
 | snoalb_anl | Use snow albedo "I6" directly if .true.;<br>Use snow age "XA" to calculate snow albedo if .false. | .true. | logical |
 | snow_emiss |  | -1. | real |
+| soil_ksat_ice |  | 'ZHANGGRAY97' | character(len=16) |
 | soiltext | Soil texture database/calculations for SVS land surface scheme<br>- 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)<br>- 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)<br>- 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC ? World Soil Information | 'GSDE' | character(len=16) |
 | svs_dynamic_z0h | use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true. | .false. | logical |
+| svs_gexp | Exponent in function defining vegetation stress when estimating transpiration<br>Transpiration decreases more slowly with soil moisture when svs_gexp is high<br>it does not start decreasing until about soil moisture is half way between wilting<br>point and field capacity when svs_gexp=10.<br>A positive value is expected, but a negative value is used by default to keep this option<br>inactive if a value is not provided.<br>Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value<br>of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when<br>the CTEM parameterization is used.<br>This behaviour is preserved if the value of the key is less or equal to zero for<br>backward compatibility purposes.<br>Since this is a bugfix, eventually the default value of the key should be changed<br>to a positive value. | -1. | real |
 | svs_hrsurf_sltext | use hrsurf based on soil texture for SVS if .true. | .false. | logical |
 | svs_local_z0m | use local momentum (no snow) roughness for SVS if .true. | .false. | logical |
 | svs_snow_rain |  | 'BELAIR03' | character(len=16) |

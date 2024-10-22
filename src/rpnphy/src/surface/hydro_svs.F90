@@ -35,11 +35,6 @@ SUBROUTINE HYDRO_SVS ( DT, &
 
 
   REAL DT, W
-  
-  INTEGER KFICE ! Option for the correction factor for hydraulic conductivity
-  !    0: Correction factor taken from Zhang and Gray (1997). Same as CLASS 3.6
-  !    1: Impedance factor taken from SURFEX (Boone et al., 2000)
-  !    3: No modification of hydraulic conductivity in presence of ice 
 
   INTEGER WAT_REDIS ! Option for the redistribution of water in case of over-saturation after the soil_fluxes solver
   !    0: Default param:
@@ -162,8 +157,6 @@ SUBROUTINE HYDRO_SVS ( DT, &
 
   ! local arrays
 
-  real                        :: fice
-
   real, dimension(n,nl_svs)   :: delzvec
   real, dimension(n,nl_svs)   :: asatfc, wsatc, asat0, grkefl, ksatmean
   real, dimension(n,nl_svs)   :: etr_grid
@@ -191,12 +184,6 @@ SUBROUTINE HYDRO_SVS ( DT, &
      ENDDO
      F(I,NL_SVS+1)=0.
   ENDDO
-
-  ! Option for soil freezing
-  !    0: Correction factor taken from Zhang and Gray (1997). Same as CLASS 3.6
-  !    1: Impedance factor taken from SURFEX (Boone et al., 2000)
-  !    3: No modification of hydraulic conductivity in presence of ice 
-  KFICE = 0
 
   !
   ! Option for the redistribution of water in case of over-saturation after the soil_fluxes solver
@@ -347,22 +334,15 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !        3.     CALCULATE THE REQUIRED PARAMETERS FOR NEW HYDRLOGY ROUTINE 
   !               ------------------------------------------
 
+  !Adjust ksat and wsat for presence of ice
+  CALL SOIL_KSATC(WD, WF, WSAT, KSAT, KSATC, N, NL_SVS)
+
   DO I=1,N
      DO K=1,NL_SVS
         !Vectorize layer thicknesses over space for watdrn module
         DELZVEC(I,K)=DELZ(K)
 
-        !Adjust ksat and wsat for presence of ice
-        IF(KFICE==0) THEN
-            FICE = (1.0-MAX(0.0,MIN((WSAT(I,K)-CRITWATER)/WSAT(I,K),WF(I,K)/WSAT(I,K))))**2.
-        ELSE IF (KFICE ==1) THEN    
-            FICE =  EXP(LOG(10.0)*(-6*WF(I,K)/(WF(I,K)+WD(I,K))))
-        ELSE IF (KFICE ==3) THEN    
-            FICE = 1.   
-        ELSE
-            FICE = 1.   
-        ENDIF 
-        KSATC(I,K) = KSAT(I,K)*FICE
+        !Adjust wsat for presence of ice
         WSATC(I,K)= MAX((WSAT(I,K)-WF(I,K)-0.00001), CRITWATER)
 
         ! Calculate parameters needed for WATDRAIN

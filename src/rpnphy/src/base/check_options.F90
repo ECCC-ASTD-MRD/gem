@@ -57,7 +57,7 @@ function check_options2() result(F_istat)
            trim(convec))
       return
 
-   else if (stcond == 'CONSUN' .and. &
+   else if ((stcond == 'CONSUN' .or. stcond == 'S2') .and. &
         .not.any(convec == (/ &
         'KFC     ', &
         'KFC2    ', &
@@ -81,15 +81,6 @@ function check_options2() result(F_istat)
            trim(fluvert)//' and convec='//trim(convec))
       return
    endif
-
-   if (longmel == 'MBOUJO' .and. &
-        .not.any(fluvert == (/ &
-        'RPNINT' &
-        /))) then
-      call msg(MSG_ERROR,'(check_options) option mismatch: longmel='//&
-           trim(longmel)//' and fluvert='//trim(fluvert))
-      return
-   endif
    
    if (NSLOFLUX > MAXSLOFLUX) then
       write(str512, '(a,i3)') &
@@ -99,10 +90,10 @@ function check_options2() result(F_istat)
    endif
 
    if ( PCPTYPE == 'BOURGE3D')then
-      if (STCOND /= 'CONSUN'    .or. &
+      if (.not.any(STCOND == (/'CONSUN','S2    '/))    .or. &
            (CONVEC /= 'KFC' .and. CONVEC /= 'KFC2' .and. CONVEC /= 'BECHTOLD'))   then
          call msg(MSG_ERROR,'(check_options) option mismatch: with ' // &
-              'PCPTYPE=BOURGE3D you can only use STCOND=CONSUN or KFC')
+              'PCPTYPE=BOURGE3D you can only use STCOND=CONSUN/S2 or KFC')
          return
       endif
    endif

@@ -25,10 +25,12 @@ contains
     use ens_perturb, only: ens_nc2d, ens_spp_get
     use microphy_utils, only: mp_lwc, mp_iwc
     use atmflux, only: atmflux4
-    use pbl_ri_utils, only: baktot, compute_conserved, ktosig, sgsvar, K_M, K_T
+    use pbl_ri_utils, only: baktot, ktosig, sgsvar, K_M, K_T
     use pbl_utils, only: dissheat, sfcflux
+    use cons_thlqw, only: thlqw_compute
     use integrals, only: INT_TYPE_LINEAR
     use tendency, only: apply_tendencies
+    use microphy_statcond, only: sc_condense
 
     implicit none
 
@@ -60,7 +62,7 @@ contains
          zvstress, zue, zflw, zfsh, zdxdy, ztdmaskxdt
     real, pointer, dimension(:,:), contiguous :: tu, tv, tt, tq, uu, vv, w, &
          t, q, zsigt, zsigm, tm, zpblsigs, zqcplus, tqc, zze, zkm, zkt, &
-         zzd, zzn, zfc, zfv, zpri, zturbqf, zturbtf, zturbuf, zturbvf, zfxp, &
+         zzd, zzn, zfc, zfv, zpri, zturbqf, zturbtf, zturbuf, zturbvf, &
          zturbuvf, zmrk2, ztcons, zqcons, zdtcons, zdqcons, zturbtlf, zgztherm
     real, pointer, dimension(:,:,:), contiguous :: zvcoef
 
@@ -122,7 +124,6 @@ contains
     MKPTR2Dm1(w, wplus, F_pvars)
     MKPTR2Dm1(zdqcons, dqcons, F_pvars)
     MKPTR2Dm1(zdtcons, dtcons, F_pvars)
-    MKPTR2Dm1(zfxp, fxp, F_pvars)
     MKPTR2Dm1(zgztherm, gztherm, F_pvars)
     MKPTR2Dm1(zkm, km, F_pvars)
     MKPTR2Dm1(zkt, kt, F_pvars)
@@ -169,8 +170,8 @@ contains
        return
     endif
     
-    ! Compute conserved thermodynamic variables for vertical diffusion
-    call compute_conserved(ztcons, zqcons, t, q, lwc, iwc, zsigt, F_ni, F_nkm1)
+    ! Compute conserved thermodynamic variables for vertical diffusion    
+    call thlqw_compute(ztcons, zqcons, t, q, lwc, iwc, zsigt, F_ni, F_nkm1)
     
     ! Compute tendency for u-component wind and diagnose flux on request
     call diffuse(tu, uu, kmsg, zero, bmsg, zsigm, zsigt, F_tau, &
@@ -212,33 +213,30 @@ contains
     bq(:) = fh_mult(:) * btsg(:)
 
     ! Compute tendency for moisture and diagnose flux on request
-    call diffuse(tq, q, ktsg, aq, bq, zsigm, zsigt, F_tau, &
+    call diffuse(zdqcons, zqcons, ktsg, aq, bq, zsigm, zsigt, F_tau, &
          FIELD_ON_TLEV, F_ni, F_nkm1)
     if (phy_error_L) return
     if (any(phyoutlist_S == 'TFHU')) then
        call atmflux4(zturbqf, tq, zsigt, ps, F_ni, F_nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
-    
-    ! Compute diffusion tendency for condensate
-    call diffuse_condensate(tl, ti, lwc, iwc, ktsg, zsigm, zsigt, ztdmaskxdt, &
-         F_pvars, F_tau, F_ni, F_nkm1)
 
     ! Update conserved variables
     do k=1,F_nkm1
        do i=1,F_ni
-          tqc(i,k) = tl(i,k) + ti(i,k)
           thl_star(i,k) = ztcons(i,k) + F_tau*zdtcons(i,k)
-          qw_star(i,k) = zqcons(i,k) + F_tau*(tq(i,k) + tqc(i,k))
+          qw_star(i,k) = zqcons(i,k) + F_tau*zdqcons(i,k)
        enddo
     enddo
     
-    ! Convert conserved variable tendencies to temperature tendency
-    call baktot(tt, zdtcons, tl, ti, zsigt, F_ni, F_nkm1)
-    
     ! Estimate updated subgrid-scale variance
-    call sgsvar(zpblsigs, thl_star, qw_star, lwc, iwc, tm, zfxp, zpri, &
+    call sgsvar(zpblsigs, thl_star, qw_star, lwc, iwc, tm, zpri, &
          zzn, zzd, zgztherm, zsigt, ps, zdxdy, zvcoef, F_ni, F_nkm1)
+
+    ! Compute state-variable tendencies via statistical clouds
+    call sc_condense(tt, tq, tl, ti, ztcons, zdtcons, zqcons, zdqcons, &
+         F_pvars, F_tau, F_ni, F_nkm1)
+    tqc(:,:) = tl(:,:) + ti(:,:)
     
     ! Dissipative heating
     call dissheat(dket, uu, vv, tu, tv, kmsg, zsigm, zsigt, zvcoef, F_tau, F_ni, F_nkm1)

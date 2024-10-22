@@ -122,6 +122,11 @@ module phy_options
    namelist /physics_cfgs/ cond_hu0max
    namelist /physics_cfgs_p/ cond_hu0max
 
+   !# Use time-minus for relative humidity in Sundqvist
+   logical        :: cond_rhminus      = .false.
+   namelist /physics_cfgs/ cond_rhminus
+   namelist /physics_cfgs_p/ cond_rhminus
+
    !# Distribution of subgrid-scale moisture variance assumed for cloud fraction
    character(len=16) :: cond_sgspdf = 'NIL'
    namelist /physics_cfgs/ cond_sgspdf
@@ -131,7 +136,7 @@ module phy_options
         'UNIFORM   ', &
         'TRIANGULAR' &
         /)
-
+   
    !# Activate computing of all diags, requested for output or not.
    logical           :: debug_alldiag_L     = .false.
    namelist /physics_cfgs/ debug_alldiag_L
@@ -400,7 +405,7 @@ module phy_options
    namelist /physics_cfgs_p/ p_runlgt
 
    !# Coefficient controlling strength of TKE diffusion
-   real              :: pbl_ae      = 0.35
+   real              :: pbl_ae      = 0.07
    namelist /physics_cfgs/ pbl_ae
    namelist /physics_cfgs_p/ pbl_ae
    
@@ -907,13 +912,14 @@ module phy_options
    character(len=16) :: stcond       = 'NIL'
    namelist /physics_cfgs/ stcond
    namelist /physics_cfgs_p/ stcond
-   character(len=*), parameter :: STCOND_OPT(6) = (/ &
+   character(len=*), parameter :: STCOND_OPT(7) = (/ &
         'NIL       ', &
         'CONSUN    ', &
         'MP_MY2    ', &
         'MP_P3     ', &
         'MP_P3V3   ', &
-        'KESSLER   ' &
+        'KESSLER   ', &
+        'S2        ' &
         /)
 
    !# Special treatment of stratosphere;

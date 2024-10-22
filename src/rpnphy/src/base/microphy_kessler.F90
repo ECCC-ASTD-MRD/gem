@@ -187,31 +187,40 @@ contains
   end function kessler_phybusinit
 
   ! Compute total water mass
-  function kessler_lwc(F_qltot, F_pvars) result(F_istat)
+  function kessler_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+    type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+    logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
     integer :: F_istat                                  !Return status
 #include "phymkptr.hf"
     integer :: ni, nkm1
-    real, dimension(:,:), pointer :: zqcp
+    real, dimension(:,:), pointer, contiguous :: zqc
+    logical :: my_tminus
     F_istat = PHY_ERROR
+    my_tminus = .false.
+    if (present(F_tminus)) my_tminus = F_tminus
     ni = size(F_qltot, dim=1); nkm1 = size(F_qltot, dim=2)
-    MKPTR2Dm1(zqcp, qcplus, F_pvars)
-    F_qltot(:,:) = zqcp(:,:)
+    if (my_tminus) then
+       MKPTR2Dm1(zqc, qcmoins, F_pvars)
+    else
+       MKPTR2Dm1(zqc, qcplus, F_pvars)
+    endif
+    F_qltot(:,:) = zqc(:,:)
     F_istat = PHY_OK
     return
   end function kessler_lwc
 
   ! Compute total ice mass
-  function kessler_iwc(F_qitot, F_pvars) result(F_istat)
+  function kessler_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
     ! use phybusidx
     use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-    type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+    type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+    logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
     integer :: F_istat                                  !Return status
     F_istat = PHY_ERROR
     F_qitot(:,:) = 0.

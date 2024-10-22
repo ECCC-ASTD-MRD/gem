@@ -27,6 +27,7 @@ module microphy_utils
   public :: mp_iwc             !Compute ice water content
   public :: mp_post_init       !Initialization after bus creation
   public :: mp_todiffuse       !List of bus entries for vertical diffusion
+  public :: mp_icefrac         !Compute ice fraction
   public :: nil_phybusinit     !Define bus requirements stcond=nil
   public :: nil_lwc            !Compute liquid water content stcond=nil
   public :: nil_iwc            !Compute ice water content stcond=nil
@@ -41,10 +42,11 @@ module microphy_utils
 
   ! Total water mass calculation
   abstract interface
-     function lwc(F_qltot, F_pvars) result(F_istat)
+     function lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
        use phymem, only: phyvar
        real, dimension(:,:), intent(out) :: F_qltot
        type(phyvar), pointer, contiguous :: F_pvars(:)  !All phy vars (meta + slab data)
+       logical, intent(in), optional :: F_tminus        !Compute fields at time-minus [false]
        integer :: F_istat
      end function lwc
   end interface
@@ -52,10 +54,11 @@ module microphy_utils
   
   ! Total ice mass calculation
   abstract interface
-     function iwc(F_qitot, F_pvars) result(F_istat)
+     function iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
        use phymem, only: phyvar
        real, dimension(:,:), intent(out) :: F_qitot
        type(phyvar), pointer, contiguous :: F_pvars(:)  !All phy vars (meta + slab data)
+       logical, intent(in), optional :: F_tminus        !Compute fields at time-minus [false]
        integer :: F_istat
      end function iwc
   end interface
@@ -74,6 +77,7 @@ contains
   ! Initialize procedure pointers and run scheme-specific bootstrap
   function mp_init(F_input_path) result(F_istat)
     use microphy_consun
+    use microphy_s2
     use microphy_p3, P3_STATUS_OK=>STATUS_OK
     use microphy_p3v3, only: &
          p3v3_init => p3_init, p3v3_phybusinit => p3_phybusinit, &
@@ -100,6 +104,11 @@ contains
        mp_phybusinit => consun_phybusinit
        mp_lwc => consun_lwc
        mp_iwc => consun_iwc
+    case ('S2')
+       istat = PHY_OK
+       mp_phybusinit => s2_phybusinit
+       mp_lwc => s2_lwc
+       mp_iwc => s2_iwc
     case ('MP_P3')
        call p3_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, stat=istat)
        if (istat == P3_STATUS_OK) istat = PHY_OK
@@ -221,6 +230,59 @@ contains
     F_difflist => dlist(1:ndlist)
     F_istat = PHY_OK
   end function mp_todiffuse
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  function mp_icefrac(F_if, F_tt, F_lwc, F_iwc, F_ni, F_nkm1, F_difdt) &
+       result(F_istat)
+    use tdpack, only: TCDK
+    implicit none
+
+    !@Arguments
+    integer, intent(in) :: F_ni                                 !horizontal dimension
+    integer, intent(in) :: F_nkm1                               !vertical dimension
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_tt            !dry air temperature (K)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_lwc           !liquid water content (kg/kg)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_iwc           !ice water content (kg/kg)
+    real, dimension(F_ni,F_nkm1), intent(out) :: F_if           !ice fraction
+    real, dimension(F_ni,F_nkm1), intent(out), optional :: F_difdt !ice fraction derivative wrt temperature (/K)
+    integer :: F_istat                                          !Function return status
+
+    !@Object Compute cloud ice fraction
+
+    ! Local parameters from Eq. 2 of Hu et al. (2010; JGR 10.1029/2009JD012384)
+    real, parameter :: C0 = 5.3608, C1=0.4025, C2=0.08387, C3=0.007182, &
+         C4=2.39e-4, C5=2.87e-6
+    
+    ! Local variables
+    integer :: i, k
+    real :: ptmid, dptmid, tmid
+
+    ! Initialization
+    F_istat = PHY_ERROR
+    
+    ! Compute ice fraction
+    do k=1,F_nkm1
+       do i=1,F_ni
+          F_if(i,k) = F_iwc(i,k) / max(F_lwc(i,k) + F_iwc(i,k), tiny(F_iwc))
+       enddo
+    enddo
+
+    ! Estimate temperature sensitivity of the ice fraction (with a minimum value
+    ! on ptmid needed to avoid an overflow on the exp(-ptmid))
+    if (present(F_difdt)) then
+       do k=1,F_nkm1
+          do i=1,F_ni             
+             tmid = F_tt(i,k) - TCDK
+             ptmid = max(C0 + tmid * (C1 + tmid * (C2 + tmid * (C3 + tmid * (C4 + tmid * C5)))), -40.)
+             dptmid = C1 + tmid * (2*C2 + tmid * (3*C3 + tmid * (4*C4 + tmid * 5*C5)))
+             F_difdt(i,k) = -exp(-ptmid) / (1. + exp(-ptmid))**2 * dptmid             
+          enddo
+       enddo
+    endif
+
+    ! Successful completion
+    F_istat = PHY_OK
+  end function mp_icefrac
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
   ! Define bus requirements
@@ -232,12 +294,13 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   ! Compute total water mass
-  function nil_lwc(F_qltot, F_pvars) result(F_istat)
+  function nil_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
      use phymem, only: phyvar
      ! use phybusidx
      implicit none
      real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
-     type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+     logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
      integer :: F_istat                                  !Return status
      F_qltot(:,:) = 0.
      F_istat = PHY_OK
@@ -246,13 +309,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   ! Compute total ice mass
-  function nil_iwc(F_qitot, F_pvars) result(F_istat)
+  function nil_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
      use phymem, only: phyvar
      ! use phybusidx
      use phy_status, only: PHY_OK, PHY_ERROR
      implicit none
      real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
-     type(phyvar), pointer, contiguous :: F_pvars(:)   !All phy vars (meta + slab data)
+     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
+     logical, intent(in), optional :: F_tminus           !Compute fields at time-minus [false]
      integer :: F_istat                                  !Return status
      F_qitot(:,:) = 0.
      F_istat = PHY_OK

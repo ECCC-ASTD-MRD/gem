@@ -71,7 +71,7 @@ subroutine phybusinit(ni,nk)
    logical :: lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly, lwindgust
-   logical :: lpcp_frac, ladvzn
+   logical :: lpcp_frac, ladvzn, ls2
    !---------------------------------------------------------------------
 
    ier = phymem_init()
@@ -129,6 +129,7 @@ subroutine phybusinit(ni,nk)
    ladvzn  = (advectke .and. lrpnint)
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
+   ls2     = (stcond == 'S2')
 
    ! Compute linoz diags only on demand
    do i=1,nphyoutlist

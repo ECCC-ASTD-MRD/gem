@@ -102,7 +102,7 @@ contains
          if (pcptype == 'SPS_W19') option = OPT_SPS_W19
          if (pcptype == 'SPS_FRC') option = OPT_SPS_FRC
          if (pcptype == 'SPS_H13') option = OPT_SPS_H13
-      else if (stcond == 'CONSUN') then
+      else if (stcond == 'CONSUN' .or. stcond == 'S2') then
          option = OPT_CONSUN
       else
          option = OPT_OTHER
