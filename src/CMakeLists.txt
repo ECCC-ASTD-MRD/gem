@@ -42,6 +42,16 @@ endif()
 
 add_subdirectory(modelutils modelutils)
 
+set(WITH_CPL OFF CACHE BOOL "Control whether to build with NEMO coupling (\"GEM-NEMO\")")
+if (WITH_CPL)
+  # Add NEMO coupling source files, if source directory exists
+  if (EXISTS ${CMAKE_SOURCE_DIR}/src/cplocn/)
+    set(CPLOCN_GLOB ${CMAKE_SOURCE_DIR}/src/cplocn/*.F90)
+  else()
+    message(ERROR " -- (EC) You set WITH_CPL=TRUE, but no cplocn directory was found!")
+  endif()
+endif()
+
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
   set(phy_LIBRARIES rpnphy CACHE STRING "rpnphy library")
   set(chm_LIBRARIES rpnphy_chm_stubs CACHE STRING "rpnphy chemistry stub library")
