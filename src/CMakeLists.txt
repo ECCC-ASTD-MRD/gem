@@ -56,6 +56,17 @@ if (WITH_MACH)
   endif()
 endif()
 
+set(WITH_NEMO OFF CACHE BOOL "Control whether to build with NEMO coupling (\"GEM-NEMO\")")
+if (WITH_NEMO)
+  # Add NEMO coupling source files, if source directory exists
+  if (EXISTS ${CMAKE_SOURCE_DIR}/src/cplocn/)
+    set(CPLOCN_GLOB ${CMAKE_SOURCE_DIR}/src/cplocn/*.F90)
+    message(STATUS "(EC) Compiling GEM-NEMO")
+  else()
+    message(ERROR "(EC) You set WITH_NEMO=TRUE, but no cplocn directory was found!")
+  endif()
+endif()
+
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
   set(phy_LIBRARIES rpnphy CACHE STRING "rpnphy library")
   add_subdirectory(rpnphy rpnphy)
