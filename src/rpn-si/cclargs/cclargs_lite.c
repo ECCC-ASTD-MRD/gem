@@ -1,11 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #ifndef _XOPEN_SOURCE_EXTENDED
 #define _XOPEN_SOURCE_EXTENDED 
 #endif
 #ifdef NOUI
-vmenu()
+int vmenu()
 {
 printf("cclargs ERROR: Interactive mode NOT SUPPORTED\n");
 exit(1);
@@ -33,7 +35,7 @@ return 1;
 
 #define NKLEMAX 1024
 
-static char OUTBUF[40960];  /* buffer containing output, if exec to curses version
+static char OUTBUF[409600];  /* buffer containing output, if exec to curses version
                                is necessary, buffer is discarded  */
 static char *OUTBUFPTR=&OUTBUF[0];
 
@@ -57,13 +59,13 @@ struct definition
     enum typecle type;
 };
 
-check_argv(char **argv){
+void check_argv(char **argv){
   if(*argv != NULL) return;
   fprintf(stderr,"cclargs: FATAL ERROR, argument expected, NULL found\n");
   exit(1);
 }
 
-main(argc, argv)
+int main(argc, argv)
 int argc;
 char **argv;
 {
@@ -173,7 +175,7 @@ char **argv;
          exit (0);
       }
     }
-if(interp== shell) {
+    if(interp== shell) {
    /*
      print list of OUTPUT keys
    */
@@ -197,7 +199,7 @@ if(interp== shell) {
      OUTBUFPTR+=sprintf(OUTBUFPTR," %s",temp);
    }
    OUTBUFPTR+=sprintf(OUTBUFPTR,"';");
-}
+   }
 
   /* recuperation des arguments en mode positionnel */
   pointeur = positionel(pointeur);
@@ -254,7 +256,6 @@ if(interp== shell) {
 }
 
 
-
 /*********************************************************************
  *   initialiser les noms de clefs et les valeurs de defaut          *
  *********************************************************************/
@@ -476,7 +477,7 @@ int *status;
    char *keyname;
    char *egal_pointeur;
    int nom_ecrit;
-   char arg_val_buf[65538];
+   char arg_val_buf[655380];
 
       while(*argv)
       {
@@ -1006,5 +1007,3 @@ struct definition defo[];
  
       return (result);
 }
-
-                

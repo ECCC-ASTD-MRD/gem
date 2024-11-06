@@ -22,8 +22,8 @@ case ${INTEL_SCRIPT_NAME} in
     .eccc_setup_intel_2023.2.0)
         export COMPILER_VERSION=2023.2.0
         ;;
-    .eccc_setup_intel_2024.0.1)
-        export COMPILER_VERSION=2024.0.1
+    .eccc_setup_intel_2024.2.0)
+        export COMPILER_VERSION=2024.2.0
         ;;
 esac
 
@@ -31,8 +31,8 @@ esac
 . r.load.dot rpn/code-tools/20240719/env/inteloneapi-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20240703-alpha
-. r.load.dot rpn/utils/20240703-alpha
+. r.load.dot mrd/rpn/libs/20241105-alpha
+. r.load.dot mrd/rpn/utils/20241105-alpha
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
@@ -44,7 +44,7 @@ if  [[ ${ORDENV_DIST} = "rhel" ]]; then
     elif [[ ${COMPILER_VERSION} = "2021.4.0" ]]; then
         . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01
         export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01/rhel-8-amd64-64
-    elif [[ ${COMPILER_VERSION} = "2024.0.1" ]]; then
+    elif [[ ${COMPILER_VERSION} = "2024.2.0" ]]; then
         . r.load.dot hpco/exp/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01
         export FFTW_ROOT=/fs/ssm/hpco/exp/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/rhel-8-amd64-64
     fi
