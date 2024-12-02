@@ -199,6 +199,31 @@ build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo:
     - work-rhel-8-icelake-64-intel-2022.1.2-gem-nemo
     - gem_dbase
 
+package:rhel-8-icelake-64-intel-2022.1.2-gem-nemo:
+   variables:
+      ORD_SOUMET_CPUS: "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - tags
+      - /^dev_5\.[0-9]$/
+      - schedules
+   dependencies:
+      - build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo
+   script:
+      - set +e
+      - . ${ECCI_ENV}/latest/profile.sh
+      - . ./.eccc_setup_intel
+      - set -e
+      - export PATH="${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2-gem-nemo/bin/:$PATH"
+      - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-gem-nemo
+      - make package
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
 #----- rhel-8-icelake-64-intel-2021.4.0
 # U2 Intel 2021 with installed RPN-SI libs
 # Used for SSM package
