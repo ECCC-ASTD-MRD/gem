@@ -30,7 +30,6 @@ target_link_libraries(maingemdm
    ${GEMMOD_OBJ_FILES}
    gemdyn
    ${phy_LIBRARIES}
-   ${cpl_LIBRARIES}
    ${chm_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
