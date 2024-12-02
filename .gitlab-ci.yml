@@ -47,7 +47,7 @@ build:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0
-    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids ${SRC_DIR}
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DCPL_BUILD_DIR=${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0-gem-nemo ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -108,6 +108,7 @@ package:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
       - schedules
    dependencies:
       - build:rhel-9-graniterapids-64_inteloneapi-2025.1.0
+      - build:rhel-9-graniterapids-64_inteloneapi-2025.1.0-gem-nemo
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
