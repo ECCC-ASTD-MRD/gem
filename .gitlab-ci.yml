@@ -92,7 +92,44 @@ build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
     - work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
     - gem_dbase
 
-package:rhel-9-graniterapids-64-intel-2025.1.0:
+#----- rhel-9-graniterapids-64_inteloneapi-2025.1.0-gem-nemo
+# U3 Intel 2025 with installed RPN-SI libs, WITH_CPL
+build:rhel-9-graniterapids-64_inteloneapi-2025.1.0-gem-nemo:
+  variables:
+     ORD_SOUMET_MACH: ppp6t
+     ORD_SOUMET_CPUS: "4"
+     ORD_SOUMET_W: "30"
+     ORD_SOUMET_M: "8G"
+     ORD_SOUMET_TMPFS: "1G"
+  stage: build
+  tags:
+    - concurrent
+  when: always
+  script:
+    - set +e
+    - . ${ECCI_ENV}/latest/profile.sh
+    - export ORDENV_PLAT=rhel-9-graniterapids-64
+    - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
+    - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
+    - . ./.eccc_setup_intel_2025.1.0
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0-gem-nemo
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo .
+    - export GEM_WORK=work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - ./scripts/link-dbase.sh
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0-gem-nemo
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DWITH_CPL=1 ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - gem_dbase
+
+package:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
    variables:
       ORD_SOUMET_MACH: ppp6t
       ORD_SOUMET_CPUS: "2"
