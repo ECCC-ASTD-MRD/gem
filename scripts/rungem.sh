@@ -11,7 +11,7 @@ eval `cclargs_lite -D "" $0 \
   -npex      "1"     "1"     "[Block partitioning along-x     ]"\
   -npey      "1"     "1"     "[Block partitioning along-y     ]"\
   -nomp      "1"     "1"     "[Number of OMP threads          ]"\
-  -nodespec  "NoNe"  "NoNe"  "[Node distribution specification]"\
+  -mimd      ""      ""      "[mimd configuration file        ]"\
   -dom_start "1"     "1"     "[Starting domain number         ]"\
   -dom_end   "1"     "1"     "[Ending domain number           ]"\
   -inorder   "0"     "5"     "[Ordered listing                ]"\
@@ -33,8 +33,12 @@ while [ ${idom} -le ${dom_end} ] ; do
 done
 
 export DOMAINS_this_instance=${cfglist}
+
+set -x
 #export OMP_STACKSIZE=4G
 export OMP_NUM_THREADS=$nomp
+export MKL_NUM_THREADS=1
+set ${SETMEX:-+x}
 
 printf "\n Running `readlink ${TASK_BIN}/ATM_MOD.Abs` on $npe_total ($npex x $npey) PEs:\n"
 printf " OMP_STACKSIZE=$OMP_STACKSIZE\n"
@@ -53,7 +57,31 @@ else
 
   unset INORDER
   if [ ${inorder} -gt 0 ] ; then INORDER="-inorder -tag"; fi
-  CMD="${TASK_BIN}/r.mpirun -pgm ${TASK_BIN}/ATM_MOD.Abs -npex $((npex*npey)) -npey $ndomains $INORDER -nodespec ${nodespec} -minstdout ${inorder} -nocleanup"
+  if [ -n "${mimd}" ] ; then
+     unset all_apps
+     total_cpus=0
+     while read line ; do
+        app=$(echo $line | awk '{print $1}')
+        pes=$(echo $line | awk '{print $2}')
+        pes=${pes:-1}
+        if [ -n "${app}" ] ; then
+        if [ $(echo $app | cut -c1) != "#" ] ;then
+        if [ "${app}" == "gemdm" -o "${app}" == "gem" ] ; then
+           app=${TASK_BIN}/ATM_MOD.Abs
+           pes=$((npex*npey))
+        fi
+        total_cpus=$((total_cpus+pes))
+      #  all_apps="${all_apps}"" -np ${pes} ${app} :"
+        all_apps="${all_apps}"" ${app} +${pes}"
+        fi
+        fi
+     done < ${mimd}
+     #all_apps=$(echo $all_apps | sed -E 's/(.*):/\1/')
+     #CMD="mpirun $all_apps"
+      CMD="${TASK_BIN}/r.mpirun -npex ${total_cpus} -npey $ndomains -pgm ${all_apps} $INORDER -minstdout ${inorder} -nocleanup"
+  else
+     CMD="${TASK_BIN}/r.mpirun -pgm ${TASK_BIN}/ATM_MOD.Abs -npex $((npex*npey)) -npey $ndomains $INORDER -minstdout ${inorder} -nocleanup"
+  fi
   if [[ "x${debug}" != "x0" ]] ; then
      [[ "x${debug}" == "xgdb" || "x${debug}" == "x1"  ]] && export debug=gdb || true
      if [[ "x$(which ${debug} 2>/dev/null)" == "x" ]] ; then
