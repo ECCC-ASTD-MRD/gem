@@ -25,8 +25,8 @@ eval `cclargs_lite -D " " $0 \
    -_npe          "1"          "1"         "[Number of subdomains]"\
   ++ ${arguments}`
 
-
 export CMCCONST=${CMCCONST:-${ATM_MODEL_DFILES}/datafiles/constants}
+unset MIMD_cfg
 
 restart=0
 
@@ -50,10 +50,6 @@ if [ ${no_setup} = 0 ] ; then
       setmod.sh \
          -cfg $(echo ${cfg} | cut -d : -f 1):$(echo ${cfg} | cut -d : -f 2) \
          -dircfg ${dircfg} -tsk_cfgfile ${TASK_CFGFILE} -dirdata ${datadir}
-      if [ -z "${MAESTRO_VERSION}" ]; then
-          echo "Maestro is not loaded: using GOAS task setup scripts: $gem_DIR/scripts/goas_task_setup.dot"
-          export TASK_SETUP=goas_task_setup.dot
-      fi
       if [ -z "${TASK_SETUP}" ] ; then
          cat <<EOF
   WARNING in $(basename $0)
@@ -70,6 +66,9 @@ EOF
       printf "\n##### RESULT OF TASK_SETUP #####\n"
       ls -l ${TASK_BIN} ${TASK_INPUT}/cfg_*
       /bin/rm -fr ${TASK_CFGFILE} ${datadir}
+   fi
+   if [ -s ${dircfg}/MIMD.cfg ] ; then
+      export MIMD_cfg=$(true_path ${dircfg}/MIMD.cfg)
    fi
 fi
 
@@ -120,12 +119,19 @@ for i in ${TASK_INPUT}/cfg_* ; do
    if [[ -e ${TASK_INPUT}/${dname}/coupleur_settings.nml ]] ; then
       cp ${TASK_INPUT}/${dname}/coupleur_settings.nml ${TASK_WORK}/${dname}
    fi
+   if [[ -e ${TASK_INPUT}/${dname}/SERVER_IO ]] ; then
+      export MIMD_cfg=${TASK_INPUT}/${dname}/SERVER_IO
+   fi
    if [ -s ${TASK_INPUT}/${dname}/BUSPER.tar ] ; then
       (mkdir -p ${TASK_WORK}/$dname/busper ; \
          cd ${TASK_WORK}/$dname/busper ; \
          tar xvf ${TASK_INPUT}/${dname}/BUSPER.tar)
    fi
 done
+if [ -n "${MIMD_cfg}" ] ; then
+   printf "\n  Content of file ${MIMD_cfg}:\n"
+   cat ${MIMD_cfg}
+fi
 
 export DOMAIN_start=$(echo ${cfg} | cut -d: -f1)
 export DOMAIN_end=$(  echo ${cfg} | cut -d: -f2)
@@ -183,7 +189,7 @@ while [ ${DOM} -le ${DOMAIN_end} ] ; do
    printf "\n LAUNCHING rungem.sh for domain: cfg_${domain_number} $(date)\n\n"
    . r.call.dot ${TASK_BIN}/rungem.sh \
       -npex $((npex*ngrids)) -npey $npey -nomp $nomp \
-      -nodespec ${nodespec} \
+      -mimd ${MIMD_cfg} \
       -dom_start ${DOM} -dom_end ${last_domain} -debug $debug \
       -barrier ${barrier} -inorder ${inorder}
 
