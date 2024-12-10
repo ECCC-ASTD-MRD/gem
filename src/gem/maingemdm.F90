@@ -1,4 +1,5 @@
 program gem
+      
    use app
    use iso_fortran_env
    implicit none
@@ -10,6 +11,8 @@ program gem
 #endif
 
    integer(kind=int32) ierror
+   integer :: colors(3), COMMs(3), wnum, wme, cnum, cme, un_out
+   character(len=256) :: component_S
 
    app_ptr=app_init(0,PROJECT_NAME_STRING,VERSION,PROJECT_DESCRIPTION_STRING,BUILD_TIMESTAMP)
    call app_logstream("stdout")
@@ -22,35 +25,15 @@ program gem
    call app_libregister(APP_LIBMACH,mach_VERSION//c_null_char)
 #endif
 
-   call MPI_INIT(ierror)
-   call app_start()
- 
-   ! Initialize: Domain, MPI, processor topology and ptopo.cdk
-   call init_component()
+   component_S= 'GEMDM' ; colors= (/1,3,4/)
+   call MiMd_init (component_S,colors,3,COMMs,wnum, wme, cnum, cme)
 
-   ! Establish: model configuration, domain decomposition and model geometry
-   call set_world_view()
-  
-   ! Initialize the ensemble prevision system
-   call itf_ens_init()
-  
-   ! Initialize the physics parameterization package
-   call itf_phy_init()
-  
-   ! Initialize tracers
-   call tracers()
-  
-   ! Setup main memory
-   call main_gmm_storage()
-   call set_dyn_opr()
-  
-   ! Run GEM
-   call gem_ctrl()
-  
-   ! Terminate
-   call stop_world_view()
-!   call MPI_FINALIZE(ierror)  
+   call app_start()
+
+   call gemdm (COMMs,cme,3)
 
    app_status=app_end(-1)
-   call rpn_comm_FINALIZE(ierror)
+
+   call MPI_FINALIZE(ierror)  
+
 end program gem
