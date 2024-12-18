@@ -160,6 +160,12 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 list(APPEND BINARIES maingemdm)
 if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
+  list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/editfst/editfst)
+  list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/fstcomp/fstcomp)
+  list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/fststat/fststat)
+  list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/pgsm/pgsm)
+  list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/voir/voir)
+  install(FILES ${LINKS} DESTINATION ${WORK_PREFIX}/bin)
 endif()
 list(APPEND BINARIES yy2global flipit yydecode yyencode test_integrals)
 if ("${phy_LIBRARIES}" STREQUAL "rpnphy" )
@@ -175,7 +181,6 @@ add_custom_target(work
     COMMAND /bin/mkdir -p ${WORK_PREFIX}/bin
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/share/configurations ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
-#    COMMAND cd ${WORK_PREFIX}/bin && rm -f editfst && ln -sfv editfst* editfst
   )
 
 #----- Generate the config file for the project to be usable via cmake's find_package command
