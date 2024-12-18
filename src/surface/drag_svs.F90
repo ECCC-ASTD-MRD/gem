@@ -14,16 +14,17 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-      SUBROUTINE DRAG_SVS ( TGRS, TVGS, WD1, &
+      SUBROUTINE DRAG_SVS ( TGRS, TVGS, WD, &
                               WR, THETAA, VMOD, VDIR, HU,  &  
                               PS, RS, Z0, Z0LOC, Z0VG, WFC, WSAT, CLAY1,  &
                               SAND1, LAI, WRMAX, ZUSL, ZTSL, LAT, & 
                               FCOR, Z0HA, & 
                               RESAGR, RESAVG, &  
                               HUSURF, & 
-                              HRSURF, &       
+                              HRSURF, BETA_EVPG, &
                               HV, DEL,  &
                               Z0HBG, Z0HVG, &
+                              DHUSURF_DQSAT, &
                               N)
       use tdpack
       use sfc_options
@@ -39,8 +40,9 @@
       REAL LAI(N), WRMAX(N), ZUSL(N), ZTSL(N), LAT(N)
       REAL FCOR(N), Z0HA(N), Z0HBG(N), Z0HVG(N)
       REAL RESAGR(N), RESAVG(N)
-      REAL HUSURF(N), HV(N), DEL(N)
-      REAL HRSURF(N), WD1(N)
+      REAL HUSURF(N), HV(N), DEL(N), BETA_EVPG(N)
+      REAL HRSURF(N), WD(N,NL_SVS)
+      REAL DHUSURF_DQSAT(N)
 !
 !Author
 !          S. Belair, M.Abrahamowicz, S.Z.Husain, N.Alavi, S.Zhang (June 2015) 
@@ -75,7 +77,7 @@
 !          - Input -
 ! TGRS      skin (surface) temperature of bare ground
 ! TVGS      skin (surface) temperature of vegetation
-! WD1       Soil volumetric water content (first level)
+! WD        Soil volumetric water content
 ! WR        water content retained by the vegetation canopy
 ! THETAA    potential temperature at the lowest level
 ! VMOD      wind speed at the lowest level
@@ -100,13 +102,16 @@
 !           vegetation only (also no orography), for heat transfer
 !
 !           - Output -
-! HRSURF   relative humidity of the bare ground surface (1st layer)
+! HRSURF    relative humidity of the bare ground surface (1st layer)
 ! HUSURF    specific humidity of the bare ground surface
+! BETA_EVPG beta factor of the bare ground surface (only used when
+!           evap. formulation based on Beta methods)
 ! HV        Halstead coefficient (i.e., relative humidity of the
 !           vegetation canopy)
 ! DEL       fraction of canopy covered by intercepted water
 ! Z0HBG     Bare ground thermal roughness
 ! Z0HVG     Vegetation thermal roughness     
+! DHUSURF_DQSAT Derivative of HUSURF = HRSURF*QSATGR wrt QSATGR
 !
 !
 !
@@ -114,7 +119,7 @@
       INTEGER I, zopt
 
       real, dimension(n) :: temp, coef, qsatgr, qsatvg, &
-           zqsvg, ctugr, ctuvg, z0hg, wcrit_hrsurf, z0bg_n
+           zqsvg, ctugr, ctuvg, z0hg, z0bg_n
            
 !
 !***********************************************************************
@@ -145,76 +150,55 @@
 !                        field capacity of the ground
 !                        ** If the 1st soil layer is very shallow (under 5cm)
 !                        might need to change the calc. to use a deeper layer
+!
+!                        first calculate the saturation vapor
+!                        pressure and specific humidity
+!                        and initialize BETA_EVPG to zero
+!
+      DO I=1,N
+            QSATGR(I) = FOQST( TGRS(I), PS(I) )
+            BETA_EVPG(I) = 0.  ! Initialize default value to zero (variable not used by "alpha" methods)
+      END DO
 
-      if( svs_hrsurf_sltext ) then
-         !use hrsurf formulation based on soil texture
-
+      if ( svs_hrsurf_method == "ALPHA_JN90" ) then
+         ! formulation based on Alpha method of Jacquemin and Noilhan (1990) BLM, 51: 93-134.
          DO I=1,N
-             ! Set soil water max for hrsurf calc. based on clay percentage)
-            if ( clay1(i) .lt. 1.0 ) then
-               wcrit_hrsurf(i) = wfc(i,1)
-            else if ( clay1(i)  .lt. 40.0 ) then
-               wcrit_hrsurf(i) =  (sand1(i)/((sand1(i)+clay1(i)))) * wfc(i,1) & 
-                    +             (clay1(i)/((sand1(i)+clay1(i)))) * wsat(i,1) 
-            else
-               wcrit_hrsurf(i)= wsat(i,1)
-            endif
-
-            TEMP(I)   = PI*WD1(I)/WCRIT_HRSURF(I)
-            HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )  
-            
+            TEMP(I)   = PI*WD(I,1)/WFC(I,1)
+            HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )
+!           for very humid soil (i.e., wg > wfc ),
+!           we take hu=1
+            IF ( WD(I,1).GT.WFC(I,1)) HRSURF(I) = 1.0
+!           there is a specific treatment for dew
+!           (see Mahfouf and Noilhan, jam, 1991)
+!           when hu*qsat < qa, there are two possibilities
+!
+!           a) low-level air is dry, i.e., qa < qsat
+            IF ( HRSURF(I)*QSATGR(I).LT.HU(I).AND.QSATGR(I).GT.HU(I) )&
+               HRSURF(I) = HU(I) / QSATGR(I)
+!
+!           b) low-level air is humid, i.e., qa >= qsat
+            IF ( HRSURF(I)*QSATGR(I).LT.HU(I).AND.QSATGR(I).LE.HU(I) )&
+               HRSURF(I) = 1.0
+            DHUSURF_DQSAT(I) = HRSURF(I)
          END DO
-      else
-         ! formulation based on field capacity
+      else if ( svs_hrsurf_method == "BETA_ECMWF12") then
+         ! formulation based on Beta method of Albergel et al (2012) HESS 16: 3607-3620.
+         ! but adapted to behave like Beta methods when soil is dry
          DO I=1,N
-    
-            TEMP(I)   = PI*WD1(I)/WFC(I,1)
-            HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )  
-            wcrit_hrsurf(i) = wfc(i,1)
+            IF (HU(I) .GT. QSATGR(I)) THEN
+               ! Beta is maximal in the following cases
+               ! - air more humid than soil water: condensation occurs at rate independent of soil moisture
+               BETA_EVPG(I) = 1.0
+               HRSURF(I) = 1.0
+            ELSE
+               TEMP(I) = (WFC(I,1) / MAX(WD(I,1),CRITWATER))
+               TEMP(I) = TEMP(I) ** MAX(svs_hrsurf_power - (svs_hrsurf_power-1.0)/TEMP(I),1.0)
+               BETA_EVPG(I) = RESAGR(I) / ( RESAGR(I) + svs_hrsurf_rs * TEMP(I) )
+               HRSURF(I) = BETA_EVPG(I) + (1-BETA_EVPG(I)) * HU(I) / QSATGR(I)
+            END IF
+            DHUSURF_DQSAT(I) = BETA_EVPG(I)
          END DO
       endif
-!
-!                         there is a specific treatment for dew
-!                         (see Mahfouf and Noilhan, jam, 1991)
-!
-!                         first calculate the saturation vapor
-!                         pressure and specific humidity
-!
-      DO I=1,N
-        QSATGR(I) = FOQST( TGRS(I), PS(I) )
-      END DO
-!
-!
-      DO I=1,N
-!
-!
-!                         when hu*qsat < qa, there are two
-!                         possibilities
-!
-!                         low-level air is dry, i.e.,
-!                         qa < qsat
-!
-!
-
-        IF ( HRSURF(I)*QSATGR(I).LT.HU(I).AND.QSATGR(I).GT.HU(I) )& 
-                HRSURF(I) = HU(I) / QSATGR(I)
-
-!
-!
-!                          b) low-level air is humid, i.e.,
-!                          qa >= qsat
-!
-        IF ( HRSURF(I)*QSATGR(I).LT.HU(I).AND.QSATGR(I).LE.HU(I) )& 
-                  HRSURF(I) = 1.0
-
-!
-!                          for very humid soil (i.e., wg > wfc ),
-!                          we take hu=1
-!
-        IF ( WD1(I).GT.WCRIT_HRSURF(I) ) HRSURF(I) = 1.0
-
-!
-      END DO
 !
 !                           Calculate specific humidity over ground 
       DO I=1,N

@@ -143,6 +143,9 @@ contains
       istat = clib_toupper(isba_soil_emiss)
       istat = clib_toupper(isba_snowfrac_bare)
       istat = clib_toupper(soiltext)
+      istat = clib_toupper(soil_ksat_ice)
+      istat = clib_toupper(svs_hrsurf_method)
+      istat = clib_toupper(svs_snow_rain)
       istat = clib_toupper(vf_type)
       istat = clib_toupper(water_emiss)
       istat = clib_toupper(z0mtype)
@@ -358,7 +361,21 @@ contains
                  ' : Should be one of: '//trim(msg_S))
             return
          endif
-
+         
+         if (.not.any(soil_ksat_ice == SOIL_KSAT_ICE_OPT)) then
+            call str_concat(msg_S, SOIL_KSAT_ICE_OPT, ', ')
+            call msg(MSG_ERROR, '(sfc_nml_check) soil_ksat_ice = '//trim(soil_ksat_ice)//&
+                 ' : Should be one of: '//trim(msg_S))
+            return
+         endif
+         
+         if (.not.any(svs_hrsurf_method == SVS_HRSURF_METHOD_OPT)) then
+            call str_concat(msg_S, SVS_HRSURF_METHOD_OPT, ', ')
+            call msg(MSG_ERROR, '(sfc_nml_check) svs_hrsurf_method = '//trim(svs_hrsurf_method)//&
+                 ' : Should be one of: '//trim(msg_S))
+            return
+         endif
+         
          if (.not.any(vf_type == VFTYPE_OPT)) then
             call str_concat(msg_S, VFTYPE_OPT,', ')
             call msg(MSG_ERROR,'(sfc_nml_check) vf_type = '//trim(vf_type)//' : Should be one of: '//trim(msg_S))
@@ -390,7 +407,39 @@ contains
          else
             vl_type = (/ 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22 , 23  /)
             vh_type = (/ 4, 5, 6, 7, 8, 9, 25, 26 /)
-          endif
+         endif
+
+         if (svs_read_d50dat) then
+            if (any(svs_d50dat < 0.) .or. any(svs_d50dat > 10.)) then
+               call msg(MSG_ERROR,'(sfc_nml_check) svs_d50dat out of range [0., 10.]')
+               return
+            endif
+         endif
+         if (svs_read_d95dat) then
+            if (any(svs_d95dat < 0.) .or. any(svs_d95dat > 10.)) then
+               call msg(MSG_ERROR,'(sfc_nml_check) svs_d95dat out of range [0., 10.]')
+               return
+            endif
+         endif
+         if (svs_read_vegdat) then
+            if (any(svs_vegdat < -99.) .or. any(svs_vegdat > 1.)) then
+               call msg(MSG_ERROR,'(sfc_nml_check) svs_vegdat out of range [-99.., 1.]')
+               return
+            endif
+         endif
+         if (svs_read_z0mdat) then
+            if (any(svs_z0mdat < 0.) .or. any(svs_z0mdat > 10.)) then
+               call msg(MSG_ERROR,'(sfc_nml_check) svs_z0mdat out of range [0., 10.]')
+               return
+            endif
+         endif
+         if (svs_read_vegcrops) then
+            if (any(svs_vegcrops < 0.) .or. any(svs_vegcrops > 1.)) then
+               call msg(MSG_ERROR,'(sfc_nml_check) svs_vegcrops out of range [0., 1.]')
+               return
+            endif
+         endif
+
        endif IF_SVS
 
       m_istat = RMN_OK

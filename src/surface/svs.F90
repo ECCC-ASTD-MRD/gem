@@ -131,7 +131,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
    integer i,m, masklat50(n)
 
-   real,dimension(n) :: alva, cg, cvpa, del, dwaterdt
+   real,dimension(n) :: alva, cg, cvpa, del, dhusurf_dqsat, dwaterdt
    real,dimension(n) :: esnofrac, esvnofrac, eva, gamva, hrsurf
    real,dimension(n) :: leff, lesnofrac, lesvnofrac, rainrate_mm
    real,dimension(n) :: rgla, rhoa, snowrate_mm, stom_rs, stomra
@@ -374,7 +374,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       endif
 
 !
-      CALL DRAG_SVS ( bus(x(TGROUND,1,1)), bus(x(TVEGE,1,1)),  &   
+      CALL DRAG_SVS ( bus(x(TGROUND,1,1)), &
+           bus(x(TVEGE,1,1)),  &   
            bus(x(WSOIL ,1,1)) ,  &   
            bus(x(WVEG   ,1,1)), zthetaa,  &   
            VMOD, VDIR, hu,     &
@@ -386,9 +387,10 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(FCOR,1,1)),bus(x(Z0HA ,1,1)), &  
            bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)), &    
            bus(x(HUSURF,1,1)),   &  
-           HRSURF,      &
+           bus(x(HRSURFGR,1,1)),bus(x(BETAGR,1,1)),      &
            bus(x(HV,1,1)), DEL,     &
            bus(x(Z0HBG,1,1)), bus(x(Z0HVG,1,1)), &
+           DHUSURF_DQSAT, &
            N )  
       if (phy_error_L) return
 
@@ -454,7 +456,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                   bus(x(ztsl       ,1,1)) , hu, &
                   ps, RHOA, BUS(x(SVS_WTA,1,1)), &
                   z0m, z0mland , bus(x(Z0T,1,indx_soil)),&
-                  HRSURF,       & 
+                  bus(x(HRSURFGR,1,1)), DHUSURF_DQSAT,      & 
                   bus(x(HV         ,1,1)) , DEL, STOM_RS ,& 
                   CG,CVPA,EVA,bus(x(PSNGRVL    ,1,1)) ,    &    
                   bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)),   &        

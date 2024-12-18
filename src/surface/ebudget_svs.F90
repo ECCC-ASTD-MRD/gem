@@ -21,7 +21,7 @@
                    ALGR,EMGR, & 
                    RAT, THETAA, FCOR, ZUSL, ZTSL, HU, PS, &  
                    RHOA, WTA, Z0, Z0LOC, Z0H, & 
-                   HRSURF, HV, DEL, RS, & 
+                   HRSURF, DHUSURF_DQSAT, HV, DEL, RS, &
                    CG,CVP, EMVG, PSNG, &  
                    RESAGR, RESAVG, RESASA, RESASV, &
                    RNETSN, HFLUXSN, LESNOFRAC, ESNOFRAC, & 
@@ -133,6 +133,7 @@
 ! Z0        momentum roughness length (no snow)
 ! Z0LOC     local land momentum roughness length (no orography) 
 ! HRSURF    relative humidity of the bare ground surface (1st soil layer)
+! DHUSURF_DQSAT derivative of HUSURF = HRSURF*QSATGR wrt QSATGR
 ! HV        Halstead coefficient (relative humidity of veg. canopy)
 ! DEL       portion of the leaves covered by water
 ! RS        stomatal resistance
@@ -222,7 +223,7 @@
             rnetgr, rnetvg, hfluxgr, hfluxvg, roragr, roravg,  &
             zqsatsno, tgrst, tgrdt, tvgst, tvgdt, esf, esvf, evf, &
             egf, ev, zqsatsnv, levnofrac, legnofrac, frach,  &
-            cmu, cm, ctu, vmod_lmin
+            cmu, cm, ctu, vmod_lmin, dhusurf_dqsat
 
 !************************************************************************
 !
@@ -326,13 +327,15 @@
 
           A2(I) = 1. / DT + CG(I) * & 
                  (4. * EMGR(I) * STEFAN * (TGRS(I)**3) &   
-                 +  RORAGR(I) * ZDQSATGR(I) * LEFF(I)* HRSURF(I) &  
+                 +  RORAGR(I) * ZDQSATGR(I) * LEFF(I) &
+                    * DHUSURF_DQSAT(I) &
                  +  RORAGR(I) * CPD) &  
                  + 2. * PI / 86400.
 
           B2(I) = 1. / DT + CG(I) *  &  
                  (3. * EMGR(I) * STEFAN * (TGRS(I)**3) &   
-                 + RORAGR(I) * ZDQSATGR(I) * LEFF(I) * HRSURF(I) )
+                 + RORAGR(I) * ZDQSATGR(I) * LEFF(I) &
+                   * DHUSURF_DQSAT(I) )
 
 
           C2(I) = 2. * PI * TGRD(I) / 86400. &   

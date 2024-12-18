@@ -22,6 +22,8 @@
 !
         use svs_configs
         use sfc_options, only: svs_gexp
+        use sfc_options, only: svs_etr_avg_beta
+        use sfc_options, only: svs_etr_max_roots_ignored
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -42,7 +44,7 @@
       REAL RH(N), VPD(N), O2_CONC(N), CO2A(N), USEBB(ICC)
 !
       REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS)
-      REAL AVG_GWSOL(N), VMAXC(N,ICC) 
+      REAL AVG_GWSOL(N), AVG_BETA(N), FRAC_WILTED_ROOTS(N), VMAXC(N,ICC)
       REAL VMUNS1(N,ICC), VMUNS2(N,ICC), VMUNS3(N,ICC), VMUNS(N,ICC), VM(N,ICC)
       REAL CO2I(N,ICC), PREV_CO2I(N,ICC), FPAR(N,ICC), JC(N,ICC),  JC1(N,ICC)
       REAL JC2(N,ICC), JC3(N,ICC), JE(N,ICC), JE1(N,ICC), JE2(N,ICC), JS(N,ICC)
@@ -71,7 +73,6 @@
       REAL INICO2I(KK), ALPHA(KK), RMLCOEFF(KK), BB(KK), MM(KK)
       REAL CO2CC, DELTA_CO2, N_EFFECT
       INTEGER ISC4(KK)
-
       REAL GEXP
 !
 !Author
@@ -711,21 +712,38 @@
       DO I=1,N
 
          DO K=1,NL_SVS
-            ! beta between 0. an 1.  , 
-            BETA_WSOL(I,K) =  min( max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) , 1.0)
-            ! soil moisture stress term per layer
-            G_WSOL(i,k) = 1.0 - ( 1.0 - BETA_WSOL(I,K) ) ** GEXP
+            BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
+            ! soil moisture stress term per layer, with beta bounded between 0 and 1
+            G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP
          ENDDO
          ! average soil moisture term ... weighted by root fractions 
          ! Total roots = 1.0 if vegetation present ... set the term=0.0 if no vegetation
+         frac_wilted_roots(i) = 0.0
          if (FCD(I,NL_SVS).gt.0.999) then
              avg_gwsol(i) = g_wsol(i,1) * fcd(i,1)
+             avg_beta(i) = beta_wsol(i,1) * fcd(i,1)
+             if (wd(i,k) .lt. wwilt(i,k)) then
+               frac_wilted_roots(i) = fcd(i,1)
+             endif
              do k=2,NL_SVS
                 avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd(i,k) - fcd(i,k-1) ) 
+                avg_beta(i) = avg_beta(i)  + beta_wsol(i,k) * ( fcd(i,k) - fcd(i,k-1) )
+                if (wd(i,k) .lt. wwilt(i,k)) then
+                  frac_wilted_roots(i) = frac_wilted_roots(i) + ( fcd(i,k) - fcd(i,k-1) )
+                endif
              enddo
+             if (svs_etr_avg_beta) then
+               if (svs_etr_max_roots_ignored > 0.0) then
+                 avg_beta(i) = avg_beta(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i)))
+               endif
+               avg_gwsol(i) = 1.0 - ( 1.0 - min(avg_beta(i), 1.0) ) ** GEXP
+             elseif (svs_etr_max_roots_ignored > 0.0) then
+               avg_gwsol(i) = min(avg_gwsol(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i))), 1.0)
+             endif
          else
             ! no vegetation
             avg_gwsol(i) = 0.0
+            avg_beta(i) = 0.0
          endif
          
       ENDDO
