@@ -1426,9 +1426,29 @@ Soil texture database/calculations for SVS land surface scheme
 | 'GSDE' || character(len=16)
 
 |-
+| svs_d50dat ||
+Values (1:NCLASS) used for the lookup table D50DAT if svs_read_d50dat=.T.
+| -999. || real
+
+|-
+| svs_d95dat ||
+Values (1:NCLASS) used for the lookup table D95DAT if svs_read_d95dat=.T.
+| -999. || real
+
+|-
 | svs_dynamic_z0h ||
 use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true.
 | .false. || logical
+
+|-
+| svs_etr_avg_beta ||
+Option to use average normalized water content rather than average stress to compute transpiration
+| .false. || logical
+
+|-
+| svs_etr_max_roots_ignored ||
+Maximum fraction of wilted roots that can be ignored when computing average stress of vegetation
+| 0.0 || real
 
 |-
 | svs_gexp ||
@@ -1448,13 +1468,50 @@ to a positive value.
 | -1. || real
 
 |-
-| svs_hrsurf_sltext ||
-use hrsurf based on soil texture for SVS if .true.
-| .false. || logical
+| svs_hrsurf_method ||
+Specify which method is used to compute hrsurf
+* ALPHA_JN90  : (default) [pending description]
+* BETA_ECMWF12: [pending description]
+| 'ALPHA_JN90' || character(len=16)
+
+|-
+| svs_hrsurf_power ||
+Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method)
+| 1. || real
+
+|-
+| svs_hrsurf_rs ||
+Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]
+| 50. || real
 
 |-
 | svs_local_z0m ||
-use local momentum (no snow) roughness for SVS if .true.
+Use local momentum (no snow) roughness for SVS if .true.
+| .false. || logical
+
+|-
+| svs_read_d50dat ||
+Option to change the lookup table D50DAT in inicover_svs.F90
+| .false. || logical
+
+|-
+| svs_read_d95dat ||
+Option to change the lookup table D95DAT in inicover_svs.F90
+| .false. || logical
+
+|-
+| svs_read_vegcrops ||
+Option to change the lookup table VEGCROPS in inicover_svs.F90
+| .false. || logical
+
+|-
+| svs_read_vegdat ||
+Option to change the lookup table VEGDAT in inicover_svs.F90
+| .false. || logical
+
+|-
+| svs_read_z0mdat ||
+Option to change the lookuptable Z0MDAT in inicover_svs.F90
 | .false. || logical
 
 |-
@@ -1466,6 +1523,21 @@ use local momentum (no snow) roughness for SVS if .true.
 | svs_urban_params ||
 New urban surface parameters within SVS only (not used in TEB)
 | .false. || logical
+
+|-
+| svs_vegcrops ||
+Values (1:13) used for the lookup table VEGCROPS if svs_read_vegcrops=.T.
+| -999. || real
+
+|-
+| svs_vegdat ||
+Values (1:NCLASS) used for the lookup table VEGDAT if svs_read_vegdat=.T.
+| -999. || real
+
+|-
+| svs_z0mdat ||
+Values (1:NCLASS) used for the lookup table Z0MDAT if svs_read_z0mdat=.T.
+| -999. || real
 
 |-
 | tdiaglim ||

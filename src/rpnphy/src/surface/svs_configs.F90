@@ -50,7 +50,7 @@ module svs_configs
   ! GSDE NUMBER OF LAYERS 
   integer,  parameter :: nl_gsde = 8 
   ! GSDE SOIL DEPTH in METERS... 
-  real, parameter , dimension(nl_gsde):: dl_gsde =  (/ 0.045, 0.091, 0.166, 0.289, 0.493, 0.829, 1.38, 2.229 /) 
+  real, parameter , dimension(nl_gsde):: dl_gsde =  (/ 0.045, 0.091, 0.166, 0.289, 0.493, 0.829, 1.383, 2.296 /)
   
 
    ! SLC NUMBER OF LAYERS 
@@ -61,7 +61,7 @@ module svs_configs
   ! SOILGRIDS NUMBER OF LAYERS 
   integer,  parameter :: nl_soilgrids = 7 
   ! SOILGRIDS SOIL DEPTH in METERS... 
-  real, parameter , dimension(nl_soilgrids):: dl_soilgrids =  (/ 0.025, 0.1, 0.225, 0.45, 0.8, 1.5, 2.0 /) 
+  real, parameter , dimension(nl_soilgrids):: dl_soilgrids =  (/ 0.05, 0.15, 0.3, 0.6, 1.0, 2.0, 2.0 /)
 
 
   !  WEIGHTS TO MAP soil parameters calculated on SOIL TEXTURE LAYERS  layers unto MODEL SOIL LAYERS 

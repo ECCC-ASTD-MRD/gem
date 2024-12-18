@@ -256,12 +256,26 @@
 | snow_emiss |  | -1. | real |
 | soil_ksat_ice |  | 'ZHANGGRAY97' | character(len=16) |
 | soiltext | Soil texture database/calculations for SVS land surface scheme<br>- 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)<br>- 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)<br>- 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC ? World Soil Information | 'GSDE' | character(len=16) |
+| svs_d50dat | Values (1:NCLASS) used for the lookup table D50DAT if svs_read_d50dat=.T. | -999. | real |
+| svs_d95dat | Values (1:NCLASS) used for the lookup table D95DAT if svs_read_d95dat=.T. | -999. | real |
 | svs_dynamic_z0h | use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true. | .false. | logical |
+| svs_etr_avg_beta | Option to use average normalized water content rather than average stress to compute transpiration | .false. | logical |
+| svs_etr_max_roots_ignored | Maximum fraction of wilted roots that can be ignored when computing average stress of vegetation | 0.0 | real |
 | svs_gexp | Exponent in function defining vegetation stress when estimating transpiration<br>Transpiration decreases more slowly with soil moisture when svs_gexp is high<br>it does not start decreasing until about soil moisture is half way between wilting<br>point and field capacity when svs_gexp=10.<br>A positive value is expected, but a negative value is used by default to keep this option<br>inactive if a value is not provided.<br>Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value<br>of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when<br>the CTEM parameterization is used.<br>This behaviour is preserved if the value of the key is less or equal to zero for<br>backward compatibility purposes.<br>Since this is a bugfix, eventually the default value of the key should be changed<br>to a positive value. | -1. | real |
-| svs_hrsurf_sltext | use hrsurf based on soil texture for SVS if .true. | .false. | logical |
-| svs_local_z0m | use local momentum (no snow) roughness for SVS if .true. | .false. | logical |
+| svs_hrsurf_method | Specify which method is used to compute hrsurf<br>- ALPHA_JN90  : (default) [pending description]<br>- BETA_ECMWF12: [pending description] | 'ALPHA_JN90' | character(len=16) |
+| svs_hrsurf_power | Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method) | 1. | real |
+| svs_hrsurf_rs | Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m] | 50. | real |
+| svs_local_z0m | Use local momentum (no snow) roughness for SVS if .true. | .false. | logical |
+| svs_read_d50dat | Option to change the lookup table D50DAT in inicover_svs.F90 | .false. | logical |
+| svs_read_d95dat | Option to change the lookup table D95DAT in inicover_svs.F90 | .false. | logical |
+| svs_read_vegcrops | Option to change the lookup table VEGCROPS in inicover_svs.F90 | .false. | logical |
+| svs_read_vegdat | Option to change the lookup table VEGDAT in inicover_svs.F90 | .false. | logical |
+| svs_read_z0mdat | Option to change the lookuptable Z0MDAT in inicover_svs.F90 | .false. | logical |
 | svs_snow_rain |  | 'BELAIR03' | character(len=16) |
 | svs_urban_params | New urban surface parameters within SVS only (not used in TEB) | .false. | logical |
+| svs_vegcrops | Values (1:13) used for the lookup table VEGCROPS if svs_read_vegcrops=.T. | -999. | real |
+| svs_vegdat | Values (1:NCLASS) used for the lookup table VEGDAT if svs_read_vegdat=.T. | -999. | real |
+| svs_z0mdat | Values (1:NCLASS) used for the lookup table Z0MDAT if svs_read_z0mdat=.T. | -999. | real |
 | tdiaglim | Limit temperature inversions to 8K/40m in surface layer if .true. | .false. | logical |
 | urb_diagtemp | Adjust temperature diagnostic in TEB in the street  if .true. | .false. | logical |
 | urb_diagwind | Adjust wind diagnostic in TEB in the street  if .true. | .false. | logical |

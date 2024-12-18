@@ -652,3 +652,21 @@ fileVersion: 6.3.0-a9 > 6.3.0-a10
 #New:  physics_cfgs/cond_rhminus
 #New:  surface_cfgs/soil_ksat_ice
 #New:  surface_cfgs/svs_gexp
+#------
+fileVersion: 6.3.0-a10 > 6.3.0-a12
+#New:  surface_cfgs/svs_d50dat
+#New:  surface_cfgs/svs_d95dat
+#New:  surface_cfgs/svs_etr_avg_beta
+#New:  surface_cfgs/svs_etr_max_roots_ignored
+rm:  surface_cfgs/svs_hrsurf_sltext
+#New:  surface_cfgs/svs_hrsurf_method
+#New:  surface_cfgs/svs_hrsurf_power
+#New:  surface_cfgs/svs_hrsurf_rs
+#New:  surface_cfgs/svs_read_d50dat
+#New:  surface_cfgs/svs_read_d95dat
+#New:  surface_cfgs/svs_read_vegcrops
+#New:  surface_cfgs/svs_read_vegdat
+#New:  surface_cfgs/svs_read_z0mdat
+#New:  surface_cfgs/svs_vegcrops
+#New:  surface_cfgs/svs_vegdat
+#New:  surface_cfgs/svs_z0mdat
