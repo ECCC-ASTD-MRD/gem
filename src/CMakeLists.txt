@@ -42,15 +42,17 @@ endif()
 
 add_subdirectory(modelutils modelutils)
 
-if ((WITH_MACH) OR (CACHE WITH_MACH) OR ($ENV{WITH_MACH}))
+set(WITH_MACH OFF CACHE BOOL "Control whether to build GEM-MACH")
+if (WITH_MACH)
   # Add gem-mach source files, if source directory exists
   if (EXISTS ${CMAKE_SOURCE_DIR}/src/mach/CMakeLists.txt)
     add_subdirectory(mach mach)
     set(MACH_FILES ${CMAKE_SOURCE_DIR}/src/mach/src/base/*.F90)
     set(MACH_INCLUDE_DIRECTORY ${CMAKE_SOURCE_DIR}/src/mach/include)
     set(MACH_VERSION ${mach_VERSION} CACHE STRING "mach version")
+    message(STATUS "(EC) Compiling GEM-MACH")
   else()
-    message(ERROR " -- (EC) You set WITH_MACH=TRUE, but no mach directory was found!")
+    message(ERROR "(EC) You set WITH_MACH=TRUE, but no mach directory was found!")
   endif()
 endif()
 
