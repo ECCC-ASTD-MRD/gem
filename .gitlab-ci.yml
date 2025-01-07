@@ -236,7 +236,6 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
    tags:
      - concurrent
    only:
-     - master
      - /^dev_5\.[0-9]$/
      - tags
    environment:
@@ -270,7 +269,6 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
    tags:
       - concurrent
    only:
-      - master
       - /^dev_5\.[0-9]$/
       - tags
       - schedules
@@ -299,7 +297,6 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
    tags:
      - concurrent
    only:
-     - master
      - /^dev_5\.[0-9]$/
      - tags
    environment:
@@ -333,7 +330,6 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
    tags:
       - concurrent
    only:
-      - master
       - /^dev_5\.[0-9]$/
       - tags
       - schedules
@@ -362,7 +358,6 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
    tags:
      - concurrent
    only:
-     - master
      - /^dev_5\.[0-9]$/
      - tags
    environment:
