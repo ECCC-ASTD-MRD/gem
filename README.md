@@ -75,9 +75,9 @@ other submodules, or adding or removing source files):
 ### Scripts
 
 Scripts in `scripts/support` and `scripts/rpy` directories are a copy of scripts
-already loaded from SSM domains when a `.eccc_setup file` is called. By
+already loaded from SSM domains when a `.eccc_setup*` file is called.  By
 default, they are not used, but if you want to test or modify them, you can
-override SSM scripts by setting GOAS_SCRIPT_MODE variable before sourcing
+override SSM scripts by setting `GOAS_SCRIPT_MODE` variable before sourcing
 `.eccc_setup_intel` or `.eccc_setup_gnu`:
 
 ```
@@ -86,24 +86,26 @@ export GOAS_SCRIPT_MODE=true
 
 Please also note that if you load maestro, maestro scripts will be used,
 either in a maestro suite or when running GEM interactively. Otherwise, goas
-task setup files situated in the scripts directory will be used instead.
+task setup files situated in the `scripts` directory will be used instead.
 
 ## Building and installing GEM
 
 There is a script called `cado` aimed at replacing the top-level Makefile.
 Both coexist, even if we suggest you use the cado script.
-See `cado -h` (short help) or `cado help` or the content of the Makefile for options.
-For example: `cado cmake` or `make cmake` generates Makefiles to compile gem,
-gemdyn, modelutils and rpnphy. . The cmake command used by cado script is printed at the end of the process.
+See `cado -h` (short help) or `cado help` or the content of the Makefile for
+options.
+For example: `cado cmake` or `make cmake` generates Makefiles to compile
+gem, gemdyn, modelutils and rpnphy.  The cmake command used by cado script
+is printed at the end of the process.
 
-Configure:
+Configure for *GEM*:
 ```
 cado cmake
 or 
 make cmake
 ```
 
-To configure for mach, use:
+Or, if you want to compile *GEM-MACH instead of GEM*, use the following instead:
 ```
 cado cmake-mach
 ```
@@ -121,8 +123,8 @@ make -j work
 ```
 cado work -j or make -j work can be used to compile and install in the same step.
 
-In development mode, gem is compiled using Intel shared libraries: use the
-following command to compile with static libraries:
+In development mode, GEM is compiled using Intel shared libraries: use the
+following command to compile with static libraries (for GEM or GEM-MACH):
 ```
 cado cmake-static
 or
