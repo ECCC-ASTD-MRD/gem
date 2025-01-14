@@ -3,7 +3,11 @@ program gem
    use iso_fortran_env
    implicit none
 
+#ifdef HAVE_MACH
+#include <gemmach_build_info.h>
+#else
 #include <gem_build_info.h>
+#endif
 
    integer(kind=int32) ierror
 
@@ -13,6 +17,9 @@ program gem
    call app_libregister(APP_LIBDYN,dyn_VERSION)
    call app_libregister(APP_LIBPHY,phy_VERSION)
    call app_libregister(APP_LIBMDLUTIL,modelutils_VERSION)
+#ifdef WITH_MACH
+   call app_libregister(APP_LIBMACH,mach_VERSION)
+#endif
 
    call MPI_INIT(ierror)
    call app_start()

@@ -51,13 +51,13 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
 endif()
 
 set(WITH_MACH FALSE CACHE BOOL "Control whether to compile with mach")
-if ((WITH_MACH) OR (CACHE WITH_MACH) OR ($ENV{WITH_MACH}))
+if (WITH_MACH)
   # Add gem-mach source files, if source directory exists
   if (EXISTS ${CMAKE_SOURCE_DIR}/src/mach/CMakeLists.txt)
     set(chm_LIBRARIES mach CACHE STRING "mach chemistry library" FORCE)
     add_subdirectory(mach mach)
   else()
-    message(ERROR " -- (EC) You set WITH_MACH=TRUE, but no mach directory was found!")
+    message(ERROR "(EC) You set WITH_MACH=TRUE, but no mach directory was found!")
   endif()
 endif()
 
@@ -75,21 +75,22 @@ if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   add_subdirectory(rpn-si/filetype filetype)
 endif()
 
-# To be installed only with package
-install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
-install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
+# To be installed only with GEM package
+if (NOT WITH_MACH)
+  install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
+  install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
-  install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS PATTERN "version.in" EXCLUDE)
-endif()
+  if (EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
+    install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS PATTERN "version.in" EXCLUDE)
+  endif()
 
-# Generate version specific nml
-install(CODE "
+  # Generate version specific nml
+  install(CODE "
    message(STATUS \"Generating nml\")
    execute_process(
      COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
      COMMAND_ERROR_IS_FATAL ANY
-)
+    )
    execute_process(
      COMMAND ${CMAKE_SOURCE_DIR}/scripts/rpy/rpy.nml_get -v -f ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
      OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv
@@ -100,8 +101,10 @@ install(CODE "
      OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k
      COMMAND_ERROR_IS_FATAL ANY)
      ")
+  # install nml reference files, physics_input_table file, and scripts
+  install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
+  install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)
+  install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/rpnphy/bin/rpnphy_nml_mkref" DESTINATION scripts)
+  install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/gemdyn/bin/gemdyn_nml_mkref" DESTINATION scripts)
+endif()
 
-install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
-install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)
-install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/rpnphy/bin/rpnphy_nml_mkref" DESTINATION scripts)
-install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/gemdyn/bin/gemdyn_nml_mkref" DESTINATION scripts)
