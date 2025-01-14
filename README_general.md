@@ -18,7 +18,7 @@ clone and proceed as intructed in a README file, we provide a set of basic
 tools in:
 
 ```
-/users/dor/armn/dyn/ovbin
+/net/local/home/s-rpnatm-dyn/ovbin
 or
 /home/sdyn001/ovbin
 ```
