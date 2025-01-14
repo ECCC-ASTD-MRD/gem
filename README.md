@@ -231,3 +231,22 @@ The following environment variables are created (examples):
     - directories situated in gem_DIR:
       - build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - work-ubuntu-22.04-amd64-64-intel-2022.1.2
+
+## Structure of GEM source code
+
+```
+--------------- gemdyn ---------------- TOP
+---- rpnphy ---- mach ------- cpl -----  |
+------------- modelutils --------------  |
+--------------- vgrid -----------------  |
+----------rmn---tdpack--rpncomm -------  V
+--------- compiler libraries ---------- BOTTOM
+```
+
+GEM code is built top-down meaning:
+
+the routines in a library *cannot* call any functions or use any modules above it
+
+ie: any routines in rpnphy *cannot* call a routine or use a module in gemdyn
+
+ie: any routines in gemdyn can call anything below it
