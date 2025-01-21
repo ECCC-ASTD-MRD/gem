@@ -39,6 +39,10 @@ cmake-mach-static:
 cmake-mach-debug:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_MACH=TRUE ${gem_DIR} )
 
+# Extra debug (see extra checks defined in cmake_rpn compiler presets and in CMakeLists.txt)
+cmake-mach-debug-extra:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON -DWITH_MACH=TRUE ${gem_DIR} )
+
 # Compiling everything with MACH package
 cmake-all-mach:
 	( export WITH_SYSTEM_RPN=FALSE && cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_MACH=TRUE ${gem_DIR} )
