@@ -11,6 +11,7 @@ cado_commands=(
     cmake-mach-static
     cmake-all-mach
     cmake-mach-debug
+    cmake-mach-debug-extra
     build
     work
     install
