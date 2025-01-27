@@ -63,4 +63,6 @@ target_link_libraries(prgemnml
    ${BLAS_LIBRARIES}
 )
 
-install(TARGETS checkdmpart gemgrid prgemnml RUNTIME DESTINATION bin)
+if (NOT WITH_MACH)
+   install(TARGETS checkdmpart gemgrid prgemnml RUNTIME DESTINATION bin)
+endif()

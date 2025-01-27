@@ -41,7 +41,11 @@ if ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   endif()
 endif()
 
-install(TARGETS gemdyn
+# Don't install lib and include if not installing GEM
+# SUPER_PROJECT_NAME should be have been set in GEM main CMakeLists.txt
+if ("${SUPER_PROJECT_NAME}" STREQUAL "gem" OR (NOT SUPER_PROJECT_NAME))
+  install(TARGETS gemdyn
     LIBRARY       DESTINATION lib
     ARCHIVE       DESTINATION lib)
-install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)
+  install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)
+endif()
