@@ -228,9 +228,6 @@ package:rhel-8-icelake-64-intel-2021.4.0:
 #----- ubuntu-22.04-amd64_inteloneapi-2022.1.2
 build:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
-      ORD_SOUMET_MACH    : gpsc7
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
-      ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS: "4"
       ORD_SOUMET_W: "30"
       ORD_SOUMET_M: "8G"
@@ -239,9 +236,10 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
    tags:
      - concurrent
    only:
-     - master
      - /^dev_5\.[0-9]$/
      - tags
+   environment:
+      name: ubuntu22
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
@@ -263,9 +261,6 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
 
 package:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
-      ORD_SOUMET_MACH    : gpsc7
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
-      ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
       ORD_SOUMET_W: "10"
       ORD_SOUMET_M: "8G"
@@ -274,14 +269,13 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
    tags:
       - concurrent
    only:
-      - master
       - /^dev_5\.[0-9]$/
       - tags
       - schedules
    dependencies:
       - build:ubuntu-22.04-amd64-intel-2022.1.2
    environment:
-      name: testing
+      name: ubuntu22
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
@@ -295,9 +289,6 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
 #----- ubuntu-22.04-amd64_inteloneapi-2023.2.0
 build:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc7
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
-      ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS: "4"
       ORD_SOUMET_W: "30"
       ORD_SOUMET_M: "8G"
@@ -306,9 +297,10 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
    tags:
      - concurrent
    only:
-     - master
      - /^dev_5\.[0-9]$/
      - tags
+   environment:
+      name: ubuntu22
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
@@ -330,9 +322,6 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
 
 package:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc7
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
-      ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
       ORD_SOUMET_W: "10"
       ORD_SOUMET_M: "8G"
@@ -341,14 +330,13 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
    tags:
       - concurrent
    only:
-      - master
       - /^dev_5\.[0-9]$/
       - tags
       - schedules
    dependencies:
       - build:ubuntu-22.04-amd64-intel-2023.2.0
    environment:
-      name: testing
+      name: ubuntu22
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
@@ -362,9 +350,6 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
 #----- ubuntu-22.04-amd64_gnu-11.4.0
 build:ubuntu-22.04-amd64-gnu-11.4.0:
    variables:
-      ORD_SOUMET_MACH    : gpsc7
-      ORD_SOUMET_IMAGE   : registry.maze.science.gc.ca/ssc-hpcs/generic-job:ubuntu22.04
-      ORD_SOUMET_PROJECT : eccc_mrd
       ORD_SOUMET_CPUS    : "2"
       ORD_SOUMET_W: "10"
       ORD_SOUMET_M: "8G"
@@ -373,9 +358,10 @@ build:ubuntu-22.04-amd64-gnu-11.4.0:
    tags:
      - concurrent
    only:
-     - master
      - /^dev_5\.[0-9]$/
      - tags
+   environment:
+      name: ubuntu22
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
