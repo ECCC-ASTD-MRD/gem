@@ -6,7 +6,7 @@
 #        for validation of the integration test results. The combined output can be used as the new control output.
 #
 #   USAGE: 
-#        ord_soumet ${TASK_BIN}/run-gm-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobProcTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${GMJobProcTopo} -cm ${GMJobMemory} -t ${GMJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${GMJobName} -listing ${TASK_BASEDIR}/listing
+#        ord_soumet ${TASK_BIN}/run-gm-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobProcTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${GMJobProcTopo} -cm ${GMJobMemory} -t ${GMJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${GMJobName} -listing ${TASK_BASEDIR}/listings
 #
 #        Note that the variables provided under quotes after "-args" will be
 #        read by this script as $1, $2, etc to fill in the values of apropriate variables
@@ -79,18 +79,16 @@ if [ "$_status" == "ABORT" ]; then
 fi
 
 # Combine physics and dynamics outputs
-for fhr in -003 000 009 012 021 024 ; do
- case ${fhr} in
-  -003) run_step=072 ;;
-  000) run_step=072 ;;
-  009) run_step=144 ;;
-  012) run_step=144 ;;
-  021) run_step=288 ;;
-  024) run_step=288 ;;
- esac
- rundate=$(basename ${TASK_OUTPUT}/cfg_0000/laststep_0000000${run_step}/000-000/pm??????????-000-000_${fhr} |cut -c3-12)
- dmoutfile=${TASK_OUTPUT}/cfg_0000/laststep_0000000${run_step}/000-000/dm${rundate}-000-000_${fhr}
- pmoutfile=${TASK_OUTPUT}/cfg_0000/laststep_0000000${run_step}/000-000/pm${rundate}-000-000_${fhr}
+if [ "${cmpl_opt}" == "dbg" ] ; then 
+ fhrs=(-003 000 009)
+else
+ fhrs=(-003 000 009 012 021 024)
+fi
+for fhr in ${fhrs[*]} ; do
+ run_step=$(basename $(dirname $(dirname ${TASK_OUTPUT}/cfg_0000/laststep_0000000???/000-000/pm??????????-000-000_${fhr})))
+ rundate=$(basename ${TASK_OUTPUT}/cfg_0000/${run_step}/000-000/pm??????????-000-000_${fhr} | cut -c3-12)
+ dmoutfile=${TASK_OUTPUT}/cfg_0000/${run_step}/000-000/dm${rundate}-000-000_${fhr}
+ pmoutfile=${TASK_OUTPUT}/cfg_0000/${run_step}/000-000/pm${rundate}-000-000_${fhr}
  outfile=${TASK_OUTPUT}/${rundate}_${fhr}
  if [ ! -f ${dmoutfile} ] ; then
   echo -e "\n\n ERROR: dynamics output, ${dmoutfile}, unavailable. \n\n" | tee -a ${gmtestinfo}
@@ -105,7 +103,7 @@ for fhr in -003 000 009 012 021 024 ; do
   echo -e "* physics output:\n ${pmoutfile} \n" | tee -a ${gmtestinfo}
  fi
  # Combine pm and dm outputs in one
- for f in ${TASK_OUTPUT}/cfg_0000/laststep_0000000${run_step}/00*/?m${rundate}-*_${fhr} ; do
+ for f in ${TASK_OUTPUT}/cfg_0000/${run_step}/00*/?m${rundate}-*_${fhr} ; do
   ${TASK_BIN}/editfst -s $f -d ${outfile} -i <<EOD
  exclure(-1,['>>','^^','!!','>^'],-1)
 EOD
@@ -128,7 +126,7 @@ if [[ "${cntrl_fl_opt}" != "new" ]]; then
               -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt}" \
               -mach ${GMJobMach} -cpus ${PostProcJobProcTopo} -cm ${GMJobMemory} \
               -t ${PostProcJobTime} -queue ${GMJobQueue} -jn ${PostProcJobName} \
-              -listing ${TASK_BASEDIR}/listing
+              -listing ${TASK_BASEDIR}/listings
 else
   echo -e "\n *** Location of new control output: $(dirname ${outfile}) *** \n " | tee -a ${gmtestinfo}
 fi

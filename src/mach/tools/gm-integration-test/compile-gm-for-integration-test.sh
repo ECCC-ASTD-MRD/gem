@@ -6,7 +6,7 @@ set -e
 #  Script for compiling GEM-MACH as a part of GEM-MACH integration test
 #
 #  Usage:
-#        ord_soumet ${TASK_BIN}/compile-gm-for-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${CmplJobProcTopo} -cm ${GMJobMemory} -t ${CmplJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${CmplJobName} -listing ${TASK_BASEDIR}/listing
+#        ord_soumet ${TASK_BIN}/compile-gm-for-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" -mach ${GMJobMach} -cpus ${CmplJobProcTopo} -cm ${GMJobMemory} -t ${CmplJobTime} -mpi 1 -queue ${GMJobQueue} -jn ${CmplJobName} -listing ${TASK_BASEDIR}/listings
 #
 #   The script relies on:
 #       1. Existence of directory structure needed for Runmod task with root directory being placed at ${TASK_BASEDIR}
@@ -86,10 +86,14 @@ EOF
 # Build Makefile, and compile/link binary
 if [[ "${cmpl_opt}" == "dbg" ]] ; then
    (time make VERBOSE=1 cmake-mach-debug) |& tee ${cmake_dir}/make.cmake-mach-debug.out
-   (time make VERBOSE=1 -j work) |& tee make.work.out
+   (time make VERBOSE=1 -j work) |& tee ${cmake_dir}/make.work.out
+elif [[ "${cmpl_opt}" == "pkg" ]] ; then
+   (time make cmake-mach-static) |& tee ${cmake_dir}/make.cmake-mach-static.out
+   (time make -j work) |& tee ${cmake_dir}/make.work.out
+   (time make  package) |& tee ${cmake_dir}/make.package.out
 else
    (time make cmake-mach) |& tee ${cmake_dir}/make.cmake-mach.out
-   (time make -j work) |& tee make.work.out
+   (time make -j work) |& tee ${cmake_dir}/make.work.out
 fi
 
 ### Link compiled binary and copy all supporting programs to the bin directory
@@ -113,14 +117,14 @@ cp $(which editfst) ${TASK_BIN}
 export GMJobTime=1200
 export GMJobProcTopo=$GMJobTopo
 export GMJobName=rungm
-[[ "${cmpl_opt}" == "dbg" ]] && export GMJobTime=2400
+[[ "${cmpl_opt}" == "dbg" ]] && export GMJobTime=3600
 
 # Submit GEM-MACH run
 echo -e "\n == Submit the GEM-MACH integration-test run at $(date) == \n"
 ord_soumet ${TASK_BIN}/run-gm-integration-test.sh \
            -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${GMJobMach} ${GMJobMemory} ${GMJobQueue} ${GMJobProcTopo} ${gmtestinfo} ${cmpl_opt} ${cntrl_fl_opt}" \
            -mach ${GMJobMach} -cpus ${GMJobProcTopo} -cm ${GMJobMemory} -t ${GMJobTime} \
-           -mpi 1 -queue ${GMJobQueue} -jn ${GMJobName} -listing ${TASK_BASEDIR}/listing
+           -mpi 1 -queue ${GMJobQueue} -jn ${GMJobName} -listing ${TASK_BASEDIR}/listings
 
 # Update status
 echo -e "\n== It took $(r.date -n -MM -L $(date '+%C%y%m%d%H%M%S') ${scriptstartdate}) seconds for the compilation script to run. == \n" | tee -a ${gmtestinfo}
