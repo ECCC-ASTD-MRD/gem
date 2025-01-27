@@ -5,7 +5,7 @@
 #   Script for for validating GEM-MACH integration test results.
 #
 #   USAGE: 
-#          ord_soumet ${TASK_BIN}/validate-gm-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt}" -mach ${GMJobMach} -cpus ${VldtJobProcTopo} -cm ${GMJobMemory} -t ${VldtJobTime} -queue ${GMJobQueue} -jn ${VldtJobName} -listing ${TASK_BASEDIR}/listing
+#          ord_soumet ${TASK_BIN}/validate-gm-integration-test.sh -args "${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt}" -mach ${GMJobMach} -cpus ${VldtJobProcTopo} -cm ${GMJobMemory} -t ${VldtJobTime} -queue ${GMJobQueue} -jn ${VldtJobName} -listing ${TASK_BASEDIR}/listings
 #          or
 #          validate-gm-integration-test.sh ${IntegrationTest_version} ${control_dir} ${TASK_BASEDIR} ${gmtestinfo} ${cmpl_opt} 2>&1 > gm-test-${TRUE_HOST}-validation-listings.txt
 #
@@ -65,7 +65,8 @@ cp -a $(which fstcomp) ${TASK_BIN}
 # Define the contorl and model output files to compare
 ctrl_output=${control_dir}/gm-output/model
 [[ "${cmpl_opt}" == "dbg" ]] && ctrl_output=${control_dir}/gm-output_${cmpl_opt}/model
-fhr=009
+fhr=024
+[[ "${cmpl_opt}" == "dbg" ]] && fhr=009
 rundate=$(basename ${ctrl_output}/??????????_${fhr} |cut -c1-10)
 ctrl_outfile=${ctrl_output}/${rundate}_${fhr}
 test_outfile=${TASK_OUTPUT}/${rundate}_${fhr}
