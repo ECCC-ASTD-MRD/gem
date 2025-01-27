@@ -44,7 +44,11 @@ target_link_libraries(rpnphy_chm_stubs PUBLIC modelutils)
 add_library(rpnphy_cpl_stubs STATIC cpl_stubs/cpl_itf_stubs.F90)
 add_dependencies(rpnphy_cpl_stubs ${PROJECT_NAME}_build_info)
 
-install(TARGETS rpnphy
+# Don't install lib and include if not installing GEM
+# SUPER_PROJECT_NAME should be have been set in GEM main CMakeLists.txt
+if ("${SUPER_PROJECT_NAME}" STREQUAL "gem" OR (NOT SUPER_PROJECT_NAME))
+  install(TARGETS rpnphy
     LIBRARY       DESTINATION lib
     ARCHIVE       DESTINATION lib)
-install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)
+  install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION include)
+endif()
