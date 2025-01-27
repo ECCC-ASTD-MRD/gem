@@ -102,7 +102,7 @@ elif [[ "$_status" == "RS" ]] ; then
    # Create linkback for working directory
    model_workbase=${TASK_BASEDIR%${Runmod}}
    rm -fr ${model_workbase}${clone}
-   ln -s ${model_workbase}000 ${model_workbase}${clone}
+   ln -s $(realpath ${model_workbase}000) ${model_workbase}${clone}
 
 else
    echo "Unknown _status ${_status} retrieved"
