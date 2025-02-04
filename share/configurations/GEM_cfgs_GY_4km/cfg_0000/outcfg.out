@@ -1,0 +1,9 @@
+ grid=1,core;
+
+ levels=1, pres,[850., 500., 250.];
+
+ steps=1,hour, 6.;
+ 
+ sortie([TT,UU,VV,GZ],  grid, 1, levels, 1, steps, 1)
+
+ xnbit(GZ,bits,16)
