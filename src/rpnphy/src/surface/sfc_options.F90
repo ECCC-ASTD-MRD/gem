@@ -321,9 +321,9 @@ module sfc_options
    namelist /surface_cfgs/ lsoil_freezing_svs1 
 
    ! Three options to compute hydraulic conductivity in the presence of ice 
-   ! - No modification of hydraulic conductivity in presence of ice 
-   ! - Correction factor taken from Zhang and Gray (1997). Same as CLASS 3.6
-   ! - Impedance factor taken from SURFEX (Boone et al., 2000)
+   ! * NONE       : No modification of hydraulic conductivity in presence of ice 
+   ! * ZHANGGRAY97: Correction factor taken from Zhang and Gray (1997). Same as CLASS 3.6
+   ! * BOONE2000  : Impedance factor taken from SURFEX (Boone et al., 2000)
    character(len=16) :: soil_ksat_ice    = 'ZHANGGRAY97'
    namelist /surface_cfgs/ soil_ksat_ice
    character(len=*), parameter :: SOIL_KSAT_ICE_OPT(3) = (/ &
@@ -362,20 +362,42 @@ module sfc_options
    real              :: svs_gexp = -1.
    namelist /surface_cfgs/ svs_gexp
 
-   !# use hrsurf based on soil texture for SVS if .true.
-   logical           :: svs_hrsurf_sltext     = .false.
-   namelist /surface_cfgs/ svs_hrsurf_sltext
+   !# Specify which method is used to compute hrsurf
+   !# * ALPHA_JN90  : (default) [pending description]
+   !# * BETA_ECMWF12: [pending description]
+   character(len=16) :: svs_hrsurf_method    = 'ALPHA_JN90'
+   namelist /surface_cfgs/ svs_hrsurf_method
+   character(len=*), parameter :: SVS_HRSURF_METHOD_OPT(2) = (/ &
+        'ALPHA_JN90   ', &
+        'BETA_ECMWF12 ' &
+        /)
 
-   !# use local momentum (no snow) roughness for SVS if .true.
+   !# Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method)
+   real              :: svs_hrsurf_power = 1.
+   namelist /surface_cfgs/ svs_hrsurf_power
+
+   !# Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]
+   real              :: svs_hrsurf_rs = 50.
+   namelist /surface_cfgs/ svs_hrsurf_rs
+
+   !# Option to use average normalized water content rather than average stress to compute transpiration
+   logical           :: svs_etr_avg_beta = .false.
+   namelist /surface_cfgs/ svs_etr_avg_beta
+
+   !# Maximum fraction of wilted roots that can be ignored when computing average stress of vegetation
+   real              :: svs_etr_max_roots_ignored = 0.0
+   namelist /surface_cfgs/ svs_etr_max_roots_ignored
+
+   !# Use local momentum (no snow) roughness for SVS if .true.
    logical           :: svs_local_z0m     = .false.
    namelist /surface_cfgs/ svs_local_z0m  
    
    !# Option to deal with melt due to rain on snow in SVS snow scheme
-   !# BELAIR03: Original formulation from Belair et al. (2003)
-   !# BELAIR03_DTGEM: Revised formulation of Belair et al. (2003) using the time step of GEM at the time when the parameterisation has been
+   !# * BELAIR03: Original formulation from Belair et al. (2003)
+   !# * BELAIR03_DTGEM: Revised formulation of Belair et al. (2003) using the time step of GEM at the time when the parameterisation has been
    !developped (12 min). Recommended for coupled applications with short time steps (< 5 min). 
-   !# NONE: Snow melt due to rain deactivated
-   !# LEONARDINI21:  Assume all the energy brought by rain is used to melt the snowpack (see Leonardini et al. (2021)
+   !# * NONE: Snow melt due to rain deactivated
+   !# * LEONARDINI21:  Assume all the energy brought by rain is used to melt the snowpack (see Leonardini et al. (2021)
    ! Options REV and L21 remvoe the large sensitivity to the time step found with DEF.  
    character(len=16) :: svs_snow_rain   = 'BELAIR03'
    namelist /surface_cfgs/ svs_snow_rain
@@ -386,15 +408,54 @@ module sfc_options
         'LEONARDINI21     ' &
         /)
 
-   
+   !# Option to change the lookup table D50DAT in inicover_svs.F90
+   logical :: svs_read_d50dat = .false.
+   namelist /surface_cfgs/ svs_read_d50dat
+
+   !# Values (1:NCLASS) used for the lookup table D50DAT if svs_read_d50dat=.T.
+   real    :: svs_d50dat(NCLASS) = -999.
+   namelist /surface_cfgs/ svs_d50dat
+
+   !# Option to change the lookup table D95DAT in inicover_svs.F90
+   logical :: svs_read_d95dat = .false.
+   namelist /surface_cfgs/ svs_read_d95dat
+
+   !# Values (1:NCLASS) used for the lookup table D95DAT if svs_read_d95dat=.T.
+   real    :: svs_d95dat(NCLASS) = -999.
+   namelist /surface_cfgs/ svs_d95dat
+
+   !# Option to change the lookup table VEGDAT in inicover_svs.F90
+   logical :: svs_read_vegdat = .false.
+   namelist /surface_cfgs/ svs_read_vegdat
+
+   !# Values (1:NCLASS) used for the lookup table VEGDAT if svs_read_vegdat=.T.
+   real    :: svs_vegdat(NCLASS) = -999.
+   namelist /surface_cfgs/ svs_vegdat
+
+   !# Option to change the lookuptable Z0MDAT in inicover_svs.F90
+   logical :: svs_read_z0mdat = .false.
+   namelist /surface_cfgs/ svs_read_z0mdat
+
+   !# Values (1:NCLASS) used for the lookup table Z0MDAT if svs_read_z0mdat=.T.
+   real    :: svs_z0mdat(NCLASS) = -999.
+   namelist /surface_cfgs/ svs_z0mdat
+
+   !# Option to change the lookup table VEGCROPS in inicover_svs.F90
+   logical :: svs_read_vegcrops = .false.
+   namelist /surface_cfgs/ svs_read_vegcrops
+
+   !# Values (1:13) used for the lookup table VEGCROPS if svs_read_vegcrops=.T.
+   real    :: svs_vegcrops(13) = -999.
+   namelist /surface_cfgs/ svs_vegcrops
+
    !# Limit temperature inversions to 8K/40m in surface layer if .true.
    logical           :: tdiaglim    = .false.
    namelist /surface_cfgs/ tdiaglim
 
    !# OPTION FOR CALCULATION of AVERAGE LAND SURFACE TEMPERATURE AND HUMIDITY IN SVS
-   !# .FALSE. :  Area-average only calculation for sfc T and Hum.
-   !# .TRUE.  :  Option that uses effective surface temperature  and specific humidity instead
-   !             of composite (area-averaged only) counterparts in surface flux calculations (D. Deacu)
+   !# * .FALSE. :  Area-average only calculation for sfc T and Hum.
+   !# * .TRUE.  :  Option that uses effective surface temperature  and specific humidity instead
+   !               of composite (area-averaged only) counterparts in surface flux calculations (D. Deacu)
    logical           :: use_eff_surf_tq    = .false.
    namelist /surface_cfgs/ use_eff_surf_tq
 

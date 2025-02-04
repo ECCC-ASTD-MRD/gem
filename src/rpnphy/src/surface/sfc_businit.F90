@@ -88,11 +88,12 @@ subroutine sfc_businit(moyhr,ni,nk)
    character(len=2) :: nlklv
    !--------   FOR SVS -----------------
    character(len=2) :: ngl, nglp1, nstel, nstpl, iemib, iicel, izp, izvg2
-   integer :: acroot, algr, alvl , alvh, avg_gwsol, clayen, co2i1, cvh, cvl, d50, d95, &
+   integer :: acroot, algr, alvl , alvh, avg_gwsol, betagr, &
+        clayen, co2i1, cvh, cvl, d50, d95, &
         deciduous, draindens, eg, emis, emisgr, emistg, emistgen, emisvh, emisvl, &
         er, etr, evergreen, &
         fbcof, frootd, gamvh, gamvl, grkef, grksat, hfluxsa, hfluxsv, &
-        impervu, &
+        hrsurfgr, impervu, &
         khc, ksat, ksatc, laictem, laideci, laiva, laivf26, laivh, laivl, &
         lesv, psi, psisat, psngrvl, psnvh, psnvha, &
         rcctem, resagr, resavg, resasa, resasv, resaef, rglvh, rglvl, &
@@ -287,6 +288,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(alvl,         'VN=alvl         ;ON=ALVL;VD=visible canopy albedo for low vegetation only                     ;VB=p0        ;MIN=0')
       PHYVAR2D1(avg_gwsol,    'VN=avg_gwsol    ;ON=AGWS;VD=average soil moisture stress term                                 ;VB=p0        ;MIN=0')
       PHYVAR3D1(bcoef,        'VN=bcoef        ;ON=1G  ;VD=slope of retention curve                       ;VS=A*'//ngl//'  ;VB=p0')
+      PHYVAR2D1(betagr,       'VN=betagr       ;ON=BTGR;VD=beta factor of the bare ground                                    ;VB=v0        ;MIN=0')
       PHYVAR3D1(clay,         'VN=clay         ;ON=J2  ;VD=percentage of clay in soil                     ;VS=A*'//nstpl//';VB=p0        ;MIN=0')
       PHYVAR3D1(clayen,       'VN=clayen       ;ON=2H  ;VD=perc. of clay in soil (E)                      ;VS=A*'//nstel//';VB=e1;IN=J2  ;MIN=0')
       PHYVAR3D1(co2i1,        'VN=co2i1        ;ON=CO3 ;VD=CO2 CONCENTRATION   CTEM                       ;VS=A*9          ;VB=p0')
@@ -323,6 +325,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR3D1(grksat,       'VN=grksat       ;ON=GKS  ;VD=sat. horiz. soil hydraulic conductivity       ;VS=A*'//ngl//'  ;VB=p0')
       PHYVAR2D1(hfluxsa,      'VN=hfluxsa      ;ON=HFSA;VD=sensible heat flux (snow only)                                    ;VB=p0')
       PHYVAR2D1(hfluxsv,      'VN=hfluxsv      ;ON=HFSV;VD=sensible heat flux (snow under veg. only)                         ;VB=p0')
+      PHYVAR2D1(hrsurfgr,     'VN=hrsurfgr     ;ON=HRGR;VD=relative humidity of the bare ground                              ;VB=v0        ;MIN=0')
       PHYVAR2D1(husurf,       'VN=husurf       ;ON=FH  ;VD=spec. humid. of the surface                                       ;VB=v0        ;MIN=0')
       PHYVAR2D1(hv,           'VN=hv           ;ON=HV  ;VD=relative humidity of veg. canopy                                  ;VB=v0        ;MIN=0')
       PHYVAR2D1(impervu,      'VN=impervu      ;ON=IMPU;VD=frac. of land sfc considered impervious (urban)                   ;VB=p0')
