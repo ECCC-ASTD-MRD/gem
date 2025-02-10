@@ -325,7 +325,7 @@ step_runstrt_s='20220616.090000',
 
   Kfctaucape   = 15000., 1000., -1, -1                         ,
 
-  Cmt_type = ecmwf_ph2         , 
+  Cmt_type = 'ECMWF_PH2'       , 
 
   Bkf_entrains = 'siebesma03'  ,
   Bkf_detrains = 'cuijpers95'  ,
