@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #CONFIG=GEM_cfgs_GY_4km
-MD5=30491b78274186fa3c14b3966dc625e5
+MD5=85941a37c3fdfb6846c9f97d72222a06
 URL=http://collaboration.cmc.ec.gc.ca/science/outgoing/sverif
 
 script=$(basename "${BASH_SOURCE[0]}")
@@ -43,7 +43,6 @@ if [[ -z "${CONFIG}" ]]; then
    eval `grep dircfg= ${RUNPATH}/RUNMOD/.setup/task_setup_set.txt`
    eval `grep ATM_MODEL_VERSION= ${RUNPATH}/RUNMOD/.setup/task_setup_set.txt`
    CONFIG=${dircfg##*/}-${ATM_MODEL_VERSION}
-   CONFIG=${dircfg##*/}-5.3.0-a10
    echo "(INFO) Run configuration found (${CONFIG})"
 fi
 
@@ -81,6 +80,8 @@ fi
 # Run verification
 tmpfile=/tmp/sverif$$
 lev=500
+# Make sure the stack limit is set to unlimited
+ulimit -s unlimited
 echo "sverif_eval.Abs GZ ${lev} ${prog} ${file} ${statpath}"
 sverif_eval.Abs GZ ${lev} ${prog} ${file} ${statpath} | grep CI=0.01 | grep -v '^\*' >${tmpfile}
 hits=$(cat ${tmpfile} | grep 'PASS' | grep -v 'overall' | wc -l)
