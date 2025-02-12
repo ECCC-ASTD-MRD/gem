@@ -28,6 +28,7 @@
       use init_options
       use gem_options
       use lam_options
+      use ens_options
       use out_options
       use VERgrid_options
       use ctrl
@@ -172,6 +173,8 @@
       if (Grdc_end   <  0) Grdc_end  = Step_total + max(Step_initial,0) !Fcst_end steps
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
+
+      if (Ens_cstv_dt_ref.eq.-1.d0) Ens_cstv_dt_ref = step_dt
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S = dumc_S

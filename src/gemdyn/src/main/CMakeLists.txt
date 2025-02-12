@@ -12,7 +12,6 @@ add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
    gemdyn
    ${phy_LIBRARIES}
-   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid::vgrid
@@ -31,7 +30,6 @@ add_executable(gemgrid maingemgrid.F90)
 target_link_libraries(gemgrid
    gemdyn
    ${phy_LIBRARIES}
-   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid::vgrid
@@ -48,7 +46,6 @@ add_executable(prgemnml mainprgemnml.F90)
 target_link_libraries(prgemnml
    gemdyn
    ${phy_LIBRARIES}
-   ${cpl_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
    vgrid::vgrid
