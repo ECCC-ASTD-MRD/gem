@@ -1,0 +1,226 @@
+#!/bin/bash
+# Prepare input for GEM
+
+_checkpoint 0 "GEM_module Prep.tsk STARTS"
+
+## Definitions
+scp_cmd_opt1="$(echo ' '${MOD_GEM_scp_opt} | sed 's/ -/ =-/g')"
+nthreads=$(nodeinfo -n ${SEQ_NODE} | grep node.cpu= | cut -d= -f2)
+nthreads=${nthreads##*x}
+if [[ ${nthreads} -lt 1 ]] ; then nthreads=1 ; fi
+
+abort_prefix=upload_abort_
+
+nb_cfg=$(ls -1d ${TASK_INPUT}/cfg_* | wc -l)
+if [[ ${nb_cfg} -lt 1 ]] ; then nb_cfg=1 ; fi
+sub_par=$((nthreads/nb_cfg))
+if [[ ${sub_par} -lt 1 ]] ; then sub_par=1 ; fi
+
+## Upload data
+_checkpoint "Prep.tsk Upload data"
+
+count=0
+for file in $(ls -1d ${TASK_INPUT}/cfg_*) ; do
+   echo === $file
+   if [[ -d ${file} ]] ; then
+      count=$(( count + 1 ))
+      bname=$(basename ${file})
+      listing=Um_upload_${bname}.lis
+      ${TASK_BIN}/Um_upload.sh -inrep ${file} -nthreads ${sub_par} \
+                 -rsync_cmd ${TASK_BIN}/rsync_cmd \
+                 -abortf ${abort_prefix}${bname} 1> ${listing} 2>&1 &
+      if [[ ${count} -eq ${nthreads} ]]; then
+         _checkpoint "Prep.tsk wait1"; wait ; _checkpoint "Prep.tsk DONE waiting1"
+         count=0
+      fi
+   fi
+done
+
+## Upload bin
+DEST=${TASK_OUTPUT}/shared/BINMOD
+${TASK_BIN}/Upload_binaries.sh \
+           -bindir ${MOD_GEM_bindir} -destination ${DEST} \
+           -scp_cmd ${TASK_BIN}/scp_cmd -scp_opt "${scp_cmd_opt1}"
+export PATH=${DEST}:${PATH}
+
+_checkpoint  "Prep.tsk Upload data wait"; wait ; _checkpoint "Prep.tsk Upload data DONE..."
+
+for file in $(ls -1d ${TASK_INPUT}/cfg_*) ; do
+   bname=$(basename ${file})
+   mkdir ${TASK_WORK}/Input_${bname}
+   mv ${TASK_OUTPUT}/${bname}/ANALYSIS ${TASK_WORK}/Input_${bname}
+done
+
+# Check for aborted functions
+if [[ $(find . -name "${abort_prefix}*" | wc -l) -gt 0 ]] ; then
+   echo "ERROR: One or more ${TASK_BIN}/Um_upload.sh function calls aborted ... see listings ${PWD}/Um_upload_cfg_*.lis for details"
+   cat Um_upload_cfg_*.lis
+   exit 1
+fi
+
+printf "\n DONE with Um_upload.sh into ${TASK_OUTPUT}\n\n"
+
+## Check configuration
+first_domain=$(ls -1d ${TASK_OUTPUT}/cfg_* | sort | head -n 1)
+#grid=$(fetchnml.sh grd_typ_s grid ${first_domain}/gem_settings.nml)
+#OPSCFG=$(fetchnml.sh Ops_configuration_S ops_cfgs ${first_domain}/gem_settings.nml)
+grid=$(rpy.nml_get -u -f ${first_domain}/gem_settings.nml -- grid/grd_typ_s 2> /dev/null)
+OPSCFG=$(rpy.nml_get -u -f ${first_domain}/gem_settings.nml -- ops_cfgs/Ops_configuration_S 2> /dev/null)
+if [ -z "${grid}" ] ; then
+    grid=LU
+    ngrids=1
+    if [ -n "${OPSCFG}" ] ; then
+       if [ $(echo $OPSCFG | grep ":" | wc -l) -gt 0 ] ; then ngrids=${OPSCFG##*:} ; fi
+    fi
+    if [ ${ngrids} -eq 2 ] ; then grid=GY ; fi
+fi
+if [[ "x${SEQ_LOOP_ARGS}" != "x" ]] ; then
+   mult_found=$(nodeinfo -n ${SEQ_CONTAINER}/Runmod ${SEQ_LOOP_ARGS},Runmod=000 -f res | grep cpu\.multiplier= | cut -d= -f2)
+else
+   mult_found=$(nodeinfo -n ${SEQ_CONTAINER}/Runmod -f res | grep cpu\.multiplier= | cut -d= -f2)
+fi
+grid_mult=1
+if [[ ${grid} == 'GY' ]] ; then
+   export GEM_YINYANG=YES
+   grid_mult=2
+fi
+mult_required=$((DOMAIN_wide * grid_mult))
+if [[ ${mult_found} != ${mult_required} ]] ; then
+   cat 1>&2 <<EOF 
+ERROR: A Runmod CPU multiplier of ${mult_found} is specified in the resource 
+       file, but ${mult_required} ${grid} domain(s) are requested by the 
+       configuration (GEM_cfg=${domain_cfgs}).
+       To correct this problem, please make sure that the cpu.multiplier 
+       field of the resource file.
+       ${SEQ_EXP_HOME}/resources${SEQ_CONTAINER}/Runmod.xml is ${grid_mult}x${NDOMAINS}.
+       *** ABORT *** 
+EOF
+   exit 1
+fi
+
+## Check that all domains have compatible configurations  #TODO: in runprep
+domain_number=${DOMAIN_start}
+while [[ ${domain_number} -le ${DOMAIN_end} ]] ; do
+   dname1=cfg_$(printf "%04d" ${domain_number})
+   NMLFILE=${TASK_OUTPUT}/${dname1}/gem_settings.nml
+   setting1="$(rpy.nml_get -u -k -f ${NMLFILE} -- step/Fcst_start_S step/Fcst_end_S step/Fcst_rstrt_S step/Fcst_bkup_S 2> /dev/null | tr '\n' ';')"
+   if [[ -n "${setting0}" ]] ; then
+      if [[ "${setting1}" != "${setting0}" ]] ; then
+         cat 1>&2 <<EOF
+ERROR: all the following must be the same for all domains, not true for ${dname1}
+       ${dname0} : ${setting0}
+       ${dname1} : ${setting1}
+       *** ABORT *** 
+EOF
+         exit 1
+      fi
+   else
+      dname0=${dname1}
+      setting0="${setting1}"
+   fi
+   domain_number=$(( domain_number+1 ))
+done
+
+printf "\n Perform domain-specific preparations\n\n"
+
+ptopo=$(nodeinfo -n ${SEQ_CONTAINER}/Runmod -f res | grep node\.cpu= | cut -d= -f2)
+npex=$(echo ${ptopo} | cut -dx -f1)
+npey=$(echo ${ptopo} | cut -dx -f2)
+if [ ${check_partition} -lt 1 ] ; then
+   npex=1 ; npey=1
+fi
+node_cpu="$(nodeinfo -n ${SEQ_NODE} -f res | grep node\.mpi=)"
+if [[ ${node_cpu#*=} == 0 ]] ; then
+   resource_path=$(noderesource -n ${SEQ_NODE} | grep node\.resourcepath=)
+   message="Prep task must be run in an mpi queue.  Set mpi=\"1\" in ${resource_path#*=}"
+   nodelogger -n ${SEQ_NODE} -s abort -m "${message}"
+   cat 1>&2 <<EOF
+ERROR: ${message}
+       *** ABORT *** 
+EOF
+   exit 1
+fi
+
+unset HEAD_script
+if [[ -L ${TASK_BIN}/headscript ]] ; then
+   src_head=$(readlink ${TASK_BIN}/headscript)
+   mach_head=$(echo ${src_head} | cut -d: -f1)
+   if [[ "${mach_head}" == "${src_head}" ]] ; then
+      HEAD_script=${TASK_BIN}/headscript
+   else
+      src_head=$(echo ${src_head} | cut -d: -f2)
+      ${TASK_BIN}/scp_cmd ${MOD_GEM_scp_opt} ${mach_head}:${src_head} ${TASK_WORK}/headscript
+      HEAD_script=${TASK_WORK}/headscript
+   fi
+fi
+
+abort_prefix=prep_abort_
+count=0
+
+nb_cfg=$(ls -1d ${TASK_OUTPUT}/cfg_* | wc -l)
+if [[ ${nb_cfg} -lt 1 ]] ; then nb_cfg=1 ; fi
+sub_par=$((nthreads/nb_cfg))
+if [[ ${sub_par} -lt 1 ]] ; then sub_par=1 ; fi
+
+unset cache
+if [[ "${MOD_GEM_cache}" != "<no value>" ]] ; then
+   cache=${MOD_GEM_cache}
+fi
+
+_checkpoint "Prep.tsk prep_domain starts"
+for file in $(ls -1d ${TASK_OUTPUT}/cfg_*) ; do
+   if [[ -d ${file} ]] ; then
+      count=$(( count + 1 ))
+      domain=$(basename ${file})
+      ${TASK_BIN}/prep_domain.sh \
+                 -anal ${TASK_WORK}/Input_${domain}/ANALYSIS \
+                 -input ${TASK_OUTPUT}/${domain}/MODEL_inrep \
+                 -o ${TASK_OUTPUT}/${domain}  \
+                 -headscript ${HEAD_script} \
+                 -check_namelist ${check_namelist} \
+                 -nmlfile ${TASK_OUTPUT}/${domain}/gem_settings.nml \
+                 -verbose -bin ${TASK_BIN} -cache "${cache}" \
+                 -npex ${npex} -npey ${npey} -nthreads ${sub_par} \
+                 -abort ${abort_prefix}${domain} 1> prep_${domain}.lis 2>&1 &
+      if [[ ${count} -eq ${nthreads} ]]; then
+         _checkpoint "Prep.tsk wait2"; wait ; _checkpoint "Prep.tsk DONE waiting2"
+         count=0
+      fi
+   fi
+done
+_checkpoint  "Prep.tsk prep_domain wait"; wait ; _checkpoint "Prep.tsk prep_domain DONE..."
+
+# Check for aborted functions
+if [[ $(find . -name "${abort_prefix}*" | wc -l) -gt 0 ]] ; then
+   echo "One or more ${TASK_BIN}/prep_domain function calls aborted ... see listings ${PWD}/prep_cfg_*.lis for details"
+   cat prep_cfg_*.lis
+   exit 1
+fi
+
+# Treat ${TASK_INPUT}/shared
+file=${TASK_INPUT}/shared
+bname=$(basename ${file})
+listing=Shared_${bname}.lis
+_checkpoint "Prep.tsk Shared starts"
+${TASK_BIN}/Um_upload.sh -inrep ${file} -nthreads ${sub_par} \
+           -rsync_cmd ${TASK_BIN}/rsync_cmd \
+           -abortf ${abort_prefix}${bname} 1> ${listing} 2>&1
+_checkpoint "Prep.tsk Shared ends"
+
+launch_model_task() {
+   set -x
+   # Launch main model task
+   if [[ ${SEQ_XFER} != "stop" ]] ; then
+      first_index='000'
+      if [[ -n "${SEQ_CONTAINER_LOOP_ARGS}" ]]; then
+         ${SEQ_BIN}/maestro -n ${SEQ_CONTAINER}/Runmod -s submit ${SEQ_CONTAINER_LOOP_ARGS},Runmod=${first_index} -f ${SEQ_XFER}
+      else
+         ${SEQ_BIN}/maestro -n ${SEQ_CONTAINER}/Runmod -s submit -l Runmod=${first_index} -f ${SEQ_XFER}
+      fi
+   fi
+}
+
+# Launch main model task (when NOT coupled)
+if [[ -z "${MOD_GEM_cpl_expname}" ]] ; then launch_model_task ; fi
+
+_checkpoint 1 "GEM_module Prep.tsk ENDS"
