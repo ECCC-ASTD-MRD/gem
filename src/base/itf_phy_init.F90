@@ -42,6 +42,7 @@
       use wb_itf_mod
       use ptopo_utils, only: ptopo_io_set !#TODO: should the phyics define its own?
       use dcmip_options, only: dcmip_case
+      use ens_options
       implicit none
 #include <arch_specific.hf>
 
@@ -115,6 +116,12 @@
             end if
          end do
       end do
+      !# Add UDIS,VDIS if needed by Ens_skeb
+      if ((ens_skeb_conf .and. Ens_skeb_gwd) .or. .not. ens_skeb_tndfix) then
+         varlist_S(n+1) = 'udis'
+         varlist_S(n+2) = 'vdis'
+         n = n + 2
+      endif
       !#TODO: trim the output list to the ones actually requested within the run
       if (n > 0) then
          err = wb_put('itf_phy/PHYOUT', varlist_S(1:n), WB_REWRITE_AT_RESTART)

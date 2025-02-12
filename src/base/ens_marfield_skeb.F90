@@ -19,6 +19,7 @@
       subroutine ens_marfield_skeb(fgem)
 !
       use cstv
+      use gem_options
       use ens_gmm_dim
       use ens_gmm_var
       use ens_options
@@ -34,6 +35,7 @@
       use out_mod
       use tdpack
       use step_options
+      use stat_mpi
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
@@ -50,6 +52,7 @@
 ! idum                       Semence du générateur de nombres aléatoires
 !
       logical :: write_markov_l
+      logical :: do_mc=.true.
       integer :: nlat, nlon, lmin,lmax
       integer :: sig, l ,m, n, i, j, dim,  indx, ier, gmmstat, gdyy
       real    :: fstd, tau , sumsp , fact, fact2, offi,offj
@@ -67,19 +70,57 @@
       real(kind=REAL64),    dimension(:), allocatable :: pspectrum , fact1, fact1n
       real(kind=REAL64),    dimension(:), allocatable  :: wrk1
       real(kind=REAL64),    dimension(:,:,:),allocatable :: cc
+      real(kind=REAL64) :: dt_ref, mod, ndt, tm, tmplus, rt
+      real(kind=REAL64), parameter:: two=2.d0, ohalf=1.50d0, onehour=3600.0d0
       real  ,    dimension(:,:),allocatable :: f
-      integer :: unf0, err, itstep_s, iperiod_iau
+      integer :: unf0, err 
+      integer, save :: stepref
+      integer :: km, itstep_s, iperiod_iau, iaustep
       character(len=1024) fn
 !
 !---------------------------------------------------------------------
 !
       dt=real(Cstv_dt_8)
+      dt_ref=real(Ens_cstv_dt_ref)
+      ndt=dt_ref/dt
+      tm=step_kount*dt
+      tmplus=(step_kount+1)*dt
+      rt=tm/dt_ref
+      km=nint(rt)
+      mod=modulo(step_kount,2)
       rad2deg_8=180.0d0/pi_8
       itstep_s=step_dt*step_kount
       iperiod_iau = iau_period
+      iaustep=iau_period/dt_ref
       write_markov_l=(itstep_s==iperiod_iau)
 
-! Look for the spectral coefficients, legendre polymome & random numbers
+      if(step_kount==1 .or. dt==dt_ref) then
+        do_mc=.true.
+        stepref=1
+      elseif(ndt==two) then
+         do_mc=.false.
+         mod=modulo(step_kount,2)
+         write_markov_l=.false.
+         if( mod==0 .and. step_kount >3) do_mc=.true.
+         if((do_mc) .and. km==iaustep)  write_markov_l=.true.
+      else
+         do_mc=.false.
+         mod=modulo(tmplus,onehour)
+         if(tm <= dt_ref) then
+            do_mc =.false.
+         else
+            if(km > stepref) then
+               if(mod==0 .and. ndt >=ohalf) then
+                  do_mc =.false. 
+               else
+                  do_mc =.true. 
+                  stepref= stepref+1
+               endif
+            endif
+         endif
+      endif
+
+! Look for the spectral coefficients, legendre polynome & random numbers
 !
       gmmstat = gmm_get(gmmk_ar_s,ar_s,meta2d_ar_s)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'ar_s'
@@ -113,7 +154,8 @@
       fmin = Ens_skeb_min
       fmax = Ens_skeb_max
       tau  = Ens_skeb_tau/2.146
-      eps  = exp(-dt/tau)
+      !eps  = exp(-ndt*dt/tau)
+      eps  = exp(-dt_ref/tau)
 
       if ( Step_kount == 1 ) then
 
@@ -168,7 +210,8 @@
          else
             fstd=Ens_skeb_std
             tau = Ens_skeb_tau/2.146
-            eps=exp(-dt/tau)
+            !eps=exp(-ndt*dt/tau)
+            eps=exp(-dt_ref/tau)
 ! Bruit blanc en nombre d'ondes
             allocate ( pspectrum(lmin:lmax) , fact1(lmin:lmax) )
             do l=lmin,lmax
@@ -236,7 +279,6 @@
       paiset=> dumdum(35,1)
       paidum=> dumdum(36,1)
 
-
 ! Save random numbers and coefficient ar,ai,br,bi
       if (write_markov_l) then
          if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
@@ -265,22 +307,24 @@
             call gem_error(ier,'Ens_marfield_SKEB','Error in writing Markov Chains files')
       endif
 
-      do l=lmin,lmax
-         fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1)) &
-                   *pspectrum(l))*SQRT((1.-eps*eps))
+      if(do_mc) then
+      	 do l=lmin,lmax
+            fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1)) &
+                      *pspectrum(l))*SQRT((1.-eps*eps))
 
-         br_s(lmax-l+1,1) = eps*br_s(lmax-l+1,1)  &
-                          + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)
-         ar_s(lmax-l+1,1) = eps*ar_s(lmax-l+1,1)  + br_s(lmax-l+1,1)*fact2
-         do m=2,l+1
-            br_s(lmax-l+1,m) = eps*br_s(lmax-l+1,m) &
-                             + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
-            ar_s(lmax-l+1,m) = eps*ar_s(lmax-l+1,m)+br_s(lmax-l+1,m)*fact2
-            bi_s(lmax-l+1,m) = eps*bi_s(lmax-l+1,m) &
-                             + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
-            ai_s(lmax-l+1,m) = eps*ai_s(lmax-l+1,m)+bi_s(lmax-l+1,m)*fact2
+            br_s(lmax-l+1,1) = eps*br_s(lmax-l+1,1)  &
+                             + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)
+            ar_s(lmax-l+1,1) = eps*ar_s(lmax-l+1,1)  + br_s(lmax-l+1,1)*fact2
+            do m=2,l+1
+               br_s(lmax-l+1,m) = eps*br_s(lmax-l+1,m) &
+                                + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
+               ar_s(lmax-l+1,m) = eps*ar_s(lmax-l+1,m)+br_s(lmax-l+1,m)*fact2
+               bi_s(lmax-l+1,m) = eps*bi_s(lmax-l+1,m) &
+                                + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
+               ai_s(lmax-l+1,m) = eps*ai_s(lmax-l+1,m)+bi_s(lmax-l+1,m)*fact2
+            end do
          end do
-      end do
+      end if
       deallocate (pspectrum, fact1, fact1n)
 
       allocate(cc(2 , nlat, lmax+1))
@@ -352,7 +396,10 @@
 
       deallocate(f)
 
-
+ 99   format (i4,a4,' Mean:',1pe22.12,' Std:',1pe22.12,/ &
+              ' Min:[(',i4,',',i4,',',i4,')', &
+              1pe22.12,']',' Max:[(',i4,',',i4,',',i4,')', &
+              1pe22.12,']')
 
  1000 format( &
            /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_SKEB)', &
