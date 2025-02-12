@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 !/@*
 subroutine phybusinit(ni,nk)
@@ -24,7 +9,7 @@ subroutine phybusinit(ni,nk)
    use phybusidx
    use ens_perturb, only: ens_nc2d
    use microphy_utils, only: mp_phybusinit
-   use phymem, only: phymem_init, phymem_add
+   use phymem, only: phymem_init, phymem_add, phymem_find, phymem_alloc
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
@@ -71,7 +56,7 @@ subroutine phybusinit(ni,nk)
    logical :: lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly, lwindgust
-   logical :: lpcp_frac, ladvzn, ls2
+   logical :: lpcp_frac, ladvzn, ls2, lmp
    !---------------------------------------------------------------------
 
    ier = phymem_init()
@@ -130,6 +115,7 @@ subroutine phybusinit(ni,nk)
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
    ls2     = (stcond == 'S2')
+   lmp     = (stcond(1:3) == 'MP_')
 
    ! Compute linoz diags only on demand
    do i=1,nphyoutlist
@@ -326,6 +312,29 @@ subroutine phybusinit(ni,nk)
 #include "phyvar.hf"
    if (phy_error_L) return
 
+   call sfc_businit(moyhr,ni,nk)
+   if (phy_error_L) return
+
+#ifdef HAVE_MACH
+   call chm_businit(ni,nk)
+#endif
+
+   !#NOTE: phymem_alloc must be done before any call to phymem_find
+   if (debug_alldiag_L) then
+      ier = phymem_alloc(debug_mem_L, (/'*'/))
+   else
+      ier = phymem_alloc(debug_mem_L, phyoutlist_S)
+   endif
+   if (.not.RMN_IS_OK(ier)) &
+        call physeterror('phybusinit', 'problem in phymem_alloc')
+   if (phy_error_L .or. .not.RMN_IS_OK(ier)) return
+
+#undef PHYMKPTR
+#define PHYPTRGETIDX
+#include "phymkptr.hf"
+#include "phyvar.hf"
+   if (phy_error_L) return   
+
    sigw = sigt
 
    if (lbourg3d) then
@@ -337,13 +346,7 @@ subroutine phybusinit(ni,nk)
    if (qcphytdmp > 0) qcphytd = qcphytdmp
    if (qcplusmp > 0) qcplus = qcplusmp
    if (qrphytdmp > 0) qrphytd = qrphytdmp
-
-   call sfc_businit(moyhr,ni,nk)
-   if (phy_error_L) return
-
-#ifdef HAVE_MACH
-   call chm_businit(ni,nk)
-#endif
+   
    !-------------------------------------------------------------------
    return
 end subroutine phybusinit

@@ -1,17 +1,3 @@
-!---------------------------------- LICENCE BEGIN ------------------------------
-! GEM - Library of kernel routines for the GEM numerical atmospheric model
-! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
-!                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
-! under the terms of the GNU Lesser General Public License as published by
-! the Free Software Foundation, version 2.1 of the License. This library is
-! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-! You should have received a copy of the GNU Lesser General Public License
-! along with this library; if not, write to the Free Software Foundation, Inc.,
-! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END --------------------------------
 
 module series_geop_mod
    use tdpack_const, only: PI
@@ -47,9 +33,11 @@ contains
       !      This subroutine is part of time serie's package
       !      initialisation. It extracts and produce output of constant
       !      fields to be used by the unwrapper.
-      integer :: j, istat, idxv1(1)
-      real, pointer, contiguous :: ptr1d(:)
+      integer :: j, istat, idxv1(1),k1
+      real, pointer, contiguous :: ptr1d(:), ptr2d(:,:)
       real :: prcon, w1(phydim_ni)
+
+      include "surface.cdk"
       !---------------------------------------------------------------
       
       call msg(MSG_INFO, PKGNAME_S//'Extracting Geop fields')
@@ -91,10 +79,11 @@ contains
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            nullify(ptr1d)
-            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            nullify(ptr2d)
+            istat = phymem_getdata(ptr2d, idxv1(1), j)
             if (istat < 0) cycle
-            w1(1:phydim_ni) = ptr1d(:)
+            k1 = min(indx_agrege, size(ptr2d,2))
+            w1(1:phydim_ni) = ptr2d(:,k1)
             call series_xst_geo(w1, 'ZP', j)
          end do
       endif
@@ -127,10 +116,11 @@ contains
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            nullify(ptr1d)
-            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            nullify(ptr2d)
+            istat = phymem_getdata(ptr2d, idxv1(1), j)
             if (istat < 0) cycle
-            w1(1:phydim_ni) = ptr1d(:)
+            k1 = min(indx_agrege, size(ptr2d,2))
+            w1(1:phydim_ni) = ptr2d(:,k1)
             call series_xst_geo(w1, 'AL', j)
          end do
       endif
@@ -139,10 +129,11 @@ contains
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            nullify(ptr1d)
-            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            nullify(ptr2d)
+            istat = phymem_getdata(ptr2d, idxv1(1), j)
             if (istat < 0) cycle
-            w1(1:phydim_ni) = ptr1d(:)
+            k1 = min(indx_agrege, size(ptr2d,2))
+            w1(1:phydim_ni) = ptr2d(:,k1)
             call series_xst_geo(w1, 'SD', j)
          end do
       endif
@@ -151,10 +142,11 @@ contains
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            nullify(ptr1d)
-            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            nullify(ptr2d)
+            istat = phymem_getdata(ptr2d, idxv1(1), j)
             if (istat < 0) cycle
-            w1(1:phydim_ni) = ptr1d(:)
+            k1 = min(indx_agrege, size(ptr2d,2))
+            w1(1:phydim_ni) = ptr2d(:,k1)
             call series_xst_geo(w1, 'TM', j)
          end do
       endif
@@ -163,10 +155,11 @@ contains
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            nullify(ptr1d)
-            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            nullify(ptr2d)
+            istat = phymem_getdata(ptr2d, idxv1(1), j)
             if (istat < 0) cycle
-            w1(1:phydim_ni) = ptr1d(:)
+            k1 = min(indx_agrege, size(ptr2d,2))
+            w1(1:phydim_ni) = ptr2d(:,k1)
             call series_xst_geo(w1, 'TP', j)
          end do
       endif
@@ -175,10 +168,11 @@ contains
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            w1(1:phydim_ni) = ptr1d(:)
-            nullify(ptr1d)
-            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            nullify(ptr2d)
+            istat = phymem_getdata(ptr2d, idxv1(1), j)
             if (istat < 0) cycle
+            k1 = min(indx_agrege, size(ptr2d,2))
+            w1(1:phydim_ni) = ptr2d(:,k1)
             call series_xst_geo(w1, 'GL', j)
          end do
       endif
@@ -187,10 +181,11 @@ contains
            F_shortmatch=.false.)
       if (istat > 0) then
          do j= 1, phydim_nj
-            nullify(ptr1d)
-            istat = phymem_getdata(ptr1d, idxv1(1), j)
+            nullify(ptr2d)
+            istat = phymem_getdata(ptr2d, idxv1(1), j)
             if (istat < 0) cycle
-            w1(1:phydim_ni) = ptr1d(:)
+            k1 = min(indx_agrege, size(ptr2d,2))
+            w1(1:phydim_ni) = ptr2d(:,k1)
             call series_xst_geo(w1, 'HS', j)
          end do
       endif

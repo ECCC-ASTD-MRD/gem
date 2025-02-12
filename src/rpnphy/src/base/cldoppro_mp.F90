@@ -1,18 +1,3 @@
-!------------------------------------a LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module cldoppro_MP
    implicit none
@@ -283,8 +268,7 @@ contains
     endif
 
     readfield_L = .false.
-    if (any(dyninread_list_s == 'qc') .or. &
-         any(phyinread_list_s(1:phyinread_n) == 'tr/mpqc:p')) then
+    if (ISDYNIN('qc') .or. ISPHYIN('tr/mpqc:p')) then
        readfield_L = .true.
        do k=1,nkm1
           do i=1,ni
@@ -294,9 +278,9 @@ contains
     endif
 
     IF_MY2: if (stcond(1:6) == 'MP_MY2' .and. &
-         (any(dyninread_list_s == 'mpqi') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqi:p')) .and. &
-         (any(dyninread_list_s == 'mpqs') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqs:p')) .and. &
-         (any(dyninread_list_s == 'mpqg') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqg:p'))) then
+         (ISDYNIN('mpqi') .or. ISPHYIN('tr/mpqi:p')) .and. &
+         (ISDYNIN('mpqs') .or. ISPHYIN('tr/mpqs:p')) .and. &
+         (ISDYNIN('mpqg') .or. ISPHYIN('tr/mpqg:p'))) then
 
        readfield_L = .true.
        !ziwc = zqiplus + zsnow
@@ -309,7 +293,7 @@ contains
        enddo
 
     elseif (stcond(1:5) == 'MP_P3' .and. &
-         (any(dyninread_list_s == 'qti1') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti1:p'))) then
+         (ISDYNIN('qti1') .or. ISPHYIN('tr/qti1:p'))) then
 
        readfield_L = .true.
        !ziwc = zqi_cat1
@@ -320,7 +304,7 @@ contains
        enddo
 
        IF_NCAT2: if (p3_ncat >= 2 .and. &
-            (any(dyninread_list_s == 'qti2') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti2:p'))) then
+            (ISDYNIN('qti2') .or. ISPHYIN('tr/qti2:p'))) then
 
           !ziwc = ziwc + zqi_cat2
           do k=1,nkm1
@@ -330,7 +314,7 @@ contains
           enddo
 
           IF_NCAT3: if (p3_ncat >= 3 .and. &
-               (any(dyninread_list_s == 'qti3') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti3:p')) ) then
+               (ISDYNIN('qti3') .or. ISPHYIN('tr/qti3:p'))) then
 
              !ziwc = ziwc + zqi_cat3
              do k=1,nkm1
@@ -340,7 +324,7 @@ contains
              enddo
 
              IF_NCAT4: if (p3_ncat >= 4 .and. &
-                  (any(dyninread_list_s == 'qti4') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti4:p'))) then
+                  (ISDYNIN('qti4') .or. ISPHYIN('tr/qti4:p'))) then
 
                 !ziwc = ziwc + zqi_cat4
                 do k=1,nkm1

@@ -1,26 +1,20 @@
-!-------------------------------------- LICENCE BEGIN --------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
+
+module linoz_tend_mod
+   implicit none
+   private
+   public :: linoz_tend
+   
+contains
    
 !/@*
 subroutine linoz_tend(o3, &
      colo3,                             &
      temp, ps, shtj, qq,                &
      o3c, c2, c3,  c4,  c5,  c6,  c7,   & 
+     hetd,                              &
      o3_new,                            & !GMv3
      do1dt,  do4dt,  do6dt, do7dt,      &
+     do8dt,                             &
      do3dt,                             &
      timestep, ni, lay, lev)
    use phy_options
@@ -64,11 +58,10 @@ subroutine linoz_tend(o3, &
    real, dimension(ni, lay ), intent(in)    :: colo3
    real, dimension(ni),       intent(in)    :: ps
    real, dimension(ni, lev ), intent(in)    :: shtj,temp
-   real, dimension(ni, lay ), intent(in)    :: c4,c2,c3,c5,c6,c7
-   ! real, dimension(ni, lay ), intent(in)    :: c8,c9,c10,c11
+   real, dimension(ni, lay ), intent(in)    :: c4,c2,c3,c5,c6,c7,hetd
    real, dimension(ni, lay ), intent(out)   :: o3_new !, n2o_new, ch4_new, f11_new, f12_new
    real, dimension(ni, lay ), intent(out)   :: do1dt,do4dt,do6dt,do7dt,do3dt
-   ! real, dimension(ni, lay ), intent(out)   :: dn2odt,dch4dt,df11dt,df12dt
+   real, pointer :: do8dt(:,:)
 
    !@author J. de Grandpre (ARQI): February 2013
    !@revisions
@@ -77,17 +70,16 @@ subroutine linoz_tend(o3, &
 
    !  Declaration of local variables.
 
-   integer :: i,k, ni2
+   integer :: i,k
    real :: ptop, hu_ppm
    real :: tau,fss, c50
-
-   ni2 = int(float(ni)/2.)
 
    do4dt = 0.
    do1dt = 0.
    do6dt = 0.
    do7dt = 0.
-   
+   if (associated(do8dt)) do8dt = 0.
+
    ! --------------------
    !  Loop on longitudes
    ! -------------------
@@ -153,10 +145,18 @@ subroutine linoz_tend(o3, &
                do1dt(i,k) = c5(i,k)*(o3(i,k)   -o3c(i,k))/o3(i,k)   !c5 : d(P-L)/dO3          sec-1 
                do6dt(i,k) = c6(i,k)*(temp(i,k) -c2(i,k)) /o3(i,k)   !c6 : d(P-L)/dT      cm-3 sec-1 K-1
                do7dt(i,k) = c7(i,k)*(colo3(i,k)-c3(i,k)) /o3(i,k)   !c7 : d(P-L)/dcolo3  cm-3 sec-1 DU-1 
- 
-               fss = o3c(i,k) + (c4(i,k)                     + &
-                                c6(i,k)*(temp(i,k)-c2(i,k)) + &
-                                c7(i,k)*(colo3(i,k)-c3(i,k)))*tau                !mole/mole vmr
+               if (associated(do8dt)) then
+                  do8dt(i,k) = hetd(i,k)                 /o3(i,k)   !sec-1
+
+                  fss = o3c(i,k) + (c4(i,k)                     + &
+                       c6(i,k)*(temp(i,k)-c2(i,k))  + &
+                       c7(i,k)*(colo3(i,k)-c3(i,k)) + &
+                       hetd(i,k) ) *tau                             !mole/mole vmr
+               else
+                  fss = o3c(i,k) + (c4(i,k)                     + &
+                       c6(i,k)*(temp(i,k)-c2(i,k))  + &
+                       c7(i,k)*(colo3(i,k)-c3(i,k))) *tau           !mole/mole vmr
+               endif
 
             ! Utilisation de la formulation analytique 
             !
@@ -205,6 +205,9 @@ subroutine linoz_tend(o3, &
    !----------------------------------------------------------------
    return
 end subroutine linoz_tend
+
+end module linoz_tend_mod
+
 
 !/@*
 subroutine linoz_tend_ghg( &

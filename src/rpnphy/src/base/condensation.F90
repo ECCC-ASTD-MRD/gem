@@ -1,18 +1,3 @@
-!#-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ----------------------------
 
 module condensation
    implicit none
@@ -93,7 +78,7 @@ contains
 
       ! Startup operations
       if (kount == 0) then
-         if (.not.any(phyinread_list_s(1:phyinread_n) == 'rhc')) zrhc(:,:) = -1.
+         if (.not.ISPHYIN('rhc')) zrhc(:,:) = -1.
       endif
       
       ! Local initializations
@@ -123,7 +108,7 @@ contains
               ttp, ttm, qqp, qqm, qcp, qcm, &
               psp, psm, sigma, dt, &
               zrnflx, zsnoflx, zf12, zfevp, zfice, &
-              zpblsigs, zmrk2, ni, nkm1)
+              zsigmas, zmrk2, ni, nkm1)
 
          ! Adjust tendencies to impose conservation
          if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
@@ -144,8 +129,6 @@ contains
               psp, psm, sigma, dt, &
               zrnflx, zsnoflx, zf12, zfevp, zfice, &
               zmrk2, ni, nkm1)
-
-         ! Post-microphysics condensation adjustment
 
       case('MP_MY2')
          
@@ -262,10 +245,6 @@ contains
          call physeterror('condensation', 'Problem computing final budget')
          return
       endif
-
-      ! Post-scheme condensation adjustment
-      if (stcond == 'S2') &
-           call sc_adjust(ztcondc1, zqcondc1, zqccondc1, pvars, delt, ni, nkm1)
       
       ! Compute profile diagnostics <<< should be done outside the model >>>
       istat1 = mp_lwc(qtl, pvars)

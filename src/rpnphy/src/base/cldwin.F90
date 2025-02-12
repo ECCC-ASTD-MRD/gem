@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
    use, intrinsic :: iso_fortran_env, only: INT64
@@ -20,6 +5,7 @@ subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
    integer NI,NK
    real FM(NI,NK),BM(NI,NK)
@@ -160,7 +146,7 @@ subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
 
 
 
-      DIAG_FTOT: if (.not.any('ftot'==phyinread_list_s(1:phyinread_n))) then
+      DIAG_FTOT: if (.not.ISPHYIN('ftot')) then
          do I=1,NI
 
             if ((TRAV(I,K).ge.WPU0(I)).and.(TRAV(I,K).le.PUS)) then
@@ -183,7 +169,7 @@ subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
       !___3) ESTIMATE CLOUD WATER CONTAIN FROM PARTIAL CLOUD
       !      COVER.
 
-      DIAG_LWC: if (.not.any('lwc'==phyinread_list_s(1:phyinread_n))) then
+      DIAG_LWC: if (.not.ISPHYIN('lwc')) then
          do I=1,NI
 
             ! reduce pmr for cold temperature

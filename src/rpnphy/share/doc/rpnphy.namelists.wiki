@@ -549,6 +549,11 @@ LINOZ prognostic stratospheric ozone
 | 'NIL' || character(len=10)
 
 |-
+| linoz_het ||
+LINOZ: Use heterogeneous ozone version
+| .false. || logical
+
+|-
 | lmetox ||
 Add methane oxydation as source of humidity in the stratosphere if .true.
 | .false. || logical
