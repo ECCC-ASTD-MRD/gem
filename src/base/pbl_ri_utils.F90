@@ -10,7 +10,7 @@ module pbl_ri_utils
   public :: covarstep                                           !Algebraic solution of the SGS variance equation
   public :: kcalc                                               !Compute diffusion coefficient
   public :: ktosig                                              !Convert coefficients from height to sigma coord
-  public :: sgsvar                                              !Diagnose subgrid-scale variance (sigma_s)
+  public :: pblri_sgspdf                                        !Diagnose subgrid-scale variance (sigma_s)
   public :: tkestep                                             !Algebraic solution of the TKE equation
   public :: tkebudget                                           !Diagnose terms of the TKE budget
 
@@ -362,7 +362,7 @@ contains
   end subroutine ktosig
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine sgsvar(F_sigmas, F_thl, F_qw, F_lwc, F_iwc, F_tt, F_pri, &
+  subroutine pblri_sgspdf(F_sigmas, F_thl, F_qw, F_lwc, F_iwc, F_tt, F_pri, &
        F_zn, F_ze, F_gzt, F_sigt, F_ps, F_dxdy, F_vcoef, F_ni, F_nkm1)
     use tdpack_const
     use pbl_utils, only: dvrtdf
@@ -373,7 +373,7 @@ contains
     integer, intent(in) :: F_ni                                 !horizontal dimension
     integer, intent(in) :: F_nkm1                               !vertical dimension
     real, dimension(F_ni,F_nkm1), intent(in) :: F_thl           !liquid water potential temperature (K; theta_l)
-    real, dimension(F_ni,F_nkm1), intent(in) :: F_qw            !total water mixing ratio (kg/kg; q_tot)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_qw            !total water content (kg/kg; q_tot)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_lwc           !liquid water content (kg/kg)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_iwc           !ice water content (kg/kg)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_tt            !dry air temperature (K)
@@ -390,7 +390,7 @@ contains
     !@Object Calculate the boundary layer subgrid-scale properties
 
     ! Local parameters
-    real, parameter :: REF_DX=500.                              !grid mesh for variance scaling
+    real, parameter :: REF_DX=1000.                             !grid mesh for variance scaling
 
     ! Local variables
     integer :: i,k
@@ -426,7 +426,7 @@ contains
     call vint_mom2thermo(F_sigmas, F_sigmas, F_vcoef, F_ni, F_nkm1)
     
     return
-  end subroutine sgsvar
+  end subroutine pblri_sgspdf
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine tkestep(F_estar, F_en, F_b, F_c, F_tau, F_ni, F_nkm1)

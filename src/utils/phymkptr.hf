@@ -1,11 +1,57 @@
+#ifndef PHYTOSTR
 #if defined(WITH_GNU) || defined(__GFORTRAN__)
 # define PHYTOSTR(A)  "A"
 #else
 # define PHYTOSTR(A)  #A
 #endif
+#endif
 
+#ifndef PHYISREQMACRO
+#define PHYISREQMACRO
+
+!# Example: if (ISREQOUT('BUEN') then
+!# Example: if (ISREQOUTL((/'BUEN','DSEN','SHEN'/)) then
+!# Example: if (ISREQSTEP('BUEN') then
+!# Example: if (ISREQSTEPL((/'BUEN','DSEN','SHEN'/)) then
+
+#define _ISINLIST(V,L,N)      (N>0 .and. any(L(1:N) == V))
+#define _ISINLISTL(VLIST,L,N) (N>0 .and. any([(any(VLIST == L(i)), i=1,N)]))
+
+#define _ISREQ(V,O,N)      (debug_alldiag_L .or. N<0 .or. _ISINLIST(V,O,N))
+#define _ISREQL(VLIST,O,N) (debug_alldiag_L .or. N<0 .or. _ISINLISTL(VLIST,O,N))
+ 
+#define ISREQOUT(V)       _ISREQ(V,phyoutlist_S,nphyoutlist)
+#define ISREQOUTL(VLIST)  _ISREQL(VLIST,phyoutlist_S,nphyoutlist)
+#define ISREQSTEP(V)      _ISREQ(V,phystepoutlist_S,nphystepoutlist)
+#define ISREQSTEPL(VLIST) _ISREQL(VLIST,phystepoutlist_S,nphystepoutlist)
+
+
+#define ISPHYIN(V)      _ISINLIST(V,phyinread_list_S,phyinread_n)
+#define ISPHYINL(VLIST) _ISINLISTL(VLIST,phyinread_list_S,phyinread_n)
+#define ISDYNIN(V)      any(dyninread_list_s == V)
+#define ISDYNINL(VLIST) _ISINLISTL(VLIST,dyninread_list_s,size(dyninread_list_s))
+   
+#endif
+
+
+#ifndef PHYLOGICALMACRO
+#define PHYLOGICALMACRO
+
+!# if (V1 >= V2) w=1 ; else w=0
+#define MASK_GE(V1, V2) max(0., sign(1., V1 - V2))
+!# if (V1 < V2) w=1 ; else w=0
+#define MASK_LT(V1, V2) (1. - MASK_GE(V1, V2))
+!# if (V1 <= V2) w=1 ; else w=0
+#define MASK_LE(V1, V2) max(0., sign(1., V2 - V1))
+!# if (V1 > V2) w=1 ; else w=0
+#define MASK_GT(V1, V2) (1. - MASK_LE(V1, V2))
+
+#endif
+
+   
 #ifndef PHYMKPTR
 #define PHYMKPTR
+!#ifdef PHYPTR ===================================================================
 #ifdef PHYPTR
 
    real, pointer :: dummy2d(:,:), dummy3d(:,:,:), dummy4d(:,:,:,:)
@@ -17,16 +63,93 @@
 #define PHYVAR2DC(NAME, DESC, COND) PHYVAR2D1(NAME, DESC)
 #define PHYVAR3DC(NAME, DESC, COND) PHYVAR3D1(NAME, DESC)
 #define PHYVAR4DC(NAME, DESC, COND) PHYVAR4D1(NAME, DESC)
-#define PHYVAR2DK(NAME, DESC, KEYWORD) PHYVAR2D1(NAME, DESC)
-#define PHYVAR3DK(NAME, DESC, KEYWORD) PHYVAR3D1(NAME, DESC)
-#define PHYVAR4DK(NAME, DESC, KEYWORD) PHYVAR4D1(NAME, DESC)
+#define PHYVAR2DK(NAME, DESC, KEY)  PHYVAR2D1(NAME, DESC)
+#define PHYVAR3DK(NAME, DESC, KEY)  PHYVAR3D1(NAME, DESC)
+#define PHYVAR4DK(NAME, DESC, KEY)  PHYVAR4D1(NAME, DESC)
 
-#define PVAR(NAME, VN, ON, VB, VS, DESC) integer :: NAME = -1
-#define PVARC(NAME, VN, ON, VB, VS, DESC, COND) PVAR(NAME, VN, ON, VB, VS, DESC)
-#define PVARK(NAME, VN, ON, VB, VS, DESC, KEYWORD) PVAR(NAME, VN, ON, VB, VS, DESC)
-#define PVARO(NAME, VN, ON, VB, VS, DESC) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVAR(  NAME, VN, ON, VB, VS, DESC)       integer :: NAME = -1
+#define PVARC( NAME, VN, ON, VB, VS, DESC, COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARK( NAME, VN, ON, VB, VS, DESC, KEY)  PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARO( NAME, VN, ON, VB, VS, DESC)       PVAR(NAME, VN, ON, VB, VS, DESC)
 #define PVAROC(NAME, VN, ON, VB, VS, DESC, COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVAROK(NAME, VN, ON, VB, VS, DESC, KEY)  PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARD( NAME, VN, ON, VB, VS, DESC, DEPS)       PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARDC(NAME, VN, ON, VB, VS, DESC, COND, DEPS) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARDK(NAME, VN, ON, VB, VS, DESC, KEY, DEPS)  PVAR(NAME, VN, ON, VB, VS, DESC)
+
+!#else #ifdef PHYPTR ===================================================================
+#else
+
+#ifndef PVBBCOND
+#define PVBBCOND(KEY) any(bb_keylist(:bb_n) == adjustl(PHYTOSTR(KEY)))
+#endif
+#ifndef PVDIAG2
+#define PVDIAG2(VN,ON) (debug_alldiag_L .or. any(phyoutlist_S(1:nphyoutlist) == PHYTOSTR(VN)) .or. any(phyoutlist_S(1:nphyoutlist) == PHYTOSTR(ON)))
+#endif
+
+#ifdef PVAR
+#undef PVAR
+#endif
    
+#ifdef PVARC
+#undef PVARC
+#endif
+   
+#ifdef PVARK
+#undef PVARK
+#endif
+
+#ifdef PVARO
+#undef PVARO
+#endif
+   
+#ifdef PVAROC
+#undef PVAROC
+#endif
+   
+#ifdef PVAROK
+#undef PVAROK
+#endif
+   
+#ifdef PVARD
+#undef PVARD
+#endif
+   
+#ifdef PVARDC
+#undef PVARDC
+#endif
+   
+#ifdef PVARDK
+#undef PVARDK
+#endif
+
+!ifdef PHYPTRGETIDX ---------------------------------------------------------------
+#ifdef PHYPTRGETIDX
+
+! #define PHYVAR2D1(NAME, DESC) NAME = phymem_add(DESC//" ; VS=A")
+! #define PHYVAR3D1(NAME, DESC) NAME = phymem_add(DESC)
+! #define PHYVAR4D1(NAME, DESC) NAME = phymem_add(DESC)
+
+! #define PHYVAR2DC(NAME, DESC, COND) if (COND) PHYVAR2D1(NAME, DESC)
+! #define PHYVAR3DC(NAME, DESC, COND) if (COND) PHYVAR3D1(NAME, DESC)
+! #define PHYVAR4DC(NAME, DESC, COND) if (COND) PHYVAR4D1(NAME, DESC)
+! #define PHYVAR2DK(NAME, DESC, KEY)  if (PVBBCOND(KEY)) NAME = phymem_add(DESC//" ; VS=A", F_flags=KEY)
+! #define PHYVAR3DK(NAME, DESC, KEY)  if (PVBBCOND(KEY)) NAME = phymem_add(DESC, F_flags=KEY)
+! #define PHYVAR4DK(NAME, DESC, KEY)  if (PVBBCOND(KEY)) NAME = phymem_add(DESC, F_flags=KEY)
+
+! #define PVARGS(NAME_, VN_, ON_, VB_, VS_, DESC) "VN="//PHYTOSTR(VN_)//"; ON="//PHYTOSTR(ON_)//"; VB="//VB_//"; VS="//VS_//"; "//DESC
+
+#define PVAR(  NAME, VN, ON, VB, VS, DESC)       NAME = phymem_find(PHYTOSTR(VN), F_npath='V')
+#define PVARC( NAME, VN, ON, VB, VS, DESC, COND) if (COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARK( NAME, VN, ON, VB, VS, DESC, KEY)  if (PVBBCOND(KEY)) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARO( NAME, VN, ON, VB, VS, DESC)       PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVAROC(NAME, VN, ON, VB, VS, DESC, COND) if (COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVAROK(NAME, VN, ON, VB, VS, DESC, KEY)  if (PVBBCOND(KEY)) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARD( NAME, VN, ON, VB, VS, DESC, DEPS)       PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARDC(NAME, VN, ON, VB, VS, DESC, COND, DEPS) if (COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARDK(NAME, VN, ON, VB, VS, DESC, KEY, DEPS)  if (PVBBCOND(KEY)) PVAR(NAME, VN, ON, VB, VS, DESC)
+
+!#else #ifdef PHYPTRGETIDX  ---------------------------------------------------------------
 #else
 
 #define PHYVAR2D1(NAME, DESC) NAME = phymem_add(DESC//" ; VS=A")
@@ -36,20 +159,30 @@
 #define PHYVAR2DC(NAME, DESC, COND) if (COND) PHYVAR2D1(NAME, DESC)
 #define PHYVAR3DC(NAME, DESC, COND) if (COND) PHYVAR3D1(NAME, DESC)
 #define PHYVAR4DC(NAME, DESC, COND) if (COND) PHYVAR4D1(NAME, DESC)
-#define PHYVAR2DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC//" ; VS=A", F_flags=KEYWORD)
-#define PHYVAR3DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC, F_flags=KEYWORD)
-#define PHYVAR4DK(NAME, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == KEYWORD)) NAME = phymem_add(DESC, F_flags=KEYWORD)
+#define PHYVAR2DK(NAME, DESC, KEY)  if (PVBBCOND(KEY)) NAME = phymem_add(DESC//" ; VS=A", F_flags=KEY)
+#define PHYVAR3DK(NAME, DESC, KEY)  if (PVBBCOND(KEY)) NAME = phymem_add(DESC, F_flags=KEY)
+#define PHYVAR4DK(NAME, DESC, KEY)  if (PVBBCOND(KEY)) NAME = phymem_add(DESC, F_flags=KEY)
 
-#define PVDIAG2(VN,ON) (debug_alldiag_L .or. any(phyoutlist_S(1:nphyoutlist) == PHYTOSTR(VN)) .or. any(phyoutlist_S(1:nphyoutlist) == PHYTOSTR(ON)))
 #define PVARGS(NAME_, VN_, ON_, VB_, VS_, DESC) "VN="//PHYTOSTR(VN_)//"; ON="//PHYTOSTR(ON_)//"; VB="//VB_//"; VS="//VS_//"; "//DESC
 
-#define PVAR(NAME, VN, ON, VB, VS, DESC) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC))
-#define PVARC(NAME, VN, ON, VB, VS, DESC, COND) if (COND) PVAR(NAME, VN, ON, VB, VS, DESC)
-#define PVARK(NAME, VN, ON, VB, VS, DESC, KEYWORD) if (any(bb_keylist(:bb_n) == adjustl(PHYTOSTR(KEYWORD)))) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC), F_flags=PHYTOSTR(KEYWORD))
-#define PVARO(NAME, VN, ON, VB, VS, DESC) if (PVDIAG2(VN,ON)) PVAR(NAME, VN, ON, VB, VS, DESC)
-#define PVAROC(NAME, VN, ON, VB, VS, DESC, COND) if (PVDIAG2(VN,ON) .and. (COND)) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVALL( NAME, VN, ON, VB, VS, DESC, FLAGS, DEPS) NAME = phymem_add(PVARGS(NAME, VN, ON, VB, VS, DESC), F_flags=FLAGS, F_deps=DEPS)
+   
+#define PVAR(  NAME, VN, ON, VB, VS, DESC)       PVALL( NAME, VN, ON, VB, VS, DESC, " ", (/" "/))
+#define PVARC( NAME, VN, ON, VB, VS, DESC, COND) if (COND) PVAR(NAME, VN, ON, VB, VS, DESC)
+#define PVARK( NAME, VN, ON, VB, VS, DESC, KEY)  if (PVBBCOND(KEY)) PVALL( NAME, VN, ON, VB, VS, DESC, PHYTOSTR(KEY), (/" "/))
+#define PVARO( NAME, VN, ON, VB, VS, DESC)       PVALL( NAME, VN, ON, VB, VS, DESC, 'DIAG', (/" "/))
+#define PVAROC(NAME, VN, ON, VB, VS, DESC, COND) if (COND) PVALL( NAME, VN, ON, VB, VS, DESC, 'DIAG', (/" "/))
+#define PVAROK(NAME, VN, ON, VB, VS, DESC, KEY)  if (PVBBCOND(KEY)) PVALL( NAME, VN, ON, VB, VS, DESC, 'DIAG+'//PHYTOSTR(KEY), (/" "/))
+#define PVARD( NAME, VN, ON, VB, VS, DESC, DEPS)       PVALL( NAME, VN, ON, VB, VS, DESC, 'DIAG', DEPS)
+#define PVARDC(NAME, VN, ON, VB, VS, DESC, COND, DEPS) if (COND) PVALL( NAME, VN, ON, VB, VS, DESC, 'DIAG', DEPS)
+#define PVARDK(NAME, VN, ON, VB, VS, DESC, KEY, DEPS)  if (PVBBCOND(KEY)) PVALL( NAME, VN, ON, VB, VS, DESC, 'DIAG+'//PHYTOSTR(KEY), DEPS)
 
+!#endif #ifdef PHYPTRGETIDX  ---------------------------------------------------------------
 #endif
+
+!#endif #ifdef PHYPTR  ===================================================================
+#endif
+!#endif #ifndef PHYMKPTR
 #endif
 
 
@@ -141,6 +274,7 @@
 #define MKPTR3DNKL(PNAME,IDXV,VARS)      real, dimension(:,:,:), pointer, contiguous :: PNAME
 #define MKPTR3D(PNAME,IDXV,VARS)         real, dimension(:,:,:), pointer, contiguous :: PNAME
 
+!#else #ifdef PHYPTRDCL
 #else
    
 !# Get NL the total number of categories (NCAT is defined as FMUL * (mosaic+1))
@@ -197,5 +331,8 @@
 #define MKPTR3DNKL(PNAME,IDXV,VARS)      nullify(PNAME); if (IDXV>0) PNAME(1:VARS(IDXV)%meta%ni,1:VARS(IDXV)%meta%nk,1:PHYMEMPTRNCAT(VARS(IDXV)%meta)) => VARS(IDXV)%data(:)
 #define MKPTR3D(PNAME,IDXV,VARS)         MKPTR3DNKL(PNAME,IDXV,VARS)
 
+!#endif #ifdef PHYPTRDCL
 #endif
+   
+!#endif #ifndef PHYMKPTR1
 #endif

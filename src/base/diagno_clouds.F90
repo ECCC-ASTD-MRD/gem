@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN --------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ----------------------------
 
 module diagno_clouds
    use debug_mod, only: init2nan
@@ -82,19 +67,14 @@ contains
       real :: press
       logical :: needoutput
       real, target :: dummy1Dni(ni)
+      character(len=4), parameter :: OLIST(14) = (/ &
+           'ECC ', 'ECCH', 'ECCM', 'ECCL', 'TCC ', 'NT  ', &
+           'TCSH', 'TCSM', 'TCSL', 'TCZH', 'TCZM', 'TCZL', &
+           'CTP ', 'CTT ' &
+           /)
       !----------------------------------------------------------------
 
-      needoutput = .false.
-      i = 1
-      do while (.not.needoutput .and. i <= nphystepoutlist)
-         if (any(phystepoutlist_S(i) == (/ &
-              'ECC ', 'ECCH', 'ECCM', 'ECCL', 'TCC ', 'NT  ', &
-              'TCSH', 'TCSM', 'TCSL', 'TCZH', 'TCZM', 'TCZL', &
-              'CTP ', 'CTT ' &
-              /))) needoutput = .true.
-         i = i+1
-      enddo
-      needoutput = (needoutput .or. debug_alldiag_L .or. etccdiagout)
+      needoutput = (etccdiagout .or. ISREQSTEPL(OLIST))
       if (.not.needoutput) return
 
 #undef MKPTR1DNI
@@ -247,7 +227,7 @@ contains
       do k=2,nk
          k1 = max(k-2,1)
          do i=1,ni
-            mask(i,k-1) = max(0., sign(1., cloud(i,k1)-0.01))
+            mask(i,k-1) = MASK_GE(cloud(i,k1), 0.01)
          enddo
       enddo
       if (etccdiag) then

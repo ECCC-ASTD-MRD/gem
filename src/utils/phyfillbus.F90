@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phyfillbus
    use, intrinsic :: iso_fortran_env, only: REAL64, INT64
@@ -30,9 +15,10 @@ module phyfillbus
 
 contains
    
-function phyfillbus1(F_kount) result(F_istat)
+function phyfillbus1(F_kount, F_delt) result(F_istat)
    implicit none
    integer, intent(in) :: F_kount            !physics timestep number
+   real,    intent(in) :: F_delt             !timestep [sec]
    integer :: F_istat                        !Function result
 
    !@author  Michel Desgagne  -   summer 2013
@@ -55,6 +41,7 @@ function phyfillbus1(F_kount) result(F_istat)
    integer :: iv, k0, istat, err, ijkmin(3), ijkmax(3)
    real, pointer :: src2d(:,:), src3d(:,:,:)
    real, pointer :: src2d1(:,:), src3d1(:,:,:)
+   real, target  :: src2dm(phy_lcl_ni, phy_lcl_nj)
    type(phymeta), pointer :: vmeta
    !     ---------------------------------------------------------------
    F_istat = RMN_ERR
@@ -66,12 +53,18 @@ function phyfillbus1(F_kount) result(F_istat)
    if (F_kount == 0) then
       istat = 0
       do iv = 1, size(FLD_INIT)
-         nullify(src2d)
+         nullify(src2d, src2d1)
          istat = min(gmm_get(FLD_INIT(iv), src2d, gmeta), istat)
          if (associated(src2d)) then
             src2d1(1:,1:) => src2d(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+            varname_S = FLD_INIT(iv)
+            if (varname_S == "TDMASK") then
+               varname_S = "TDMASKXDT"
+               src2dm = src2d1(1:phy_lcl_ni,1:phy_lcl_nj) * F_delt
+               src2d1 => src2dm
+            endif
             istat = min(istat, &
-                 phyfold1(src2d1, FLD_INIT(iv), 'P', ijkmin, ijkmax))
+                 phyfold1(src2d1, varname_S, 'P', ijkmin, ijkmax))
          else
             call msg(MSG_ERROR, '(phyfillbus) missing GMM var: '//trim(FLD_INIT(iv)))
             istat = RMN_ERR

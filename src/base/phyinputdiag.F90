@@ -1,19 +1,4 @@
  
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phyinputdiag
    use phy_options
@@ -42,6 +27,7 @@ contains
       !*@/
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
+#include "phymkptr.hf"
       logical,parameter:: SHORTMATCH_L = .true.
       character(len=256) :: incfg_S
       character(len=32) :: inname_S,prefix_S,basename_S,time_S,ext_S
@@ -74,7 +60,7 @@ contains
                inname_S = vmeta%iname
                if (inname_S == ' ') inname_S = vmeta%oname
                if (inname_S == ' ') inname_S = vmeta%vname
-               if (any(dyninread_list_s(:) == inname_S)) then
+               if (ISDYNIN(inname_S)) then
                   istat = min(input_add(F_inputid,'in='//trim(inname_S)//'; '//trim(incfg_S)),istat)
                   call msg(MSG_INFO,'(phyinputdiag) Adding: '//trim(inname_S)//' for '//trim(vmeta%vname))
                else
@@ -152,7 +138,7 @@ contains
                inname_S = vmeta%iname
                if (inname_S == ' ') inname_S = vmeta%oname
                if (inname_S == ' ') inname_S = vmeta%vname
-               if (any(dyninread_list_s(:) == inname_S)) then
+               if (ISDYNIN(inname_S)) then
                   istat = min(inputio_add(F_inputobj%cfg, 'in='//trim(inname_S)// &
                        '; '//trim(incfg_S)), istat)
                   call msg(MSG_INFO, '(phyinputdiag) Adding: '//trim(inname_S)// &

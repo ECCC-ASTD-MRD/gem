@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module boundary_layer
    implicit none
@@ -69,6 +54,7 @@ contains
       real, pointer, dimension(:) :: zfc  !#TODO: should be contiguous
       real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, &
            zwdifv, zqcdifv, ztmoins, zqmoins, ztve, zvcoef
+      logical :: dqc_applied
 
       ! External symbols
       integer, external :: pbl_simple
@@ -160,9 +146,10 @@ contains
 
       ! Apply diffusion operator to compute PBL tendencies
       if (fluvert == 'RPNINT') then
-         call diffuseall(pvars, cdt1, ni, nk, nkm1)
+         call diffuseall(pvars, dqc_applied, cdt1, ni, nk, nkm1)
       else
          call difver(pvars, cdt1, kount, ni, nk, nkm1, trnch)
+         dqc_applied = .false.
       endif
       if (phy_error_L) return
          
@@ -178,7 +165,7 @@ contains
       call apply_tendencies(zqplus, ztplus, zuplus, zvplus, &
            &                zqdifv, ztdifv, zudifv, zvdifv, &
            &                ztdmaskxdt, ni, nk, nkm1)
-      if (associated(zqcplus)) &
+      if (associated(zqcplus) .and. .not.dqc_applied) &
            call apply_tendencies(zqcplus, zqcdifv, ztdmaskxdt, ni, nk, nkm1)
       if (diffuw) call apply_tendencies(zwplus, zwdifv, ztdmaskxdt, ni, nk, nkm1)
       

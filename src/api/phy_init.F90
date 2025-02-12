@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phy_init_mod
    use iso_c_binding
@@ -198,9 +183,9 @@ contains
       if (deep_timerefresh_sec > 0.) ier = timestr2sec(deep_timerefresh_sec,deep_timerefresh,dble(F_dt))
       if (shal_timeconv_sec > 0.) ier = timestr2sec(shal_timeconv_sec,shal_timeconv,dble(F_dt))
 
-      nphyoutlist = 0
+      nphyoutlist = -1
       ier = wb_get_meta('itf_phy/PHYOUT', type1, sizeof1, nphyoutlist, options1)
-      if (.not.WB_IS_OK(ier)) nphyoutlist = 0
+      if (.not.WB_IS_OK(ier)) nphyoutlist = -1
       allocate(phyoutlist_S(max(1,nphyoutlist)))
       phyoutlist_S(:) = ' '
       if (nphyoutlist > 0) then

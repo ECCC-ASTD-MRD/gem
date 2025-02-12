@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN --------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ----------------------------
 
 module ccc2_cccmarad
    implicit none
@@ -50,6 +35,7 @@ contains
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nkm1, nk
@@ -205,15 +191,15 @@ contains
       enddo
 
       ! Initialize O3 if not read from a 3D climatology
-      if (kount == 0 .and. .not.any(phyinread_list_S(1:phyinread_n) == 'o3ce')) zo3ce = -1.
+      if (kount == 0 .and. .not.ISPHYIN('o3ce')) zo3ce = -1.
 
       if (radghg_L) then
          if (kount == 0) then
             !#TODO: check if var was read from dyn as well
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'ch4c')) zch4c = 1.
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'n2oc')) zn2oc = 1.
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'cf1c')) zcf1c = 1.
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'cf2c')) zcf2c = 1.
+            if (.not.ISPHYIN('ch4c')) zch4c = 1.
+            if (.not.ISPHYIN('n2oc')) zn2oc = 1.
+            if (.not.ISPHYIN('cf1c')) zcf1c = 1.
+            if (.not.ISPHYIN('cf2c')) zcf2c = 1.
          endif
          zch4  = zch4  * zch4c
          zn2o  = zn2o * zn2oc
@@ -224,39 +210,23 @@ contains
 
       ! Initialize O3 tracer for uvindex calculation from climatology, if not found in analysis
       IF_LINOZ0: if (kount == 0 .and. llinoz) then
-
-         if (.not.any(dyninread_list_s == 'o3l') .or.   &
-             .not.any(phyinread_list_s(1:phyinread_n) == 'tr/o3l:p')) then
-
+         if (.not.(ISDYNIN('o3l') .or. ISPHYIN('tr/o3l:p'))) then
             ! climato_phase2_v2 (Paul V)
             if (minval(zo3ce) >= 0.) zo3lmoins = zo3ce * 1E+9  !micro g /kg air <-- kg /kg air
-
          endif
-
       endif IF_LINOZ0
 
       IF_RDGHG0: if (kount == 0 .and. radghg_L) then
-
          if (radlinghg_L) then
-
-            if (.not.any(dyninread_list_s == 'ch4l') .or.   &
-                 .not.any(phyinread_list_s(1:phyinread_n) == 'tr/ch4l:m')) &
-               zch4lmoins = zch4 * 1E+9                      !micro g /kg
-
-            if (.not.any(dyninread_list_s == 'n2ol') .or.   &
-                .not.any(phyinread_list_s(1:phyinread_n) == 'tr/n2ol:m')) &
-               zn2olmoins = zn2o * 1E+9                      !micro g /kg
-
-            if (.not.any(dyninread_list_s == 'f11l') .or.   &
-                .not.any(phyinread_list_s(1:phyinread_n) == 'tr/f11l:m')) &
-               zf11lmoins = zcf11 * 1E+9                     !micro g /kg
-
-            if (.not.any(dyninread_list_s == 'f12l') .or.   &
-                .not.any(phyinread_list_s(1:phyinread_n) == 'tr/f12l:m')) &
-               zf12lmoins = zcf12 * 1E+9                     !micro g /kg
-
+            if (.not.(ISDYNIN('ch4l') .or. ISPHYIN('tr/ch4l:m'))) &
+                 zch4lmoins = zch4 * 1E+9                      !micro g /kg
+            if (.not.(ISDYNIN('n2ol') .or. ISPHYIN('tr/n2ol:m'))) &
+                 zn2olmoins = zn2o * 1E+9                      !micro g /kg
+            if (.not.(ISDYNIN('f11l') .or. ISPHYIN('tr/f11l:m'))) &
+                 zf11lmoins = zcf11 * 1E+9                     !micro g /kg
+            if (.not.(ISDYNIN('f12l') .or. ISPHYIN('tr/f12l:m'))) &
+                 zf12lmoins = zcf12 * 1E+9                     !micro g /kg
          endif
-
       endif IF_RDGHG0
 
       zt2   = 0.0
