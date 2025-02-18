@@ -321,6 +321,7 @@ contains
                lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
 
+         err = -1
          do i=1,local_nk
             success=recs(kstart+i-1)%read(data=c_loc(wk1))
             err = ezsint(wk4(1,(idst-1)*nz+i), wk1)

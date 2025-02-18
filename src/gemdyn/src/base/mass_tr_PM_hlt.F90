@@ -193,8 +193,6 @@
          do n=1,F_ntr_bc
          c_mass_8(n,1)=sum(thread_sum2(1,n,:))
          c_mass_8(n,2)=sum(thread_sum2(2,n,:))
-         c_mass_8(n,3)=sum(thread_sum2(3,n,:))
-         c_mass_8(n,4)=sum(thread_sum2(4,n,:))
          enddo
          call MPI_Allgather(c_mass_8,2*F_ntr_bc,MPI_DOUBLE_PRECISION,gathV1,2*F_ntr_bc,MPI_DOUBLE_PRECISION,comm,err)
 
