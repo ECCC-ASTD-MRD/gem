@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module mixing_length
    ! Container for calculation and manipulation of mixing and dissipation length scales in the PBL.
@@ -24,6 +9,7 @@ module mixing_length
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
+#include "phymkptr.hf"
    private
 
    ! External symbols
@@ -553,7 +539,7 @@ contains
      if (pbl_diss == 'LIM50') zd = min(zd,50.)
 
      ! Recycling of length scales
-     if (any('zn'==phyinread_list_s(1:phyinread_n))) zn(:,:) = znold(:,:)
+     if (ISPHYIN('zn')) zn(:,:) = znold(:,:)
      
      ! Completed timings
      if (timings_L) call timing_stop_omp(500)
@@ -588,7 +574,7 @@ contains
      endif
      
      ! Do not filter if field has been read on this step
-     READ_INPUT: if (any('zn'==phyinread_list_s(1:phyinread_n))) then
+     READ_INPUT: if (ISPHYIN('zn')) then
         zn = znold
         stat = PHY_OK
         return
@@ -633,7 +619,7 @@ contains
       endif
       
       ! Do not filter if field has been read on this step
-      READ_INPUT: if (any('zn'==phyinread_list_s(1:phyinread_n))) then
+      READ_INPUT: if (ISPHYIN('zn')) then
          zn = znold
          stat = PHY_OK
          return
@@ -979,7 +965,7 @@ contains
       real :: gravinv, thvp, tp, pres, qsat, tl, lmin, lsm, lsh, lpim, lpih, wt, bvfreq
       real, dimension(size(th,dim=1)) :: a,zdep
       real, dimension(size(th,dim=1),size(th,dim=2)) :: y, lup, ldown, zcoord, thl, qw, &
-           ccoef, leff, thlp, qwp, fice, exner, unused, thlm, qwm
+           ccoef, leff, thlp, qwp, fice, exner, unused, thlm, qwm, znfix, zntfix
       logical :: myInit
       logical, dimension(size(th,dim=1)) :: intok
       logical, dimension(size(th,dim=1),size(th,dim=2)) :: myMask
@@ -1113,6 +1099,16 @@ contains
          enddo
          
       enddo
+
+      ! Correct any physical inconsistencies in mixing length profile
+      do ki=2,nk
+         do j=1,n
+            znfix(j,ki) = maxval(zn(j,:) - 1.1*abs(gze(j,ki) - gze(j,:)))
+            zntfix(j,ki) = maxval(znt(j,:) - 1.1*abs(gze(j,ki) - gze(j,:)))
+         enddo
+      enddo
+      zn(:,2:) = znfix(:,2:)
+      znt(:,2:) = zntfix(:,2:)
 
       ! Copy values into extremes
       zn(:,1) = zn(:,2)

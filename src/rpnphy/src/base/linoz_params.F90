@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module linoz_param
    implicit none
@@ -45,6 +30,10 @@ module linoz_param
    real, parameter :: consth    = 0.1607549380000e+07 ! const for conv hum  1.0e+06 / (18.015/28.96)
    real, parameter :: tau_linoz_tropo = 2.*24.*3600.        ! 2 days relaxation time in troposphere (sec) 
    real, parameter :: tau_linoz_meso = 6.*3600.            ! 6 hours relaxation time in mesosphere (sec)
+   real, parameter :: tau_hetchm = 10.*24.*3600.      ! 10 days 1Jun2020 (formerly 15 days heterogeneus chemistry time (sec)
+   real, parameter :: tau_activ  = 4.*3600.           ! 4 hours
+   real, parameter :: tau_deactn = 5.*24.*3600.       ! 5 days
+   real, parameter :: tau_deacts = 5.*24.*3600.       ! 5 days (formerly 10 days 09/29/2021)
    real, parameter :: QepsO3    = 1.e-10              ! mole /mole
    real, parameter :: Qeps      = 1.e-20              ! mole /mole
    

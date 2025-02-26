@@ -18,7 +18,7 @@ contains
     use, intrinsic :: iso_fortran_env, only: INT64
     use tdpack, only: GRAV, KARMAN, RGASD
     use phy_options, only: ilongmel, etrmin2, phystepoutlist_s, nphystepoutlist, &
-         pbl_progvar, pbl_ae, pbl_turbsl_depth, pbl_ricrit
+         pbl_progvar, pbl_ae, pbl_turbsl_depth, pbl_ricrit, debug_alldiag_L
     use phy_status, only: phy_error_L, PHY_OK
     use mixing_length, only: ml_compute, ML_LMDA
     use ens_perturb, only: ens_nc2d
@@ -30,6 +30,7 @@ contains
     use cons_thlqw, only: thlqw_compute
     implicit none
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
     !Arguments
     integer, intent(in) :: F_ni                                 !horizontal dimension
@@ -103,7 +104,7 @@ contains
     zero3d = 0.
     one = 1.
     if (F_kount == 0) then
-       if (.not.any('zn' == phyinread_list_s(1:phyinread_n))) then
+       if (.not.ISPHYIN('zn')) then
           do k=1,F_nkm1
              F_zn(:,k) = min(KARMAN*(F_gzm(:,k) + F_z0m(:)), ML_LMDA)
           enddo
@@ -165,7 +166,7 @@ contains
     if (phy_error_L) return
 
     ! Diagnose TKE budget terms on request
-    if (any([(any((/'BUEN','DSEN','SHEN'/) == phystepoutlist_S(i)), i=1,nphystepoutlist)])) then
+    if (ISREQSTEPL((/'BUEN','DSEN','SHEN'/))) then
        call tkebudget(F_en, e_star, b_term, c_term, F_zn, F_buoy, F_shr2, &
             F_buoyen, F_shren, F_dissen, F_tau, F_ni, F_nkm1)
        if (phy_error_L) return

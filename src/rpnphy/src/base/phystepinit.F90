@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phystepinit
    implicit none
@@ -30,13 +15,16 @@ contains
       use calcz0_mod, only: calcz0
       use phy_options
       use phymem, only: phyvar, phymeta, nphyvars, phymem_find, phymem_busreset, PHY_VBUSIDX, PHY_DBUSIDX
-      use phybusidx
+      use phybusidx, except=>lwc, except2=>iwc
       use series_mod, only: series_xst
       use sigmalev, only: sigmalev3
       use surf_precip, only: surf_precip1, surf_precip3
       use phybudget, only: pb_compute, pb_residual
       use phy_status, only: PHY_OK
       use vintphy, only: vint_mom2thermo
+      use microphy_utils, only: mp_lwc, mp_iwc
+      use cons_thlqw, only: thlqw_compute
+      use sgspdf, only: sgspdf_bkg
       implicit none
 !!!#include <arch_specific.hf>
       !@Author L. Spacek (Oct 2011)
@@ -77,6 +65,7 @@ contains
       real, target :: tmp1d(ni)
       real, pointer :: tmpptr(:)
       real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
+      real, dimension(ni, nk-1) :: lwc, iwc, thl, qw
       
       type(phymeta), pointer :: vmeta, var_m
 
@@ -87,14 +76,15 @@ contains
            zz4, ztls, ztss, zrainrate, zsnowrate, zpplus, &
            zrsc, zrlc, zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
            zcone0, zconq0, zcone1, zconq1, zconedyn, zconqdyn, &
-           ztdmask, ztdmaskxdt
+           zdxdy, zh
       real, pointer, dimension(:,:), contiguous :: &
            zgzmom, zgz_moins, zhumoins, zhuplus, &
            zqadv, zqcmoins, zqcplus, zsigm, zsigt, ztadv, ztmoins, ztplus, &
            zuadv, zumoins, zuplus, zvadv, zvmoins, zvplus, zwplus, zze, &
            zgztherm, zfneige, zfip, &
            zqrp, zqrm, zqti1p, zqti1m, zqti2p, zqti2m, zqti3p, zqti3m, zqti4p, zqti4m, &
-           zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim, zsige
+           zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim, zsige, &
+           zsigmas,  zmrk2
       real, pointer, dimension(:,:), contiguous :: tmp1, tmp2
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
       !----------------------------------------------------------------
@@ -108,7 +98,9 @@ contains
       MKPTR1D(zconq1, conq1, pvars)
       MKPTR1D(zconqdyn, conqdyn, pvars)
       MKPTR1D(zdlat, dlat, pvars)
+      MKPTR1D(zdxdy, dxdy, pvars)
       MKPTR1D(zfcor, fcor, pvars)
+      MKPTR1D(zh, h, pvars)
       MKPTR1D(zpmoins, pmoins, pvars)
       MKPTR1D(zpplus, pplus, pvars)
       MKPTR1D(zqdiag, qdiag, pvars)
@@ -140,9 +132,6 @@ contains
       MKPTR1D(zfrfrac, frfrac, pvars)
       MKPTR1D(zpefrac, pefrac, pvars)
 
-      MKPTR1D(ztdmask, tdmask, pvars)
-      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
-
       ind_sfc = nk
       if (any(pcptype == (/ &
            'NIL   ', &
@@ -165,6 +154,7 @@ contains
       MKPTR2D(zqcplus, qcplus, pvars)
       MKPTR2D(zsige, sige, pvars)
       MKPTR2D(zsigm, sigm, pvars)
+      MKPTR2D(zsigmas, sigmas, pvars)
       MKPTR2D(zsigt, sigt, pvars)
       MKPTR2D(ztadv, tadv, pvars)
       MKPTR2D(ztmoins, tmoins, pvars)
@@ -177,7 +167,8 @@ contains
       MKPTR2D(zvplus, vplus, pvars)
       MKPTR2D(zwplus, wplus, pvars)
       MKPTR2D(zze, ze, pvars)
-
+      
+      MKPTR2D(zmrk2, mrk2, pvars)
       MKPTR3D(zvcoef, vcoef, pvars)
       
       MKPTR2D(zqrp, qrplus, pvars)
@@ -198,19 +189,16 @@ contains
       MKPTR2D(zqgm, qgmoins, pvars)
       MKPTR2D(zqhm, qhmoins, pvars)
       MKPTR2D(zqim, qimoins, pvars)
-
+      
       call init2nan(work)
       call init2nan(tmp1d)
       call init2nan(en0, pw0, en1, pw1)
-
-      if (kount == 0) then
-         ztdmaskxdt(:) = ztdmask(:) * delt
-      endif
+      call init2nan(thl, qw, lwc, iwc)
       
       IF_DEBUG: if (debug_mem_L) then
          DO_IVAR: do ivar= 1, nphyvars
             vmeta => pvars(ivar)%meta
-            if (any(vmeta%vname == phyinread_list_s(1:phyinread_n))) cycle
+            if (ISPHYIN(vmeta%vname)) cycle
             if (vmeta%ibus == PHY_DBUSIDX) then
                !# Init diag level of dyn bus (copy down) if var not read
                !# this is needed in debug mode since the bus is init with NaN
@@ -286,7 +274,7 @@ contains
            zumoins(:,nk-1), zvmoins(:,nk-1), ni)
 
       ! Initialize diagnostic level values in the profile
-      if (any('pw_tt:p' == phyinread_list_s(1:phyinread_n))) then
+      if (ISPHYIN('pw_tt:p')) then
          ztdiag = ztplus(:,nk)
       elseif (kount == 0) then
          ztplus(:,nk) = ztplus(:,nk-1)
@@ -294,7 +282,7 @@ contains
       else
          ztplus(:,nk) = ztdiag
       endif
-      if (any('tr/hu:p' == phyinread_list_s(1:phyinread_n))) then
+      if (ISPHYIN('tr/hu:p')) then
          zqdiag = zhuplus(:,nk)
       elseif (kount  ==  0) then
          zhuplus(:,nk) = zhuplus(:,nk-1)
@@ -302,7 +290,7 @@ contains
       else
          zhuplus(:,nk) = zqdiag
       endif
-      if (any('pw_uu:p' == phyinread_list_s(1:phyinread_n))) then
+      if (ISPHYIN('pw_uu:p')) then
          zudiag = zuplus(:,nk)
       elseif (kount  ==  0) then
          zuplus(:,nk) = zuplus(:,nk-1)
@@ -310,7 +298,7 @@ contains
       else
          zuplus(:,nk) = zudiag
       endif
-      if (any('pw_vv:p' == phyinread_list_s(1:phyinread_n))) then
+      if (ISPHYIN('pw_vv:p')) then
          zvdiag = zvplus(:,nk)
       elseif (kount == 0) then
          zvplus(:,nk) = zvplus(:,nk-1)
@@ -489,6 +477,19 @@ contains
               zrlc, ztls, zrsc, ztss, zrainrate, zsnowrate, &
               zfneige(:,ind_sfc), zfip(:,ind_sfc), ni)
       endif
+
+      ! Estimate standard deviation of subgrid-scale saturation deficit
+      if (kount == 0) then
+         if (mp_lwc(lwc, pvars) /= PHY_OK .or. &
+              mp_iwc(iwc, pvars) /= PHY_OK) then
+            call physeterror('phystepinit', 'Cannot compute condensate contents')
+            return
+         endif
+         call thlqw_compute(thl, qw, ztmoins, zhumoins, lwc, iwc, zsigt, ni, nk-1)
+         call sgspdf_bkg(zsigmas, ztplus, qw, zsigt, zgztherm, zp0, zh, &
+              zmrk2, ni, nk-1)
+      endif
+      
       if (timings_L) call timing_stop_omp(405)
       call msg_toall(MSG_DEBUG, 'phystepinit [END]')
       !-------------------------------------------------------------

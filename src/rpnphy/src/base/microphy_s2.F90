@@ -462,6 +462,7 @@ contains
 
           PRCP = PRCPST(il)
           XN = STPEVP(il) * TAU / HCIMP(il)
+          HDPMX(il) = -(QM(il,jk) - HQSAT(il,jk)) * HCIMP(il) * rTAU * DPRG(il,jk)
           x = amax1( PRCP , 1.E-16 )
           x = sqrt ( x )          
           y = 0.5 * XN * HDPMX(il) / x
@@ -475,7 +476,7 @@ contains
 
           PRCPST(il) = amax1( 0. , PRCPST(il) - EVAPRI )
           STSNOW(il) = amax1( 0. , STSNOW(il) - EVAPRI )
-          HCOND(il) = HCOND(il) - EVAPRI / DPRG(il,jk)
+          HCOND(il) = - EVAPRI / DPRG(il,jk)
 
           COVBAR(il) = XBB * ( 1. - XB ) + XB
 
@@ -483,8 +484,8 @@ contains
           ! TEMPERATURE AND MOISTURE TENDENCIES, PRECIPITATION FLUXES
           ! ------------------------------------------------------------
 
-          STT(il,jk) = - DTMELT
-          SQT(il,jk) = 0.
+          STT(il,jk) = - DTMELT + HCOND(il) * HLDCP(il)
+          SQT(il,jk) = - HCOND(il)
 
           PRFLX(il,jk+1) =  PRCPST(il)
           SWFLX(il,jk+1) =  STSNOW(il)
@@ -554,7 +555,7 @@ contains
     else
        MKPTR2Dm1(zqc, qcplus, F_pvars)
        MKPTR2Dm1(zt, tplus, F_pvars)
-    endif
+    endif  
     F_istat = s2_ice_partition(zt, zqc, F_qliqs=F_qltot)
     return
   end function s2_lwc
@@ -608,8 +609,8 @@ contains
        wfrac(:,:) = 0.0059 + 0.9941*exp(-0.003102*(F_tt(:,:)-TCDK)**2)
     endwhere
     where (wfrac(:,:) < 0.01) wfrac(:,:) = 0.
-    if (present(F_qices)) F_qices = (1.-wfrac) * F_qc
-    if (present(F_qliqs)) F_qliqs = wfrac * F_qc
+    if (present(F_qices)) F_qices = max((1.-wfrac) * F_qc, 0.)
+    if (present(F_qliqs)) F_qliqs = max(wfrac * F_qc, 0.)
     ! End of subprogram
     return
   end function s2_ice_partition
