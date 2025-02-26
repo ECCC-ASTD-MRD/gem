@@ -114,6 +114,7 @@
       rhsf (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(5*dim+1:)
 
       rhsu=0.;rhsv=0.;rhst=0.;rhsc=0.;rhsw=0.;rhsf=0.;rhs_zero=0.
+      dgzm=0.;dgzt =0.
 
       allocate (orhsu(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 orhsv(l_minx:l_maxx,l_miny:l_maxy,l_nk),&

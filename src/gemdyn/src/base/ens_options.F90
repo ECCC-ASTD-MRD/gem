@@ -46,6 +46,12 @@ module ens_options
    logical :: Ens_stat = .false.
    namelist /ensembles/ Ens_stat
 
+   !# Reference timestep for Markov Chains time interpolation
+   !# (3D MARKOV CHAINES)
+   real ::Ens_cstv_dt_ref = -1.d0
+   namelist /ensembles/Ens_cstv_dt_ref
+
+
    !# switch to do the calculation of the divergence due to SKEB forcing
    !# (3D MARKOV CHAINES)
    logical :: Ens_skeb_div = .false.
@@ -382,6 +388,7 @@ contains
 !!$            write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_tlc = ',Ens_ptp_tlc
             write(Lun_out,'(a,f12.5)' )'Ens_ens_ptp_crit_w = ',Ens_ptp_crit_w
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_fac_reduc = ',Ens_ptp_fac_reduc
+            write(Lun_out,'(a,f8.2)' )'Ens_cstv_dt_ref = ', Ens_cstv_dt_ref
          end if
 
       end if

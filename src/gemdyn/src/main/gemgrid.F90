@@ -60,7 +60,6 @@
       Step_dt = 1.
       radians = .false.
       
-      rec%etiket=etk_ext
       rec%dateo=0
       rec%deet=0
       rec%npas=0
@@ -159,6 +158,8 @@
       else
          etk_ext=trim(etk)
       endif
+
+      rec%etiket=trim(etk_ext)
 
       rec%nomvar='>>'
       rec%typvar='X'
@@ -323,7 +324,7 @@
       rec%ip1=ip1
       rec%ip2=ip2
       rec%ip3=Grd_ip3
-      rec%ni=G_ni
+      rec%ni=ni
       rec%nj=1
       rec%ig1=Hgc_ig1ro
       rec%ig2=Hgc_ig2ro
@@ -334,7 +335,7 @@
 
       rec%nomvar='^^'
       rec%ni=1
-      rec%nj=G_nj
+      rec%nj=nj
       rec%data=c_loc(ypos)
       success = file%write(rec,rewrite=FST_SKIP)
 
