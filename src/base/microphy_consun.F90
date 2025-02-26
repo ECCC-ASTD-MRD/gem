@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module microphy_consun
   use phymem, only: phyvar
@@ -33,7 +18,7 @@ contains
        tp, tm, qp, qm, cwp, cwm, &
        psp, psm, s, tau, &
        prflx, swflx, f12, fevp, icefrac, &
-       pblsigs, mrk2, ni, nlev)
+       sigmas, mrk2, ni, nlev)
     use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, PI, foqst, fodqs
     use phy_options, only: cond_evap, cond_hmrst, cond_hu0max, cond_hu0min, cond_iceacc, &
          cond_sgspdf, cond_drhc, cond_rhminus
@@ -52,7 +37,7 @@ contains
          s(ni,*)         , rhc(ni,nlev)    , &
          tau             , f12(ni,nlev)    , fevp(ni,nlev), &
          icefrac(ni,nlev), mrk2(ni,ens_nc2d), &
-         pblsigs(ni,nlev)
+         sigmas(ni,nlev)
 
     !@Authors Claude Girard and Gerard Pellerin (1995)
     !@Revision
@@ -293,10 +278,11 @@ contains
           rhcrit(il,jk)= min(rhcrit(il,jk) + x, HU0MAX(il))
           x = 1. !apply variance-based RHc for full column
           if (cond_sgspdf == 'TRIANGULAR') then
-             xwrk = max(1. - sqrt(6.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
+             xwrk = max(1. - sqrt(6.)*sigmas(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
           elseif (cond_sgspdf == 'UNIFORM') then
-             xwrk = max(1. - sqrt(3.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
+             xwrk = max(1. - sqrt(3.)*sigmas(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
           else
+             xwrk = 0.
              x = 0.  !do not use PBL SGS variance estimate 
           endif
           rhcrit(il,jk) = min(x * xwrk + (1. - x) * rhcrit(il,jk), 0.999)
@@ -670,8 +656,8 @@ contains
        wfrac(:,:) = 0.0059 + 0.9941*exp(-0.003102*(F_tt(:,:)-TCDK)**2)
     endwhere
     where (wfrac(:,:) < 0.01) wfrac(:,:) = 0.
-    if (present(F_qices)) F_qices = (1.-wfrac) * F_qc
-    if (present(F_qliqs)) F_qliqs = wfrac * F_qc
+    if (present(F_qices)) F_qices = max((1.-wfrac) * F_qc, 0.)
+    if (present(F_qliqs)) F_qliqs = max(wfrac * F_qc, 0.)
     ! End of subprogram
     return
   end function consun_ice_partition

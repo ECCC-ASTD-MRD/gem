@@ -11778,7 +11778,7 @@ SUBROUTINE access_lookup_table_coll_3mom_LF(dumzz,dumjj,dumii,dumll,dumj,dumi,in
        MKPTR2Dm1(zqc, qcplus, F_pvars)
        MKPTR2Dm1(zqr, qrplus, F_pvars)
     endif
-    F_qltot(:,:) = zqc(:,:) + zqr(:,:)
+    F_qltot(:,:) = max(zqc(:,:), 0.) + max(zqr(:,:), 0.)
     F_istat = PHY_OK
     return
   end function p3_lwc
@@ -11814,10 +11814,10 @@ SUBROUTINE access_lookup_table_coll_3mom_LF(dumzz,dumjj,dumii,dumll,dumj,dumi,in
        MKPTR2Dm1(zqti4, qti4plus, F_pvars)
     endif
     F_qitot = 0.
-    if (associated(zqti1)) F_qitot = F_qitot + zqti1
-    if (associated(zqti2)) F_qitot = F_qitot + zqti2
-    if (associated(zqti3)) F_qitot = F_qitot + zqti3
-    if (associated(zqti4)) F_qitot = F_qitot + zqti4
+    if (associated(zqti1)) F_qitot = F_qitot + max(zqti1, 0.)
+    if (associated(zqti2)) F_qitot = F_qitot + max(zqti2, 0.)
+    if (associated(zqti3)) F_qitot = F_qitot + max(zqti3, 0.)
+    if (associated(zqti4)) F_qitot = F_qitot + max(zqti4, 0.)
     F_istat = PHY_OK
     return
   end function p3_iwc

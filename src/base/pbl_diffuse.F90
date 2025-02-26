@@ -64,7 +64,7 @@ contains
     real, parameter :: WEIGHT_BM=0.5
     integer, parameter :: FLUX_INTTYPE=INT_TYPE_LINEAR
 
-    integer j, k, typet, typem
+    integer i, j, k, typet, typem
     real rsg, rgam
     logical :: compute_tend
 #include "phymkptr.hf"
@@ -87,7 +87,7 @@ contains
     real, pointer, dimension(:,:), contiguous :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
          t, q, sg, zsigw, zsigt, zsigm, tm, &
          sigef, sigex, conserv_t,conserv_q,tconserv_t,tconserv_q, zgztherm, &
-         zpblsigs,zpblq1, zqcplus, tqc
+         zsigmas,zpblq1, zqcplus, tqc
     real, pointer, dimension(:,:), contiguous :: zgq, zgql, zgte, zkm, zkt, zqtbl, ztve, &
          zwtng, zwqng, zuwng, zvwng, zfbl, zfblgauss, zfblnonloc, zfnn, &
          zzd, zzn, zfc, zfv, zc1pbl, zturbqf, zturbtf, zturbuf, zturbvf, &
@@ -187,7 +187,7 @@ contains
 
     MKPTR2Dm1(tw, wdifv, pvars)
     MKPTR2Dm1(tl, qcdifv, pvars)
-    MKPTR2Dm1(zpblsigs, pblsigs, pvars)
+    MKPTR2Dm1(zsigmas, sigmas, pvars)
     MKPTR2Dm1(zpblq1, pblq1, pvars)
 
     MKPTR3D(zvcoef, vcoef, pvars)
@@ -280,6 +280,7 @@ contains
        sfc_density(j) = -aq(j) * ps(j)/GRAV
     end do
     if (pbl_cmu_timeavg .and. kount > 0) then
+       !#TODO: check - Looks like zbm0 was never init in the code (only =0 at bus init)...
        bmsg(:) = fm_mult(:) * ((zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM) )*aq(:))
        zbm0(:) = zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM)
     endif
@@ -295,7 +296,7 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for u-component wind
-    if (any([(any((/'TFUU', 'TFUV'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
+    if (ISREQSTEPL((/'TFUU', 'TFUV'/))) then
        call atmflux4(zturbuf, tu, zsigm, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -310,13 +311,14 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for v-component wind
-    if (any([(any((/'TFVV', 'TFUV'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
+    if (ISREQSTEPL((/'TFVV', 'TFUV'/))) then
        call atmflux4(zturbvf, tv, zsigm, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
 
     ! Diagnose total turbulent momentum flux
-    zturbuvf(:,:) = sqrt(zturbuf(:,:)**2+zturbvf(:,:)**2)
+    if (ISREQSTEP('TFUV')) &
+         zturbuvf(:,:) = sqrt(zturbuf(:,:)**2+zturbvf(:,:)**2)
 
     ! ** Vertical Motion Diffusion **
 
@@ -357,7 +359,7 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for moisture
-    if (any(phyoutlist_S == 'TFHU')) then
+    if (ISREQSTEP('TFHU')) then
        call atmflux4(zturbqf, tconserv_q, zsigt, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -398,7 +400,7 @@ contains
     if (fluvert == 'MOISTKE') then
        call baktotq(tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
             ps,zgztherm,tm,ficelocal,ztve,zh,zfc_ag,zqtbl,zfnn,zfbl,zfblgauss, &
-            zfblnonloc,zc1pbl,zzn,zzd,zmg,zmrk2,zvcoef,zpblsigs,zpblq1,tau,ni,nkm1)
+            zfblnonloc,zc1pbl,zzn,zzd,zmg,zmrk2,zvcoef,zsigmas,zpblq1,tau,ni,nkm1)
     endif
 
     ! Compute tendency for condensate diffusion
@@ -417,7 +419,7 @@ contains
     tt(:,1:nkm1) = tt(:,1:nkm1) - (1./CPD) * dket(:,1:nkm1)
 
     ! Diagnose atmospheric fluxes for temperature
-    if (any(phyoutlist_S == 'TFTT')) then
+    if (ISREQSTEP('TFTT')) then
        call atmflux4(zturbtf, tt, zsigt, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif

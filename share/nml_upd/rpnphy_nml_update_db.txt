@@ -670,3 +670,6 @@ rm:  surface_cfgs/svs_hrsurf_sltext
 #New:  surface_cfgs/svs_vegcrops
 #New:  surface_cfgs/svs_vegdat
 #New:  surface_cfgs/svs_z0mdat
+#------
+fileVersion: 6.3.0-a12 > 6.3.0-a13
+#New:  physics_cfgs/linoz_het

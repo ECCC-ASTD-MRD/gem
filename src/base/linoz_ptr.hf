@@ -2,6 +2,7 @@
 #include "phymkptr.hf"
 
    MKPTR2D(zairplus, airplus, pvars)
+   MKPTR2D(zohalplus, ohalplus, pvars)
    MKPTR2D(zo3lplus,  o3lplus , pvars)
    MKPTR2D(zch4lplus, ch4lplus, pvars)
    MKPTR2D(zn2olplus, n2olplus, pvars)
@@ -14,6 +15,8 @@
 
    MKPTR1D(zpplus, pmoins, pvars)
    MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
+   MKPTR1D(zcosas, cosas, pvars)
+   MKPTR1D(zdlat,  dlat,  pvars)
 
    MKPTR2D(zttce     , ttce   ,  pvars)
    MKPTR2D(zlin4     , lin4   ,  pvars)
@@ -32,6 +35,7 @@
    MKPTR2D(zcf1c     , cf1c   ,  pvars)
    MKPTR2D(zcf2c     , cf2c   ,  pvars)
 
+   MKPTR2D(zgztherm  , gztherm,  pvars)
    MKPTR2D(zch4      , ch4    ,  pvars)
    MKPTR2D(zn2o      , n2o    ,  pvars)
    MKPTR2D(zcf11     , cf11   ,  pvars)
@@ -42,6 +46,8 @@
    MKPTR2D(zo4chmtd  , o4chmtd,  pvars)
    MKPTR2D(zo6chmtd  , o6chmtd,  pvars)
    MKPTR2D(zo7chmtd  , o7chmtd,  pvars)
+   MKPTR2D(zo8chmtd  , o8chmtd,  pvars)
+   MKPTR2D(zo9chmtd  , o9chmtd,  pvars)
 
    MKPTR2D(zch4chmtd  , ch4chmtd,  pvars)
    MKPTR2D(zn2ochmtd  , n2ochmtd,  pvars)
@@ -50,6 +56,7 @@
 
    MKPTR2D(zo3col  , o3col,  pvars)
    MKPTR2D(zo3ccol , o3ccol, pvars)
+   MKPTR2D(zo3xcol , o3xcol, pvars)
    MKPTR2D(zch4col , ch4col, pvars)
    MKPTR2D(zn2ocol , n2ocol, pvars)
    MKPTR2D(zf11col , f11col, pvars)
@@ -57,6 +64,7 @@
 
    MKPTR1D(zo3tc   , o3tc,  pvars)
    MKPTR1D(zo3ctc  , o3ctc, pvars)
+   MKPTR1D(zo3xtc  , o3xtc, pvars)
    MKPTR1D(zch4tc  , ch4tc, pvars)
    MKPTR1D(zn2otc  , n2otc, pvars)
    MKPTR1D(zf11tc  , f11tc, pvars)

@@ -1,7 +1,7 @@
 module phymem
    use clib_itf_mod, only: clib_toupper, clib_tolower
    use rmn_gmm, only: gmm_metadata, gmm_create, gmm_get, GMM_IS_OK, GMM_FLAG_RSTR, GMM_FLAG_IZER, GMM_FLAG_INAN, GMM_NULL_FLAGS, GMM_MAXNAMELENGTH
-   use str_mod, only: str_normalize
+   use str_mod, only: str_normalize, str_concat
    use phy_status, only: PHY_OK, PHY_ERROR
    use splitst, only: splitst4
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phydim_ni, phydim_nj, phydim_nk
@@ -16,7 +16,7 @@ module phymem
    !# Public functions
    public :: phymem_busidx, phymem_alloc, phymem_init
    public :: phymem_add, phymem_gmmname, phymem_busreset
-   public :: phymem_find, phymem_find_idxv, phymem_updatemeta
+   public :: phymem_find, phymem_find_idxv, phymem_find_idxv1, phymem_updatemeta
    public :: phymem_getmeta, phymem_getmeta_copy, phymem_getdata
    public :: phymem_get_slabvars, phymem_get_i0_string
    
@@ -25,7 +25,8 @@ module phymem
    integer, parameter, public :: PHY_NAMELEN  = 32
    integer, parameter, public :: PHY_DESCLEN  = 256
    integer, parameter, public :: PHY_MAXFLAGS = 16
-   
+   integer, parameter, public :: PHY_MAXDEPS  = 16
+
    integer, parameter, public :: PHY_STAG_SFC = 0
    integer, parameter, public :: PHY_STAG_MOM = 0
    integer, parameter, public :: PHY_STAG_THERMO = 1
@@ -61,7 +62,7 @@ module phymem
       integer :: nlcl(3) !# local tile dims in "not folded" space
       integer :: ibus    !# index of bus containing the field
       integer :: idxb    !# var index in the specified bus, pbuses(ibus)%meta(idxb)
-      integer :: idxv    !# var index in the specified bus, pvmetas(idxv)%meta
+      integer :: idxv    !# var index in the specified bus, pvmetas(idxv)
       integer :: i0      !# index of first element in the bus pointer, pbuses(ibus)%bptr(i0:in,:)
       integer :: in      !# in=i0+size-1; index of first element in the bus pointer, pbuses(ibus)%bptr(i0:in,:)      
       integer :: init    !# 1 = init/mandatory, 0 otherwise
@@ -81,6 +82,11 @@ module phymem
       character(len=PHY_NAMELEN) :: sname  !# series name
       character(len=PHY_DESCLEN) :: desc   !# Field description
       character(len=PHY_NAMELEN) :: flags(PHY_MAXFLAGS)  !# list of text key describing the fields caracteristics
+      
+      character(len=PHY_NAMELEN) :: deps(PHY_MAXDEPS)    !# list of others vars (VNAME) needed to compute this one
+      integer :: ideps(PHY_MAXDEPS)
+      logical :: outcond_L
+      logical :: outreq_L
    end type phymeta
    
    type phyvar
@@ -98,7 +104,7 @@ module phymem
    type phybus
       integer :: nvars = 0
       integer :: nsize = 0
-      type(phymeta), pointer, contiguous :: meta(:) => null() !# ptr to var meta
+      type(phymetaptr), pointer, contiguous :: mptr(:) => null() !# ptr to var metaptr (pbuses(ibus)%mptr(idxb)%meta => pvmetas(idxv)
       real, pointer, contiguous :: bptr(:,:) => null()  !# ptr to bus, all slabs
       character(len=32) :: busid = ' '                  !# Bus short name
    end type phybus
@@ -118,6 +124,7 @@ module phymem
    
    interface phymem_find
       module procedure phymem_find_idxv
+      module procedure phymem_find_idxv1
    end interface phymem_find
 
    interface phymem_getdata
@@ -131,14 +138,15 @@ module phymem
    integer, parameter :: DNVARS = 25
 
    type(phybus), save  :: pbuses(PHY_NBUSES)
-   type(phymetaptr), pointer, contiguous, save :: pvmetas(:) => null()
+   type(phymeta), pointer, contiguous, save :: pvmetas(:) => null()
 
    logical, save :: isallocated = .false.
    logical, save :: isinit = .false.
 
    integer, save, pointer :: uidxvlist(:) => NULL()
    integer, save :: nuidxvlist = -1
-   
+   integer, save :: nphyvarsmax = 0
+
 contains
 
    !/@*
@@ -293,18 +301,17 @@ contains
 
          
    !/@*
-   function phymem_add_meta(F_imeta, F_i0) result(F_idxv)
+   function phymem_add_meta(F_imeta) result(F_istat)
       !@objective  Add physics var from pre-filler phymeta
       !@arguments
       type(phymeta), intent(in) :: F_imeta
-      integer, intent(out), optional :: F_i0  !# Temporarily return i0 for backward compat
       !@return
-      integer :: F_idxv  !# var index in pvmetas
+      integer :: F_istat
       !*@/
       type(phymeta) :: vmeta
-      integer :: istat, nkfm, idxb, idxv, ibus, memgap, vsize
+      integer :: istat, nkfm, idxb, idxv, ibus, memgap, vsize, n
       !---------------------------------------------------------------
-      F_idxv = PHY_ERROR
+      F_istat = PHY_ERROR
       if (.not.isinit) istat = priv_init()
       if (isallocated) then
          call msg(MSG_ERROR, '(phymem_addvar) Cannot add var after allocation')
@@ -317,9 +324,7 @@ contains
               '(phymem_add) Unknown bus: '//trim(F_imeta%bus))
          return
       endif
-      if (pbuses(ibus)%nvars >= PHY_MAXVARS(ibus)) then
-         istat = priv_resize(ibus, DNVARS)
-      endif
+      if (nphyvars >= nphyvarsmax) istat = priv_resize(DNVARS)
       
       vmeta = F_imeta
       vmeta%ibus = ibus
@@ -327,7 +332,17 @@ contains
       call str_normalize(vmeta%oname)
       call str_normalize(vmeta%vname)
       call str_normalize(vmeta%sname)
+!!$      istat = clib_toupper(vmeta%iname)
+!!$      istat = clib_toupper(vmeta%oname)
+!!$      istat = clib_toupper(vmeta%vname)
+!!$      istat = clib_toupper(vmeta%sname)
       istat = clib_toupper(vmeta%bus)
+
+      do n=1,PHY_MAXDEPS
+         call str_normalize(vmeta%deps(n))
+         vmeta%ideps(n) = -1
+      enddo
+      vmeta%outreq_L = .false.
 
       if (vmeta%oname == '') vmeta%oname = vmeta%vname
       if (vmeta%iname == '') vmeta%iname = vmeta%oname
@@ -339,45 +354,36 @@ contains
       if (istat /= PHY_OK) return
 
       idxv = nphyvars + 1
-      idxb = pbuses(ibus)%nvars + 1
+      vmeta%idxv = idxv
+
       nkfm = vmeta%nk*vmeta%fmul*(vmeta%mosaic+1)
       vsize = vmeta%ni * nkfm
-      memgap = 0
-      if (debug_mem_L) memgap = max(vmeta%ni/5,1)+2*(ibus-1)
 
-      vmeta%idxb = idxb
-      vmeta%idxv = idxv
-      vmeta%i0 = pbuses(ibus)%nsize + memgap + 1
-      vmeta%in = vmeta%i0 + vsize - 1
       vmeta%nlcl = (/phy_lcl_ni, phy_lcl_nj, nkfm/)
       vmeta%size = vsize
-
-      pbuses(ibus)%meta(idxb) = vmeta
-
-      pbuses(ibus)%nsize = vmeta%in
-      pbuses(ibus)%nvars = idxb
+      
+      pvmetas(idxv) = vmeta
       nphyvars = idxv
       
       ! if (F_imeta%flags(1) /= '') then
       !    print *,'(phymem_add_meta) ',trim(pbuses(ibus)%meta(idxb)%vname),':',trim(pbuses(ibus)%meta(idxb)%flags(1)),':',trim(pbuses(ibus)%meta(idxb)%flags(2))
       ! endif
-
-      F_idxv = idxv
-      if (present(F_i0)) F_i0 = vmeta%i0
+      
+      F_istat = RMN_OK
       !---------------------------------------------------------------
       return
    end function phymem_add_meta
 
    
    !/@*
-   function phymem_add_string(F_string, F_i0, F_flags) result(F_idxv)
+   function phymem_add_string(F_string, F_flags, F_deps) result(F_istat)
       !@objective Add physics var from string description
       !@arguments
       character(len=*), intent(in) :: F_string
-      integer, intent(out), optional :: F_i0  !# Temporarily return i0 for backward compat
       character(len=*), intent(in), optional :: F_flags
+      character(len=*), intent(in), optional :: F_deps(:)
       !@return
-      integer :: F_idxv  !# var index in pvmetas
+      integer :: F_istat
       !@Notes
       !  See splitst.F90 for the input string description
       !*@/
@@ -387,7 +393,7 @@ contains
       type(phymeta) :: vmeta
       character(len=PHY_NAMELEN) :: flags(PHY_MAXFLAGS)
       !---------------------------------------------------------------
-      F_idxv = -1
+      F_istat = PHY_ERROR
       if (.not.isinit) istat = priv_init()
       if (isallocated) then
          call msg(MSG_ERROR, '(phymem_addvar) Cannot add var after allocation')
@@ -457,6 +463,16 @@ contains
          enddo
       endif
 
+      vmeta%deps(:) = ''
+      if (present(F_deps)) then
+         if (size(F_deps) > PHY_MAXDEPS) then
+            call physeterror('phymem_add', 'too many deps for: '//trim(F_string))
+            return
+         endif
+         vmeta%deps(1:size(F_deps)) = F_deps(:)
+      endif
+      vmeta%outcond_L = any(vmeta%flags == 'DIAG')
+
       ! if (vmeta%flags(1) /= '') then
       !    print *,'(phymem_add_string) ',trim(vmeta%vname),':',trim(vmeta%flags(1)),':',trim(vmeta%flags(2))
       ! endif
@@ -464,11 +480,7 @@ contains
       vmeta%nk = phydim_nk
       if (shape == "A") vmeta%nk = 1
 
-      if (present(F_i0)) then
-         F_idxv = phymem_add_meta(vmeta, F_i0)
-      else
-         F_idxv = phymem_add_meta(vmeta)
-      endif
+      F_istat = phymem_add_meta(vmeta)
       !---------------------------------------------------------------
       return
    end function phymem_add_string
@@ -510,24 +522,27 @@ contains
          call physeterror('phymem_get_idxv_string', 'Cannot find var for: '//trim(F_string))
          return
       endif
-      F_i0 = pvmetas(idxvlist(1))%meta%i0
+      F_i0 = pvmetas(idxvlist(1))%i0
       !---------------------------------------------------------------
       return
    end function phymem_get_i0_string
 
    
    !/@*
-   function phymem_alloc(F_debug) result(F_istat)
+   function phymem_alloc(F_debug, F_outreq_S) result(F_istat)
       implicit none
       !@objective Allocate memory buses for previously added vars
       !@arguments
       logical, intent(in) :: F_debug
+      character(len=*), intent(in) :: F_outreq_S(:)
       !@return
       integer :: F_istat
       !*@/
-      integer :: ib, iv, idxv, halo, init, i0, in, istat
-      character(len=GMM_MAXNAMELENGTH) :: gmmname
+      integer :: ib, iv, idxv, halo, init, i0, in, istat, memgap, n, nphyvars2
+      character(len=GMM_MAXNAMELENGTH) :: gmmname, vname, oname
       type(gmm_metadata) :: gmmmeta
+      logical :: changed_L, isreq_L
+      character(len=GMM_MAXNAMELENGTH) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (isallocated) then
@@ -540,12 +555,79 @@ contains
          call msg(MSG_ERROR, '(phymem) called phymem_alloc w/o any var defined')
          return
       endif
-      allocate(pvmetas(nphyvars), stat=istat)
-      if (istat /= 0) then
-         call msg(MSG_ERROR, '(phymem) allocate problem in phymem_alloc')
-         return
-      endif
 
+      !# Set outreq_L for all outcond_L vars
+      call str_concat(msg_S,F_outreq_S,', ')
+      call msg(MSG_INFOPLUS, '(phymem_alloc) outreq: '//msg_S)
+      changed_L = .true.
+      DO_CHANGED: do while (changed_L)
+         changed_L = .false.
+         DO_IV: do iv = 1, nphyvars
+            if (pvmetas(iv)%outcond_L) then
+               vname = pvmetas(iv)%vname ; istat = clib_toupper(vname)  !#TODO: better use all upper *pvmetas%*name... cause problem... check it out
+               oname = pvmetas(iv)%oname ; istat = clib_toupper(oname)
+               isreq_L = (any(F_outreq_S == vname) .or. any(F_outreq_S == oname) &
+                    .or. F_outreq_S(1) == '*')
+               if (isreq_L .and. .not.pvmetas(iv)%outreq_L) changed_L = .true.
+               pvmetas(iv)%outreq_L = (pvmetas(iv)%outreq_L .or. isreq_L)
+               if (pvmetas(iv)%outreq_L) then
+                  DO_IDEP: do n=1,PHY_MAXDEPS
+                     if (pvmetas(iv)%deps(n) /= '') then
+                        if (pvmetas(iv)%ideps(n) <= 0) then
+                           pvmetas(iv)%ideps(n) = priv_find(pvmetas(iv)%deps(n))
+                           if (pvmetas(iv)%ideps(n) <= 0) then
+                              call msg(MSG_ERROR, '(phymem) phymem_alloc - cannot output requested var '//trim(pvmetas(iv)%vname)//' -- missing dep: '//trim(pvmetas(iv)%deps(n)))
+                              return
+                           endif
+                        endif
+                        if (pvmetas(pvmetas(iv)%ideps(n))%outcond_L .and. &
+                             .not.pvmetas(pvmetas(iv)%ideps(n))%outreq_L) changed_L = .true.
+                        pvmetas(pvmetas(iv)%ideps(n))%outreq_L = .true.
+                     endif
+                  enddo DO_IDEP
+               endif
+            endif
+         enddo DO_IV
+      enddo DO_CHANGED
+      
+      !# Trim pvmetas list with dep conditions
+      nphyvars2 = 0
+      do iv = 1, nphyvars
+         pvmetas(iv)%ideps = -1  !#TODO: is it usefull to get ideps again?
+         if (pvmetas(iv)%outreq_L .or. .not.pvmetas(iv)%outcond_L) then
+            nphyvars2 = nphyvars2 + 1
+            if (nphyvars2 /= iv) pvmetas(nphyvars2) = pvmetas(iv)
+            pvmetas(nphyvars2)%idxv = nphyvars2
+            if (pvmetas(iv)%outcond_L) &
+                 call msg(MSG_INFOPLUS, '(phymem_alloc) diag add: '//trim(pvmetas(iv)%vname))
+         else
+            call msg(MSG_INFOPLUS, '(phymem_alloc) diag rm : '//trim(pvmetas(iv)%vname))
+         endif
+      enddo
+      nphyvars = nphyvars2
+
+      !# Split into buses
+      do iv = 1, nphyvars
+         memgap = 0
+         if (debug_mem_L) memgap = max(pvmetas(iv)%ni/5,1)+2*(ib-1)
+
+         ib = pvmetas(iv)%ibus
+         pvmetas(iv)%i0 = pbuses(ib)%nsize + memgap + 1
+         pvmetas(iv)%in = pvmetas(iv)%i0 + pvmetas(iv)%size - 1
+         pbuses(ib)%nsize = pvmetas(iv)%in
+         pbuses(ib)%nvars = pbuses(ib)%nvars + 1
+         pvmetas(iv)%idxb = pbuses(ib)%nvars
+      enddo
+      do ib = 1, PHY_NBUSES
+         allocate(pbuses(ib)%mptr(pbuses(ib)%nvars))
+         PHY_MAXVARS(ib) = pbuses(ib)%nvars
+      enddo
+      do iv = 1, nphyvars
+         ib = pvmetas(iv)%ibus
+         pbuses(ib)%mptr(pvmetas(iv)%idxb)%meta => pvmetas(iv)
+      enddo
+
+      !# allocate buses
       halo = 0
       DOBUS: do ib = 1, PHY_NBUSES
          
@@ -567,20 +649,17 @@ contains
             call msg_toall(MSG_ERROR, 'phymem_alloc: problem allocating memory for '//trim(gmmname)//' bus')
             return
          endif
-
-         do iv = 1, pbuses(ib)%nvars
-            idxv = pbuses(ib)%meta(iv)%idxv
-            pvmetas(idxv)%meta => pbuses(ib)%meta(iv)
-
-            if (F_debug) then
-               i0 = pbuses(ib)%meta(iv)%i0
-               in = pbuses(ib)%meta(iv)%in
-               pbuses(ib)%bptr(i0:in,:) = 0.
-            endif
-
-         enddo
           
       enddo DOBUS
+
+      if (F_debug) then
+         do iv = 1, nphyvars
+            i0 = pvmetas(iv)%i0
+            in = pvmetas(iv)%in
+            ib = pvmetas(iv)%ibus
+            pbuses(ib)%bptr(i0:in,:) = 0.
+         enddo
+      endif
 
       call priv_init_vlist()
       
@@ -589,6 +668,42 @@ contains
       !---------------------------------------------------------------
       return
    end function phymem_alloc
+
+   
+   !/@*
+   function phymem_find_idxv1(F_name, F_npath, F_bpath) result(F_idxv)
+      implicit none
+      !@objective Retreive idx of 1st var in pvmetas matching name+
+      !@arguments
+      character(len=*),  intent(in) :: F_name     !# Name of field to retrieve (input, variable or output name)
+      character(len=*),  intent(in), optional :: F_npath    !# Name path to search ['VOI']
+      character(len=*),  intent(in), optional :: F_bpath    !# Bus path to search ['PVD']
+      !@return
+      integer :: F_idxv !# idxv in pvmetas for 1st var matching provided params
+      !*@/
+      character(len=PHY_NAMELEN) :: npath, bpath
+      integer :: istat, nmatch, idxvlist(1)
+      !---------------------------------------------------------------
+      F_idxv = PHY_ERROR
+
+      npath = ' '
+      if (present(F_npath)) then
+         npath = F_npath ; call str_normalize(npath) ; istat = clib_toupper(npath)
+      endif
+      if (npath == ' ') npath = PHY_NPATH_DEFAULT
+
+      bpath = ' '
+      if (present(F_bpath)) then
+         bpath = F_bpath ; call str_normalize(bpath) ; istat = clib_toupper(bpath)
+      endif
+      if (bpath == ' ') bpath = PHY_BPATH_DEFAULT
+      
+      nmatch = phymem_find_idxv(idxvlist, F_name, npath, bpath, F_quiet=.true.)
+
+      if (nmatch > 0) F_idxv = idxvlist(1)
+      !---------------------------------------------------------------
+      return
+   end function phymem_find_idxv1
 
    
    !/@*
@@ -702,12 +817,12 @@ contains
             DO_PVMETAS: do iv = 1, nphyvars
                !# check bus
                match_L = (nbpath == 0)
-!!$               if (nbpath > 0) match_L = (pvmetas(iv)%meta%bus == buses(ib))
+!!$               if (nbpath > 0) match_L = (pvmetas(iv)%bus == buses(ib))
                if (nbpath > 0) then
                   if (buses(ib) == 'U') then
-                     match_L = (pvmetas(iv)%meta%bus == 'V' .and. pvmetas(iv)%meta%reset == 0)
+                     match_L = (pvmetas(iv)%bus == 'V' .and. pvmetas(iv)%reset == 0)
                   else
-                     match_L = (pvmetas(iv)%meta%bus == buses(ib))
+                     match_L = (pvmetas(iv)%bus == buses(ib))
                   endif
                endif
                
@@ -717,13 +832,13 @@ contains
                   match_L = .false.
                   select case (npath(in:in))
                   case ('V')
-                     fname = pvmetas(iv)%meta%vname                  
+                     fname = pvmetas(iv)%vname                  
                   case ('I')
-                     fname = pvmetas(iv)%meta%iname
+                     fname = pvmetas(iv)%iname
                   case ('O')
-                     fname = pvmetas(iv)%meta%oname
+                     fname = pvmetas(iv)%oname
                   case ('S')
-                     fname = pvmetas(iv)%meta%sname
+                     fname = pvmetas(iv)%sname
                   case DEFAULT
                      call msg(MSG_WARNING,'(phymem_find) Ignoring unknown variable path entry '//npath(in:in))
                      cycle
@@ -737,9 +852,9 @@ contains
                   match_L = .false.
                   do ik = 1, nflags
                      if (flags(ik) == ' ') exit
-                     do ikk = 1,size(pvmetas(iv)%meta%flags)
-                        if (pvmetas(iv)%meta%flags(ikk) == ' ') exit
-                        if (flags(ik) == pvmetas(iv)%meta%flags(ikk)(1:flen(ik))) match_L = .true.
+                     do ikk = 1,size(pvmetas(iv)%flags)
+                        if (pvmetas(iv)%flags(ikk) == ' ') exit
+                        if (flags(ik) == pvmetas(iv)%flags(ikk)(1:flen(ik))) match_L = .true.
                      enddo
                   enddo
                   if (.not.match_L) cycle  
@@ -781,11 +896,12 @@ contains
       implicit none
       !@objective Return meta from pvmetas(idxv)
       !@arguments
-      type(phymeta), pointer    :: F_meta  !# pvmetas(F_idxv)%meta
+      type(phymeta), pointer    :: F_meta  !# pvmetas(F_idxv)
       integer,       intent(in) :: F_idxv  !# pvmetas index of the field
       !@return
       integer :: F_istat
       !*@/
+      character(len=32) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       nullify(F_meta)
@@ -794,10 +910,11 @@ contains
          return
       endif
       if (F_idxv < 1 .or. F_idxv > nphyvars) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
+         write(msg_S,'(2i6)') F_idxv, nphyvars
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range: '//msg_S)
          return
       endif
-      F_meta => pvmetas(F_idxv)%meta
+      F_meta => pvmetas(F_idxv)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -809,11 +926,12 @@ contains
       implicit none
       !@objective Return meta copy from pvmetas(idxv)
       !@arguments
-      type(phymeta), intent(out) :: F_meta  !# pvmetas(F_idxv)%meta
+      type(phymeta), intent(out) :: F_meta  !# pvmetas(F_idxv)
       integer,       intent(in)  :: F_idxv  !# pvmetas index of the field
       !@return
       integer :: F_istat
       !*@/
+      character(len=32) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -821,10 +939,11 @@ contains
          return
       endif
       if (F_idxv < 1 .or. F_idxv > nphyvars) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
+         write(msg_S,'(2i6)') F_idxv, nphyvars
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range: '//msg_S)
          return
       endif
-      F_meta = pvmetas(F_idxv)%meta
+      F_meta = pvmetas(F_idxv)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -840,6 +959,7 @@ contains
       !@return
       integer :: F_istat
       !*@/
+      character(len=32) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -847,25 +967,26 @@ contains
          return
       endif
       if (F_idxv < 1 .or. F_idxv > nphyvars) then
-         call msg(MSG_ERROR,'(phymem_updatemeta) Requested F_idxv out of range')
+         write(msg_S,'(2i6)') F_idxv, nphyvars
+         call msg(MSG_ERROR,'(phymem_updatemeta) Requested F_idxv out of range: '//msg_S)
          return
       endif
 
       !#TODO: check which one can be updated, insure consistency...
-      pvmetas(F_idxv)%meta%init  = F_meta%init
-      pvmetas(F_idxv)%meta%reset = F_meta%reset
-      pvmetas(F_idxv)%meta%stag  = F_meta%stag
-      pvmetas(F_idxv)%meta%wload = F_meta%wload
-      pvmetas(F_idxv)%meta%hzd   = F_meta%hzd
-      pvmetas(F_idxv)%meta%monot = F_meta%monot
-      pvmetas(F_idxv)%meta%massc = F_meta%massc
-      pvmetas(F_idxv)%meta%vmin  = F_meta%vmin
-      pvmetas(F_idxv)%meta%vmax  = F_meta%vmax
-      pvmetas(F_idxv)%meta%iname = F_meta%iname
-      pvmetas(F_idxv)%meta%oname = F_meta%oname
-      pvmetas(F_idxv)%meta%sname = F_meta%sname
-      pvmetas(F_idxv)%meta%desc  = F_meta%desc
-      pvmetas(F_idxv)%meta%flags(:) = F_meta%flags(:)
+      pvmetas(F_idxv)%init  = F_meta%init
+      pvmetas(F_idxv)%reset = F_meta%reset
+      pvmetas(F_idxv)%stag  = F_meta%stag
+      pvmetas(F_idxv)%wload = F_meta%wload
+      pvmetas(F_idxv)%hzd   = F_meta%hzd
+      pvmetas(F_idxv)%monot = F_meta%monot
+      pvmetas(F_idxv)%massc = F_meta%massc
+      pvmetas(F_idxv)%vmin  = F_meta%vmin
+      pvmetas(F_idxv)%vmax  = F_meta%vmax
+      pvmetas(F_idxv)%iname = F_meta%iname
+      pvmetas(F_idxv)%oname = F_meta%oname
+      pvmetas(F_idxv)%sname = F_meta%sname
+      pvmetas(F_idxv)%desc  = F_meta%desc
+      pvmetas(F_idxv)%flags(:) = F_meta%flags(:)
       
       F_istat = PHY_OK
       !---------------------------------------------------------------
@@ -885,6 +1006,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: i0, nikfm, in
+      character(len=32) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -892,7 +1014,8 @@ contains
          return
       endif
       if (F_idxv < 1 .or. F_idxv > nphyvars) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
+         write(msg_S,'(2i6)') F_idxv, nphyvars
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range: '//msg_S)
          return
       endif
       if (F_trnch < 1 .or. F_trnch > phydim_nj) then
@@ -900,10 +1023,10 @@ contains
          return
       endif
       
-      i0 = pvmetas(F_idxv)%meta%i0
-      nikfm = pvmetas(F_idxv)%meta%size
-      in = pvmetas(F_idxv)%meta%in
-      F_ptr(1:nikfm) => pbuses(pvmetas(F_idxv)%meta%ibus)%bptr(i0:in,F_trnch)
+      i0 = pvmetas(F_idxv)%i0
+      nikfm = pvmetas(F_idxv)%size
+      in = pvmetas(F_idxv)%in
+      F_ptr(1:nikfm) => pbuses(pvmetas(F_idxv)%ibus)%bptr(i0:in,F_trnch)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -922,6 +1045,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: i0, nkf, in, ni
+      character(len=32) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -929,19 +1053,20 @@ contains
          return
       endif
       if (F_idxv < 1 .or. F_idxv > nphyvars) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range: '//msg_S)
          return
       endif
       if (F_trnch < 1 .or. F_trnch > phydim_nj) then
+         write(msg_S,'(2i6)') F_idxv, nphyvars
          call msg(MSG_ERROR,'(phymem_get) Requested F_trnch out of range')
          return
       endif
       
-      i0 = pvmetas(F_idxv)%meta%i0
-      ni = pvmetas(F_idxv)%meta%ni
-      in = pvmetas(F_idxv)%meta%in
-      nkf = pvmetas(F_idxv)%meta%nk * pvmetas(F_idxv)%meta%fmul * (pvmetas(F_idxv)%meta%mosaic+1)
-      F_ptr(1:ni,1:nkf) => pbuses(pvmetas(F_idxv)%meta%ibus)%bptr(i0:in,F_trnch)
+      i0 = pvmetas(F_idxv)%i0
+      ni = pvmetas(F_idxv)%ni
+      in = pvmetas(F_idxv)%in
+      nkf = pvmetas(F_idxv)%nk * pvmetas(F_idxv)%fmul * (pvmetas(F_idxv)%mosaic+1)
+      F_ptr(1:ni,1:nkf) => pbuses(pvmetas(F_idxv)%ibus)%bptr(i0:in,F_trnch)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -960,6 +1085,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: i0, ni, in, nk, nfm
+      character(len=32) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -967,7 +1093,8 @@ contains
          return
       endif
       if (F_idxv < 1 .or. F_idxv > nphyvars) then
-         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range')
+         write(msg_S,'(2i6)') F_idxv, nphyvars
+         call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range: '//msg_S)
          return
       endif
       if (F_trnch < 1 .or. F_trnch > phydim_nj) then
@@ -975,12 +1102,12 @@ contains
          return
       endif
       
-      i0 = pvmetas(F_idxv)%meta%i0
-      ni = pvmetas(F_idxv)%meta%ni
-      in = pvmetas(F_idxv)%meta%in
-      nk = pvmetas(F_idxv)%meta%nk
-      nfm = pvmetas(F_idxv)%meta%fmul * (pvmetas(F_idxv)%meta%mosaic+1)
-      F_ptr(1:ni,1:nk,1:nfm) => pbuses(pvmetas(F_idxv)%meta%ibus)%bptr(i0:in,F_trnch)
+      i0 = pvmetas(F_idxv)%i0
+      ni = pvmetas(F_idxv)%ni
+      in = pvmetas(F_idxv)%in
+      nk = pvmetas(F_idxv)%nk
+      nfm = pvmetas(F_idxv)%fmul * (pvmetas(F_idxv)%mosaic+1)
+      F_ptr(1:ni,1:nk,1:nfm) => pbuses(pvmetas(F_idxv)%ibus)%bptr(i0:in,F_trnch)
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -1021,10 +1148,10 @@ contains
 
       !# Fill every phyvar with meta and slab data pointer
       do ivar = 1, nphyvars
-         F_pvars(ivar)%meta => pvmetas(ivar)%meta
+         F_pvars(ivar)%meta => pvmetas(ivar)
          istat = phymem_getdata1d(F_pvars(ivar)%data, ivar, F_trnch)
          if (.not.RMN_IS_OK(istat)) then
-            call msg(MSG_ERROR,'(phymem_get_slabvars) Problem getting pointer for '//pvmetas(ivar)%meta%vname)
+            call msg(MSG_ERROR,'(phymem_get_slabvars) Problem getting pointer for '//pvmetas(ivar)%vname)
             return
          endif
       enddo
@@ -1068,15 +1195,11 @@ contains
          pbuses(ib)%busid = PHY_BUSID(ib)
          pbuses(ib)%nvars = 0
          pbuses(ib)%nsize = 0
-         nullify(pbuses(ib)%meta)
-         istat = priv_resize(ib, dnvars2)
-         if (istat /= PHY_OK) then
-            call msg(MSG_ERROR, '(phymem) allocate problem in phymem_init')
-            return
-         endif
+         nullify(pbuses(ib)%mptr)
          nullify(pbuses(ib)%bptr)
-         nullify(pvmetas)
       enddo
+      nullify(pvmetas)
+      nphyvarsmax = 0
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -1084,12 +1207,12 @@ contains
 
    
    !/@*
-   function priv_resize(F_ib, F_dnvars) result(F_istat)
-      integer, intent(in) :: F_ib, F_dnvars
+   function priv_resize(F_dnvars) result(F_istat)
+      integer, intent(in) :: F_dnvars
       integer :: F_istat
       !*@/
       integer :: n, istat
-      type(phymeta), pointer, contiguous :: metaptr(:)
+      type(phymeta), pointer, contiguous :: pvmetasnew(:)
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isinit) istat = priv_init()
@@ -1097,20 +1220,17 @@ contains
          call msg(MSG_ERROR, '(phymem_resize) Cannot add var after allocation')
          return
       endif
-      if (max(1, min(F_ib, PHY_NBUSES)) /= F_ib) then
-         call msg(MSG_ERROR, '(phymem_resize) Bus number out of range')
-         return         
+      if (F_dnvars >= 0) then
+         nphyvarsmax = nphyvarsmax + max(0, F_dnvars)
+         allocate(pvmetasnew(nphyvarsmax), stat=istat)
+         if (associated(pvmetas)) then
+            do n=1,nphyvars
+               pvmetasnew(n) = pvmetas(n)
+            enddo
+            deallocate(pvmetas)
+         endif
+         pvmetas => pvmetasnew
       endif
-      PHY_MAXVARS(F_ib) = PHY_MAXVARS(F_ib) + max(0, F_dnvars)
-!!$      print *, '(phymem_resize) '//PHY_BUSID(F_ib)//':', PHY_MAXVARS(F_ib)
-      allocate(metaptr(PHY_MAXVARS(F_ib)), stat=istat)
-      if (associated(pbuses(F_ib)%meta)) then
-         do n=1,pbuses(F_ib)%nvars
-            metaptr(n) = pbuses(F_ib)%meta(n)
-         enddo
-         deallocate(pbuses(F_ib)%meta)
-      endif
-      pbuses(F_ib)%meta => metaptr
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
@@ -1123,7 +1243,7 @@ contains
       type(phymeta), intent(in) :: F_meta
       integer :: F_istat
       !*@/
-      integer :: ibus, idxb
+      integer :: n
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
 
@@ -1139,47 +1259,66 @@ contains
          call msg(MSG_ERROR, '(phymem::checkvar) must provide positive values for ni, nk ,fmul and mosaic for vname='//trim(F_meta%desc))
          return
       endif
-      
-      DO_BUS: do ibus = 1, PHY_NBUSES
-         DO_VAR: do idxb = 1, pbuses(ibus)%nvars
-            if (F_meta%vname == pbuses(ibus)%meta(idxb)%vname) then
-               call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (vname) for: '//trim(F_meta%vname))
-               return
-            endif
-            if (F_meta%oname == pbuses(ibus)%meta(idxb)%oname) then
-               call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (oname) for: '//trim(F_meta%oname)//' ('//trim(F_meta%vname)//')')
-               return
-            endif
-!!$            if (F_meta%iname == pbuses(ibus)%meta(idxb)%iname) then
+            
+      do n = 1, nphyvars
+         if (F_meta%vname == pvmetas(n)%vname) then
+            call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (vname) for: '//trim(F_meta%vname))
+            return
+         endif
+         if (F_meta%oname == pvmetas(n)%oname) then
+            call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (oname) for: '//trim(F_meta%oname)//' ('//trim(F_meta%vname)//')')
+            return
+         endif
+!!$            if (F_meta%iname == pvmetas(n)%iname) then
 !!$               call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (iname) for: '//trim(F_meta%iname)//' ('//trim(F_meta%vname)//')')
 !!$               return
 !!$            endif
-            if (F_meta%sname == pbuses(ibus)%meta(idxb)%sname) then
-               call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (sname) for: '//trim(F_meta%sname)//' ('//trim(F_meta%vname)//')')
-               return
-            endif
-            if (F_meta%desc == pbuses(ibus)%meta(idxb)%desc) then
-               call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (desc) for: ('//trim(F_meta%vname)//') '//trim(F_meta%desc))
-               return
-            endif
-         enddo DO_VAR
-      enddo DO_BUS
+         if (F_meta%sname == pvmetas(n)%sname) then
+            call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (sname) for: '//trim(F_meta%sname)//' ('//trim(F_meta%vname)//')')
+            return
+         endif
+         if (F_meta%desc == pvmetas(n)%desc) then
+            call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (desc) for: ('//trim(F_meta%vname)//') '//trim(F_meta%desc))
+            return
+         endif
+      enddo
       
       F_istat = PHY_OK
       !---------------------------------------------------------------
       return
    end function priv_checkvar
 
+   
+   !/@*
+   function priv_find(F_vname) result(F_idxv)
+      character(len=*), intent(in) :: F_vname
+      integer :: F_idxv
+      !*@/
+      integer :: n
+      !---------------------------------------------------------------
+      F_idxv = PHY_ERROR
+      do n = 1, nphyvars
+         if (F_vname == pvmetas(n)%vname) then
+            F_idxv = n
+            return
+         endif
+      enddo
+      !---------------------------------------------------------------
+      return
+   end function priv_find
 
+   
+   !/@*
    subroutine priv_init_vlist()
+      !*@/
       integer :: n
       !---------------------------------------------------------------
       if (.not.associated(uidxvlist)) allocate(uidxvlist(nphyvars))
       nuidxvlist = 0
       uidxvlist = -1
       do n=1,nphyvars
-         if (pvmetas(n)%meta%ibus == PHY_VBUSIDX) then
-            if (pvmetas(n)%meta%reset == 1) then
+         if (pvmetas(n)%ibus == PHY_VBUSIDX) then
+            if (pvmetas(n)%reset == 1) then
                nuidxvlist = nuidxvlist + 1
                uidxvlist(nuidxvlist) = n
             endif

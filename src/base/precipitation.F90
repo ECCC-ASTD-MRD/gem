@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ---------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END -----------------------------
 
 module precipitation
    implicit none
@@ -28,6 +13,7 @@ contains
       use shal_ktrsnt, only: sc_ktrsnt
       use cnv_main, only: cnv_main4
       use condensation, only: condensation4
+      use microphy_statcond, only: sc_adjust
       use phy_status, only: phy_error_L
       use phy_options
       use phybusidx
@@ -65,7 +51,8 @@ contains
       real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm, ztdmaskxdt
       real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
            zcte,zcqe,zste,zsqe,zcqce,zsqce,zprcten,zsqre,zhumoins,zsigt,zmte,zmqe, &
-           zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins,zprctns,zpritns
+           zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins,zprctns,zpritns,zqccondc2, &
+           zqcondc2,ztcondc2
       !----------------------------------------------------------------
 
       ! Early return moist processes are inactive
@@ -84,7 +71,9 @@ contains
       MKPTR2D(zprcten, prcten, pvars)
       MKPTR2D(zprctnm, prctnm, pvars)
       MKPTR2D(zmqce, mqce, pvars)
+      MKPTR2D(zqccondc2, qccondc2, pvars)
       MKPTR2D(zqcmoins, qcmoins, pvars)
+      MKPTR2D(zqcondc2, qcondc2, pvars)
       MKPTR2D(zqcphytd, qcphytd, pvars)
       MKPTR2D(zqcplus, qcplus, pvars)
       MKPTR2D(zqrphytd, qrphytd, pvars)
@@ -95,6 +84,7 @@ contains
       MKPTR2D(zsqre, sqre, pvars)
       MKPTR2D(zste, ste, pvars)
       MKPTR2D(ztcond, tcond, pvars)
+      MKPTR2D(ztcondc2, tcondc2, pvars)
       MKPTR1D(ztlc, tlc, pvars)
       MKPTR1D(ztlcm, tlcm, pvars)
       MKPTR1D(ztlcs, tlcs, pvars)
@@ -209,6 +199,10 @@ contains
         endif
       endif
 
+      ! Post-scheme condensation adjustment
+      if (stcond == 'S2') &
+           call sc_adjust(ztcondc2, zqcondc2, zqccondc2, pvars, delt, ni, nkm1)
+      
       ! Add shallow convection tendencies to convection/condensation tendencies 
       ztcond(:,1:nkm1) = ztcond(:,1:nkm1) + ztshal(:,1:nkm1)
       zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zhushal(:,1:nkm1)

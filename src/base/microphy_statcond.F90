@@ -54,9 +54,9 @@ contains
     call apply_tendencies(ztplus,  zhuplus, &
          &                F_dtt, F_dhu, ztdmaskxdt, F_ni, F_nkm1+1, F_nkm1)
     if (associated(zqcplus)) then
-       F_dqc(:,1:F_nkm1) = tqc(:,1:F_nkm1) + tqi(:,1:F_nkm1)  !for S2 only
-       call apply_tendencies(zqcplus, F_dqc, ztdmaskxdt, F_ni, F_nkm1+1, F_nkm1)
-    endif
+       F_dqc(:,1:F_nkm1) = tqc(:,1:F_nkm1) + tqi(:,1:F_nkm1)  !for S2 only       
+       call apply_tendencies(zqcplus, F_dqc, ztdmaskxdt, F_ni, F_nkm1+1, F_nkm1)       
+    endif    
 
     ! End of subprogram
     return
@@ -163,7 +163,7 @@ contains
     ! Assign bus pointers
     MKPTR1D(zpmoins, pmoins, F_pvars)
     MKPTR2Dm1(zfxp, fxp, F_pvars)
-    MKPTR2Dm1(zsigmas, pblsigs, F_pvars)
+    MKPTR2Dm1(zsigmas, sigmas, F_pvars)
     MKPTR2Dm1(zsigt, sigt, F_pvars)
     MKPTR2Dm1(ztplus, tplus, F_pvars)
 
@@ -289,7 +289,7 @@ contains
        do i=1,F_ni
           F_fn(i,k) = 0.5 * (1. + erf(q1(i,k)/sqrt(2.)))
           qliq = sigmas(i,k) * (F_fn(i,k) * q1(i,k) + &
-               exp(-0.5*q1(i,k)**2/sqrt(2.*PI)))
+               exp(-0.5*q1(i,k)**2)/sqrt(2.*PI))
           F_qi(i,k) = qliq * fice(i,k)
           F_qc(i,k) = qliq - F_qi(i,k)
        enddo

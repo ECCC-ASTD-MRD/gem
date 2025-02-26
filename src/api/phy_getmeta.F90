@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phy_getmeta_mod
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
@@ -94,8 +79,10 @@ contains
       !@author Ron McTaggart-Cowan - Spring 2014
       !*@/
       character(len=PHY_MAXNAMELENGTH) :: npath, bpath
-      integer :: istat, maxmeta, i, nmatch, idxv(nphyvars)
+      integer :: istat, maxmeta, i, nmatch
+      integer, target :: idxv_target(nphyvars)
       logical :: quiet, shortmatch, to_alloc
+      integer, pointer :: idxv(:)
       ! ---------------------------------------------------------------------
       F_istat = RMN_ERR
       if (phy_init_ctrl /= PHY_CTRL_INI_OK) then
@@ -107,7 +94,7 @@ contains
       npath = NPATH_DEFAULT
       bpath = BPATH_DEFAULT
       quiet = .false.
-      maxmeta = size(idxv)
+      maxmeta = size(idxv_target)
       shortmatch = .false.
       if (present(F_npath)) then
          if (len_trim(F_npath) /= 0) then
@@ -128,20 +115,19 @@ contains
       if (present(F_shortmatch)) shortmatch = F_shortmatch
 
       !# Retrieve metadata into temporary space
+      idxv => idxv_target(1:maxmeta)
       nmatch = phymem_find(idxv, F_name, npath, bpath, quiet, shortmatch)
 
       !# Extract public part of the metadata
       if (nmatch > 0) then
          to_alloc = .true.
          if (associated(F_meta)) then
-            !#TODO: should not do this because a pointer is not necessarily allocated... would be an API change
-            if (size(F_meta) < nmatch) then
-               deallocate(F_meta, stat=istat)
-            else
-               to_alloc = .false.
-            endif
+            if (size(F_meta) >= nmatch) to_alloc = .false.
          endif
-         if (to_alloc) allocate(F_meta(nmatch))
+         if (to_alloc) then
+            nullify(F_meta)  !#NOTE: This may lead to memory leak but we cannot deallocate since it may not be allocated mem and changing behavious would be an API change
+            allocate(F_meta(nmatch))
+         endif
          do i = 1, nmatch
             istat = phymem_getmeta_copy(F_meta(i), idxv(i))
          enddo

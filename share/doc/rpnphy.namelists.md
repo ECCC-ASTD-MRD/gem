@@ -96,6 +96,7 @@
 | lhn_stop_s | last time step at which LHN is applied | '360p' | character(len=16) |
 | lhn_weight | Modulation factor for the magnitude of Latent Heat Nudging being applied<br>modulated_tendencies = lhn_weight*(LHN tendencies) | 0. | real |
 | linoz_chm | LINOZ prognostic stratospheric ozone<br>- 'NIL     ' :<br>- 'OZONE   ' :<br>- 'GHG     ' :<br>- 'OZONEGHG' : | 'NIL' | character(len=10) |
+| linoz_het | LINOZ: Use heterogeneous ozone version | .false. | logical |
 | lmetox | Add methane oxydation as source of humidity in the stratosphere if .true. | .false. | logical |
 | longmel | Mixing length calc. scheme<br>- 'BLAC62  ': mixing length calc. using Blackadar<br>- 'BOUJO   ': mixing length calc. using Bougeault<br>- 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)<br>- 'LH      ': mixing length calc. using Lenderink and Holtslag<br>- 'MBOUJO  ': mixing length calc. using moist Bougeault | 'BLAC62' | character(len=16) |
 | moyhr | Time length (hours) for special time averaged physics variables | 0 | integer |

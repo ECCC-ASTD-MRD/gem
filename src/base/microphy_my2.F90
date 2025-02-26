@@ -4056,7 +4056,7 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
        MKPTR2Dm1(zqc, qcplus, F_pvars)
        MKPTR2Dm1(zqr, qrplus, F_pvars)
     endif
-    F_qltot(:,:) = zqc(:,:) + zqr(:,:)
+    F_qltot(:,:) = max(zqc(:,:), 0.) + max(zqr(:,:), 0.)
     F_istat = PHY_OK
     return
   end function my2_lwc
@@ -4088,7 +4088,8 @@ subroutine sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,gamfact1d,epsQ,epsN,dmx,VxMax,DxMax,
        MKPTR2Dm1(zqg, qgplus, F_pvars)
        MKPTR2Dm1(zqh, qhplus, F_pvars)
     endif
-    F_qitot(:,:) = zqi(:,:) + zqn(:,:) + zqg(:,:) + zqh(:,:)
+    F_qitot(:,:) = max(zqi(:,:), 0.) + max(zqn(:,:), 0.) + &
+         max(zqg(:,:), 0.) + max(zqh(:,:), 0.)
     F_istat = PHY_OK
     return
   end function my2_iwc

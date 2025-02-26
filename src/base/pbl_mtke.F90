@@ -26,6 +26,7 @@ contains
     implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
     !Arguments
     integer, intent(in) :: n                          !horizontal dimension
     integer, intent(in) :: nk                         !vertical dimension
@@ -139,15 +140,15 @@ contains
 
     ! Initialization
     if(kount.eq.0) then
-       if (.not.any('zn' == phyinread_list_s(1:phyinread_n))) then
+       if (.not.ISPHYIN('zn')) then
           do k=1,nk
              zn(:,k)=min(KARMAN*(z(:,k)+z0(:)),ML_LMDA)
           enddo
        endif
-       if (.not.any('qtbl' == phyinread_list_s(1:phyinread_n))) qc = 0.
-       if (.not.any('fnn' == phyinread_list_s(1:phyinread_n))) fnn = 0.
-       if (.not.any('fblgauss' == phyinread_list_s(1:phyinread_n))) fngauss = 0.
-       if (.not.any('hpar' == phyinread_list_s(1:phyinread_n))) hpar = hpbl
+       if (.not.ISPHYIN('qtbl')) qc = 0.
+       if (.not.ISPHYIN('fnn')) fnn = 0.
+       if (.not.ISPHYIN('fblgauss')) fngauss = 0.
+       if (.not.ISPHYIN('hpar')) hpar = hpbl
     endif
     zero = 0.
     ricmax = pbl_ricrit(2)
@@ -180,7 +181,7 @@ contains
     if (pbl_turbsl_depth > 0.) &
          stat = neark(se,ps,pbl_turbsl_depth,n,nk,slk) !determine "surface layer" vertical index
     if (kount == 0) then
-       INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
+       INIT_TURB: if (.not.ISPHYIN('turbreg')) then
           do k=1,nk
              do j=1,n
                 if (k <= slk(j)) then

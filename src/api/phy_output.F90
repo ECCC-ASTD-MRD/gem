@@ -1,11 +1,3 @@
-!--------------------------------------------------------------------------
-! This is free software, you can use/redistribute/modify it under the terms of
-! the EC-RPN License v2 or any later version found (if not provided) at:
-! - http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-! - EC-RPN License, 2121 TransCanada, suite 500, Dorval (Qc), CANADA, H9P 1J3
-! - service.rpn@ec.gc.ca
-! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
-!-------------------------------------------------------------------------- 
 
 !/@*
 function phy_output(F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core,F_outcfg_S,F_basedir_S) result(F_istat)

@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module ccc2_lwtragh
    private
@@ -26,6 +11,7 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
    integer, intent(in) :: ni, lay, lev
    real, intent(in) :: cut
@@ -157,13 +143,13 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
 !!$         xu(i,1,1)       =  rtaul1(i,1) * bf(i,2) * dtr(i,1,1)
 !!$      endif
       
-      w1 = max(0., sign(1., 0.001 - abs(epsd)))  !# abs(epsd) <= 0.001
+      w1 = MASK_LE(abs(epsd), 0.001)   !# abs(epsd) <= 0.001
       epsd = sign(max(0.001, abs(epsd)), epsd)
       v1 = (bf(i,2) - bf(i,1) * dtr(i,1,1)) / epsd
       v2 = rtaul1(i,1) * bf(i,1) * dtr(i,1,1)
       xd(i,1,1) = (1. - w1) * v1 + w1 * v2 
 
-      w1 = max(0., sign(1., 0.001 - abs(epsu)))  !# abs(epsu) <= 0.001
+      w1 = MASK_LE(abs(epsu), 0.001)   !# abs(epsu) <= 0.001
       epsu = sign(max(0.001, abs(epsu)), epsu)
       v1 = (bf(i,2) * dtr(i,1,1) - bf(i,1)) / epsu
       v2 = rtaul1(i,1) * bf(i,2) * dtr(i,1,1)
@@ -200,13 +186,13 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
 !!$            xu(i,2,1)     =  crtaul2 * bf(i,2) * dtr(i,2,1)
 !!$         endif
          
-         w1 = max(0., sign(1., 0.001 - abs(epsd)))  !# abs(epsd) <= 0.001
+         w1 = MASK_LE(abs(epsd), 0.001)   !# abs(epsd) <= 0.001
          epsd = sign(max(0.001, abs(epsd)), epsd)
          v1 = (bf(i,2) - bf(i,1) * dtr(i,2,1)) / epsd
          v2 = crtaul2 * bf(i,1) * dtr(i,2,1)
          xd(i,2,1) = (1. - w1) * v1 + w1 * v2 
 
-         w1 = max(0., sign(1., 0.001 - abs(epsu)))  !# abs(epsu) <= 0.001
+         w1 = MASK_LE(abs(epsu), 0.001)   !# abs(epsu) <= 0.001
          epsu = sign(max(0.001, abs(epsu)), epsu)
          v1 = (bf(i,2) * dtr(i,2,1) - bf(i,1)) / epsu
          v2 = crtaul2 * bf(i,2) * dtr(i,2,1)
@@ -239,13 +225,13 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
 !!$            xu(i,1,km1)   =  rtaul1(i,km1) * bf(i,k) * dtr(i,1,km1)
 !!$         endif
 
-         w1 = max(0., sign(1., 0.001 - abs(epsd)))  !# abs(epsd) <= 0.001
+         w1 = MASK_LE(abs(epsd), 0.001)   !# abs(epsd) <= 0.001
          epsd = sign(max(0.001, abs(epsd)), epsd)
          v1 = (bf(i,k) - bf(i,km1) * dtr(i,1,km1)) / epsd
          v2 = rtaul1(i,km1) * bf(i,km1) * dtr(i,1,km1)
          xd(i,1,km1) = (1. - w1) * v1 + w1 * v2 
 
-         w1 = max(0., sign(1., 0.001 - abs(epsu)))  !# abs(epsu) <= 0.001
+         w1 = MASK_LE(abs(epsu), 0.001)   !# abs(epsu) <= 0.001
          epsu = sign(max(0.001, abs(epsu)), epsu)
          v1 = (bf(i,k) * dtr(i,1,km1) - bf(i,km1)) / epsu
          v2 = rtaul1(i,km1) * bf(i,k) * dtr(i,1,km1)
@@ -253,7 +239,7 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
           
          fd(i,1,k)       =  fd(i,1,km1) * dtr(i,1,km1) + xd(i,1,km1)
 
-!!$         w2 = max(0., sign(1., cut - cldfrac(i,km1)))  !# cldfrac(i,km1) >= cut
+!!$         w2 = MASK_GE(cldfrac(i,km1), cut)   !# cldfrac(i,km1) >= cut
          
          !#TODO: transform this one too into a weight/mask fn
          if (cldfrac(i,km1) .lt. cut)                              then
@@ -284,13 +270,13 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
 !!$               xu(i,2,km1) =  crtaul2 * bf(i,k) * dtr(i,2,km1)
 !!$            endif
 
-            w1 = max(0., sign(1., 0.001 - abs(epsd)))  !# abs(epsd) <= 0.001
+            w1 = MASK_LE(abs(epsd), 0.001)   !# abs(epsd) <= 0.001
             epsd = sign(max(0.001, abs(epsd)), epsd)
             v1 = (bf(i,k) - bf(i,km1) * dtr(i,2,km1)) / epsd
             v2 = crtaul2 * bf(i,km1) * dtr(i,2,km1)
             xd(i,2,km1) = (1. - w1) * v1 + w1 * v2 
 
-            w1 = max(0., sign(1., 0.001 - abs(epsu)))  !# abs(epsu) <= 0.001
+            w1 = MASK_LE(abs(epsu), 0.001)   !# abs(epsu) <= 0.001
             epsu = sign(max(0.001, abs(epsu)), epsu)
             v1 = (bf(i,k) * dtr(i,2,km1) - bf(i,km1)) / epsu
             v2 = crtaul2 * bf(i,k) * dtr(i,2,km1)
@@ -309,7 +295,7 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
 !!$                    dtr(i,2,km1) + xd(i,2,km1)
 !!$            endif
             
-            w1 = max(0., sign(1., cldfrac(i,km2) - cldfrac(i,km1)))  !# cldfrac(i,km1) <= cldfrac(i,km2)
+            w1 = MASK_LE(cldfrac(i,km1), cldfrac(i,km2))   !# cldfrac(i,km1) <= cldfrac(i,km2)
             
             v1 = (fx(i,2,km1) + (1.0 - cldfrac(i,km2)) / &
                  max(1.e-10, 1.0 - cldfrac(i,km1)) * &
@@ -350,7 +336,7 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
 !!$              cldfrac(i,lay) * (fy(i,2,lay) - fy(i,1,lay))
 !!$      endif
 
-      w1 = max(0., sign(1., cldfrac(i,lay) - cut))  !# cldfrac(i,lay) >= cut
+      w1 = MASK_GE(cldfrac(i,lay), cut)   !# cldfrac(i,lay) >= cut
 
 !!$      print *,'ccc2a:',i,fy(i,2,lev),dtr(i,1,lay),xu(i,1,lay)
 !!$      call flush(6)
@@ -373,7 +359,7 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
       do i = 1, ni
          fu(i,1,k)      =  fu(i,1,kp1) * dtr(i,1,k) + xu(i,1,k)
 
-!!$         w2 = max(0., sign(1., cut - cldfrac(i,k)))  !# cldfrac(i,k) >= cut
+!!$         w2 = MASK_GE(cldfrac(i,k), cut)   !# cldfrac(i,k) >= cut
 
          if (cldfrac(i,k) .lt. cut)                                then
             fu(i,2,k)    =  fu(i,2,kp1) * dtr(i,1,k) + xu(i,1,k)
@@ -393,7 +379,7 @@ subroutine ccc2_lwtragh1(fu, fd, slwf, tauci, omci, &
 !!$                    xu(i,2,k)
 !!$            endif
 
-            w1 = max(0., sign(1., cldfrac(i,k) - cldfrac(i,kp1)))  !# cldfrac(i,k) >= cldfrac(i,kp1)
+            w1 = MASK_GE(cldfrac(i,k), cldfrac(i,kp1))   !# cldfrac(i,k) >= cldfrac(i,kp1)
             
             v1 = ( fy(i,2,kp1) + (1.0 - cldfrac(i,kp1)) / &
                    max(1.e-10, (1.0 - cldfrac(i,k))) * (fy(i,1,kp1) - &

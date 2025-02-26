@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phyexe
    private
@@ -35,8 +20,8 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    use phy_options
    use phymem, only: phyvar
    use phystepinit, only: phystepinit3
+   use phystepend, only: phystepend1
    use precipitation, only: precipitation4
-   use prep_cw, only: prep_cw3
    use radiation, only: radiation3
    use sfc_calcdiag, only: sfc_calcdiag3
    use surface, only: surface1
@@ -119,7 +104,7 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call precipitation4(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call prep_cw3(pvars, ni, nk)
+   call phystepend1(pvars, ni, nk)
    if (phy_error_L) return
 
    call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, pvars, &
