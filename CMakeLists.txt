@@ -52,14 +52,19 @@ endif()
 option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
 # Adding specific flags for GEM
 if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
+  # Flag for MKL is different depending on Intel compiler version
   if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl ${STATIC_LINK_INTEL_FLAGS}")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268 ${STATIC_LINK_INTEL_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -qmkl ${STATIC_LINK_INTEL_FLAGS}")
+    set(MKL "-qmkl")
   else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mkl ${STATIC_LINK_INTEL_FLAGS}")
-    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -mkl -static-intel -diag-disable 5268 ${STATIC_LINK_INTEL_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} -mkl ${STATIC_LINK_INTEL_FLAGS}")
+    set(MKL "-mkl")
+  endif()
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MKL} ${STATIC_LINK_INTEL_FLAGS}")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MKL} -static-intel ${STATIC_LINK_INTEL_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} ${MKL} ${STATIC_LINK_INTEL_FLAGS}")
+  # flags in addition to extra checks defined in cmake_rpn compiler presets
+  # https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/alphabetical-option-list.html
+  if (EXTRA_CHECKS)
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -qopt-report=5 -C -init=snan,arrays -warn nointerfaces")
   endif()
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
@@ -182,27 +187,6 @@ add_custom_target(work
     COMMAND /bin/ln -sf ${CMAKE_SOURCE_DIR}/share/configurations ${WORK_PREFIX}
     COMMAND cd ${CMAKE_BINARY_DIR} && make install/local
   )
-
-#----- Generate the config file for the project to be usable via cmake's find_package command
-set(INCLUDE_INSTALL_DIR include)
-set(LIB_INSTALL_DIR     lib)
-set(CONFIG_INSTALL_DIR  "${LIB_INSTALL_DIR}/cmake/${PROJECT_NAME}-${PROJECT_VERSION}")
-
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    "Config.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-    INSTALL_DESTINATION "${CONFIG_INSTALL_DIR}"
-    PATH_VARS           INCLUDE_INSTALL_DIR LIB_INSTALL_DIR
-)
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-    COMPATIBILITY SameMajorVersion
-)
-install(FILES   "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-                "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-    DESTINATION "${CONFIG_INSTALL_DIR}"
-)
 
 #----- Packaging
 ec_package_name()      # Define package prefix
