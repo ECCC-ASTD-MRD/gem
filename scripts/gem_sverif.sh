@@ -87,6 +87,11 @@ sverif_eval.Abs GZ ${lev} ${prog} ${file} ${statpath} | grep CI=0.01 | grep -v '
 hits=$(cat ${tmpfile} | grep 'PASS' | grep -v 'overall' | wc -l)
 cat ${tmpfile}
 
+lev=250
+sverif_eval.Abs UU ${lev} ${prog} ${file} ${statpath} | grep CI=0.01 | grep -v '^\*' >${tmpfile}
+hits=$(( ${hits} + $(cat ${tmpfile} | grep 'PASS' | grep -v 'overall' | wc -l) ))
+cat ${tmpfile}; rm -f ${tmpfile}
+
 lev=850
 sverif_eval.Abs TT ${lev} ${prog} ${file} ${statpath} | grep CI=0.01 | grep -v '^\*' >${tmpfile}
 hits=$(( ${hits} + $(cat ${tmpfile} | grep 'PASS' | grep -v 'overall' | wc -l) ))
