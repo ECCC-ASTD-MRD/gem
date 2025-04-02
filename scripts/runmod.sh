@@ -11,7 +11,7 @@ eval `cclargs_lite -D " " $0 \
    -cfg           "0:0"        "0:0"       "[Configurations number/range (START:END)]"\
    -dircfg        "configurations/GEM_cfgs"   "configurations/GEM_cfgs"  "[Location of config files]"\
    -barrier       "0"          "0"         "[DO NOT run binary]"\
-   -timing        "0"          "0"         "[Report performance timers]"\
+   -timing        "0"          "1"         "[export GEMDYN_TIMING=DYN_WB]"\
    -ptopo         "1x1x1"      "1x1x1"     "[MPI & OMP PEs topology (NPEXxNPEYx NOMP)]"\
    -smt           ""           ""          "[SMT controler (AIX) (smtdyn x smtphy)]"\
    -along_Y       "1"          "0"         "[Distribute PEs alog Y axis first]"\
@@ -144,8 +144,9 @@ fi
 export DOMAIN_wide=${DOMAIN_wide}
 alongYfirst=.false.
 if [ $along_Y -gt 0  ] ; then alongYfirst=.true. ; fi
-# Use performance timers on request
-if [ ${timing} -gt 0 ] ; then export TMG_ON=YES      ; fi
+# Use timers with barriers on request
+#if [ ${timing} -gt 0 ] ; then export TMG_ON=YES      ; fi
+if [ ${timing} -gt 0 ] ; then export GEMDYN_TIMING=DYN_WB   ; fi
 
 if [[ "x${debug}" != "x0" ]] ; then
    export RPN_COMM_DIAG=2
