@@ -1,24 +1,34 @@
 #!/bin/bash
+# create_maestro
+# - creates a simple GEM maestro suite under $HOME/.suites or $HOME/.suites/goas
+# ------------------------------------------------
 #
-# GoaS git clone environment
+# Under GoaS git clone environment
 # ie: create_maestro -cfg configurations/GEM_cfgs_GY_FISL_H
 # ie: create_maestro -f -exp $HOME/path_of_my_clone -module $HOME/modeles/GEMDM/v_5.2.0-a6/module_gem -ptopo 8x5
 #  - suite created at $HOME/.suites/goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
 # ie: create_maestro -location [mysuite_name]
 #  - suite created at $HOME/.suites/[mysuite_name]
+# if GOAS_SCRIPT_MODE already exported, auto include $gem_DIR/scripts/support
+# if GOAS_SCRIPT_MODE not exported, 
+# ie: create_maestro -location [mysuite_name] -goass
+#  option -goass will force to include $gem_DIR/scripts/support
+# ------------------------------------------------
 #
-# GEM SSM package environment (ignores -exp)
+# Under GEM SSM package environment (ignores -exp)
 # ie: create_maestro -location [mysuite_name] -cfg $gem_DIR/share/configurations/GEM_cfgs
 #  - suite created at $HOME/.suites/[mysuite_name]
+# ------------------------------------------------
 #
 arguments=$*
 eval `cclargs_lite $0 \
   -exp      "$PWD"  "$PWD"  "[[ GIT path work directory ]]" \
   -cfg      "\\$gem_DIR/share/configurations/GEM_cfgs" "\\$gem_DIR/share/configurations/GEM_cfgs" "[]" \
-  -xfer     ""      ""      "[]" \
+  -goass    "0"     "1"     "[[ Exports GOAS_SCRIPT_MODE (Goas git ENV only) ]]" \
   -module   "\\$gem_DIR/share/gem-maestro/gem_module"  "\\$gem_DIR/share/gem-maestro/gem_module"      "[]" \
-  -location ""      ""      "[[ $HOME/.suites/[location] ]]" \
+  -location ""      ""      "[[ puts suite at $HOME/.suites/[location] ]]" \
   -ptopo    "1x1x1" "1x1x1" "[]" \
+  -xfer     ""      ""      "[]" \
   -t        "10"    "10"    "[]" \
   -f        "0"     "1"     "[]" \
   -nosubmit "0"     "1"     "[]" \
@@ -60,7 +70,7 @@ else
    expM=$(basename $cfg)
    NAME_exp=${location:-goas/${ATM_MODEL_VERSION}/${expgem}/${expM}_${mach}}
    GEM_OVBIN=${GEM_INSTALL}/work-${GEM_ARCH}/bin
-   if [ -z "${GOAS_SCRIPT_MODE}" ]; then
+   if [[ -z "${GOAS_SCRIPT_MODE}" && "${goass}" -eq 0 ]] ; then
       GEM_BIN_version="GOAS:${GEM_INSTALL}/work-${GEM_ARCH}:${ATM_MODEL_VERSION}"
    else
       echo "ATTN: This maestro suite will also use scripts/support in ${GEM_INSTALL}"
@@ -100,6 +110,7 @@ fi
 cp -r ${REF}/* $suite_name
 
 CONFIG=$(true_path ${cfg}/cfg_0000 2> /dev/null || true)
+DIRCFG=$(true_path ${cfg} 2> /dev/null || true)
 if [ -z "${CONFIG}" ] ; then
    printf  "\n  Invalid config directory ${cfg} - ABORT\n\n"
    exit 1
@@ -125,9 +136,27 @@ if [[ ${GRDTYP} == "GY" ]] ; then
 else
   cpu_mult=1
 fi
+resource_cpus=${ptopo}
+if [ -e "${DIRCFG}/MIMD.cfg" ] ; then
+   printf "\n MIMD.cfg exists so recalculate number of cpus required\n"
+   npex=$(echo ${ptopo} | cut -d "x" -f 1)
+   npey=$(echo ${ptopo} | cut -d "x" -f 2)
+   nomp=$(echo ${ptopo} | cut -d "x" -f 3)
+   mpi_cpus=0
+   ncpu_serverIO=0
+   for i in $(sed '/^\#/d' ${DIRCFG}/MIMD.cfg | grep -i server | cut -d" " -f2) ; do
+      ncpu_serverIO=$((ncpu_serverIO+i))
+   done
+   ncpu_serverIO=${ncpu_serverIO:-0}
+   printf  "Numper of cpus requested for IOserver: ${ncpu_serverIO}\n"
+   mpi_cpus=$((npex*npey*cpu_mult + ${ncpu_serverIO}))
+   printf  "Numper of mpi cpus requested total: ${mpi_cpus}\n"
+   resource_cpus=${mpi_cpus}x1x${nomp}
+   cpu_mult=1
+fi
 
 nodesetres -n /gem/Runmod -v wallclock=${t} cpu_multiplier=${cpu_mult} \
-                             cpu=${ptopo} soumet_args="-waste 100"
+                             cpu=${resource_cpus} soumet_args="-waste 100"
 
 cat ${CONFIG}/configexp.cfg | sed '/GEM_version=/d' | sed '/GEM_ovbin=/d' | sed '/GEM_bin=/d' | sed '/GEM_settings=/d' | sed '/GEM_outcfg=/d' | sed '/GEM_xfer=/d' | sed '/GEM_headscript_E=/d' | sed '/GEM_phy_intable=/d' | sed '/GEM_check_settings=/d' > ${suite_name}/experiment.cfg
 
@@ -138,7 +167,11 @@ GEM_settings=${CONFIG}/gem_settings.nml
 GEM_outcfg=${CONFIG}/outcfg.out
 #GEM_headscript_E=
 GEM_version=${GEM_BIN_version}
+GEM_ptopo=${ptopo}
 EOF
+if [ -e "${DIRCFG}/MIMD.cfg" ] ; then
+   echo "GEM_serverIO=$DIRCFG/MIMD.cfg" >> ${suite_name}/experiment.cfg
+fi
 if [ -f ${CONFIG}/physics_input_table ] ; then
    echo "GEM_phy_intable=${CONFIG}/physics_input_table" >> ${suite_name}/experiment.cfg
    printf  "\n physics_input_table is taken from ${CONFIG}/physics_input_table\n"
@@ -160,4 +193,8 @@ if [ -f ${CONFIG}/physics_input_table ] ; then
 else
    printf  "\n Using default physics_input_table\n"
 fi
-printf  "\n  Directory $suite_name is now available\n\n"
+if [ ${nosubmit} -eq 0 ] ; then
+printf  "\n  Directory $suite_name is now available and submitted\n\n"
+else
+printf  "\n  Directory $suite_name is now available and not submitted\n\n"
+fi
