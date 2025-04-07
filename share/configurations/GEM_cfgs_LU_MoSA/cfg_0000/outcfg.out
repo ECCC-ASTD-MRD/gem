@@ -1,0 +1,52 @@
+
+ grid=1,core;
+ levels=1,eta, -1;
+ levels=2, pres,[1000., 925., 850., 700., 500., 400., 300., 275., 250., 225., 200., 175., 150.,
+125., 100., 84., 70., 60., 50., 38.7, 30., 25., 20., 15.9, 12.6, 10., 8.4,
+7., 6., 5., 4., 3.5, 3.0, 2.4, 2., 1.7, 1.4, 1.2,1., .7, .5, .3, .2, .1];
+
+ levels=3,eta, 0;
+ levels=4,eta, [79, 80];
+ levels=5,pres,[1000., 925., 850., 700., 500., 250.];
+ levels=6,pres,[850.];
+
+ steps=1,hour,0.;
+ steps=2,hour,<0.,240.,1.>;
+ steps=3,hour,<0.,240.,3.>;
+ steps=4,hour,[24.,72.,120.];
+ steps=5,hour,<0.,144.,3.>,<150.,240.,6.>;
+ steps=6,step,<0.,240.,1.>;
+
+ sortie_p([Z0,LH,MG,GL,SD,TM,2F],           grid, 1, levels, 1, steps, 1)
+ sortie_p([FV,FC,FI,FS,FB,FL,SI,FQ,EI,IIR,ICR],               grid, 1, levels, 1, steps, 2)
+ sortie_p([TM,DSST,SINC,TG,NT,RT,PC,RC],                      grid, 1, levels, 1, steps, 5)
+ sortie_p([PR],                                               grid, 1, levels, 1, steps, 3)
+ sortie_p([I7,I8,I9,SD],              grid, 1, levels, 1, steps, 2)
+
+ sortie_p([WT,MG,LA,LO,2F,LG],                       grid, 1, levels, 1, steps, 1)
+ sortie_p([Z0,Z0t,J1,J2,URBF,BLDF,PAVF,WHOR,Z0RF,Z0RD,
+        ALRF,ALRD,ALWL,EMRF,EMRD,EMWL,HCRF,HCRD,HCWL,EMWL,
+        HCRF,HCRD,HCWL,TCRF,TCRD,TCWL,DPRF,DPRD,DPWL,Z0TW],   grid, 1, levels, 1, steps, 1)
+
+ sortie_p([TJ,TDK,TG,TJST,TDST,UDST,VDST,AL],                 grid, 1, levels, 1, steps, 2)
+
+ sortie_p([TCAN,QCAN,EMTW,TLRF,TLRD,TLWL,
+        TBLD,QHTW],                                           grid, 1, levels, 1, steps, 2)
+ sortie_p([SWRF,STRF,SDRF,SWRD,STRD,SDRD,WSRF,
+        WSRD,QHRD,QERD,QHRF,QHWL,
+        QGRD,QGRF,QGWL,QGTW,
+        SARF,SERF,SSRF,TIRD,SARD,SERD,
+        SSRD],                                                grid, 1, levels, 1, steps, 2)
+
+ sortie_p([WVEG,SNAL,SVAL,SNDN,SVDN,SNDP,SVDP,WSV,WSN,
+        TSN,TSNV,TVG,TGR,
+        ISOL,WSOL],                                           grid, 1, levels, 1, steps, 2)
+
+ sortie_p([RTSU,GTSU,DXSU,GXSU,RTFS],                         grid, 1, levels, 1, steps, 2)
+
+ sortie([TT,GZ,ES,UU,VV,WW,UV],                   grid, 1, levels, 2, steps, 2)
+ sortie([ME],                                     grid, 1, levels, 1, steps, 1)
+ sortie([TT,GZ,ES,UU,VV,WW,WT1,QT1,ZDT1,HU,P0,PN],grid, 1, levels, 1, steps, 2)
+ csortie([URT1,VRT1,ZDT1,HU,P0,PN],               grid, 1, levels, 1, steps, 4)
+
+ xnbit([QCAN],bits,32)
