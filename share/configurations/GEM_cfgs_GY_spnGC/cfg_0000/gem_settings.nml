@@ -45,6 +45,7 @@ Tr3d_list_S =  'HU,wload=0,mono=2,mass=1,hzd=0,min=0.',
   Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1
   P_lmvd_weigh_high_lat = 0.0  ,
 /
+
  &spn
  Spn_start_lev = 0.9
  Spn_const_lev_bot = 0.7
@@ -57,9 +58,9 @@ Tr3d_list_S =  'HU,wload=0,mono=2,mass=1,hzd=0,min=0.',
  Spn_cutoff_scale_large = 1500.
  Spn_cutoff_scale_small=1000.
 
- Spn_yy_nudge_data_freq = 21600.
+ Spn_yy_nudge_data_freq = 21600
 
- Spn_freq = 3600.
+ Spn_freq = 3600
  Spn_weight_L= .true.
  Spn_wt_pwr=2
 
