@@ -30,6 +30,7 @@ fi
 if [ -f ${HOME}/.gem_tests_rc ] ; then
     . ${HOME}/.gem_tests_rc
 else
+    GEM_test_IO=1
     GEM_test_RI=1
     GEM_test_acid=1
     GEM_test_rstrt=1
@@ -37,6 +38,14 @@ else
     GEM_test_synthetic=1
     GEM_test_ops=1
 fi
+GEM_test_RI=${GEM_test_RI:-1}
+GEM_test_IO=${GEM_test_IO:-1}
+GEM_test_acid=${GEM_test_acid:-1}
+GEM_test_rstrt=${GEM_test_rstrt:-1}
+GEM_test_ptopo=${GEM_test_ptopo:-1}
+GEM_test_synthetic=${GEM_test_synthetic:-1}
+GEM_test_ops=${GEM_test_ops:-1}
+
 EXP=${exp:-NONAME}
 ici=${PWD}
 REP_gemtest=TESTS_GEM
@@ -71,6 +80,10 @@ if [ $norun -eq 1 ] ; then
    export NORUN_GEM='yes'
 else
    /bin/rm -f RESULTS/$EXP/status/*_couleur
+fi
+
+if [ $GEM_test_IO -gt 0 ] ; then
+    time . ${GT_scripts}/gem_test_IO
 fi
 
 if [ $GEM_test_RI -gt 0 ] ; then
@@ -134,6 +147,7 @@ cat RESULTS/$EXP/REPORT
 
 cat > ${HOME}/.gem_tests_rc <<EOF
 GEM_test_RI=$GEM_test_RI
+GEM_test_IO=$GEM_test_IO
 GEM_test_acid=$GEM_test_acid
 GEM_test_rstrt=$GEM_test_rstrt
 GEM_test_ptopo=$GEM_test_ptopo
