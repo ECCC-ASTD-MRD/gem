@@ -123,9 +123,7 @@
          n = n + 2
       endif
       !#TODO: trim the output list to the ones actually requested within the run
-      if (n > 0) then
-         err = wb_put('itf_phy/PHYOUT', varlist_S(1:n), WB_REWRITE_AT_RESTART)
-      end if
+      err = wb_put('itf_phy/PHYOUT', varlist_S(1:(max(1,n))), WB_REWRITE_AT_RESTART)
 
 ! We put mandatory variables in the WhiteBoard
 
