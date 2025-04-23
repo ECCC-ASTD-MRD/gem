@@ -10,6 +10,19 @@ module diagno_clouds
    private
    public :: diagno_clouds2
 
+#include "phymkptr.hf"
+#include "nocld.cdk"
+#include "nbsnbl.cdk"
+#include "cldop.cdk"
+   
+   real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
+   integer, parameter :: TOPC2 = 5000.  !#Top level for cloud tendencies (Pa) (we take 10xtopc in nocld... ad hoc)
+   character(len=4), parameter :: OLIST(14) = (/ &
+        'ECC ', 'ECCH', 'ECCM', 'ECCL', 'TCC ', 'NT  ', &
+        'TCSH', 'TCSM', 'TCSL', 'TCZH', 'TCZM', 'TCZL', &
+        'ECTP', 'ECTT'  &
+        /)
+
 contains
 
    !/@*
@@ -19,7 +32,6 @@ contains
         ni, nkm1, nk)
       implicit none
 !!!#include <arch_specific.hf>
-#include "nbsnbl.cdk"
 
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: trnch, ni, nkm1, nk
@@ -51,12 +63,7 @@ contains
       ! nkm1       number of layers
       !
       !*@/
-#include "phymkptr.hf"
-#include "nocld.cdk"
 
-      integer, parameter :: TOPC2 = 5000.  !#Top level for cloud tendencies (Pa) (we take 10xtopc in nocld... ad hoc)
-
-      
       real, pointer, dimension(:), contiguous :: ztopthw,ztopthi,znt
       real, pointer, dimension(:), contiguous :: ztcc,zecc,zeccl,zeccm,zecch
       real, pointer, dimension(:), contiguous :: ztcsl,ztcsm,ztcsh
@@ -67,12 +74,22 @@ contains
       real :: press
       logical :: needoutput
       real, target :: dummy1Dni(ni)
-      character(len=4), parameter :: OLIST(14) = (/ &
-           'ECC ', 'ECCH', 'ECCM', 'ECCL', 'TCC ', 'NT  ', &
-           'TCSH', 'TCSM', 'TCSL', 'TCZH', 'TCZM', 'TCZL', &
-           'CTP ', 'CTT ' &
-           /)
+      
+      real, dimension(ni,nkm1) :: transmissint, trans_exp, cldfrac, mask
+      logical, dimension(ni) :: top
+      real, dimension(ni,nkm1) :: aird, rec_cdd, vs1
+      real, dimension(ni) :: trmin, tmem, trmin2, tmem2
+      real, dimension(ni,nk,nk) :: ff, ff2
+      integer, dimension(ni) :: ih, ih2, ih3, ib, ib2, ib3    
+
+      real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
+      integer :: k1, ip, l, km1, lmax
+      real :: xnu, xnu2, mask1
       !----------------------------------------------------------------
+      call init2nan(transmissint, trans_exp, cldfrac)
+      call init2nan(aird, rec_cdd, vs1)
+      call init2nan(trmin, tmem, trmin2, tmem2 )
+      call init2nan(ff, ff2)
 
       needoutput = (etccdiagout .or. ISREQSTEPL(OLIST))
       if (.not.needoutput) return
@@ -113,56 +130,6 @@ contains
       enddo
       ktop = minval(ktopi)  !#Note: this may cause bit pattern change with change of ptopo or runlgt
       
-      !#Note: move computations in other function, away from the pointers (opimiz)
-      call priv_diagno_clouds2(taucs, taucl, gz, cloud, tt, sig, ps,  &
-        ztopthw, ztopthi, znt, ztcc, zecc, zeccl, zeccm, zecch, &
-        ztcsl, ztcsm, ztcsh, ztczl, ztczm, ztczh, zctp, zctt, zlwc, &
-        trnch, ni, nkm1, nk, ktop)
-
-      !----------------------------------------------------------------
-      return
-   end subroutine diagno_clouds2
-      
-
-   !/@*
-   subroutine priv_diagno_clouds2(taucs, taucl, gz, cloud, tt, sig, ps, &
-        ztopthw, ztopthi, znt, ztcc, zecc, zeccl, zeccm, zecch, &
-        ztcsl, ztcsm, ztcsh, ztczl, ztczm, ztczh, zctp, zctt, zlwc, &
-        trnch, ni, nkm1, nk, ktop)
-      implicit none
-!!!#include <arch_specific.hf>
-#include "nbsnbl.cdk"
-
-      integer, intent(in) :: trnch, ni, nkm1, nk, ktop
-      real, intent(in), dimension(ni,nkm1,nbs) :: taucs
-      real, intent(in), dimension(ni,nkm1,nbl) :: taucl
-      real, intent(in), dimension(ni,nkm1) :: gz, cloud, tt, sig
-      real, intent(in), dimension(ni)    :: ps
-      real, dimension(ni) :: ztopthw, ztopthi, znt
-      real, dimension(ni) :: ztcc, zecc, zeccl, zeccm, zecch
-      real, dimension(ni) :: ztcsl, ztcsm, ztcsh
-      real, dimension(ni) :: ztczl, ztczm, ztczh
-      real, dimension(ni) :: zctp, zctt
-      real, pointer, dimension(:,:), contiguous :: zlwc
-
-#include "cldop.cdk"
-
-      real, dimension(ni,nkm1) :: transmissint, trans_exp, cldfrac, mask
-      logical, dimension(ni) :: top
-      real, dimension(ni,nkm1) :: aird, rec_cdd, vs1
-      real, dimension(ni) :: trmin, tmem, trmin2, tmem2
-      real, dimension(ni,nk,nk) :: ff, ff2
-      integer, dimension(ni) :: ih, ih2, ih3, ib, ib2, ib3    
-
-      real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
-      integer :: i, k, k1, ip, l, km1, lmax
-      real :: xnu, xnu2, mask1
-      !----------------------------------------------------------------
-      call init2nan(transmissint, trans_exp, cldfrac)
-      call init2nan(aird, rec_cdd, vs1)
-      call init2nan(trmin, tmem, trmin2, tmem2 )
-      call init2nan(ff, ff2)
-
       !     diagnostics: cloud top pressure (ctp) and temperature (ctt)
       !     using the cloud optical depth at window region (band 6) to
       !     calculate the emissivity
@@ -266,19 +233,23 @@ contains
          zecch(i) = 1. - ff(i,IH(i),1)
          zeccm(i) = 1. - ff(i,IB(i),IH(i))
          zeccl(i) = 1. - ff(i,nk,IB(i))
-         ztcc(i)  = 1. - ff2(i,nk,1)
       enddo
+      
+      if (ISREQSTEPL((/"TCC","NT "/)) .or. ISREQOUTL((/"TCCM", "NF  "/))) &
+           ztcc = 1. - ff2(:,nk,1)
 
-      if (stcond(1:3)=='MP_') then
-         do i=1,ni
-            znt(i) = ztcc(i)*(1.-exp(-0.1*(ztopthw(i) + ztopthi(i))))
-         enddo
-      else
-         !#Note: vintage_nt modify cldfrac, need a copy
-         cldfrac = cloud
-         call vintage_nt1( &
-              tt, ps, sig, zlwc, &
-              cldfrac, znt, trnch, ni, nk, nkm1)
+      if (ISREQSTEP("NT") .or. ISREQOUT("NF")) then
+         if (stcond(1:3)=='MP_') then
+            do i=1,ni
+               znt(i) = ztcc(i)*(1.-exp(-0.1*(ztopthw(i) + ztopthi(i))))
+            enddo
+         else
+            !#Note: vintage_nt modify cldfrac, need a copy
+            cldfrac = cloud
+            call vintage_nt1( &
+                 tt, ps, sig, zlwc, &
+                 cldfrac, znt, trnch, ni, nk, nkm1)
+         endif
       endif
 
 
@@ -296,7 +267,6 @@ contains
 
       !----------------------------------------------------------------
       return
-   end subroutine priv_diagno_clouds2
-   
+   end subroutine diagno_clouds2
 end module diagno_clouds
 

@@ -61,23 +61,18 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    integer :: iverb, nkm1
    character(len=64) :: tmp_S
 
-   real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-
    !----------------------------------------------------------------
    write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
    call msg_verbosity_get(iverb)
    if (debug_trace_L) call msg_verbosity(MSG_DEBUG)
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [BEGIN]')
 
-   call init2nan(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0)
-
    nkm1 = nk-1
 
    call inichamp4(pvars, kount, ni, nk)
    if (phy_error_L) return
 
-   call phystepinit3(pvars, uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        delt, kount, ni, nk, trnch)
+   call phystepinit3(pvars, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
    call radiation3(pvars, kount, ni, nk, trnch)
@@ -107,8 +102,7 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call phystepend1(pvars, ni, nk)
    if (phy_error_L) return
 
-   call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, pvars, &
-        1./delt, kount, ni, nk)
+   call tendency5(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
    call lhn2(pvars, delt, kount, ni, nk)

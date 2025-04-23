@@ -50,7 +50,7 @@ contains
     integer, intent(in) ::  kount
     real, intent(in) :: xlat(ix), mg(ix), mlac(ix), wstar(ix), tstar(ix)
     real, intent(in) :: tke(ix,kx), kt(ix,kx)
-    real, intent(inout) :: coadvu(ix), coadvv(ix), coage(ix), cowlcl(ix), cozlcl(ix)
+    real, pointer, dimension(:) :: coadvu, coadvv, coage, cowlcl, cozlcl
     real, pointer :: mrk2(:,:)
     real, intent(in) :: critmask, delt
 
@@ -724,8 +724,10 @@ contains
           ZTOPOUT(I)  = 0.
           WUMAXOUT(I) = 0.
           WKLCLOUT(I) = 0.
-          COADVU(I)   = 0.
-          COADVV(I)   = 0.
+          if (deep_cloudobj) then
+             COADVU(I)   = 0.
+             COADVV(I)   = 0.
+          endif
 
        else if (FLAGCONV(I).gt.0) then
           ACTIV(I) = .true.
@@ -1008,7 +1010,7 @@ contains
 
              if (cowlcl(i) > WLCL) then
                 wlcl = cowlcl(i)  !Existing updraft is stronger
-             else
+             elseif (deep_cloudobj) then
                 coage(i) = 0.     !New initiation is stronger
              endif
           endif
@@ -3259,18 +3261,21 @@ contains
              intv = intv + vg(k)*dpp(i,k)
              intdp = intdp + dpp(i,k)
           enddo
-          coadvu(i) = intu / intdp
-          coadvv(i) = intv / intdp
+          
+          if (deep_cloudobj) then
+             coadvu(i) = intu / intdp
+             coadvv(i) = intv / intdp
 
-          ! Update cloud object properties
-          wlcl0 = wlcl*exp(coage(i)/deep_codecay)
-          coage(i) = coage(i) + delt
-          if (deep_codecay > 0.) then
-             cowlcl(i) = wlcl0*exp(-coage(i)/deep_codecay)
-          else
-             cowlcl(i) = 0.
+             ! Update cloud object properties
+             wlcl0 = wlcl*exp(coage(i)/deep_codecay)
+             coage(i) = coage(i) + delt
+             if (deep_codecay > 0.) then
+                cowlcl(i) = wlcl0*exp(-coage(i)/deep_codecay)
+             else
+                cowlcl(i) = 0.
+             endif
+             cozlcl(i) = zlcl
           endif
-          cozlcl(i) = zlcl
 
        endif CO_SETUP
 
@@ -3280,7 +3285,7 @@ contains
 325    continue
 
        ! Reset cloud object properties if the column is no longer active
-       if (.not.ACTIV(I)) then
+       if (deep_cloudobj .and. .not.ACTIV(I)) then
           coage(i) = 0.
           cowlcl(i) = 0.
           cozlcl(i) = 0.

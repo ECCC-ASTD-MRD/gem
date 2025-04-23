@@ -7,8 +7,7 @@ module phystepinit
 contains
 
    !/@*
-   subroutine phystepinit3(pvars, uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        dt, kount, ni, nk, trnch)
+   subroutine phystepinit3(pvars, dt, kount, ni, nk, trnch)
       use, intrinsic :: iso_fortran_env, only: INT64, REAL64
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
@@ -32,8 +31,6 @@ contains
       !@Arguments
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nk
-      real, dimension(ni,nk), intent(out) :: uplus0, vplus0, wplus0, tplus0, &
-           huplus0, qcplus0
       real, intent(in) :: dt
       !          - Input / output -
       ! pvars    list of all phy vars (meta + slab data)
@@ -61,11 +58,11 @@ contains
       character(len=32) :: prefix_S,basename_S,time_S,ext_S
       integer                :: i,k,ivar,nvars,istat, ivarlist(nphyvars),ind_sfc, idxv1(1)
       real                   :: rcdt1
-      real, dimension(ni,nk) :: work
-      real, target :: tmp1d(ni)
+      real, dimension(ni,nk) :: rtmp2d
+      real, target :: tmp1d1(ni), tmp1d2(ni)
       real, pointer :: tmpptr(:)
-      real(kind=REAL64), dimension(ni) :: en0, pw0, en1, pw1
-      real, dimension(ni, nk-1) :: lwc, iwc, thl, qw
+      real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
+      real, dimension(ni,nk-1) :: lwc, iwc, qw
       
       type(phymeta), pointer :: vmeta, var_m
 
@@ -84,9 +81,10 @@ contains
            zgztherm, zfneige, zfip, &
            zqrp, zqrm, zqti1p, zqti1m, zqti2p, zqti2m, zqti3p, zqti3m, zqti4p, zqti4m, &
            zqnp, zqnm, zqgp, zqgm, zqhp, zqhm, zqip, zqim, zsige, &
-           zsigmas,  zmrk2
-      real, pointer, dimension(:,:), contiguous :: tmp1, tmp2
+           zsigmas,  zmrk2, tmp1, tmp2, &
+           zuplus0, zvplus0, zwplus0, ztplus0, zhuplus0, zqcplus0
       real, pointer, dimension(:,:,:), contiguous :: zvcoef
+
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'phystepinit [BEGIN]')
       if (timings_L) call timing_start_omp(405, 'phystepinit', 46)
@@ -190,10 +188,17 @@ contains
       MKPTR2D(zqhm, qhmoins, pvars)
       MKPTR2D(zqim, qimoins, pvars)
       
-      call init2nan(work)
-      call init2nan(tmp1d)
+      MKPTR2D(zqcplus0, qcplus0, pvars)
+      MKPTR2D(zhuplus0, huplus0, pvars)
+      MKPTR2D(zuplus0,  uplus0, pvars)
+      MKPTR2D(zvplus0,  vplus0, pvars)
+      MKPTR2D(ztplus0,  tplus0, pvars)
+      MKPTR2D(zwplus0,  wplus0, pvars)
+
+      call init2nan(rtmp2d)
+      call init2nan(tmp1d1, tmp1d2)
       call init2nan(en0, pw0, en1, pw1)
-      call init2nan(thl, qw, lwc, iwc)
+      call init2nan(qw, lwc, iwc)
       
       IF_DEBUG: if (debug_mem_L) then
          DO_IVAR: do ivar= 1, nphyvars
@@ -247,6 +252,7 @@ contains
          return
       endif
 
+      !# Humidity Clipping
       where(zhuplus(:,1:nk-1)  < 0.) zhuplus(:,1:nk-1)  = 0.
       where(zhumoins(:,1:nk-1) < 0.) zhumoins(:,1:nk-1) = 0.
 
@@ -273,7 +279,8 @@ contains
       if (z0dir) call calcz0(zmg, zz0, zz1, zz2, zz3, zz4, &
            zumoins(:,nk-1), zvmoins(:,nk-1), ni)
 
-      ! Initialize diagnostic level values in the profile
+      !# Initialize diagnostic level values in the profile
+      !# Save initial time plus values to compute on-demand *phytd
       if (ISPHYIN('pw_tt:p')) then
          ztdiag = ztplus(:,nk)
       elseif (kount == 0) then
@@ -282,6 +289,9 @@ contains
       else
          ztplus(:,nk) = ztdiag
       endif
+      ztmoins(:,nk) = ztdiag
+      if (associated(ztplus0))  ztplus0  = ztplus
+
       if (ISPHYIN('tr/hu:p')) then
          zqdiag = zhuplus(:,nk)
       elseif (kount  ==  0) then
@@ -290,6 +300,9 @@ contains
       else
          zhuplus(:,nk) = zqdiag
       endif
+      zhumoins(:,nk) = zqdiag
+      if (associated(zhuplus0)) zhuplus0 = zhuplus
+
       if (ISPHYIN('pw_uu:p')) then
          zudiag = zuplus(:,nk)
       elseif (kount  ==  0) then
@@ -298,6 +311,9 @@ contains
       else
          zuplus(:,nk) = zudiag
       endif
+      zumoins(:,nk) = zudiag
+      if (associated(zuplus0))  zuplus0  = zuplus
+
       if (ISPHYIN('pw_vv:p')) then
          zvdiag = zvplus(:,nk)
       elseif (kount == 0) then
@@ -306,28 +322,18 @@ contains
       else
          zvplus(:,nk) = zvdiag
       endif
-      if (associated(zqcplus)) zqcplus(:,nk) = 0.
-
-      ztmoins(:,nk) = ztdiag
-      zhumoins(:,nk) = zqdiag
-      zumoins(:,nk) = zudiag
       zvmoins(:,nk) = zvdiag
-      if (associated(zqcmoins)) zqcmoins(:,nk) = 0.
+            if (associated(zvplus0))  zvplus0  = zvplus
 
-      !# Save initial time plus values
-      do k = 1, nk
-         do i = 1, ni
-            huplus0(i,k) = zhuplus(i,k)
-            uplus0(i,k)  = zuplus (i,k)
-            vplus0(i,k)  = zvplus (i,k)
-            tplus0(i,k)  = ztplus (i,k)
-         enddo
-      enddo
-      if (diffuw) wplus0(:,1:nk) = zwplus(:,1:nk)
-      if (associated(zqcplus)) then
-         qcplus0(:,1:nk) = zqcplus(:,1:nk)
-      else
-         qcplus0(:,1:nk) = 0.
+      if (associated(zqcplus)) zqcplus(:,nk) = 0.
+      if (associated(zqcmoins)) zqcmoins(:,nk) = 0.
+      if (diffuw .and. associated(zwplus0)) zwplus0 = zwplus
+      if (associated(zqcplus0)) then
+         if (associated(zqcplus)) then
+            zqcplus0 = zqcplus
+         else
+            zqcplus0 = 0.
+         endif
       endif
 
       ! Microphysics initializations
@@ -351,22 +357,16 @@ contains
       if (associated(zqrm)) zqrm(:,nk) = 0.
 
       !# calcul des tendances de la dynamique
-      do k = 1,nk
-         do i = 1,ni
-            ztadv(i,k) = (ztplus (i,k) - ztmoins (i,k)) * rcdt1
-            zqadv(i,k) = (zhuplus(i,k) - zhumoins(i,k)) * rcdt1
-            zuadv(i,k) = (zuplus (i,k) - zumoins (i,k)) * rcdt1
-            zvadv(i,k) = (zvplus (i,k) - zvmoins (i,k)) * rcdt1
-         end do
-      end do
+      if (associated(ztadv)) ztadv = (ztplus  - ztmoins) * rcdt1
+      if (associated(zqadv)) zqadv = (zhuplus - zhumoins) * rcdt1
+      if (associated(zuadv)) zuadv = (zuplus  - zumoins) * rcdt1
+      if (associated(zvadv)) zvadv = (zvplus  - zvmoins) * rcdt1
 
-      
       IF_CONS: if (lcons) then
          ! Compute pre-physics budget state
          if (associated(zcone0).or.associated(zconq0)) then
-            tmp1d = 0.
-            if (.not.associated(zcone0)) zcone0 => tmp1d
-            if (.not.associated(zconq0)) zconq0 => tmp1d          
+            if (.not.associated(zcone0)) zcone0 => tmp1d1
+            if (.not.associated(zconq0)) zconq0 => tmp1d2
             if (pb_compute(zcone0, zconq0, en0, pw0, &
                  pvars, nk-1) /= PHY_OK) then
                call physeterror('phystepinit', &
@@ -398,12 +398,8 @@ contains
       if (associated(zqadv)) call series_xst(zqadv, 'XQ', trnch)
 
       if (associated(zqcplus)) then
-         do k = 1, nk
-            do i = 1, ni
-               work(i,k) = (zqcplus(i,k) - zqcmoins(i,k)) * rcdt1
-            enddo
-         enddo
-         call series_xst(work, 'XL', trnch)
+         rtmp2d = (zqcplus - zqcmoins) * rcdt1
+         call series_xst(rtmp2d, 'XL', trnch)
       endif
 
       !# Time swap for tracers at diag level (other levels done in dyn)
@@ -433,10 +429,8 @@ contains
          do ivar = 1, nvars
             vmeta => pvars(ivarlist(ivar))%meta
             if (.not.any(vmeta%vname == (/'tr/hu:m', 'tr/hu:p'/))) then
-               !#TODO: adapt for 4D vars (ni,nk,fmul,nj)
                var_m => pvars(ivarlist(ivar))%meta
-               tmp2(1:ni,1:nk-1) => pvars(ivarlist(ivar))%data(:)
-               tmp2 = min(max(var_m%vmin, tmp2), var_m%vmax)
+               pvars(ivarlist(ivar))%data = min(max(var_m%vmin, pvars(ivarlist(ivar))%data), var_m%vmax)
             endif
          enddo
       endif
@@ -454,10 +448,10 @@ contains
       ! Diagnostic precipitation types
       if (pcptype == 'NIL' .or. & 
            (pcptype == 'BOURGE' .and. .not.mpdiag_for_sfc)) then
-         tmp1d = 0.
+         tmp1d1 = 0.
          nullify(tmpptr)
          call surf_precip1(ztmoins(:,nk-1), &
-              tmp1d, tmp1d, &
+              tmp1d1, tmp1d1, &
               zrlc, ztls, zrsc, ztss, &
               tmpptr, tmpptr, tmpptr, tmpptr, &
               zrainrate, zsnowrate, ni)
@@ -465,9 +459,9 @@ contains
            'SPS_W19', &
            'SPS_H13', &
            'SPS_FRC'/))) then
-         tmp1d = zp0*zsigt(:,nk-1)
+         tmp1d1 = zp0*zsigt(:,nk-1)
          call surf_precip1(ztmoins(:,nk-1), &
-              zhumoins(:,nk-1), tmp1d, &
+              zhumoins(:,nk-1), tmp1d1, &
               zrlc, ztls, zrsc, ztss, &
               zrainfrac, zsnowfrac, zfrfrac, zpefrac, &
               zrainrate, zsnowrate, ni)
@@ -485,7 +479,7 @@ contains
             call physeterror('phystepinit', 'Cannot compute condensate contents')
             return
          endif
-         call thlqw_compute(thl, qw, ztmoins, zhumoins, lwc, iwc, zsigt, ni, nk-1)
+         call thlqw_compute(rtmp2d, qw, ztmoins, zhumoins, lwc, iwc, zsigt, ni, nk-1)
          call sgspdf_bkg(zsigmas, ztplus, qw, zsigt, zgztherm, zp0, zh, &
               zmrk2, ni, nk-1)
       endif

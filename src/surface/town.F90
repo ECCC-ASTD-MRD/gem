@@ -20,6 +20,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    use, intrinsic :: iso_fortran_env, only: INT64
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
    use sfclayer,   only : sl_prelim,sl_sfclayer,SL_OK
+   use SFC_OPTIONS,   only : THERMAL_STRESS
    use modd_town,      only : xtown,                            &
         xq_town,                               &
         xu_canyon,                             &
@@ -34,21 +35,21 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
         xgsnow_road,xmelt_road,                &
         xrn,xh,xle,xgflux,xevap,xrunoff,       &
         xch,xri,xustar,                        &
-        XTRAD_IN,XTRAD_SUN,XTRAD_SHADE,        &
-        XTRAD_RFSUN,XTRAD_RFSHADE,             &
-        XTGLOBE_SUN,XTGLOBE_SHADE,             &
-        XTGLOBE_RFSUN,XTGLOBE_RFSHADE,         &
-        XTWETB,XTWETB_ROOF,                    &
-        XUTCI_IN,XUTCI_OUTSUN,XUTCI_OUTSHADE,  &
-        XUTCI_RFSUN,XUTCI_RFSHADE,             &
-        XWBGT_OUTSUN,XWBGT_OUTSHADE,           &
-        XWBGT_RFSUN,XWBGT_RFSHADE,             &
-        XUTCIC_IN,XUTCIC_OUTSUN,               &
-        XUTCIC_OUTSHADE,XUTCIC_RFSUN,          &
-        XUTCIC_RFSHADE,                        &
-        XTRFZT,XTRDZT,XURDZU,                  &
-        XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,           &
-        XQ8,XQ9,XQ10,XQ11,XQ12,XQ13
+        xtrad_in,xtrad_sun,xtrad_shade,        &
+        xtrad_rfsun,xtrad_rfshade,             &
+        xtglobe_sun,xtglobe_shade,             &
+        xtglobe_rfsun,xtglobe_rfshade,         &
+        xtwetb,xtwetb_roof,                    &
+        xutci_in,xutci_outsun,xutci_outshade,  &
+        xutci_rfsun,xutci_rfshade,             &
+        xwbgt_outsun,xwbgt_outshade,           &
+        xwbgt_rfsun,xwbgt_rfshade,             &
+        xutcic_in,xutcic_outsun,               &
+        xutcic_outshade,xutcic_rfsun,          &
+        xutcic_rfshade,                        &
+        xtrfzt,xtrdzt,xurdzu,                  &
+        xq1,xq2,xq3,xq4,xq5,xq6,xq7,           &
+        xq8,xq9,xq10,xq11,xq12,xq13
 
    use modd_teb,       only : xzs, xbld, xbld_height, xz0_town,      &
         xz0_roof,xz0_road,                     &
@@ -104,7 +105,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    ! Last version Sylvie Leroyer (2018)
 
    include "tebcst.cdk"
-! surface pointer and bus : definition
+! Define pointers relative to surface buses (memory already allocated)
    include "town_ptr.cdk"
 
    integer surflen
@@ -154,7 +155,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 
    surflen = m
 
-! surface pointer and bus : link to bus
+! Link pointers to surface buses (memory already allocated)
 #include "town_ptr_as.cdk"
 
    nroof_layer = roof_layer
@@ -162,8 +163,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    nwall_layer = wall_layer
 
 
-! TEB specific pointer and bus : allocate
-!     6. Diagnostic variables :
+! Allocate memory for pointers not in surface bus
    allocate( xq_town      (n)             , stat=alloc_status(1) )
    allocate( xles_roof    (n)             , stat=alloc_status(2) )
    allocate( xrunoff_roof (n)             , stat=alloc_status(3) )
@@ -184,53 +184,8 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    allocate( xch          (n)             , stat=alloc_status(18) )
    allocate( xri          (n)             , stat=alloc_status(19) )
    allocate( xustar       (n)             , stat=alloc_status(20) )
-   allocate( xz0_roof     (n)             , stat=alloc_status(21) )
-   allocate( xz0_road     (n)             , stat=alloc_status(22) )
-!     7.heat-stress variables
-   allocate(XTRAD_IN          (N)  ,stat=alloc_status(23)    )
-   allocate(XTRAD_SUN         (N)  ,stat=alloc_status(24)    )
-   allocate(XTRAD_SHADE       (N) ,stat=alloc_status(25)     )
-   allocate(XTRAD_RFSUN       (N)  ,stat=alloc_status(26)    )
-   allocate(XTRAD_RFSHADE     (N)   ,stat=alloc_status(27)   )
-   allocate(XUTCI_IN          (N)   ,stat=alloc_status(28)   )
-   allocate(XUTCI_OUTSUN      (N)  ,stat=alloc_status(29)    )
-   allocate(XUTCI_OUTSHADE    (N)   ,stat=alloc_status(30)   )
-   allocate(XUTCI_RFSUN       (N)   ,stat=alloc_status(31)   )
-   allocate(XUTCI_RFSHADE     (N)  ,stat=alloc_status(32)   )
-   allocate(XWBGT_OUTSUN      (N)  ,stat=alloc_status(33)    )
-   allocate(XWBGT_OUTSHADE    (N)   ,stat=alloc_status(34)   )
-   allocate(XWBGT_RFSUN       (N)   ,stat=alloc_status(35)   )
-   allocate(XWBGT_RFSHADE     (N)  ,stat=alloc_status(36)   )
-   allocate(XUTCIC_IN         (N)   ,stat=alloc_status(37)  )
-   allocate(XUTCIC_OUTSUN     (N)   ,stat=alloc_status(38)  )
-   allocate(XUTCIC_OUTSHADE   (N)   ,stat=alloc_status(39)  )
-   allocate(XUTCIC_RFSUN      (N)  ,stat=alloc_status(40)   )
-   allocate(XUTCIC_RFSHADE    (N)  ,stat=alloc_status(41)   )
-   allocate(XTGLOBE_SUN        (N)  ,stat=alloc_status(42) )
-   allocate(XTGLOBE_SHADE      (N)  ,stat=alloc_status(43) )
-   allocate(XTGLOBE_RFSUN      (N)  ,stat=alloc_status(44) )
-   allocate(XTGLOBE_RFSHADE    (N)  ,stat=alloc_status(45) )
-   allocate(XTWETB             (N)  ,stat=alloc_status(46) )
-   allocate(XTWETB_ROOF        (N)  ,stat=alloc_status(47) )
-   allocate(XTRFZT     (N)  ,stat=alloc_status(48) )
-   allocate(XTRDZT     (N)  ,stat=alloc_status(49) )
-   allocate(XURDZU     (N)  ,stat=alloc_status(50) )
-   allocate(XQ1     (N)  ,stat=alloc_status(51) )
-   allocate(XQ2     (N)  ,stat=alloc_status(52) )
-   allocate(XQ3     (N)  ,stat=alloc_status(53) )
-   allocate(XQ4     (N)  ,stat=alloc_status(54) )
-   allocate(XQ5     (N)  ,stat=alloc_status(55) )
-   allocate(XQ6     (N)  ,stat=alloc_status(56) )
-   allocate(XQ7     (N)  ,stat=alloc_status(57) )
-   allocate(XQ8     (N)  ,stat=alloc_status(58) )
-   allocate(XQ9     (N)  ,stat=alloc_status(59) )
-   allocate(XQ10    (N)  ,stat=alloc_status(60) )
-   allocate(XQ11    (N)  ,stat=alloc_status(61) )
-   allocate(XQ12    (N)  ,stat=alloc_status(62) )
-   allocate(XQ13    (N)  ,stat=alloc_status(63) )
 
-! TEB specific pointer and bus : Initialisation
-!     6. Diagnostic variables :
+! Initialization of local pointers
    xq_town         = xundef
    xles_roof       = xundef
    xrunoff_roof    = xundef
@@ -251,45 +206,6 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    xch             = xundef
    xri             = xundef
    xustar          = xundef
-!     7. heat-stress variables
-    XTRAD_IN   = XUNDEF
-    XTRAD_SUN   = XUNDEF
-    XTRAD_SHADE   = XUNDEF
-    XTRAD_RFSUN   = XUNDEF
-    XTRAD_RFSHADE   = XUNDEF
-    XUTCI_IN   = XUNDEF
-    XUTCI_OUTSUN   = XUNDEF
-    XUTCI_OUTSHADE   = XUNDEF
-    XUTCI_RFSUN   = XUNDEF
-    XUTCI_RFSHADE   = XUNDEF
-    XWBGT_OUTSUN   = XUNDEF
-    XWBGT_OUTSHADE   = XUNDEF
-    XWBGT_RFSUN   = XUNDEF
-    XWBGT_RFSHADE   = XUNDEF
-    XUTCIC_IN   = XUNDEF
-    XUTCIC_OUTSUN   = XUNDEF
-    XUTCIC_OUTSHADE   = XUNDEF
-      XUTCIC_RFSUN  = XUNDEF
-      XUTCIC_RFSHADE= XUNDEF
-      XTGLOBE_SUN   = XUNDEF
-      XTGLOBE_SHADE   = XUNDEF
-      XTGLOBE_RFSUN   = XUNDEF
-      XTGLOBE_RFSHADE   = XUNDEF
-      XTWETB         = XUNDEF
-      XTWETB_ROOF    = XUNDEF
-      XQ1 = XUNDEF
-      XQ2 = XUNDEF
-      XQ3 = XUNDEF
-      XQ4 = XUNDEF
-      XQ5 = XUNDEF
-      XQ6 = XUNDEF
-      XQ7 = XUNDEF
-      XQ8 = XUNDEF
-      XQ9 = XUNDEF
-      XQ10 = XUNDEF
-      XQ11 = XUNDEF
-      XQ12 = XUNDEF
-      XQ13 = XUNDEF
 
    call ini_csts
 
@@ -321,9 +237,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
         prain         (i) = zrainrate(i) *1000.
       enddo
 
-!       General variables
-!       -----------------
-! TEB specific pointer and bus : link to bus
+! Link pointers to TEB buses (memory already allocated)
 !     1. Geometric parameters :
       xbld          (1:n) => bus(x(bld         ,1,1) : )
       xbld_height   (1:n) => bus(x(bld_height  ,1,1) : )
@@ -397,34 +311,16 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       xle_wall    (1:n) => bus(x( le_wall ,1,1)  : )
       xgflux_wall (1:n) => bus(x( g_wall  ,1,1)  : )
 !     7. Heat-stress variables :
-      xtrad_in       (1:n) => bus( x( yradin,1,1)         : )
+      IF_THERMAL_STRESS: if ( thermal_stress ) then
       xtrad_sun      (1:n) => bus( x( yradsun,1,indx_urb)        : )
       xtrad_shade    (1:n) => bus( x( yradshade,1,indx_urb)      : )
-      xtrad_rfsun    (1:n) => bus( x(yradrfsun ,1,1)      : )
-      xtrad_rfshade  (1:n) => bus( x( yradrfshade,1,1)    : )
-      xutci_in      (1:n) => bus( x( yutciin,1,1)        : )
       xutci_outsun     (1:n) => bus( x( yutcisun,1,indx_urb)       : )
       xutci_outshade   (1:n) => bus( x( yutcishade,1,indx_urb)     : )
-      xutci_rfsun   (1:n) => bus( x( yutcirfsun,1,1)     : )
-      xutci_rfshade (1:n) => bus( x( yutcirfshade,1,1)   : )
       xwbgt_outsun     (1:n) => bus( x( ywbgtsun,1,indx_urb)       : )
       xwbgt_outshade   (1:n) => bus( x( ywbgtshade,1,indx_urb)     : )
-      xwbgt_rfsun   (1:n) => bus( x( ywbgtrfsun,1,1)     : )
-      xwbgt_rfshade (1:n) => bus( x( ywbgtrfshade,1,1)   : )
-      xutcic_in     (1:n) => bus( x( yutcicin,1,1)       : )
-      xutcic_outsun    (1:n) => bus( x(yutcicsun ,1,1)      : )
-      xutcic_outshade  (1:n) => bus( x(yutcicshade ,1,1)    : )
-      xutcic_rfsun  (1:n) => bus( x(yutcicrfsun ,1,1)    : )
-      xutcic_rfshade(1:n) => bus( x(yutcicrfshade ,1,1)   : )
       xtglobe_sun     (1:n) => bus( x( ytglbsun,1,indx_urb)       : )
       xtglobe_shade   (1:n) => bus( x( ytglbshade,1,indx_urb)     : )
       xtwetb    (1:n) => bus( x(ytwetb ,1,indx_urb)         : )
-      xtglobe_rfsun    (1:n) => bus( x( ytglbrfsun,1,1)         : )
-      xtglobe_rfshade   (1:n) => bus( x( ytglbrfshade,1,1)         : )
-      xtwetb_roof   (1:n) => bus( x( ytwetbrf,1,1)         : )
-      xtrfzt   (1:n) => bus( x( ytrfzt,1,1)         : )
-      xtrdzt   (1:n) => bus( x( ytrdzt,1,1)         : )
-      xurdzu   (1:n) => bus( x( yurdzu,1,1)         : )
       xQ1   (1:n) => bus( x( yQ1,1,indx_urb)         : )
       xQ2   (1:n) => bus( x( yQ2,1,indx_urb)         : )
       xQ3   (1:n) => bus( x( yQ3,1,indx_urb)         : )
@@ -432,18 +328,38 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       xQ5   (1:n) => bus( x( yQ5,1,indx_urb)         : )
       xQ6   (1:n) => bus( x( yQ6,1,indx_urb)         : )
       xQ7   (1:n) => bus( x( yQ7,1,indx_urb)         : )
+
+      xtrad_in       (1:n) => bus( x( yradin,1,1)         : )
+      xtrad_rfsun    (1:n) => bus( x(yradrfsun ,1,1)      : )
+      xtrad_rfshade  (1:n) => bus( x( yradrfshade,1,1)    : )
+      xutci_in      (1:n) => bus( x( yutciin,1,1)        : )
+      xutci_rfsun   (1:n) => bus( x( yutcirfsun,1,1)     : )
+      xutci_rfshade (1:n) => bus( x( yutcirfshade,1,1)   : )
+      xwbgt_rfsun   (1:n) => bus( x( ywbgtrfsun,1,1)     : )
+      xwbgt_rfshade (1:n) => bus( x( ywbgtrfshade,1,1)   : )
+      xutcic_in     (1:n) => bus( x( yutcicin,1,1)       : )
+      xutcic_outsun    (1:n) => bus( x(yutcicsun ,1,1)      : )
+      xutcic_outshade  (1:n) => bus( x(yutcicshade ,1,1)    : )
+      xutcic_rfsun  (1:n) => bus( x(yutcicrfsun ,1,1)    : )
+      xutcic_rfshade(1:n) => bus( x(yutcicrfshade ,1,1)   : )
+      xtglobe_rfsun    (1:n) => bus( x( ytglbrfsun,1,1)         : )
+      xtglobe_rfshade   (1:n) => bus( x( ytglbrfshade,1,1)         : )
+      xtwetb_roof   (1:n) => bus( x( ytwetbrf,1,1)         : )
+      xtrfzt   (1:n) => bus( x( ytrfzt,1,1)         : )
+      xtrdzt   (1:n) => bus( x( ytrdzt,1,1)         : )
+      xurdzu   (1:n) => bus( x( yurdzu,1,1)         : )
       xQ8   (1:n) => bus( x( yQ8,1,1)         : )
       xQ9   (1:n) => bus( x( yQ9,1,1)         : )
       xQ10  (1:n) => bus( x( yQ10,1,1)        : )
       xQ11  (1:n) => bus( x( yQ11,1,1)        : )
       xQ12  (1:n) => bus( x( yQ12,1,1)        : )
       xQ13  (1:n) => bus( x( yQ13,1,1)        : )
-
+      endif IF_THERMAL_STRESS
 
       do i=1,n
     !# in  offline mode no forcing of diffuse (scattered) radiation
     if (atm_external) then
-    !# about 13-15 % (Leroyer et al. 2018, urban climate), we should consider a diurnal cycle sunset/sunrise
+    !# if direct/diffuse solar radiation not in forcing used default partitionning
         zdir_sw  (i,1) = 0.85*psol_sw(i,1)
         zsca_sw  (i,1) = 0.15*psol_sw(i,1)
     else
@@ -526,8 +442,6 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
          zalfaq(i) = -psftq(i)
         if (.not.impflx) zbt(i) = 0.
         if (impflx) then
-!         zalfat(i) = zalfat(i) - zbt(i) * pthetaa(i)
-!         zalfaq(i) = zalfaq(i) - zbt(i) * pqa(i)
          zalfat(i) = zalfat(i) - zbt(i) * pthetaa(i)
          zalfaq(i) = zalfaq(i) - zbt(i) * pqa(i)
         endif
@@ -599,7 +513,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 
       call fillagg ( bus, bussiz, ptsurf, ptsurfsiz, indx_urb, surflen )
 
-!     6. diagnostic variables
+!     Deallocate memory for local variables
       deallocate( xq_town           , stat=alloc_status(1) )
       deallocate( xles_roof         , stat=alloc_status(2) )
       deallocate( xrunoff_roof      , stat=alloc_status(3) )
@@ -620,50 +534,6 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       deallocate( xch               , stat=alloc_status(18) )
       deallocate( xri               , stat=alloc_status(19) )
       deallocate( xustar            , stat=alloc_status(20) )
-      deallocate( xz0_roof          , stat=alloc_status(21) )
-      deallocate( xz0_road          , stat=alloc_status(22) )
-!     7. heat-stress indices
-      deallocate( XTRAD_IN        ,stat=alloc_status(23)  )
-      deallocate( XTRAD_SUN      ,stat=alloc_status(24)   )
-      deallocate( XTRAD_SHADE     ,stat=alloc_status(25)  )
-      deallocate( XTRAD_RFSUN      ,stat=alloc_status(26) )
-      deallocate( XTRAD_RFSHADE    ,stat=alloc_status(27) )
-      deallocate( XUTCI_IN        ,stat=alloc_status(28)  )
-      deallocate( XUTCI_OUTSUN     ,stat=alloc_status(29) )
-      deallocate( XUTCI_OUTSHADE   ,stat=alloc_status(30) )
-      deallocate( XUTCI_RFSUN     ,stat=alloc_status(31)  )
-      deallocate( XUTCI_RFSHADE    ,stat=alloc_status(32) )
-      deallocate( XWBGT_OUTSUN     ,stat=alloc_status(33) )
-      deallocate( XWBGT_OUTSHADE   ,stat=alloc_status(34) )
-      deallocate( XWBGT_RFSUN     ,stat=alloc_status(35)  )
-      deallocate( XWBGT_RFSHADE    ,stat=alloc_status(36) )
-      deallocate( XUTCIC_IN        ,stat=alloc_status(37))
-      deallocate( XUTCIC_OUTSUN    ,stat=alloc_status(38) )
-      deallocate( XUTCIC_OUTSHADE  ,stat=alloc_status(39) )
-      deallocate( XUTCIC_RFSUN     ,stat=alloc_status(40) )
-      deallocate( XUTCIC_RFSHADE   ,stat=alloc_status(41) )
-      deallocate( XTGLOBE_SUN      ,stat=alloc_status(42) )
-      deallocate( XTGLOBE_SHADE    ,stat=alloc_status(43) )
-      deallocate( XTGLOBE_RFSUN    ,stat=alloc_status(44) )
-      deallocate( XTGLOBE_RFSHADE  ,stat=alloc_status(45) )
-      deallocate( XTWETB           ,stat=alloc_status(46) )
-      deallocate( XTWETB_ROOF      ,stat=alloc_status(47) )
-      deallocate( XTRFZT          ,stat=alloc_status(48) )
-      deallocate( XTRDZT          ,stat=alloc_status(49) )
-      deallocate( XURDZU          ,stat=alloc_status(50) )
-      deallocate( XQ1          ,stat=alloc_status(51) )
-      deallocate( XQ2          ,stat=alloc_status(52) )
-      deallocate( XQ3          ,stat=alloc_status(53) )
-      deallocate( XQ4          ,stat=alloc_status(54) )
-      deallocate( XQ5          ,stat=alloc_status(55) )
-      deallocate( XQ6          ,stat=alloc_status(56) )
-      deallocate( XQ7          ,stat=alloc_status(57) )
-      deallocate( XQ8          ,stat=alloc_status(58) )
-      deallocate( XQ9          ,stat=alloc_status(59) )
-      deallocate( XQ10         ,stat=alloc_status(60) )
-      deallocate( XQ11         ,stat=alloc_status(61) )
-      deallocate( XQ12         ,stat=alloc_status(62) )
-      deallocate( XQ13         ,stat=alloc_status(63) )
 
       !--------------------------------------------------------------------
    return

@@ -17,8 +17,7 @@ module tendency
 contains
 
    !/@*
-   subroutine tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        pvars, rcdt1, kount, ni, nk)
+   subroutine tendency5(pvars, dt, kount, ni, nk)
       use phy_options
       use phybusidx
       use phymem, only: phyvar
@@ -31,9 +30,8 @@ contains
       !@Arguments
 
       integer, intent(in) :: kount, ni, nk
-      real, dimension(ni,nk), intent(in) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
       type(phyvar), pointer, contiguous :: pvars(:)
-      real, intent(in)  :: rcdt1
+      real, intent(in)  :: dt
 
       ! ni       horizontal running length
       ! nk       vertical dimension
@@ -48,7 +46,11 @@ contains
 #include <rmn/msg.h>
 
       integer :: i, k
-      real, pointer, dimension(:,:), contiguous :: zhuphytd, zhuplus, zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus
+      real :: rcdt1
+      real, pointer, dimension(:,:), contiguous :: zhuphytd, zhuplus, &
+           zqcphytd, zqcplus, zqdifv, ztdifv, ztphytd, ztplus, zuphytd, &
+           zudifv, zuplus, zvphytd, zvdifv, zvplus, zwphytd, zwplus, &
+           zuplus0, zvplus0, zwplus0, ztplus0, zhuplus0, zqcplus0
       !-------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'tendency [BEGIN]')
       if (timings_L) call timing_start_omp(450, 'tendency', 46)
@@ -70,48 +72,42 @@ contains
       MKPTR2D(zwphytd , wphytd, pvars)
       MKPTR2D(zwplus  , wplus, pvars)
 
-      do k=1,nk
-         do i=1,ni
-            zuphytd (i,k) = (zuplus (i,k) - uplus0 (i,k)) * rcdt1
-            zvphytd (i,k) = (zvplus (i,k) - vplus0 (i,k)) * rcdt1
-            ztphytd (i,k) = (ztplus (i,k) - tplus0 (i,k)) * rcdt1
-            zhuphytd(i,k) = (zhuplus(i,k) - huplus0(i,k)) * rcdt1
-         enddo
-      enddo
+      MKPTR2D(zqcplus0, qcplus0, pvars)
+      MKPTR2D(zhuplus0, huplus0, pvars)
+      MKPTR2D(zuplus0,  uplus0, pvars)
+      MKPTR2D(zvplus0,  vplus0, pvars)
+      MKPTR2D(ztplus0,  tplus0, pvars)
+      MKPTR2D(zwplus0,  wplus0, pvars)
 
-      if (associated(zqcphytd)) then
-         do k=1,nk
-            do i=1,ni
-               zqcphytd(i,k) = (zqcplus(i,k) - qcplus0(i,k)) * rcdt1
-            enddo
-         enddo
+      rcdt1 = 1. / dt
+      
+      if (associated(zuphytd) .and. associated(zuplus0) .and. (ISREQSTEP('UPHY') .or. ISREQOUT('UPHM'))) then
+         zuphytd = (zuplus - zuplus0) * rcdt1
+         zuphytd(:,nk) = zudifv(:,nk)
       endif
-
-      if (diffuw) then
-         do k=1,nk
-            do i=1,ni
-               zwphytd(i,k)  = (zwplus(i,k) - wplus0(i,k)) * rcdt1
-            enddo
-         enddo
+      if (associated(zvphytd) .and. associated(zvplus0) .and. (ISREQSTEP('VPHY') .or. ISREQOUT('VPHM'))) then
+         zvphytd = (zvplus - zvplus0) * rcdt1
+         zvphytd(:,nk) = zvdifv(:,nk)
       endif
-
-      do i=1,ni
-         zuphytd (i,nk) = zudifv(i,nk)
-         zvphytd (i,nk) = zvdifv(i,nk)
-         ztphytd (i,nk) = ztdifv(i,nk)
-         zhuphytd(i,nk) = zqdifv(i,nk)
-      end do
+      if (associated(ztphytd) .and. associated(ztplus0) .and. (ISREQSTEP('TPHY') .or. ISREQOUT('TPHM'))) then
+         ztphytd = (ztplus - ztplus0) * rcdt1
+         ztphytd (:,nk) = ztdifv(:,nk)
+      endif
+      if (associated(zhuphytd) .and. associated(zhuplus0) .and. (ISREQSTEP('QPHY') .or. ISREQOUT('QPHM'))) then
+         zhuphytd = (zhuplus - zhuplus0) * rcdt1
+         zhuphytd(:,nk) = zqdifv(:,nk)
+      endif
+      if (associated(zqcphytd) .and. associated(zqcplus0)) &
+           zqcphytd = (zqcplus - zqcplus0) * rcdt1
+      if (diffuw .and. associated(zwphytd) .and. associated(zwplus0) .and. ISREQSTEP('WPHY')) &
+           zwphytd  = (zwplus - zwplus0) * rcdt1
 
       if (ptp_L .and. kount >= 1) then
-         do k=1,nk
-            do i=1,ni
-               zuplus (i,k) = uplus0 (i,k)
-               zvplus (i,k) = vplus0 (i,k)
-               ztplus (i,k) = tplus0 (i,k)
-               !       zhuplus(i,k) = huplus0(i,k)
-               !       zqcplus(i,k) = qcplus0(i,k)
-            enddo
-         enddo
+         if (associated(zuplus0)) zuplus = zuplus0
+         if (associated(zvplus0)) zvplus = zvplus0
+         if (associated(ztplus0)) ztplus = ztplus0
+         ! if (associated(zhuplus0)) zhuplus = zhuplus0
+         ! if (associated(zqcplus0)) zcqplus = zcqplus0
       endif
 
       if (timings_L) call timing_stop_omp(450)

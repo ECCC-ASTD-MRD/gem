@@ -70,12 +70,12 @@
 !               ------------
 !
 USE MODD_CSTS,       ONLY : XTT, XCI, XRHOLI, XRHOLW, XCPD, XLSTT, XLMTT, XDAY, XCONDI
-USE MODD_SNOW_PAR,   ONLY : XEMISSN, SWE_CRIT
+USE MODD_SNOW_PAR_TEB,   ONLY : XEMISSN, SWE_CRIT
 !
 USE MODE_THERMOS
 !
 USE MODI_SURFACE_RI
-USE MODI_SURFACE_AERO_COND
+USE MODI_SURFACE_AERO_COND_TEB
 !
 implicit none
 !!!#include <arch_specific.hf>
@@ -265,7 +265,7 @@ CALL SURFACE_RI(ZTS_SNOW, ZQSAT, ZEXNS, ZEXNA, PTA, PQA, &
 !*      1.3.4  Aerodynamical conductance
 !              -------------------------
 !
-CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, PVMOD, ZZ0, ZZ0H, ZAC)
+CALL SURFACE_AERO_COND_TEB(ZRI, PZREF, PUREF, PVMOD, ZZ0, ZZ0H, ZAC)
 !
 !-------------------------------------------------------------------------------
 
@@ -438,7 +438,7 @@ WHERE (GFLUXMASK(:))
 !
 END WHERE
 !
-!*      5.6    If ground T>0°C, Melting is estimated from conduction heat flux
+!*      5.6    If ground T>0?C, Melting is estimated from conduction heat flux
 !              ---------------------------------------------------------------
 !
 WHERE (GFLUXMASK(:) .AND. PTG(:)>XTT)
