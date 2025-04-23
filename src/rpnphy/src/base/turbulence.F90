@@ -44,7 +44,7 @@ contains
       include "surface.cdk"
 
       ! Internal variables
-      integer :: istat, istat1, j, k
+      integer :: istat, istat1, j, k, i
       real dsig
       real, dimension(ni,nk) :: dkem, dket, rho
       real, dimension(:), pointer, contiguous :: ztsrad, zpplus, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmaskxdt
@@ -104,16 +104,18 @@ contains
          call apply_tendencies(ztplus, zttofd, ztdmaskxdt, ni, nk, nk)
          
          ! Diagnose surface stress
-         zgzmom1 => zgzmom(:,1)
-         zgzmom2 => zgzmom(:,nk-1)
-         do k=1,nk
-            rho(:,k) = zpplus(:) * zsigm(:,k) / (RGASD * ztplus(:,k))
-         enddo
-         istat  = int_profile(zutautofd, -rho*zutofd, zgzmom, zgzmom2, zgzmom1)
-         istat1 = int_profile(zvtautofd, -rho*zvtofd, zgzmom, zgzmom2, zgzmom1)
-         if (istat /= INT_OK .or. istat1 /= INT_OK) then
-            call physeterror('turbulence', 'Problem in int_profile')
-            return
+         if (ISREQSTEPL((/"UTFD", "VTFD"/))) then
+            zgzmom1 => zgzmom(:,1)
+            zgzmom2 => zgzmom(:,nk-1)
+            do k=1,nk
+               rho(:,k) = zpplus(:) * zsigm(:,k) / (RGASD * ztplus(:,k))
+            enddo
+            istat  = int_profile(zutautofd, -rho*zutofd, zgzmom, zgzmom2, zgzmom1)
+            istat1 = int_profile(zvtautofd, -rho*zvtofd, zgzmom, zgzmom2, zgzmom1)
+            if (istat /= INT_OK .or. istat1 /= INT_OK) then
+               call physeterror('turbulence', 'Problem in int_profile')
+               return
+            endif
          endif
 
       endif

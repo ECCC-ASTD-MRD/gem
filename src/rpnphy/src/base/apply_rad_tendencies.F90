@@ -41,7 +41,7 @@ contains
       ! Local variables
       integer :: k
       real, dimension(ni) :: tradmult
-      real, dimension(ni,nkm1) :: qrad, mtrad
+      real, dimension(ni,nkm1) :: qrad, mtrad  !#TODO: use a single tmpvar for both?
       real, dimension(:), pointer, contiguous :: zconerad, zconqrad, ztdmaskxdt, znetrad
       real, dimension(:,:), pointer, contiguous :: ztplus, &
            ztrad, zmrk2, zqccondr, zqcondr, ztcondr

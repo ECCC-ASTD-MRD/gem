@@ -32,6 +32,7 @@ module phymem
    integer, parameter, public :: PHY_STAG_THERMO = 1
    integer, parameter, public :: PHY_STAG_ENERGY = 2
 
+   integer, parameter, public :: PHY_NPATH_MAX = 4
    character(len=*), parameter, public :: PHY_NPATH_DEFAULT='VOI'
    character(len=*), parameter, public :: PHY_BPATH_DEFAULT='VPDE'
 
@@ -187,7 +188,7 @@ contains
       quiet = .false.
       if (present(F_quiet)) quiet = F_quiet
       istat = clib_toupper(busname)
-!!$      if (busname == 'U') busname = 'V'
+      if (busname == 'U') busname = 'V'
       do F_busidx = 1, PHY_NBUSES
          if (busname == PHY_BUSID(F_busidx)) return
       enddo
@@ -314,14 +315,13 @@ contains
       F_istat = PHY_ERROR
       if (.not.isinit) istat = priv_init()
       if (isallocated) then
-         call msg(MSG_ERROR, '(phymem_addvar) Cannot add var after allocation')
+         call physeterror('phymem_add', 'Cannot add var after allocation')
          return
       endif
 
       ibus = phymem_busidx(F_imeta%bus)
       if (ibus < 1 .or. ibus > PHY_NBUSES) then
-         call msg(MSG_ERROR, &
-              '(phymem_add) Unknown bus: '//trim(F_imeta%bus))
+         call physeterror('phymem_add', 'Unknown bus: '//trim(F_imeta%bus))
          return
       endif
       if (nphyvars >= nphyvarsmax) istat = priv_resize(DNVARS)
@@ -332,10 +332,6 @@ contains
       call str_normalize(vmeta%oname)
       call str_normalize(vmeta%vname)
       call str_normalize(vmeta%sname)
-!!$      istat = clib_toupper(vmeta%iname)
-!!$      istat = clib_toupper(vmeta%oname)
-!!$      istat = clib_toupper(vmeta%vname)
-!!$      istat = clib_toupper(vmeta%sname)
       istat = clib_toupper(vmeta%bus)
 
       do n=1,PHY_MAXDEPS
@@ -351,7 +347,10 @@ contains
       vmeta%ni = phydim_ni
 
       istat = priv_checkvar(vmeta)
-      if (istat /= PHY_OK) return
+      if (istat /= PHY_OK) then
+         call physeterror('phymem_add', 'Problem in check var meta')
+         return
+      endif
 
       idxv = nphyvars + 1
       vmeta%idxv = idxv
@@ -364,10 +363,6 @@ contains
       
       pvmetas(idxv) = vmeta
       nphyvars = idxv
-      
-      ! if (F_imeta%flags(1) /= '') then
-      !    print *,'(phymem_add_meta) ',trim(pbuses(ibus)%meta(idxb)%vname),':',trim(pbuses(ibus)%meta(idxb)%flags(1)),':',trim(pbuses(ibus)%meta(idxb)%flags(2))
-      ! endif
       
       F_istat = RMN_OK
       !---------------------------------------------------------------
@@ -396,7 +391,7 @@ contains
       F_istat = PHY_ERROR
       if (.not.isinit) istat = priv_init()
       if (isallocated) then
-         call msg(MSG_ERROR, '(phymem_addvar) Cannot add var after allocation')
+         call physeterror('phymem_add', 'Cannot add var after allocation')
          return
       endif
 
@@ -473,10 +468,6 @@ contains
       endif
       vmeta%outcond_L = any(vmeta%flags == 'DIAG')
 
-      ! if (vmeta%flags(1) /= '') then
-      !    print *,'(phymem_add_string) ',trim(vmeta%vname),':',trim(vmeta%flags(1)),':',trim(vmeta%flags(2))
-      ! endif
-      
       vmeta%nk = phydim_nk
       if (shape == "A") vmeta%nk = 1
 
@@ -516,7 +507,6 @@ contains
          call physeterror('phymem_get_idxv_string', 'Invalid string: '//trim(F_string))
          return
       endif
-!!$      if (vmeta%bus == 'U') vmeta%bus = 'V'
       istat = phymem_find(idxvlist, F_name=vmeta%vname, F_npath='V', F_bpath=vmeta%bus)
       if (istat <= 0) then
          call physeterror('phymem_get_idxv_string', 'Cannot find var for: '//trim(F_string))
@@ -564,7 +554,7 @@ contains
          changed_L = .false.
          DO_IV: do iv = 1, nphyvars
             if (pvmetas(iv)%outcond_L) then
-               vname = pvmetas(iv)%vname ; istat = clib_toupper(vname)  !#TODO: better use all upper *pvmetas%*name... cause problem... check it out
+               vname = pvmetas(iv)%vname ; istat = clib_toupper(vname)
                oname = pvmetas(iv)%oname ; istat = clib_toupper(oname)
                isreq_L = (any(F_outreq_S == vname) .or. any(F_outreq_S == oname) &
                     .or. F_outreq_S(1) == '*')
@@ -593,7 +583,7 @@ contains
       !# Trim pvmetas list with dep conditions
       nphyvars2 = 0
       do iv = 1, nphyvars
-         pvmetas(iv)%ideps = -1  !#TODO: is it usefull to get ideps again?
+         pvmetas(iv)%ideps = -1
          if (pvmetas(iv)%outreq_L .or. .not.pvmetas(iv)%outcond_L) then
             nphyvars2 = nphyvars2 + 1
             if (nphyvars2 /= iv) pvmetas(nphyvars2) = pvmetas(iv)
@@ -725,12 +715,12 @@ contains
       integer :: F_nmatch  !# PHY_ERROR or number of matching vars
       !*@/
       character(len=PHY_NAMELEN) :: name, npath, bpath, fname
-      character(len=2) :: buses(PHY_NBUSES)
+      character(len=2) :: buses(PHY_NBUSES), npathlist(PHY_NPATH_MAX)
       character(len=1024) :: flagstr
       character(len=PHY_NAMELEN) :: flags(PHY_MAXFLAGS)
-      integer :: nflags, nflags2, nbpath, ib, in, iv, ik, slen, iadd, istat, cnt, nnpath, &
-           iaddf, istart, isub, ikk
-      integer, dimension(PHY_MAXFLAGS) :: flen
+      integer :: nflags, nflags2, nbpath, ib, in, iv, iv2, ik, slen, iadd, &
+           istat, cnt, cnt2, nnpath, iaddf, istart, isub, ikk
+      integer :: flen(PHY_MAXFLAGS), idxvlist(nphyvars)
       logical :: match_L, quiet_L
       !---------------------------------------------------------------
       F_nmatch = PHY_ERROR
@@ -799,8 +789,6 @@ contains
          nflags = nflags2
       endif
 
-      !# Loop to search for matching vars
-      cnt  = 0
       buses = ' '
       nbpath = len_trim(bpath)
       do ib = 1, min(nbpath, PHY_NBUSES)
@@ -809,15 +797,99 @@ contains
       
       slen = min(max(1,len_trim(name)+iadd),PHY_NAMELEN)
       nnpath = max(1,len_trim(npath))
-      if (name == ' ') nnpath=1
-      DO_NPATH: do in = 1, nnpath  !#TODO: avoid looping nnpath times
+      npathlist = ' '
+      if (name == ' ') then
+         nnpath = 1
+      else
+         do in = 1, min(nnpath, PHY_NPATH_MAX)
+            npathlist(in) = npath(in:in)
+         enddo
+      endif
+      
+      !# Loop to search for matching vars
+      cnt  = 0
+      DO_PVMETAS1: do iv = 1, nphyvars
+         
+         !# check bus
+         match_L = (nbpath == 0)
+         if (nbpath > 0) then
+            match_L = any(buses == pvmetas(iv)%bus)
+            if (.not.match_L .and. any(buses == 'U')) &
+                 match_L = (pvmetas(iv)%bus == 'V' .and. pvmetas(iv)%reset == 0)
+         endif
+         if (.not.match_L) cycle
+
+         !# check names
+         IF_NAME: if (name /= ' ') then
+            match_L = .false.
+            if (any(npathlist == 'V')) then
+               fname = pvmetas(iv)%vname
+               istart = max(1, len_trim(fname)-isub+1)
+               match_L = (fname(istart:istart+slen-1) == name)
+            endif
+            if ((.not.match_L) .and. any(npathlist == 'I')) then
+               fname = pvmetas(iv)%iname
+               istart = max(1, len_trim(fname)-isub+1)
+               match_L = (fname(istart:istart+slen-1) == name)
+            endif
+            if ((.not.match_L) .and. any(npathlist == 'O')) then
+               fname = pvmetas(iv)%oname
+               istart = max(1, len_trim(fname)-isub+1)
+               match_L = (fname(istart:istart+slen-1) == name)
+            endif
+            if ((.not.match_L) .and. any(npathlist == 'S')) then
+               fname = pvmetas(iv)%sname
+               istart = max(1, len_trim(fname)-isub+1)
+               match_L = (fname(istart:istart+slen-1) == name)
+            endif
+            if (.not.match_L) cycle
+         endif IF_NAME
+
+         !# check flags
+         IF_FLAG: if (nflags > 0) then
+            match_L = .false.
+            do ik = 1, nflags
+               if (flags(ik) == ' ') exit
+               do ikk = 1,size(pvmetas(iv)%flags)
+                  if (pvmetas(iv)%flags(ikk) == ' ') exit
+                  if (flags(ik) == pvmetas(iv)%flags(ikk)(1:flen(ik))) match_L = .true.
+               enddo
+            enddo
+            if (.not.match_L) cycle  
+         endif IF_FLAG
+
+         !# save matched indices
+         cnt = cnt + 1
+         idxvlist(cnt) = iv
+            
+      enddo DO_PVMETAS1
+
+      if (.not.quiet_L .and. cnt > size(F_idxvlist)) then
+         call msg(MSG_WARNING,'(phymem_find) F_idxvlist buffer overflow, returning only first few elements')
+      endif
+
+      if (cnt == 0 .and. .not.quiet_L) call msg(MSG_WARNING, &
+           '(phymem_find) No matching entry found for name='// &
+           trim(name)//', npath='//trim(npath)//', bpath='//trim(bpath)// &
+           ', flags='//trim(flagstr))
+
+      if (cnt <= 1) then
+         F_nmatch = cnt
+         if (cnt == 1) F_idxvlist(1) = idxvlist(1)
+         return
+      endif
+      
+      cnt2  = 0
+      !# Re-order matching vars
+      DO_NPATH: do in = 1, nnpath
 
          DO_BPATH: do ib = 1, max(1, nbpath)
 
-            DO_PVMETAS: do iv = 1, nphyvars
+            DO_IDXVLIST: do iv2 = 1, cnt
+               iv = idxvlist(iv2)
+               
                !# check bus
                match_L = (nbpath == 0)
-!!$               if (nbpath > 0) match_L = (pvmetas(iv)%bus == buses(ib))
                if (nbpath > 0) then
                   if (buses(ib) == 'U') then
                      match_L = (pvmetas(iv)%bus == 'V' .and. pvmetas(iv)%reset == 0)
@@ -825,10 +897,10 @@ contains
                      match_L = (pvmetas(iv)%bus == buses(ib))
                   endif
                endif
-               
                if (.not.match_L) cycle
+               
                !# check names
-               IF_NAME: if (name /= ' ') then
+               IF_NAME1: if (name /= ' ') then
                   match_L = .false.
                   select case (npath(in:in))
                   case ('V')
@@ -846,9 +918,10 @@ contains
                   istart = max(1, len_trim(fname)-isub+1)
                   match_L = (fname(istart:istart+slen-1) == name)  
                   if (.not.match_L) cycle
-               endif IF_NAME
+               endif IF_NAME1
+               
                !# check flags
-               IF_FLAG: if (nflags > 0) then
+               IF_FLAG2: if (nflags > 0) then
                   match_L = .false.
                   do ik = 1, nflags
                      if (flags(ik) == ' ') exit
@@ -858,34 +931,29 @@ contains
                      enddo
                   enddo
                   if (.not.match_L) cycle  
-               endif IF_FLAG
+               endif IF_FLAG2
 
                !# save matched indices
-               if (cnt > 0) then
-                  if (any(iv == F_idxvlist(1:cnt))) cycle
+               if (cnt2 > 0) then
+                  if (any(iv == F_idxvlist(1:cnt2))) cycle
                endif
-               if (cnt >= size(F_idxvlist)) then
+               if (cnt2 >= size(F_idxvlist)) then
                   if (.not.quiet_L) &
                        call msg(MSG_WARNING,'(phymem_find) F_idxvlist buffer overflow')
                   exit
                endif
 
-               cnt = cnt + 1
-               F_idxvlist(cnt) = iv
+               cnt2 = cnt2 + 1
+               F_idxvlist(cnt2) = iv
 
-            enddo DO_PVMETAS
-            if (cnt >= size(F_idxvlist)) exit
+            enddo DO_IDXVLIST
+            if (cnt2 >= size(F_idxvlist)) exit
          enddo DO_BPATH
-         if (cnt >= size(F_idxvlist)) exit
+         if (cnt2 >= size(F_idxvlist)) exit
 
       enddo DO_NPATH
       
-      if (cnt == 0 .and. .not.quiet_L) call msg(MSG_WARNING, &
-           '(phymem_find) No matching entry found for name='// &
-           trim(name)//', npath='//trim(npath)//', bpath='//trim(bpath)// &
-           ', flags='//trim(flagstr))
-
-      F_nmatch = cnt
+      F_nmatch = cnt2
       !---------------------------------------------------------------
       return
    end function phymem_find_idxv
@@ -901,7 +969,7 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      character(len=32) :: msg_S
+      character(len=1024) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       nullify(F_meta)
@@ -931,7 +999,7 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      character(len=32) :: msg_S
+      character(len=1024) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -959,7 +1027,7 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      character(len=32) :: msg_S
+      character(len=1024) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -972,7 +1040,6 @@ contains
          return
       endif
 
-      !#TODO: check which one can be updated, insure consistency...
       pvmetas(F_idxv)%init  = F_meta%init
       pvmetas(F_idxv)%reset = F_meta%reset
       pvmetas(F_idxv)%stag  = F_meta%stag
@@ -1006,7 +1073,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: i0, nikfm, in
-      character(len=32) :: msg_S
+      character(len=1024) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -1045,7 +1112,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: i0, nkf, in, ni
-      character(len=32) :: msg_S
+      character(len=1024) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -1053,11 +1120,11 @@ contains
          return
       endif
       if (F_idxv < 1 .or. F_idxv > nphyvars) then
+         write(msg_S,'(2i6)') F_idxv, nphyvars
          call msg(MSG_ERROR,'(phymem_get) Requested F_idxv out of range: '//msg_S)
          return
       endif
       if (F_trnch < 1 .or. F_trnch > phydim_nj) then
-         write(msg_S,'(2i6)') F_idxv, nphyvars
          call msg(MSG_ERROR,'(phymem_get) Requested F_trnch out of range')
          return
       endif
@@ -1085,7 +1152,7 @@ contains
       integer :: F_istat
       !*@/
       integer :: i0, ni, in, nk, nfm
-      character(len=32) :: msg_S
+      character(len=1024) :: msg_S
       !---------------------------------------------------------------
       F_istat = PHY_ERROR
       if (.not.isallocated) then
@@ -1278,8 +1345,7 @@ contains
             return
          endif
          if (F_meta%desc == pvmetas(n)%desc) then
-            call msg(MSG_ERROR, '(phymem::checkvar) Duplicate entry (desc) for: ('//trim(F_meta%vname)//') '//trim(F_meta%desc))
-            return
+            call msg(MSG_WARNING, '(phymem::checkvar) Duplicate entry (desc) for: ('//trim(F_meta%vname)//') '//trim(F_meta%desc))
          endif
       enddo
       
@@ -1291,6 +1357,7 @@ contains
    
    !/@*
    function priv_find(F_vname) result(F_idxv)
+      implicit none
       character(len=*), intent(in) :: F_vname
       integer :: F_idxv
       !*@/
@@ -1310,6 +1377,7 @@ contains
    
    !/@*
    subroutine priv_init_vlist()
+      implicit none
       !*@/
       integer :: n
       !---------------------------------------------------------------

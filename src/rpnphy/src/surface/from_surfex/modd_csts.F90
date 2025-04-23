@@ -1,18 +1,7 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############
       MODULE MODD_CSTS      
 !     ###############
@@ -44,12 +33,14 @@
 !!      J. Stein    25/07/97  add XTH00                    
 !!      V. Masson   05/10/98  add XRHOLI
 !!      C. Mari     31/10/00  add NDAYSEC
+!!      J. Escobar     06/13  add XSURF_TIMY XSURF_TIMY_12 XSURF_EPSILON for REAL*4
+!!      M. Goret     04/04/17 add NB_MONTH, NB_DAY, NB_HOUR
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
-implicit none
+IMPLICIT NONE 
 REAL,SAVE :: XPI                ! Pi
 !
 REAL,SAVE :: XDAY,XSIYEA,XSIDAY ! day duration, sideral year duration,
@@ -74,6 +65,9 @@ REAL,SAVE :: XCPD,XCPV          ! Cpd (dry air), Cpv (vapor)
 REAL,SAVE :: XRHOLW             ! Volumic mass of liquid water
 REAL,SAVE :: XCL,XCI            ! Cl (liquid), Ci (ice)
 REAL,SAVE :: XTT                ! Triple point temperature
+REAL,SAVE :: XTTSI              ! Temperature of ice fusion over salty sea
+REAL,SAVE :: XTTS               ! Equivalent temperature of ice fusion over a mixed of sea and sea-ice
+REAL,SAVE :: XICEC              ! Threshold fraction over which the tile is considered as only covered with ice
 REAL,SAVE :: XLVTT              ! Vaporization heat constant
 REAL,SAVE :: XLSTT              ! Sublimation heat constant
 REAL,SAVE :: XLMTT              ! Melting heat constant
@@ -85,10 +79,23 @@ REAL,SAVE :: XALPI,XBETAI,XGAMI ! Constants for saturation vapor
                                 !  pressure  function over solid ice
 REAL, SAVE        :: XTH00      ! reference value  for the potential
                                 ! temperature
-REAL,SAVE :: XRHOLI             ! Volumic mass of liquid water
+REAL,SAVE :: XRHOLI             ! Volumic mass of ice
 REAL,SAVE :: XCONDI             ! thermal conductivity of ice (W m-1 K-1)
 !
 INTEGER, SAVE :: NDAYSEC        ! Number of seconds in a day
+INTEGER, PARAMETER :: NB_MONTH  = 12   ! Number of months in one year
+INTEGER, PARAMETER :: NB_DAY    = 7    ! Number of days in one week
+INTEGER, PARAMETER :: NB_HOUR   = 24   ! Number of hours in one day
+INTEGER, PARAMETER, DIMENSION(NB_MONTH) :: NMONTHDAY_NON =(/31,28,31,30,31,30,31,31,30,31,30,31/)
+                                                 !number of day in a month (starting from january)
+                                                 !for a non bissextile year
+INTEGER, PARAMETER, DIMENSION(NB_MONTH) :: NMONTHDAY_BIS =(/31,29,31,30,31,30,31,31,30,31,30,31/)
+                                                 !number of day in a month (starting from january)
+                                                 !for a bissextile year
+!
+REAL,SAVE     :: XSURF_TINY          ! minimum real on this machine
+REAL,SAVE     :: XSURF_TINY_12       ! sqrt(minimum real on this machine)
+REAL,SAVE     :: XSURF_EPSILON       ! minimum space with 1.0
 !
 END MODULE MODD_CSTS
 

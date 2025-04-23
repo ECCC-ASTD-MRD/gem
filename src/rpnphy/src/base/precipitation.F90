@@ -109,15 +109,24 @@ contains
       if (phy_error_L) return
 
       ! Store current state
-      t0(:,:) = ztplus(:,:)
-      q0(:,:) = zhuplus(:,:)
+      if (.not.any(stcond == (/&
+           'MP_MY2 ', &
+           'MP_P3  ', &
+           'MP_P3V3'/))) then
+         t0(:,:) = ztplus(:,:)
+         q0(:,:) = zhuplus(:,:)
+         if (stcond /= 'NIL' .and. associated(zqcplus)) then
+            qc0(:,:) = zqcplus(:,:)
+         else
+            qc0(:,:) = 0.
+         endif
+      endif
+
+      ! Clipping
       where (zhuplus(:,:) < 0.) zhuplus(:,:) = 0.
-      if (stcond /= 'NIL' ) then
-         qc0(:,:) = zqcplus(:,:)
+      if (stcond /= 'NIL') then
          where(zqcplus(:,:) < 0.) zqcplus(:,:) = 0.
          where(zqcmoins(:,:) < 0.) zqcmoins(:,:) = 0.
-      else
-         qc0(:,:) = 0.
       endif
       
       ! Run deep and shallow convective schemes
@@ -138,15 +147,19 @@ contains
          where(press < TOPC)
             zcte = 0.
             zste = 0.
-            zmte = 0.
             zcqe = 0.
             zsqe = 0.
-            zmqe = 0.
             zcqce = 0.
             zsqce = 0.
-            zmqce = 0.
             zsqre = 0.
          endwhere
+         if (conv_mid /= 'NIL') then
+            where(press < TOPC)
+               zmte = 0.
+               zmqe = 0.
+               zmqce = 0.
+            endwhere
+         endif
          if (associated(zprcten)) then
             where(press < TOPC)
                zprcten = 0.
@@ -155,8 +168,12 @@ contains
       endif
 
       ! Sum of convective and stratiform 
-      ztcond(:,1:nkm1) = zcte(:,1:nkm1) + zste(:,1:nkm1) + zmte(:,1:nkm1)
-      zhucond(:,1:nkm1) = zcqe(:,1:nkm1) + zsqe(:,1:nkm1) + zmqe(:,1:nkm1)
+      ztcond(:,1:nkm1) = zcte(:,1:nkm1) + zste(:,1:nkm1)
+      if (associated(zmte)) &
+         ztcond(:,1:nkm1) = ztcond(:,1:nkm1) + zmte(:,1:nkm1)
+      zhucond(:,1:nkm1) = zcqe(:,1:nkm1) + zsqe(:,1:nkm1)
+      if (associated(zmqe)) &
+           zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zmqe(:,1:nkm1)
       if (associated(zqcphytd)) zqcphytd(:,1:nkm1) = 0.
       if (stcond(1:3)=='MP_') then
          ! Use only convective liquid fraction for MP schemes
@@ -204,9 +221,10 @@ contains
            call sc_adjust(ztcondc2, zqcondc2, zqccondc2, pvars, delt, ni, nkm1)
       
       ! Add shallow convection tendencies to convection/condensation tendencies 
-      ztcond(:,1:nkm1) = ztcond(:,1:nkm1) + ztshal(:,1:nkm1)
-      zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zhushal(:,1:nkm1)
-
+      if (associated(ztshal))  ztcond(:,1:nkm1)  = ztcond(:,1:nkm1)  + ztshal(:,1:nkm1)
+      if (associated(zhushal)) zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zhushal(:,1:nkm1)
+      
+           
       ! Convert from flux to liquid-equivalent precipitation rates by dividing by
       ! the density of water
       irhow = 1./RAUW

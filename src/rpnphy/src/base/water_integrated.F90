@@ -35,8 +35,8 @@ contains
     integer, intent(in) :: n, nk
     real, dimension(:,:), intent(in) :: t, hu, lwc, iwc, s
     real, dimension(:), intent(in) :: ps
-    real, dimension(:), intent(out) :: icw, iwv, iwv700, iwp, lwp, &
-         slwp, slwp2, slwp3, slwp4
+    real, pointer, dimension(:) :: icw, iwv, iwv700, iwp, lwp  !# OUT
+    real, pointer, dimension(:) :: slwp, slwp2, slwp3, slwp4   !# OUT
 
     !@Arguments
     !          - Input -
@@ -63,104 +63,102 @@ contains
     integer i,k,im,k1,k2,k3,k4
     real dsg,dpsg,qctemp
     real :: s1=1., s2=0.8, s3=0.6, s4=0.4
-    logical :: scool=.false.
+!!$    logical :: scool=.false.
 #include <rmn/msg.h>
 
     !----------------------------------------------------------------
     call msg_toall(MSG_DEBUG, 'water_integrated [BEGIN]')
     
     !* 1. INITIALIZE OUTPUT FIELDS
-    do i = 1,N
-       ICW (i)   = 0.
-       IWV (i)   = 0.
-       IWV700(i) = 0.
-       IWP (i)   = 0.
-       LWP (i)   = 0.
-       SLWP(i)   = 0.
-       SLWP2(i)  = 0.
-       SLWP3(i)  = 0.
-       SLWP4(i)  = 0.
-    end do
-
-    !* 3. REINITIALIZE FIELDS
-
-    do i = 1,N
-       LWP (i) = 0.
-       IWP (i) = 0.
-    end do
+    if (associated(iwv))    IWV    = 0.
+    if (associated(icw))    ICW    = 0.
+    if (associated(iwv700)) IWV700 = 0.
+    if (associated(iwp))    IWP    = 0.
+    if (associated(lwp))    LWP    = 0.
+    if (associated(slwp))   SLWP   = 0.
+!!$    if (associated(slwp2))  SLWP2  = 0.
+!!$    if (associated(slwp3))  SLWP3  = 0.
+!!$    if (associated(slwp4))  SLWP4  = 0.
 
     !* 4. SUPERCOOLED LIQUID WATER by layers
 
-    if (scool) then
-
-       !     Find k1, k2, k3 and k4 from s1, s2, s3 and s4
-
-       im = int(N/2 + 1)
-
-       do k = 1,NK
-          if (s(im,k) .gt. s4) go to 200
-       end do
-200    continue
-       k4 = k-1
-
-       do k = k4+1,NK
-          if (s(im,k) .gt. s3) go to 300
-       end do
-300    continue
-       k3 = k-1
-
-       do k = k3+1,NK
-          if (s(im,k) .gt. s2) go to 400
-       end do
-400    continue
-       k2 = k-1
-
-       if (s1 .eq. 1.) then
-          k1 = NK
-       else
-          do k = k1+1,NK
-             if (s(im,k) .gt. s1) go to 500
-          end do
-500       continue
-          k1 = min(NK,k-1)
-       end if
-
-       do i = 1,N
-          do k = k2+1,k1
-             if ( T(i,k) .lt. tcdk) then
-                dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
-                if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
-                dpsg = max(ps(i)*dsg/grav,0.)
-                qctemp  = (max( LWC(i,k), 0. ))*dpsg
-                SLWP2 (i)= SLWP2(i) + qctemp
-             end if
-          end do
-       end do
-
-       do i = 1,N
-          do k = k3+1,k2
-             if ( T(i,k) .lt. tcdk) then
-                dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
-                if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
-                dpsg = max(ps(i)*dsg/grav,0.)
-                qctemp  = (max( LWC(i,k), 0. ))*dpsg
-                SLWP3 (i)= SLWP3(i) + qctemp
-             end if
-          end do
-       end do
-
-       do i = 1,N
-          do k = k4+1,k3
-             if ( T(i,k) .lt. tcdk) then
-                dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
-                if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
-                dpsg = max(ps(i)*dsg/grav,0.)
-                qctemp  = (max( LWC(i,k), 0. ))*dpsg
-                SLWP4 (i)= SLWP4(i) + qctemp
-             end if
-          end do
-       end do
-    end if
+!!$    IF_SCOOL: if (scool) then
+!!$
+!!$       !     Find k1, k2, k3 and k4 from s1, s2, s3 and s4
+!!$
+!!$       im = int(N/2 + 1)
+!!$
+!!$       do k = 1,NK
+!!$          if (s(im,k) .gt. s4) go to 200
+!!$       end do
+!!$200    continue
+!!$       k4 = k-1
+!!$
+!!$       do k = k4+1,NK
+!!$          if (s(im,k) .gt. s3) go to 300
+!!$       end do
+!!$300    continue
+!!$       k3 = k-1
+!!$
+!!$       do k = k3+1,NK
+!!$          if (s(im,k) .gt. s2) go to 400
+!!$       end do
+!!$400    continue
+!!$       k2 = k-1
+!!$
+!!$       if (s1 .eq. 1.) then
+!!$          k1 = NK
+!!$       else
+!!$          do k = k1+1,NK
+!!$             if (s(im,k) .gt. s1) go to 500
+!!$          end do
+!!$500       continue
+!!$          k1 = min(NK,k-1)
+!!$       end if
+!!$
+!!$       if (associated(slwp2)) then
+!!$          do i = 1,N
+!!$             do k = k2+1,k1
+!!$                if ( T(i,k) .lt. tcdk) then
+!!$                   dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
+!!$                   if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
+!!$                   dpsg = max(ps(i)*dsg/grav,0.)
+!!$                   qctemp  = (max( LWC(i,k), 0. ))*dpsg
+!!$                   SLWP2 (i)= SLWP2(i) + qctemp
+!!$                end if
+!!$             end do
+!!$          end do
+!!$       endif
+!!$
+!!$       if (associated(slwp3)) then
+!!$          do i = 1,N
+!!$             do k = k3+1,k2
+!!$                if ( T(i,k) .lt. tcdk) then
+!!$                   dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
+!!$                   if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
+!!$                   dpsg = max(ps(i)*dsg/grav,0.)
+!!$                   qctemp  = (max( LWC(i,k), 0. ))*dpsg
+!!$                   SLWP3 (i)= SLWP3(i) + qctemp
+!!$                end if
+!!$             end do
+!!$          end do
+!!$       endif
+!!$
+!!$       if (associated(slwp4)) then
+!!$          do i = 1,N
+!!$             do k = k4+1,k3
+!!$                if ( T(i,k) .lt. tcdk) then
+!!$                   dsg = 0.5 * ( s(i,min(k+1,NK)) - s(i,max(k-1,1)) )
+!!$                   if (k.eq.NK) dsg = 1. - 0.5 * ( s(i,NK) + s(i,NK-1))
+!!$                   dpsg = max(ps(i)*dsg/grav,0.)
+!!$                   qctemp  = (max( LWC(i,k), 0. ))*dpsg
+!!$                   SLWP4 (i)= SLWP4(i) + qctemp
+!!$                end if
+!!$             end do
+!!$          end do
+!!$       end if
+!!$       
+!!$    endif IF_SCOOL
 
     !* 5. VERTICAL INTEGRALS of TOTAL CONDENSATE (ICW), VAPOR (IWV),
     !     VAPOR from top to 700 mb (IWV700),SOLID (IWP),
@@ -169,40 +167,47 @@ contains
     do i = 1, N
        dsg= 0.5 * ( s(i,2) - s(i,1) )
        dpsg= ps(i)*dsg/grav
-       IWV(i) = IWV(i) + max( HU(i,1) , 0. ) * dpsg
-       IWV700(i) = IWV700(i) + max( HU(i,1) , 0. ) * dpsg
+       if (associated(iwv)) IWV(i) = IWV(i) + max( HU(i,1) , 0. ) * dpsg
+       if (associated(IWV700)) IWV700(i) = IWV700(i) + max( HU(i,1) , 0. ) * dpsg
        qctemp = max(LWC(i,1) , 0. ) * dpsg
-       LWP (i)= LWP(i) + qctemp
-       if (T(i,1).lt.tcdk) SLWP (i) =  SLWP(i) + qctemp
-       IWP(i) = IWP(i) + max(IWC(i,1) , 0. ) * dpsg
+       if (associated(lwp)) LWP(i) = LWP(i) + qctemp
+       if (associated(slwp)) then
+          if (T(i,1).lt.tcdk ) SLWP(i) =  SLWP(i) + qctemp
+       endif
+       if (associated(iwp)) IWP(i) = IWP(i) + max(IWC(i,1) , 0. ) * dpsg
     end do
 
     do k = 2,NK-1
        do i = 1 , N
           dsg= 0.5 * ( s(i,k+1) - s(i,k-1) )
           dpsg= ps(i)*dsg/grav
-          IWV(i) = IWV(i) + max( HU(i,k) , 0. ) * dpsg
-          if ((s(i,k)*ps(i)) .lt. 70000.)IWV700(i)=IWV700(i)+max(HU(i,k),0.)*dpsg
+          if (associated(iwv)) IWV(i) = IWV(i) + max( HU(i,k) , 0. ) * dpsg
+          if (associated(IWV700)) then
+             if ((s(i,k)*ps(i)) .lt. 70000.) &
+                  IWV700(i) = IWV700(i)+max(HU(i,k),0.)*dpsg
+          endif
           qctemp = max(LWC(i,k) , 0. ) * dpsg
-          LWP (i)= LWP(i) + qctemp
-          if (T(i,k).lt.tcdk) SLWP (i)= SLWP(i) + qctemp
-          IWP(i) = IWP(i) + max(IWC(i,k) , 0. ) * dpsg
+          if (associated(lwp)) LWP(i) = LWP(i) + qctemp
+          if (associated(slwp)) then
+             if (T(i,k).lt.tcdk) SLWP(i) = SLWP(i) + qctemp
+          endif
+          if (associated(iwp)) IWP(i) = IWP(i) + max(IWC(i,k) , 0. ) * dpsg
        end do
     end do
 
     do i = 1, N
        dsg= 1. - 0.5 * ( s(i,NK) + s(i,NK-1) )
        dpsg= ps(i)*dsg/grav
-       IWV(i) = IWV(i) + max( HU(i,NK) , 0. ) * dpsg
+       if (associated(iwv)) IWV(i) = IWV(i) + max( HU(i,NK) , 0. ) * dpsg
        qctemp = max(LWC(i,NK) , 0. ) * dpsg
-       LWP (i)= LWP(i) + qctemp
-       if (T(i,NK).lt.tcdk) SLWP (i)= SLWP(i) + qctemp
-       IWP(i) = IWP(i) + max(IWC(i,NK) , 0. ) * dpsg
+       if (associated(lwp)) LWP(i) = LWP(i) + qctemp
+       if (associated(slwp)) then
+          if (T(i,NK).lt.tcdk) SLWP(i) = SLWP(i) + qctemp
+       endif
+       if (associated(iwp)) IWP(i) = IWP(i) + max(IWC(i,NK) , 0. ) * dpsg
     end do
 
-    do i = 1, N
-       ICW(i)  = LWP(i) + IWP(i)
-    end do
+    if (associated(icw)) ICW = LWP + IWP
 
     call msg_toall(MSG_DEBUG, 'water_integrated [END]')
     !----------------------------------------------------------------

@@ -59,7 +59,7 @@ CONTAINS
       FUNCTION SNOW_FRAC_GROUND(PWSNOW) RESULT(PPSNG)
 !     ###############################################
 !
-USE MODD_SNOW_PAR, ONLY : XWCRN
+USE MODD_SNOW_PAR_TEB, ONLY : XWCRN
 implicit none
 !!!#include <arch_specific.hf>
 !
@@ -76,7 +76,7 @@ END FUNCTION SNOW_FRAC_GROUND
       FUNCTION WSNOW_FROM_SNOW_FRAC_GROUND(PPSNG) RESULT(PWSNOW)
 !     ##########################################################
 !
-USE MODD_SNOW_PAR, ONLY : XWCRN
+USE MODD_SNOW_PAR_TEB, ONLY : XWCRN
 implicit none
 !!!#include <arch_specific.hf>
 !
@@ -131,7 +131,7 @@ END FUNCTION SNOW_FRAC_NAT
       SUBROUTINE SNOW_FRAC_ROAD(PWSNOW_ROAD,OSNOW,PDN_ROAD,PDF_ROAD)
 !     ##############################################################
 !
-USE MODD_SNOW_PAR, ONLY : XWCRN
+USE MODD_SNOW_PAR_TEB, ONLY : XWCRN
 !!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW_ROAD ! snow amount over roads (kg/m2) 
@@ -159,7 +159,7 @@ END SUBROUTINE SNOW_FRAC_ROAD
       SUBROUTINE SNOW_FRAC_ROOF(PWSNOW_ROOF,OSNOW,PDN_ROOF,PDF_ROOF)
 !     ##############################################################
 !
-USE MODD_SNOW_PAR, ONLY : XWCRN
+USE MODD_SNOW_PAR_TEB, ONLY : XWCRN
 !!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW_ROOF ! snow amount over roofs (kg/m2) 

@@ -99,6 +99,23 @@ module sfc_options
    real :: dp_svs(MAX_NL_SVS) = -1.0
    namelist /surface_cfgs/ dp_svs
 
+
+   !# (SVS2) Option for the turbulent fluxes in Crocus
+   !# * 'DEF' : Default: Louis (ISBA: Noilhan and Mahfouf 1996)
+   !# * 'RIL' : Limit Richarson number under very stable conditions to 0.2 (currently testing)
+   !# * 'RI1' : Limit Richarson number under very stable conditions to 0.1
+   !# * 'RI2' : Limit Richarson number under very stable conditions to 0.026
+   !# * 'M98' : Martin et Lejeune 1998 : older computation for turbulent fluxes coefficents in Crocus   
+   character(len=16) :: hsnowres = 'RIL'
+   namelist /surface_cfgs/ hsnowres
+   character(len=*), parameter :: HSNOWRES_OPT(5) = (/ &
+        'DEF',  &
+        'RIL',  &  
+        'RI1',  &  
+        'RI2',  &  
+        'M98'   &  
+         /)
+
    !# Emissivity for ice (glacier and sea ice)
    !# * '_constant_' : A fixed floating point value used as a constant
    character(len=16) :: ice_emiss = '0.99'

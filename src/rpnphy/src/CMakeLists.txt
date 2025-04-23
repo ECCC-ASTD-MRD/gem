@@ -5,7 +5,7 @@ if (MPI_FOUND)
    set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 endif()
 
-file(GLOB F_FILES main/*.F90 api/*.F90 base/*.F90 series/*.F90 surface/*.F90 utils/*.F90 ${MACH_FILES})
+file(GLOB F_FILES main/*.F90 api/*.F90 base/*.F90 series/*.F90 surface/*.F90 surface/from_surfex/*.F90 utils/*.F90 ${MACH_FILES})
 list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*")
 if(WITH_NEMO)
   file(GLOB CPLOCN_SOURCES ${CPLOCN_GLOB})
@@ -17,7 +17,7 @@ set(PROJECT_INCLUDE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 
 add_library(rpnphy STATIC ${F_FILES})
 
-target_compile_definitions(rpnphy PUBLIC ECCCGEM)
+target_compile_definitions(rpnphy PUBLIC ECCCGEM CROCUS_EXT)
 if (WITH_MACH)
    target_compile_definitions(rpnphy PUBLIC HAVE_MACH)
    message(STATUS "(EC) rpnphy compile definition: HAVE_MACH")

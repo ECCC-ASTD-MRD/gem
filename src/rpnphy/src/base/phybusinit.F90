@@ -48,7 +48,7 @@ subroutine phybusinit(ni,nk)
    logical :: lkfbe, lshal, lshbkf, lmid
    logical :: lmoistke, lrpnint
    logical :: lmoyhr, lmoyhrkf, lmoykfsh, lmoymid
-   logical :: lgwdsm
+   logical :: lgwdsm, lgwd, ltofd
    logical :: lccc2
    logical :: lghg, ltrigtau
    logical :: liuv
@@ -56,7 +56,7 @@ subroutine phybusinit(ni,nk)
    logical :: lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly, lwindgust
-   logical :: lpcp_frac, ladvzn, ls2, lmp
+   logical :: lpcp_frac, ladvzn, ls2, lmp, lcsun
    !---------------------------------------------------------------------
 
    ier = phymem_init()
@@ -90,7 +90,8 @@ subroutine phybusinit(ni,nk)
    endif
    
    lbourg3d= (pcptype == 'BOURGE3D')
-   lgwdsm  = (sgo_tdfilter > 0.)
+   lgwdsm  = (gwdrag /= 'NIL' .and. sgo_tdfilter > 0.)
+   lgwd    = (gwdrag /= 'NIL')
    lmoyhr  = (moyhr > 0 .or. dynout)
    lkfbe   = any(convec == (/ &
         'BECHTOLD', &
@@ -111,10 +112,12 @@ subroutine phybusinit(ni,nk)
         'SPS_H13'  &
         /))
    lrpnint = (fluvert == 'RPNINT')
+   lmoistke = (fluvert == 'MOISTKE')
    ladvzn  = (advectke .and. lrpnint)
    lccc2   = (radia == 'CCCMARAD2')
    lghg    = (lccc2 .and. radghg_L)
    ls2     = (stcond == 'S2')
+   lcsun   = (stcond == 'CONSUN')
    lmp     = (stcond(1:3) == 'MP_')
 
    ! Compute linoz diags only on demand
@@ -137,7 +140,7 @@ subroutine phybusinit(ni,nk)
       /))
       if (out_linoz) exit
    enddo
-   out_linoz = (out_linoz .or. debug_alldiag_L)
+   out_linoz = (out_linoz .or. debug_alldiag_L .or. nphyoutlist < 0)
    
    llinozage = (llinoz .and. age_linoz)              ! age of air tracer off 
    llinozout = (llinoz .and. out_linoz)
@@ -156,6 +159,7 @@ subroutine phybusinit(ni,nk)
    if (lsurfonly) dwwz = 'd0'
    psss = 'p0'
    if (tofd /= 'NIL') psss = 'p1'
+   ltofd = (tofd /= 'NIL')
    lpcp_frac = lsurfonly .and. (pcptype == 'SPS_FRC')
 
 
@@ -171,7 +175,7 @@ subroutine phybusinit(ni,nk)
            )) ebdiag = .true.
       i = i+1
    enddo
-   ebdiag = (ebdiag .or. debug_alldiag_L)
+   ebdiag = (ebdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
 
    ! Activate ECMWF diagnostics only if outputs are requested by the user
    i = 1
@@ -182,7 +186,7 @@ subroutine phybusinit(ni,nk)
            /))) ecdiag = .true.
       i = i+1
    enddo
-   ecdiag = (ecdiag .or. debug_alldiag_L)
+   ecdiag = (ecdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
 
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
@@ -195,7 +199,7 @@ subroutine phybusinit(ni,nk)
               /))) llight = .true.
          i = i+1
       enddo
-      llight = (llight .or. debug_alldiag_L)
+      llight = (llight .or. debug_alldiag_L .or. nphyoutlist < 0)
    endif
    
    ! Activate refractivity diagnostics only if outputs are requested by the user
@@ -214,7 +218,7 @@ subroutine phybusinit(ni,nk)
            /))) lrefract = .true.
       i = i+1
    enddo
-   lrefract = (lrefract .or. debug_alldiag_L)
+   lrefract = (lrefract .or. debug_alldiag_L .or. nphyoutlist < 0)
 
    ! Activate wind gust estimate only if outputs are requested by the user
    lwindgust = .false.
@@ -228,7 +232,7 @@ subroutine phybusinit(ni,nk)
            /))) lwindgust = .true.
       i = i+1
    enddo
-   lwindgust = (lwindgust .or. debug_alldiag_L)
+   lwindgust = (lwindgust .or. debug_alldiag_L .or. nphyoutlist < 0)
    
    ! Activate energy budget diagnostics only if outputs are requested by the user
    lcons = .false.
@@ -262,7 +266,7 @@ subroutine phybusinit(ni,nk)
            /))) lcons = .true.
       i = i+1
    enddo
-   lcons = (lcons .or. debug_alldiag_L)
+   lcons = (lcons .or. debug_alldiag_L .or. nphyoutlist < 0)
    lmoycons = (lcons .and. lmoyhr)
 
    etccdiag = .false.
@@ -274,7 +278,7 @@ subroutine phybusinit(ni,nk)
            /))) etccdiag = .true.
       i = i+1
    enddo
-   etccdiag = (etccdiag .or. debug_alldiag_L)
+   etccdiag = (etccdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
    
    etccdiagout = .false.
    i = 1
@@ -285,7 +289,7 @@ subroutine phybusinit(ni,nk)
            /))) etccdiagout = .true.
       i = i+1
    enddo
-   etccdiagout = (etccdiagout .or. debug_alldiag_L)
+   etccdiagout = (etccdiagout .or. debug_alldiag_L .or. nphyoutlist < 0)
 
    
    lhn_init = (lhn /= 'NIL')
@@ -306,7 +310,7 @@ subroutine phybusinit(ni,nk)
          i = i+1
       enddo
    endif
-   cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L)
+   cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L .or. nphyoutlist < 0)
 
 #include "phymkptr.hf"
 #include "phyvar.hf"
@@ -320,7 +324,7 @@ subroutine phybusinit(ni,nk)
 #endif
 
    !#NOTE: phymem_alloc must be done before any call to phymem_find
-   if (debug_alldiag_L) then
+   if (debug_alldiag_L .or. nphyoutlist < 0) then
       ier = phymem_alloc(debug_mem_L, (/'*'/))
    else
       ier = phymem_alloc(debug_mem_L, phyoutlist_S)

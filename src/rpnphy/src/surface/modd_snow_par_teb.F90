@@ -14,10 +14,10 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !     ######################
-      MODULE MODD_SNOW_PAR
+      MODULE MODD_SNOW_PAR_TEB
 !     ######################
 !
-!!****  *MODD_SNOW_PAR* - declaration of parameters related
+!!****  *MODD_SNOW_PAR_TEB* - declaration of parameters related
 !!                          to the snow parameterization
 !!
 !!    PURPOSE
@@ -40,7 +40,8 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original       01/2004                    
+!!      Original       01/2004
+!!      Rename with _teb to avoid confusion  with updated Surfex version of this module  M. Abrahamowicz 01/2025
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -114,7 +115,7 @@ REAL, PARAMETER                      :: XWSNOWHOLDMAX2   = 0.10  ! (-)
 REAL, PARAMETER                      :: XWSNOWHOLDMAX1   = 0.03  ! (-)
 REAL, PARAMETER                      :: XSNOWRHOHOLD     = 200.0 ! (kg/m3)
 !
-END MODULE MODD_SNOW_PAR
+END MODULE MODD_SNOW_PAR_TEB
 
 
 

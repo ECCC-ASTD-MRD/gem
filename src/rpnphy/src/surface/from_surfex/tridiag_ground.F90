@@ -1,19 +1,8 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!      #########################################
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+!     #########
        SUBROUTINE TRIDIAG_GROUND(PA,PB,PC,PY,PX)
 !      #########################################
 !
@@ -69,13 +58,17 @@
 !!     MODIFICATIONS
 !!     -------------
 !!       Original        May 13, 1998
+!!       Modified :
+!!       B. Decharme  08/12 Loop optimization
 !! ---------------------------------------------------------------------
 !
 !*       0. DECLARATIONS
 !
 !
-implicit none
-!!!#include <arch_specific.hf>
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
 !
 !
 !*       0.1 declarations of arguments
@@ -89,14 +82,19 @@ REAL,    DIMENSION(:,:), INTENT(OUT) :: PX  ! solution of A.X = Y
 !
 !*       0.2 declarations of local variables
 !
+INTEGER           :: JI             ! number of point loop control
 INTEGER           :: JK             ! vertical loop control
-INTEGER           :: IN             ! number of vertical levels
+INTEGER           :: INI            ! number of point
+INTEGER           :: INL            ! number of vertical levels
 !
 REAL, DIMENSION(SIZE(PA,1)           ) :: ZDET ! work array
 REAL, DIMENSION(SIZE(PA,1),SIZE(PA,2)) :: ZW   ! work array
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 ! ---------------------------------------------------------------------------
 !
-IN=SIZE(PX,2)
+IF (LHOOK) CALL DR_HOOK('TRIDIAG_GROUND',0,ZHOOK_HANDLE)
+INI=SIZE(PX,1)
+INL=SIZE(PX,2)
 !
 !*       1.  levels going up
 !            ---------------
@@ -111,11 +109,12 @@ PX  (:,1) = PY(:,1) / ZDET(:)
 !*       1.2 other levels
 !            ------------
 !
-DO JK=2,IN
-  ZW(:,JK)    = PC(:,JK-1)/ZDET(:)
-  ZDET(:)       = PB(:,JK  ) - PA(:,JK)*ZW(:,JK)
-
-  PX  (:,JK)    = ( PY(:,JK) - PA(:,JK)*PX(:,JK-1) ) / ZDET(:)
+DO JK=2,INL
+   DO JI=1,INI
+      ZW  (JI,JK)  = PC(JI,JK-1)/ZDET(JI)
+      ZDET(JI)     = PB(JI,JK  ) - PA(JI,JK)*ZW(JI,JK)
+      PX  (JI,JK)  = ( PY(JI,JK) - PA(JI,JK)*PX(JI,JK-1) ) / ZDET(JI)
+   END DO
 END DO
 !
 !-------------------------------------------------------------------------------
@@ -123,9 +122,12 @@ END DO
 !*       2.  levels going down
 !            -----------------
 !
-DO JK=IN-1,1,-1
-  PX  (:,JK) = PX(:,JK) - ZW(:,JK+1)*PX(:,JK+1)
+DO JK=INL-1,1,-1
+   DO JI=1,INI
+      PX  (JI,JK) = PX(JI,JK) - ZW(JI,JK+1)*PX(JI,JK+1)
+   END DO
 END DO
+IF (LHOOK) CALL DR_HOOK('TRIDIAG_GROUND',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
