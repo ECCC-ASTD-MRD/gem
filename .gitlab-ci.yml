@@ -154,7 +154,7 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - tags
       - /^dev_5\.[0-9]$/
       - schedules
-   dependencies:
+   needs:
       - build:rhel-8-icelake-64-intel-2022.1.2
    script:
       - set +e
@@ -211,7 +211,7 @@ package:rhel-8-icelake-64-intel-2022.1.2-gem-nemo:
       - tags
       - /^dev_5\.[0-9]$/
       - schedules
-   dependencies:
+   needs:
       - build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo
    script:
       - set +e
@@ -271,7 +271,7 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - tags
       - /^dev_5\.[0-9]$/
       - schedules
-   dependencies:
+   needs:
       - build:rhel-8-icelake-64-intel-2021.4.0
    script:
       - set +e
@@ -329,7 +329,7 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       - /^dev_5\.[0-9]$/
       - tags
       - schedules
-   dependencies:
+   needs:
       - build:ubuntu-22.04-amd64-intel-2022.1.2
    environment:
       name: ubuntu22
@@ -390,7 +390,7 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
       - /^dev_5\.[0-9]$/
       - tags
       - schedules
-   dependencies:
+   needs:
       - build:ubuntu-22.04-amd64-intel-2023.2.0
    environment:
       name: ubuntu22
@@ -458,7 +458,7 @@ findtopo:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -478,7 +478,7 @@ findtopo:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -505,7 +505,7 @@ CANO_W7cascP_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   allow_failure: true
@@ -532,7 +532,7 @@ CANO_dcmip163r100_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -559,7 +559,7 @@ CANO_wil7_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -586,7 +586,7 @@ GEM_cfgs_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -613,7 +613,7 @@ GEM_GY_FISL_P_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -640,7 +640,7 @@ GEM_GY_FISL_H_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -667,7 +667,7 @@ GEM_GY_spnGC_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -694,7 +694,7 @@ GEM_LU_FISL_H_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -721,7 +721,7 @@ GEM_LU_OFFC_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -748,7 +748,7 @@ GEM_LU_EXP_P_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -775,7 +775,7 @@ GEM_LU_MoSA_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -802,7 +802,7 @@ GEM_LU_TEB_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -829,7 +829,7 @@ OPS_GYens_ic4_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -856,7 +856,7 @@ OPS_GY_ic4_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -883,7 +883,7 @@ OPS_LU_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -910,7 +910,7 @@ PTOPO_GYH_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -937,7 +937,7 @@ PTOPO_LUP_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -964,7 +964,7 @@ RSTRT_GYP_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -991,7 +991,7 @@ THEO_bubbleG_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -1014,7 +1014,7 @@ THEO_schar_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
@@ -1038,7 +1038,7 @@ THEO_schar_intel:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1065,7 +1065,7 @@ CANO_W7cascP_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1092,7 +1092,7 @@ CANO_dcmip163r100_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1119,7 +1119,7 @@ CANO_wil7_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1146,7 +1146,7 @@ GEM_cfgs_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1173,7 +1173,7 @@ GEM_GY_FISL_P_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1200,7 +1200,7 @@ GEM_GY_FISL_H_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1227,7 +1227,7 @@ GEM_GY_spnGC_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1254,7 +1254,7 @@ GEM_LU_FISL_H_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1281,7 +1281,7 @@ GEM_LU_OFFC_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1308,7 +1308,7 @@ GEM_LU_EXP_P_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1335,7 +1335,7 @@ GEM_LU_MoSA_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1362,7 +1362,7 @@ GEM_LU_TEB_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1389,7 +1389,7 @@ OPS_GYens_ic4_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1416,7 +1416,7 @@ OPS_GY_ic4_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1443,7 +1443,7 @@ OPS_LU_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1470,7 +1470,7 @@ PTOPO_GYH_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1497,7 +1497,7 @@ PTOPO_LUP_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1524,7 +1524,7 @@ RSTRT_GYP_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1551,7 +1551,7 @@ THEO_bubbleG_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1574,7 +1574,7 @@ THEO_schar_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
