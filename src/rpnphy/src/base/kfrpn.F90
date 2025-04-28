@@ -953,7 +953,9 @@ contains
        ! Calculate the tendencies
 
        if (TLCLG(I)+DTLCL.gt.TENV) goto 45                                            !Initiation of new cloud
-       if (deep_cloudobj .and. cowlcl(i) > WU_MIN) goto 45  !Pre-existing cloud triggering
+       if (deep_cloudobj) then
+          if (cowlcl(i) > WU_MIN) goto 45  !Pre-existing cloud triggering
+       endif
 
 
        !  Parcel not buoyant.
@@ -1010,7 +1012,7 @@ contains
 
              if (cowlcl(i) > WLCL) then
                 wlcl = cowlcl(i)  !Existing updraft is stronger
-             elseif (deep_cloudobj) then
+             else
                 coage(i) = 0.     !New initiation is stronger
              endif
           endif
