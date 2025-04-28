@@ -68,6 +68,7 @@ contains
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
            vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw
       real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
+      real, target :: zero2d(ni,nk)
       real, dimension(ni,nk) :: rtmp2d, presinv
       real, dimension(ni,nk-1) :: q_grpl, iiwc, prest
 
@@ -88,6 +89,7 @@ contains
       call init2nan(en0, pw0, en1, pw1)
       call init2nan(rtmp2d, presinv, q_grpl, iiwc, prest)
 
+      zero2d = 0.
       w_p3v5 = 0.
       if (stcond == 'MP_P3') w_p3v5 = 1.
       w_my2 = 0.
@@ -268,6 +270,8 @@ contains
          IF_BOURG3D: if (is_pcptype_b3d .and. is_consun) then
             !AZR3D: Accumulation des precipitations verglaclacantes en 3D
             !AIP3D: Accumulation des precipitations re-gelees en 3D
+            if (.not.associated(zkfmrf)) zkfmrf => zero2d
+            if (.not.associated(zkfmsf)) zkfmsf => zero2d
             do k = 1,nk-1
                do i = 1, ni
                   ! Flux de consun1

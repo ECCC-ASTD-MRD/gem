@@ -140,7 +140,7 @@ contains
 
     MKPTR2DN(zfc, fc, ni, nagrege, pvars)
     MKPTR2DN(zfv, fv, ni, nagrege, pvars)
-    MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, pvars)
+    MKPTR2D(zmrk2, mrk2, pvars)
 
     MKPTR2D(zturbqf, turbqf, pvars)
     MKPTR2D(zturbtf, turbtf, pvars)
