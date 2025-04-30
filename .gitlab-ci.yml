@@ -4,7 +4,7 @@ variables:
   ORD_SOUMET_TMPFS: "10G"
   ORD_SOUMET_M: "100G"
   ORD_SOUMET_W: "60"
-  GIT_SUBMODULE_STRATEGY: none
+  GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
   - build
@@ -64,7 +64,6 @@ build:rhel-8-amd64_gnu-14.1.0:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu_14
-    - git submodule update --recursive --init
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.1.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-14.1.0
@@ -100,7 +99,6 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
     - . ./.eccc_setup_intel
     - set -e
     - export WITH_SYSTEM_RPN=FALSE
-    - git submodule update --recursive --init
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
