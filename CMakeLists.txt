@@ -17,7 +17,7 @@ include(ec_compiler_presets)
 
 # Option for compiling or not with Intel static libraries
 option(STATIC_INTEL "Whether to compile with static Intel libraries" OFF)
-if ((("$ENV{ECCI_PROCESS}" STREQUAL "staging") OR (STATIC_INTEL)) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel"))
+if ((("$ENV{ECCI_PROCESS}" STREQUAL "staging") OR (STATIC_INTEL)) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM"))
   message(STATUS "(EC) Building with static Intel libraries")
   # Use static MPI libraries: must be set before calling find_package(MPI)
   set(MPI_COMPILER_FLAGS "${MPI_COMPILER_FLAGS} -static_mpi -nostrip")
@@ -51,7 +51,7 @@ endif()
 
 option(EXTRA_CHECKS "Compile with extra checks to detect things such as overunned bounds and stack trashing" OFF)
 # Adding specific flags for GEM
-if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM") AND NOT ("${CMAKE_SYSTEM_NAME}" STREQUAL "CrayLinuxEnvironment"))
   # Flag for MKL is different depending on Intel compiler version
   if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2021)
     set(MKL "-qmkl")
@@ -79,7 +79,7 @@ if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_I
   find_package(BLAS)
 endif()
 
-if((DEFINED ENV{EC_ARCH}) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel"))
+if((DEFINED ENV{EC_ARCH}) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM"))
   set(FFTW_USE_STATIC_LIBS TRUE)
 endif()
 
