@@ -3,12 +3,17 @@
 COMPILER_VERSION="Unknown_Compiler"
 
 case $1 in
+    aocc)
+        COMPILER_VERSION=$(clang --version | grep version | sed "s/.*version \([^ ]*\).*$/\1/")
+        ;;
     gnu)
         COMPILER_VERSION=`gfortran --version | head -n 1 | sed "s/.*) \([^ ]*\).*$/\1/"`
         ;;
     intel)
         type ifort >/dev/null &&
             COMPILER_VERSION=`ifort -V 2>&1 | head -n 1 | sed "s/.*Version \([^ ]*\).*$/\1/"`
+    llvm)
+        COMPILER_VERSION=$(clang --version | grep version | sed "s/.*version \([^ ]*\).*$/\1/")
         ;;
     nvhpc)
         COMPILER_VERSION=`nvcc --version | grep release | sed "s/.*V\([^ ]*\).*$/\1/"`
