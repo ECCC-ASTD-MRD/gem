@@ -7,7 +7,7 @@ case $1 in
         COMPILER_VERSION=$(clang --version | grep version | sed "s/.*version \([^ ]*\).*$/\1/")
         ;;
     gnu)
-        COMPILER_VERSION=`gfortran --version | head -n 1 | sed "s/.*) \([^ ]*\).*$/\1/"`
+        COMPILER_VERSION=$(gfortran --version | head -n 1 | sed "s/.*) \([^ ]*\).*$/\1/")
         ;;
     intel)
         type ifort >/dev/null &&
@@ -16,14 +16,14 @@ case $1 in
         COMPILER_VERSION=$(clang --version | grep version | sed "s/.*version \([^ ]*\).*$/\1/")
         ;;
     nvhpc)
-        COMPILER_VERSION=`nvcc --version | grep release | sed "s/.*V\([^ ]*\).*$/\1/"`
+        COMPILER_VERSION=$(nvcc --version | grep release | sed "s/.*V\([^ ]*\).*$/\1/")
         ;;
     pgi)
-        COMPILER_VERSION=`pgfortran --version  | sed -n "/fortran/ s/.*pgfortran \([^ ]*\).*$/\1/p"`
+        COMPILER_VERSION=$(pgfortran --version  | sed -n "/fortran/ s/.*pgfortran \([^ ]*\).*$/\1/p")
         ;;
     # Example: "Version: 16.01.0000.0000"
     xlf)
-        COMPILER_VERSION=`xlf -qversion  | sed -n "/Version: / s/.*Version: \([0-9]*.[0-9]*\).*$/\1/p"`
+        COMPILER_VERSION=$(xlf -qversion  | sed -n "/Version: / s/.*Version: \([0-9]*.[0-9]*\).*$/\1/p")
         ;;
 esac
 
