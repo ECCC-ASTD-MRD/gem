@@ -27,6 +27,10 @@ cmake-debug:
 cmake-debug-extra:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON ${gem_DIR} )
 
+# Compile with nvhpc
+cmake-nvhpc:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCOMPILER_SUITE=nvhpc ${gem_DIR} )
+
 # Use installed RPN libraries and add MACH package
 cmake-mach:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_MACH=TRUE ${gem_DIR} )

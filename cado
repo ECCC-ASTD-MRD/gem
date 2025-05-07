@@ -34,6 +34,7 @@ this_project=`cat MANIFEST | sed -n '/NAME/s/.*: //p'`
              cmake_all_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir} "$@"'
            cmake_debug_command='cmake -S . -B ${build_dir} -DCMAKE_BUILD_TYPE=Debug "$@"'
      cmake_debug_extra_command='cmake -S . -B ${build_dir} -DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON "$@"'
+           cmake_nvhpc_command='cmake -S . -B ${build_dir} -DCOMPILER_SUITE=nvhpc "$@"'
             cmake_mach_command='cmake -S . -B ${build_dir} -DWITH_MACH=TRUE "$@"'
      cmake_mach_static_command='cmake -S . -B ${build_dir} -DWITH_MACH=TRUE -DSTATIC_INTEL=ON "$@"'
         cmake_all_mach_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE "$@"'
@@ -158,6 +159,7 @@ case "${name}" in
              cmake-all) cmd=${cmake_all_command} ;;
            cmake-debug) cmd=${cmake_debug_command} ;;
      cmake-debug-extra) cmd=${cmake_debug_extra_command} ;;
+           cmake-nvhpc) cmd=${cmake_nvhpc_command} ;;
             cmake-mach) cmd=${cmake_mach_command} ;;
      cmake-mach-static) cmd=${cmake_mach_static_command} ;;
         cmake-all-mach) cmd=${cmake_all_mach_command} ;;

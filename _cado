@@ -7,6 +7,7 @@ cado_commands=(
     cmake-all
     cmake-debug
     cmake-debug-extra
+    cmake-nvhpc
     cmake-mach
     cmake-mach-static
     cmake-all-mach
