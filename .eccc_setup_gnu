@@ -9,12 +9,11 @@
 
 DOMAIN=`hostname -d`
 
-if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/gpscc3/gnu
-elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/gnu-9.3.0
+# Load code-tools 
+if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+    . r.load.dot rpn/code-tools/20250521/env/gnu-9.3.0
 else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/ECCC/gnu
+    . r.load.dot rpn/code-tools/20250521/env/gnu
 fi
 
 # Load latest version of RPN-SI libraries and utilities
@@ -22,9 +21,6 @@ fi
 . r.load.dot rpn/utils/20240513
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
-
-# We need a more recent version of cmake than the one available by default
-. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
 
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then

@@ -27,14 +27,8 @@ case ${INTEL_SCRIPT_NAME} in
         ;;
 esac
 
-# According to the domain, load corresponding code-tools 
-if [[ ${DOMAIN} = "collab.science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/gpscc3/inteloneapi-${COMPILER_VERSION}
-elif  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/SCIENCE/inteloneapi-${COMPILER_VERSION}
-else
-    . r.load.dot rpn/code-tools/ENV/cdt-1.6.9/ECCC/inteloneapi-${COMPILER_VERSION}
-fi
+# Load code-tools 
+. r.load.dot rpn/code-tools/20250521/env/inteloneapi-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot rpn/libs/20240513
@@ -55,9 +49,6 @@ if  [[ ${ORDENV_DIST} = "rhel" ]]; then
         export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/rhel-9-amd64-64
     fi
 fi
-
-# We need a more recent version of cmake than the one available by default
-. ssmuse-sh -d main/opt/cmake/cmake-3.21.1
 
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then
