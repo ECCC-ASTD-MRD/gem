@@ -97,8 +97,8 @@ sverif_eval.Abs TT ${lev} ${prog} ${file} ${statpath} | grep CI=0.01 | grep -v '
 hits=$(( ${hits} + $(cat ${tmpfile} | grep 'PASS' | grep -v 'overall' | wc -l) ))
 cat ${tmpfile}; rm -f ${tmpfile}
 
-if [[ ${hits} -ge 6 ]] ; then
-    echo "(INFO) Passed (passed ${hits}/8)"
+if [[ ${hits} -ge 10 ]] ; then
+    echo "(INFO) Passed (passed ${hits}/12)"
 else
-    echo "(INFO) Failed (passed ${hits}/8)"
+    echo "(INFO) Failed (passed ${hits}/12)"
 fi
