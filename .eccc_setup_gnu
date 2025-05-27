@@ -20,7 +20,7 @@ fi
 . r.load.dot rpn/libs/20250331
 . r.load.dot rpn/utils/20250331
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
+. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then

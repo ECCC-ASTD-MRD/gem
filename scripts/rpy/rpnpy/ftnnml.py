@@ -271,7 +271,7 @@ class FtnNmlKeyVal(FtnNmlObj):
 
     @classmethod
     def encode(cls, data):
-        return re.sub(r'("[^"]+?"|\'[^\']+?\')',
+        return re.sub(r'("[^"]+?"|\'[^\']+?\'|""|\'\')',
                       lambda m: m.group(0).replace("=", "\x00"),
                       data.replace('\n', "\x01"))
 
@@ -340,9 +340,21 @@ class FtnNmlFile(FtnNmlObj):
         self.prop['strStart'] = ''
         if fromFile: self.read(name)
 
+    def printtmp(self, myobj):
+        for item in myobj:
+            if isinstance(item, FtnNmlObj):
+                print("name: ",item.name,item.__class__)
+                if isinstance(item.data, (list, FtnNmlFile)):
+                    self.printtmp(item.data)
+                else:
+                    print(item.data,item.data.__class__)
+            else:
+                print(repr(item),item.__class__)
+        
     def parse(self, mystr):
         self.data = self.__class__.parseToList(mystr)
-
+        # self.printtmp(self.data)
+ 
     def read(self, filename):
         """Read and parse file"""
         rawdata = ""
