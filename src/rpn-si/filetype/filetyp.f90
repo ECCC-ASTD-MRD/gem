@@ -1,9 +1,9 @@
       program filetyp
       use app
       implicit none
-      character *8 cle(10)
-      character *4096 def(10),val(10)
-      character *60 msgs(-1:41)
+      character(len=8) cle(10)
+      character(len=4096) def(10),val(10)
+      character(len=60) msgs(-1:41)
       integer wkoffit,ipos,ier,t(8),i
 
       data cle /'L ',8*'T','-.'/

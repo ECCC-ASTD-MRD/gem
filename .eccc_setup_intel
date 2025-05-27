@@ -31,8 +31,8 @@ esac
 . r.load.dot rpn/code-tools/20250521/env/inteloneapi-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20240513
-. r.load.dot rpn/utils/20240513
+. r.load.dot rpn/libs/20250331
+. r.load.dot rpn/utils/20250331
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/x/rpnpy/2.2.0-rc2
 
