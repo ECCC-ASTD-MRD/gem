@@ -2437,7 +2437,8 @@ END subroutine p3_init
              log_hydrometeorsPresent = .true.    ! final update
           endif
 
-          if (log_LiquidFrac .and. qitot(i,k,iice).ge.qsmall .and. (qiliq(i,k,iice)/qitot(i,k,iice)).gt.0.99) then
+          if (log_LiquidFrac .and. qitot(i,k,iice).ge.qsmall) then
+            if ( (qiliq(i,k,iice)/qitot(i,k,iice)).gt.0.99) then
              qr(i,k) = qr(i,k) + qitot(i,k,iice)
              nr(i,k) = nr(i,k) + nitot(i,k,iice)
              th(i,k) = th(i,k) - invexn(i,k)*(qitot(i,k,iice)-qiliq(i,k,iice))*xlf(i,k)*inv_cp
@@ -2446,6 +2447,7 @@ END subroutine p3_init
              qirim(i,k,iice) = 0.
              qiliq(i,k,iice) = 0.
              birim(i,k,iice) = 0.
+            endif
           endif
 
           if (qitot(i,k,iice).ge.qsmall .and. qitot(i,k,iice).lt.1.e-8 .and.             &
@@ -3491,7 +3493,8 @@ END subroutine p3_init
 
        ! if (log_LiquidFrac) then
 
-              if (qitot(i,k,iice).ge.qsmall .and. (qiliq(i,k,iice)/qitot(i,k,iice)).lt.0.01) then
+              if (qitot(i,k,iice).ge.qsmall) then
+              if ((qiliq(i,k,iice)/qitot(i,k,iice)).lt.0.01) then
               ! Sublimation/deposition of ice
               !note: diffusional growth/decay rate: (stored as 'qidep' temporarily; may go to qisub below)
 !Note (BUG): Cholette (Jul 2022), remove *SCF(k) for ssat_cld and multiplication *CF for grid-mean qccon
@@ -3500,11 +3503,13 @@ END subroutine p3_init
                  qidep(iice) = (aaa*epsi(iice)*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsi(iice)*oxx*   &
                                (1.-dexp(-dble(xx*dt))))*oabi+(qvs(i,k)-dumqvi)*epsi(iice)*oabi
               endif
+              endif
 
               !for very small ice contents in dry air, sublimate all ice instantly
-              if (supi_cld.lt.-0.001 .and. qitot(i,k,iice).lt.1.e-12 .and. qitot(i,k,iice).ge.qsmall .and. &
-                 (qiliq(i,k,iice)/qitot(i,k,iice)).lt.0.01) &
+              if (supi_cld.lt.-0.001 .and. qitot(i,k,iice).lt.1.e-12 .and. qitot(i,k,iice).ge.qsmall) then
+                 if ((qiliq(i,k,iice)/qitot(i,k,iice)).lt.0.01) &
                  qidep(iice) = -(qitot(i,k,iice)-qiliq(i,k,iice))*odt
+              endif
 
               !note: 'clbfact_dep' and 'clbfact_sub' calibration factors for ice deposition and sublimation
               !   These are adjustable ad hoc factors used to increase or decrease deposition and/or
@@ -3523,7 +3528,8 @@ END subroutine p3_init
                  qidep(iice) = min(qidep(iice), qv(i,k)*odt)
               endif
 
-              if (qitot(i,k,iice).ge.qsmall .and. (qiliq(i,k,iice)/qitot(i,k,iice)).ge.0.01) then
+              if (qitot(i,k,iice).ge.qsmall) then
+              if ((qiliq(i,k,iice)/qitot(i,k,iice)).ge.0.01) then
               ! Condensation/evaporation fo qiliq
 !Note (BUG) Cholette (Jul 2022), remove *SCF(k) for ssat_cld and multiplication *CF for grid-mean qccon
 !                 qlcon(iice) = ((aaa*epsiw(iice)*oxx+(ssat_cld-aaa*oxx)*odt*epsiw(iice)*oxx* &
@@ -3531,10 +3537,12 @@ END subroutine p3_init
                  qlcon(iice) = (aaa*epsiw(iice)*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsiw(iice)*oxx* &
                                (1.-dexp(-dble(xx*dt))))/ab
               endif
+              endif
 
-              if (sup_cld.lt.-0.001 .and. qitot(i,k,iice).lt.1.e-12 .and. qitot(i,k,iice).ge.qsmall .and. &
-                 (qiliq(i,k,iice)/qitot(i,k,iice)).ge.0.01) &
+              if (sup_cld.lt.-0.001 .and. qitot(i,k,iice).lt.1.e-12 .and. qitot(i,k,iice).ge.qsmall) then
+                 if ((qiliq(i,k,iice)/qitot(i,k,iice)).ge.0.01) &
                  qlcon(iice) = -qiliq(i,k,iice)*odt
+              endif
 
               if (qlcon(iice).lt.0.) then
                  qlevp(iice) = -qlcon(iice)
@@ -4295,7 +4303,8 @@ END subroutine p3_init
        ! clipping for Filiq > 0.99 (transfer unmelted ice to rain)
        if (log_LiquidFrac) then
          do iice = 1,nCat
-            if (qitot(i,k,iice).ge.qsmall .and. (qiliq(i,k,iice)/qitot(i,k,iice)).gt.0.99) then
+            if (qitot(i,k,iice).ge.qsmall) then 
+               if ((qiliq(i,k,iice)/qitot(i,k,iice)).gt.0.99) then
                   qr(i,k) = qr(i,k) + qitot(i,k,iice)
                   nr(i,k) = nr(i,k) + nitot(i,k,iice)
                   th(i,k) = th(i,k) - invexn(i,k)*(qitot(i,k,iice)-qiliq(i,k,iice))*xlf(i,k)*inv_cp
@@ -4304,6 +4313,7 @@ END subroutine p3_init
                   qirim(i,k,iice) = 0.
                   qiliq(i,k,iice) = 0.
                   birim(i,k,iice) = 0.
+               endif
             endif
           enddo !iice-loop
         endif

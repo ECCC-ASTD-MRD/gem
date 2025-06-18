@@ -373,6 +373,13 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
               dt, kount, trnch, &
               ni_soil, ni_soil, nk-1)
 
+      elseif (schmsol.eq.'SVS2') then
+         
+         call svs2(bus_soil, siz_soil, &
+              ptr_soil, nvarsurf, &
+              dt, kount, trnch, &
+              ni_soil, ni_soil, nk-1)
+         
       endif
       if (phy_error_L) return
 
@@ -595,6 +602,12 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
 
    ! !******************************
    ! !        RIVERS       - NOT DEFINED - THIS IS ONLY A PLACEHOLDER
+   ! ! Initialize these variables to avoid calculating nonsense in agrege
+      do_river = .false.
+      siz_river = 1
+      ni_river = 1
+      bus_river = 0.0
+      ptr_river = 1
    ! !******************************
 
    ! sommet = 1

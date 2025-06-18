@@ -1,6 +1,7 @@
 
 module microphy_utils
   use phy_status, only: PHY_OK, PHY_ERROR
+  use microphy_thompson, only: thompson_wrapper_init
   implicit none
   private
   save
@@ -69,6 +70,7 @@ contains
          p3v3_lwc => p3_lwc, p3v3_iwc => p3_iwc
     use microphy_my2
     use microphy_kessler
+    use microphy_thompson
     use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac
     implicit none
     character(len=*), intent(in) :: F_input_path  !Directory containing initializing data
@@ -116,6 +118,12 @@ contains
        mp_phybusinit => kessler_phybusinit
        mp_lwc => kessler_lwc
        mp_iwc => kessler_iwc
+    case ('THOMPSON')
+       call thompson_wrapper_init(F_input_path)
+       istat = PHY_OK
+       mp_phybusinit => thompson_phybusinit
+       mp_lwc => thompson_lwc
+       mp_iwc => thompson_iwc
     case ('NIL')
        istat = PHY_OK
     case DEFAULT
@@ -237,10 +245,11 @@ contains
     ! Local parameters from Eq. 2 of Hu et al. (2010; JGR 10.1029/2009JD012384)
     real, parameter :: C0 = 5.3608, C1=0.4025, C2=0.08387, C3=0.007182, &
          C4=2.39e-4, C5=2.87e-6
+    real, parameter :: T_HOM = -40.  !Temperature for homogeneous freezing to avoid overflow
     
     ! Local variables
     integer :: i, k
-    real :: ptmid, dptmid, tmid, lwc, iwc
+    real :: ptmid, dptmid, tmid, twc, iwc, sigmoid
 
     ! Initialization
     F_istat = PHY_ERROR
@@ -248,9 +257,16 @@ contains
     ! Compute ice fraction
     do k=1,F_nkm1
        do i=1,F_ni
-          lwc = max(F_lwc(i,k), 0.)
           iwc = max(F_iwc(i,k), 0.)
-          F_if(i,k) = iwc / max(lwc + iwc, tiny(iwc))
+          twc = max(F_lwc(i,k), 0.) + iwc
+          if (twc > tiny(twc)) then
+             F_if(i,k) = iwc / max(twc, tiny(iwc))
+          else
+             tmid = max(F_tt(i,k) - TCDK, T_HOM)
+             ptmid = C0 + tmid * (C1 + tmid * (C2 + tmid * (C3 + tmid * (C4 + tmid * C5))))
+             sigmoid = 1. / (1. + exp(-ptmid))
+             F_if(i,k) = 1. - sigmoid             
+          endif  
        enddo
     enddo
 
@@ -259,10 +275,11 @@ contains
     if (present(F_difdt)) then
        do k=1,F_nkm1
           do i=1,F_ni             
-             tmid = F_tt(i,k) - TCDK
-             ptmid = max(C0 + tmid * (C1 + tmid * (C2 + tmid * (C3 + tmid * (C4 + tmid * C5)))), -40.)
+             tmid = max(F_tt(i,k) - TCDK, T_HOM)
+             ptmid = C0 + tmid * (C1 + tmid * (C2 + tmid * (C3 + tmid * (C4 + tmid * C5))))
              dptmid = C1 + tmid * (2*C2 + tmid * (3*C3 + tmid * (4*C4 + tmid * 5*C5)))
-             F_difdt(i,k) = -exp(-ptmid) / (1. + exp(-ptmid))**2 * dptmid             
+             sigmoid = 1. / (1. + exp(-ptmid))
+             F_difdt(i,k) = -sigmoid * (1. - sigmoid) * dptmid             
           enddo
        enddo
     endif

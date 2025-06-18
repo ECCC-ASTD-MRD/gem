@@ -9,6 +9,7 @@ module pbl_utils
   public :: dvrtdf                              !Compute vertical derivative
   public :: ficemxp                             !Diagnose ice fraction
   public :: sfcflux                             !Diagnose implicit surface fluxes
+  public :: turbreg                             !Diagnose turbulence regime
 
   ! API parameters
   integer, parameter, public :: LAMINAR = 1     !Code for laminar flow (hysteresis)
@@ -319,10 +320,10 @@ contains
   end subroutine ficemxp
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  subroutine sfcflux(F_utau, F_vtau, F_fq, F_ustar, F_fsh, F_flw, &
-       F_u, F_v, F_t, F_q, F_utend, F_vtend, F_ttend, F_qtend, &
-       F_bmsg, F_btsg, F_alphaq, F_rhosfc, F_ps, F_tau, F_ni, F_nkm1)
-    use tdpack, only: GRAV
+  subroutine sfcflux(F_utau, F_vtau, F_fq, F_ustar, F_fsh, F_fca, F_flw, &
+       F_u, F_v, F_t, F_q, F_utend, F_vtend, F_ttend, F_qtend, F_sigt,&
+       F_bmsg, F_btsg, F_alphaq, F_alphat, F_rhosfc, F_ps, F_tau, F_ni, F_nkm1)
+    use tdpack, only: GRAV ,CPD, RGASD
 
     ! Argument declarations
     integer, intent(in) :: F_ni                                 !horizontal dimension
@@ -336,9 +337,11 @@ contains
     real, dimension(F_ni,F_nkm1), intent(in) :: F_vtend         !v-component wind tendency (m/s2)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_ttend         !dry air temperature tendency (K/s)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_qtend         !specific humidity tendency (kg/kg/s)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_sigt         !sigma of thermo levels (--)
     real, dimension(F_ni), intent(in) :: F_bmsg                 !surface component of momentum flux
     real, dimension(F_ni), intent(in) :: F_btsg                 !surface component of heat flux
     real, dimension(F_ni), intent(in) :: F_alphaq               !inhomogeneous part of sfc heat flux
+    real, dimension(F_ni), intent(in) :: F_alphat               !inhomogeneous part of sfc heat flux
     real, dimension(F_ni), intent(in) :: F_rhosfc               !near-surface density (kg/m3) 
     real, dimension(F_ni), intent(in) :: F_ps                   !surface pressure (Pa)
     real, dimension(F_ni), intent(out) :: F_utau                !u-component surface stress
@@ -346,13 +349,14 @@ contains
     real, dimension(F_ni), intent(out) :: F_fq                  !total surface stress
     real, dimension(F_ni), intent(out) :: F_ustar               !friction velocity (m/s)
     real, dimension(F_ni), intent(out) :: F_fsh                 !specific humidity flux (m/s)
+    real, dimension(:),    pointer     :: F_fca                 !sensible heat flux (Wm-2)
     real, dimension(F_ni), intent(out) :: F_flw                 !water density flux (kg m-2 s-1)
 
     !@Object   Diagnose (implicit) surface fluxes
     
     ! Local variable declarations
     integer :: i
-    real :: rhortvsg, mrhocmu, tplusnk, qplusnk, uplusnk, vplusnk, fsh
+    real :: rhortvsg, mrhocmu, tplusnk, qplusnk, uplusnk, vplusnk, fsh, fca
 
     ! Compute surface fluxes
     do i=1,F_ni
@@ -360,7 +364,6 @@ contains
        ! Compute lowest-level time-plus state
        rhortvsg = F_ps(i) / GRAV
        mrhocmu  = rhortvsg * F_bmsg(i)
-       tplusnk  = F_t(i,F_nkm1) + F_tau * F_ttend(i,F_nkm1)
        qplusnk  = F_q(i,F_nkm1) + F_tau * F_qtend(i,F_nkm1)
        uplusnk  = F_u(i,F_nkm1) + F_tau * F_utend(i,F_nkm1)
        vplusnk  = F_v(i,F_nkm1) + F_tau * F_vtend(i,F_nkm1)
@@ -375,11 +378,122 @@ contains
        fsh = F_alphaq(i) + F_btsg(i)*qplusnk
        F_flw(i) = rhortvsg * fsh
        F_fsh(i) = F_flw(i) / F_rhosfc(i)
-
+       
     enddo
+
+    if (associated(F_fca)) then
+       do i=1,F_ni
+          ! Diagnose Sensible heat flux from sfc used by atm
+          rhortvsg = F_ps(i) / GRAV
+          tplusnk  = F_t(i,F_nkm1) + F_tau * F_ttend(i,F_nkm1)
+          fca = F_alphat(i) + F_btsg(i)*tplusnk/( F_sigt(i,F_nkm1)**(RGASD/CPD) )
+          F_fca(i) = CPD * rhortvsg * fca
+       enddo
+    endif
 
     ! End of subprogram
     return
   end subroutine sfcflux
-  
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine turbreg(F_turbreg, F_hyst, F_ri, F_sigt, F_ps, F_mrk2, &
+       F_ni, F_nkm1, F_init)
+    use, intrinsic :: iso_fortran_env, only: INT64
+    use phy_options, only: pbl_turbsl_depth, pbl_ricrit
+    use ens_perturb, only: ens_spp_get, ens_nc2d
+    
+    ! Argument declarations
+    integer, intent(in) :: F_ni                                 !horizontal dimension
+    integer, intent(in) :: F_nkm1                               !vertical dimension
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_ri            !Richardson number
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_sigt          !sigma for thermo levels
+    real, dimension(F_ni), intent(in) :: F_ps                   !surface pressure (Pa)
+    real, dimension(F_ni,ens_nc2d), intent(in) :: F_mrk2        !Markov chains for stochastic parameters
+    real, dimension(F_ni,F_nkm1), intent(inout) :: F_turbreg    !turbulence regime
+    real, dimension(F_ni,F_nkm1), intent(out) :: F_hyst         !hysteresis mask (0 => hysteresis active)
+    logical, intent(in), optional :: F_init                     !initialize turbulence regime [.false.]
+
+    ! External symbols
+    integer, external :: neark
+#include "phymkptr.hf"
+#include "tables.cdk"
+    include "phyinput.inc"
+
+    ! Local parameters
+    real, parameter :: P_MIN=60000.                             !top pressure for hysteresis calculations (hPa)
+
+    ! Local variables
+    integer :: i, k, stat
+    integer, dimension(F_ni) :: slk
+    real, dimension(F_ni) :: ricmin, ricmax
+    logical :: myInit
+
+    ! Handle optional arguments
+    myInit = .false.
+    if (present(F_init)) myInit = F_init
+    
+    ! Stochastic parameter setup
+    ricmin = ens_spp_get('ricmin', F_mrk2, pbl_ricrit(1))
+    ricmax = pbl_ricrit(2)
+    
+    ! Level setup
+    if (pbl_turbsl_depth > 0.) then
+       stat = neark(F_sigt, F_ps, pbl_turbsl_depth, F_ni, F_nkm1, slk)
+    else
+       slk(:) = F_nkm1
+    endif
+
+    ! Initialize turbulence regime if needed
+    INIT_TURB: if (myInit .and. .not.ISPHYIN('turbreg')) then
+       do k=1,F_nkm1
+          if (std_p_prof(k) < P_MIN) then
+             F_turbreg(:,k) = LAMINAR
+             cycle
+          endif
+          do i=1,F_ni
+             if (k <= slk(i)) then
+                if (F_ri(i,k) > ricmin(i)) then
+                   F_turbreg(i,k) = LAMINAR
+                else
+                   F_turbreg(i,k) = TURBULENT
+                endif
+             else
+                F_turbreg(i,k) = TURBULENT
+             endif
+          enddo
+       enddo
+    end if INIT_TURB
+
+    ! Update turbulence regime
+    do k=1,F_nkm1
+       if (std_p_prof(k) < P_MIN) cycle
+       do i=1,F_ni
+          ABOVE_SFCLAYER: if (k <= slk(i)) then
+             if (F_ri(i,k) < ricmin(i)) then
+                F_turbreg(i,k) = TURBULENT
+             elseif (F_ri(i,k) >  ricmax(i)) then
+                F_turbreg(i,k) = LAMINAR
+             endif
+          else
+             F_turbreg(i,k) = TURBULENT
+          endif ABOVE_SFCLAYER
+       enddo
+    enddo
+
+    ! Set up mask for Ri hysteresis
+    F_hyst = 1.
+    do k=1,F_nkm1
+       if (std_p_prof(k) < P_MIN) cycle
+       do i=1,F_ni          
+          if (F_ri(i,k) > ricmin(i) .and. F_ri(i,k) < 1. .and. &
+               nint(F_turbreg(i,k)) == LAMINAR) F_hyst(i,k) = 0.
+          if (F_ri(i,k) > 1. .and. F_ri(i,k) < ricmax(i) .and. &
+               nint(F_turbreg(i,k)) == TURBULENT) F_hyst(i,k) = 0.
+       enddo       
+    enddo 
+
+    ! End of subprogram
+    return
+  end subroutine turbreg
+    
 end module pbl_utils

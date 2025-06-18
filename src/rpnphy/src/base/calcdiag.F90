@@ -22,7 +22,7 @@ contains
       use pbl_utils, only: blheight
       use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use phy_options
-      use phybusidx
+      use phybusidx, except=>znt
       use phymem, only: phyvar
       use phybudget, only: pb_compute, pb_residual
       use phy_status, only: PHY_OK
@@ -54,6 +54,7 @@ contains
       real, parameter :: EC_Z0T_GRASS=0.003            !Grass thermodynamic roughness for ECMWF diagnostics
       real, parameter :: EC_Z_ROUGH=40.                !Fixed height for ECMWF diagnostics in rough terrain
       real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
+      real, parameter :: WGTMIN=1.e-3                  !Minimum weight for a surface type
       character(len=*), parameter :: EC_INTERP='cubic' !Type of vertical interpolation for ECMWF diagnostics
       character(len=4), parameter :: REFRACVAR(12) = (/ &
               'DCBH', 'DCNB', 'DCLL', 'DC1M', 'DC1I', 'DCMR', &
@@ -62,11 +63,12 @@ contains
       
       logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr, is_mp, is_consun, &
            is_pcptype_nil, is_pcptype_sps, is_pcptype_b3d, is_fluvert_nil, is_fluvert_sfc, is_hrl, is_hrli
-      integer :: i, k, moyhr_steps, istat, istat1, nkm1
+      integer :: i, k, moyhr_steps, istat, istat1, nkm1, ik
       real :: moyhri, tempo, tempo2, sol_stra, sol_conv, liq_stra, liq_conv, sol_mid, liq_mid
       real :: w1, w2, w_p3v5, w_my2, w_reset
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
-           vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw
+           vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw, &
+           esdiagst, sldmask 
       real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
       real, target :: zero2d(ni,nk)
       real, dimension(ni,nk) :: rtmp2d, presinv
@@ -244,6 +246,59 @@ contains
          endif
 
       endif ECMWF_SCREEN
+
+      ! Final-state (FS) screen-level calculations performed on request
+      FS_SCREEN: if (fsdiag) then 
+         ! Prepare atmospheric final-state inputs
+         if (sl_prelim(ztplus(:,nkm1), zhuplus(:,nkm1), zuplus(:,nkm1), zvplus(:,nkm1), &
+              zpplus, zgzmom(:,nkm1), spd_air=vmod, dir_air=vdir, &
+              min_wind_speed=VAMIN) /= SL_OK) then
+            call physeterror('calcdiag', 'Problem preparing fsdiag calculations')
+            return
+         endif
+         th_air(:) = ztplus(:,nkm1)*zsigt(:,nkm1)**(-CAPPA)
+
+         ! Loop over surface-types and aggregate
+                      
+         ztdiagtyp2  = 0.
+         zqdiagtyp2  = 0.
+         ztddiagtyp2 = 0.
+         zudiagtyp2  = 0.
+         zvdiagtyp2  = 0.
+
+         DO_ISFC: do ik = 1,nagrege
+            if (ik == indx_agrege) cycle
+
+            sldmask(:) = max(0., min(1., zsfcwgt2(:,ik)))
+            where (sldmask < WGTMIN) sldmask = 0.
+
+            if (sl_sfclayer(th_air, zhuplus(:,nkm1), vmod, vdir, zgzmom(:,nkm1), zgztherm(:,nkm1),  &
+                 ztsurf2(:,ik), zqsurf2(:,ik), zz02(:,ik), zz0t2(:,ik), &
+                 zdlat, zfcor, hghtt_diag=zt, hghtm_diag=zu, &
+                 t_diag=ztdiagtyp2(:,ik), q_diag=zqdiagtyp2(:,ik), &
+                 u_diag=zudiagtyp2(:,ik), v_diag=zvdiagtyp2(:,ik), &
+                 L_min=sl_Lmin_type(ik), sl_mask=sldmask ) /= SL_OK)  then
+               call physeterror('calcdiag', 'Problem with FS screen-level diagnostic')
+               return
+            endif
+
+            call mhuaes3(esdiagst, zqdiagtyp2(:,ik), ztdiagtyp2(:,ik), zpplus, .false., ni, 1, ni)
+            do i=1,ni
+               if (sldmask(i) < WGTMIN) cycle
+               ztddiagtyp2(i,ik) = ztdiagtyp2(i,ik) - max(esdiagst(i), 0.)
+               ztdiagtyp2(i,indx_agrege) = ztdiagtyp2(i,indx_agrege) + sldmask(i)*ztdiagtyp2(i,ik)
+               zqdiagtyp2(i,indx_agrege) = zqdiagtyp2(i,indx_agrege) + sldmask(i)*zqdiagtyp2(i,ik)
+               zudiagtyp2(i,indx_agrege) = zudiagtyp2(i,indx_agrege) + sldmask(i)*zudiagtyp2(i,ik)
+               zvdiagtyp2(i,indx_agrege) = zvdiagtyp2(i,indx_agrege) + sldmask(i)*zvdiagtyp2(i,ik)
+            enddo
+
+         enddo DO_ISFC
+
+         call mhuaes3(esdiagst, zqdiagtyp2(:,indx_agrege), ztdiagtyp2(:,indx_agrege), zpplus, .false., ni, 1, ni)
+         ztddiagtyp2(:,indx_agrege) = ztdiagtyp2(:,indx_agrege) - max(esdiagst(:), 0.)
+
+      endif FS_SCREEN
+
       
       !****************************************************************
       !     PRECIPITATION RATES AND ACCUMULATIONS
@@ -776,10 +831,19 @@ contains
          DO_AVG(zztopkfcm, zztopkfc,  moyhri, w_reset)
          DO_AVG(zkkfcm,    zkkfc,     moyhri, w_reset)
          DO_AVG(zkmidm,    zkmid,     moyhri, w_reset)
-
-         DO_AVG(zsumf, zustress, moyhri, w_reset)
-         DO_AVG(zsvmf, zvstress, moyhri, w_reset)
-         DO_AVG(zfqm,  zfq,      moyhri, w_reset)
+         DO_AVG(zlftm,     zlft,      moyhri, w_reset)
+         DO_AVG(zsftm,     zsft,      moyhri, w_reset)
+         DO_AVG(znftm,     znft,      moyhri, w_reset)
+         DO_AVG(zlfbm,     zlfb,      moyhri, w_reset)
+         DO_AVG(zsfbm,     zsfb,      moyhri, w_reset)
+         DO_AVG(znfbm,     znfb,      moyhri, w_reset)
+         DO_AVG(zclbaf,    zclb,      moyhri, w_reset)
+         DO_AVG(zcltaf,    zclt,      moyhri, w_reset)
+         DO_AVG(zcstaf,    zcstt,     moyhri, w_reset)
+         DO_AVG(zcsbaf,    zcsb,      moyhri, w_reset)
+         DO_AVG(zsumf,     zustress,  moyhri, w_reset)
+         DO_AVG(zsvmf,     zvstress,  moyhri, w_reset)
+         DO_AVG(zfqm,      zfq,       moyhri, w_reset)
 
          DO_AVG(zuscm, ztusc, moyhri, w_reset)
          DO_AVG(zvscm, ztvsc, moyhri, w_reset)
@@ -839,11 +903,7 @@ contains
          DO_ACC(zntaf, znt,   dt, w_reset)
          DO_ACC(zflusolaf, zflusolis, dt, w_reset)
 
-         !# Accumu of sfc and toa net clear sky fluxes, avail with cccmarad
-         DO_ACC(zclbaf,  zclb,  dt, w_reset)
-         DO_ACC(zcltaf,  zclt,  dt, w_reset)
-         DO_ACC(zcstaf,  zcstt, dt, w_reset)
-         DO_ACC(zcsbaf,  zcsb,  dt, w_reset)
+         !# Accumu of sfc and toa fluxes, avail with cccmarad
          DO_ACC(zfsdaf,  zfsd,  dt, w_reset)
          DO_ACC(zfsfaf,  zfsf,  dt, w_reset)
          DO_ACC(zfsiaf,  zfsi,  dt, w_reset)

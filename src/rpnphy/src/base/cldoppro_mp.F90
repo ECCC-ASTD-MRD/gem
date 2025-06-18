@@ -11,7 +11,7 @@ contains
        taucs, omcs, gcs, taucl, omcl, gcl, &
        liqwcin, icewcin, &
        liqwpin, icewpin, cldfrac, &
-       tt, sig, ps, ni, nkm1, nk, kount)
+       tt, sig, ps, dontneedall, ni, nkm1, nk, kount)
     use, intrinsic :: iso_fortran_env, only: INT64
     use debug_mod, only: init2nan
     use tdpack_const, only: GRAV, RGASD, TCDK
@@ -35,6 +35,7 @@ contains
     real, intent(inout), dimension(ni,nkm1) :: liqwpin, icewpin
     real, intent(inout) :: cldfrac(ni,nkm1)
     real, intent(in)    :: tt(ni,nkm1), sig(ni,nkm1), ps(ni)
+    logical, intent(in) :: dontneedall                   ! .true. = need only band1 in SW and band6 in LW
 
     !          - input/output -
     ! pvars    list of all phy vars (meta + slab data)
@@ -104,7 +105,7 @@ contains
     real, dimension(:,:,:), allocatable :: iwcinmp, iwpinmp, effradi
 
     logical :: nostrlwc, readfield_L
-    integer :: i, j, k, l, mpcat, istat1, istat2
+    integer :: i, j, k, l, mpcat, istat1, istat2, swi,swf,lwi,lwf
     real :: rec_grav,  press
     real :: rew1, rew2, rew3, dg, dg2, dg3, tausw, omsw, gsw, tausi, omsi, gsi, y1, y2, y3
     real :: taulw, omlw, glw, tauli, omli, gli
@@ -430,9 +431,9 @@ contains
 
     do k=1,nkm1
        do i=1,ni
-          icewpin(i,k)  = icewcin(i,k)*dp(i,k)
-          liqwpin(i,k)  = liqwcin(i,k)*dp(i,k)
-          lwpinmp(i,k)  = lwcinmp(i,k)*dp(i,k)
+          icewpin(i,k)  = icewcin(i,k)*dp(i,k) !imp
+          liqwpin(i,k)  = liqwcin(i,k)*dp(i,k) !imp
+          lwpinmp(i,k)  = lwcinmp(i,k)*dp(i,k) !exp
           iwpinmps(i,k) = 0.
           iwcinmps(i,k) = 0.
        enddo
@@ -442,8 +443,8 @@ contains
        do i=1,ni
           do l=1,mpcat
              iwpinmp(i,k,l) = iwcinmp(i,k,l)*dp(i,k)
-             iwpinmps(i,k) = iwpinmps(i,k) + iwpinmp(i,k,l)
-             iwcinmps(i,k) = iwcinmps(i,k) + iwcinmp(i,k,l)
+             iwpinmps(i,k) = iwpinmps(i,k) + iwpinmp(i,k,l) !exp
+             iwcinmps(i,k) = iwcinmps(i,k) + iwcinmp(i,k,l) !exp
           enddo
        end do
     end do
@@ -511,6 +512,7 @@ contains
        ztopthi(i) = 0.0
     end do
 
+!begin-code: Effective radii of Implicit clouds (non-mp sources)
 ! choice of effective radius for implicit water clouds
 
     do k = 1, nkm1
@@ -618,8 +620,13 @@ contains
     !            but in practice, rei must be below 70microns or the model crashes
     !----------------------------------------------------------------------
 
+    if(dontneedall) then
+     swi=1;swf=1;lwi=6;lwf=6
+    else
+     swi=1;swf=nbs;lwi=1;lwf=nbl
+    endif
 
-    DO_NBS: do j = 1, nbs
+    DO_NBS: do j = swi, swf
        do k = 1, nkm1
           do i = 1, ni
              IF_NOCLOUD: if (nocloud(i,k)) then
@@ -745,7 +752,7 @@ contains
        enddo
     enddo DO_NBS
 
-    DO_NBL: do j = 1, nbl
+    DO_NBL: do j = lwi, lwf
        do k = 1, nkm1
           do i = 1, ni
              IF_NOCLOUD2: if (nocloud(i,k)) then

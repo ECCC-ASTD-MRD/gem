@@ -42,7 +42,7 @@ subroutine phybusinit(ni,nk)
    character(len=4), parameter :: LVLM2= 'M*2'
    character(len=4), parameter :: LVLT = 'T'
 
-   character(len=6)  :: nag, nmar, dwwz, nuv, psss
+   character(len=6)  :: nag, nmar, dwwz, nuv, psss, nccl
    integer :: ier, iverb, nsurf, i
    logical :: lbourg3d, lbourg
    logical :: lkfbe, lshal, lshbkf, lmid
@@ -78,6 +78,7 @@ subroutine phybusinit(ni,nk)
    write(nag,'(a,i2)') 'A*', nagrege
 
    write(nuv,'(a,i2)') 'A*', RAD_NUVBRANDS
+   write(nccl,'(a,i2)') 'A*', RAD_TCCL
 
    !# nmar is the number of 2d Markov fields
    write(nmar,'(a,i2)') 'A*', ens_nc2d
@@ -141,7 +142,8 @@ subroutine phybusinit(ni,nk)
       if (out_linoz) exit
    enddo
    out_linoz = (out_linoz .or. debug_alldiag_L .or. nphyoutlist < 0)
-   
+   out_linoz = (out_linoz .and. fluvert /= 'SURFACE')
+
    llinozage = (llinoz .and. age_linoz)              ! age of air tracer off 
    llinozout = (llinoz .and. out_linoz)
    llinghout = (llingh .and. out_linoz)
@@ -176,6 +178,7 @@ subroutine phybusinit(ni,nk)
       i = i+1
    enddo
    ebdiag = (ebdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
+   ebdiag = (ebdiag .and. fluvert /= 'SURFACE')
 
    ! Activate ECMWF diagnostics only if outputs are requested by the user
    i = 1
@@ -187,6 +190,17 @@ subroutine phybusinit(ni,nk)
       i = i+1
    enddo
    ecdiag = (ecdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
+   ecdiag = (ecdiag .and. fluvert /= 'SURFACE')
+
+   ! Activate final-state screen-level diagnostics only if outputs are requested by the user
+   i = 1
+   do while (.not.fsdiag .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == (/ &
+           'SLT    ', 'SLQ    ', 'SLTD   ', 'SLU    ', 'SLV    ' &
+           /))) fsdiag = .true.
+      i = i+1
+   enddo
+   fsdiag = (fsdiag .or. debug_alldiag_L .or. nphyoutlist < 0)   
 
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
@@ -200,6 +214,7 @@ subroutine phybusinit(ni,nk)
          i = i+1
       enddo
       llight = (llight .or. debug_alldiag_L .or. nphyoutlist < 0)
+      llight = (llight .and. fluvert /= 'SURFACE')
    endif
    
    ! Activate refractivity diagnostics only if outputs are requested by the user
@@ -219,6 +234,7 @@ subroutine phybusinit(ni,nk)
       i = i+1
    enddo
    lrefract = (lrefract .or. debug_alldiag_L .or. nphyoutlist < 0)
+   lrefract = (lrefract .and. fluvert /= 'SURFACE')
 
    ! Activate wind gust estimate only if outputs are requested by the user
    lwindgust = .false.
@@ -233,7 +249,8 @@ subroutine phybusinit(ni,nk)
       i = i+1
    enddo
    lwindgust = (lwindgust .or. debug_alldiag_L .or. nphyoutlist < 0)
-   
+   lwindgust = (lwindgust .and. fluvert /= 'SURFACE')
+
    ! Activate energy budget diagnostics only if outputs are requested by the user
    lcons = .false.
    i = 1
@@ -267,6 +284,7 @@ subroutine phybusinit(ni,nk)
       i = i+1
    enddo
    lcons = (lcons .or. debug_alldiag_L .or. nphyoutlist < 0)
+   lcons = (lcons .and. fluvert /= 'SURFACE')
    lmoycons = (lcons .and. lmoyhr)
 
    etccdiag = .false.
@@ -279,19 +297,8 @@ subroutine phybusinit(ni,nk)
       i = i+1
    enddo
    etccdiag = (etccdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
-   
-   etccdiagout = .false.
-   i = 1
-   do while (.not.etccdiagout .and. i <= nphyoutlist)
-      if (any(phyoutlist_S(i) == (/ &
-           'TCCM', 'NF  ', 'TSHM', 'TSMM', 'TSLM', 'TZHM', 'TZMM', 'TZLM', &
-           'NTAF' &
-           /))) etccdiagout = .true.
-      i = i+1
-   enddo
-   etccdiagout = (etccdiagout .or. debug_alldiag_L .or. nphyoutlist < 0)
+   etccdiag = (etccdiag .and. fluvert /= 'SURFACE')
 
-   
    lhn_init = (lhn /= 'NIL')
    lsfcflx = (sfcflx_filter_order > 0)
 
@@ -311,6 +318,7 @@ subroutine phybusinit(ni,nk)
       enddo
    endif
    cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L .or. nphyoutlist < 0)
+   cmt_comp_diag = (cmt_comp_diag .and. fluvert /= 'SURFACE')
 
 #include "phymkptr.hf"
 #include "phyvar.hf"

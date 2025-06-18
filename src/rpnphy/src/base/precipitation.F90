@@ -52,7 +52,7 @@ contains
       real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
            zcte,zcqe,zste,zsqe,zcqce,zsqce,zprcten,zsqre,zhumoins,zsigt,zmte,zmqe, &
            zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins,zprctns,zpritns,zqccondc2, &
-           zqcondc2,ztcondc2
+           zqcondc2,ztcondc2,zqccondc1,zqcondc1,ztcondc1
       !----------------------------------------------------------------
 
       ! Early return moist processes are inactive
@@ -71,8 +71,10 @@ contains
       MKPTR2D(zprcten, prcten, pvars)
       MKPTR2D(zprctnm, prctnm, pvars)
       MKPTR2D(zmqce, mqce, pvars)
+      MKPTR2D(zqccondc1, qccondc1, pvars)
       MKPTR2D(zqccondc2, qccondc2, pvars)
       MKPTR2D(zqcmoins, qcmoins, pvars)
+      MKPTR2D(zqcondc1, qcondc1, pvars)
       MKPTR2D(zqcondc2, qcondc2, pvars)
       MKPTR2D(zqcphytd, qcphytd, pvars)
       MKPTR2D(zqcplus, qcplus, pvars)
@@ -84,6 +86,7 @@ contains
       MKPTR2D(zsqre, sqre, pvars)
       MKPTR2D(zste, ste, pvars)
       MKPTR2D(ztcond, tcond, pvars)
+      MKPTR2D(ztcondc1, tcondc1, pvars)
       MKPTR2D(ztcondc2, tcondc2, pvars)
       MKPTR1D(ztlc, tlc, pvars)
       MKPTR1D(ztlcm, tlcm, pvars)
@@ -184,8 +187,11 @@ contains
          ! Use full convective condensate tendency for condensation schemes
          if (associated(zcqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zcqce(:,1:nkm1)
          if (associated(zsqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zsqce(:,1:nkm1)
-         if (associated(zmqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zmqce(:,1:nkm1)
+         if (associated(zmqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zmqce(:,1:nkm1)      
       endif
+      if (associated(ztcondc1)) ztcond(:,1:nkm1) = ztcond(:,1:nkm1) + ztcondc1(:,1:nkm1)
+      if (associated(zqcondc1)) zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zqcondc1(:,1:nkm1)
+      if (associated(zqccondc1).and.associated(zqcphytd)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zqccondc1(:,1:nkm1)
       if (associated(zqrphytd)) zqrphytd(:,1:nkm1) = zsqre(:,1:nkm1)
       ! note: zqcphytd does not contain shal contributions; ok because will be re-calculated in tendency
 
@@ -218,7 +224,7 @@ contains
 
       ! Post-scheme condensation adjustment
       if (stcond == 'S2') &
-           call sc_adjust(ztcondc2, zqcondc2, zqccondc2, pvars, delt, ni, nkm1)
+           call sc_adjust(ztcondc2, zqcondc2, zqccondc2, pvars, dt, ni, nkm1)
       
       ! Add shallow convection tendencies to convection/condensation tendencies 
       if (associated(ztshal))  ztcond(:,1:nkm1)  = ztcond(:,1:nkm1)  + ztshal(:,1:nkm1)
