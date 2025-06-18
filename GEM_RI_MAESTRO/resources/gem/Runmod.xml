@@ -1,0 +1,10 @@
+<NODE_RESOURCES>
+  <BATCH machine="${BACKEND}" 
+         memory="2G" 
+         mpi="1" 
+         wallclock="15" 
+         catchup="1" 
+         cpu="1x1x1" 
+         cpu_multiplier="1" 
+         soumet_args="-mpi -waste 100" />
+</NODE_RESOURCES>

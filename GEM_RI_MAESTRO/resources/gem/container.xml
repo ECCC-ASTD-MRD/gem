@@ -1,0 +1,9 @@
+<NODE_RESOURCES>
+  <BATCH machine="${FRONTEND}" 
+         catchup="1" 
+         cpu="1" 
+         memory="2G" 
+         mpi="0" 
+         wallclock="10" 
+         soumet_args="-waste 100" />
+</NODE_RESOURCES>
