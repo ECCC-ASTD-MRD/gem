@@ -98,8 +98,6 @@ subroutine FESERI
    HOUR64 = LFN(8).eq.'OUI'
    DIAG = LFN(9).eq.'OUI'
 
-   JUNK = EXDB('FESERI', 'V4.0', LFN(5))
-
    status= sergdim3(inpunit,mstat,msurf,mprof,nk_hybm,nk_hybt)
    if (status.lt.0) stop 1
 
@@ -130,8 +128,6 @@ subroutine FESERI
       write(6,*) '----PAS DE profile POUR LES SERIES'
    endif
 40 continue
-
-   JUNK = EXFIN ( 'FESERI' , 'FIN NORMALE' , 'NON' )
 
    !     ---------------------------------------------------------------
    return

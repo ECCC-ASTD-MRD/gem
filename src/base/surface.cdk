@@ -22,6 +22,7 @@
       real    l07_ah, l07_am
       real    leadfrac
       real    n0rib
+      real    sl_Lmin_type(32)
       real    vamin
       real    veg_rs_mult
       real    zt, zta
@@ -58,6 +59,7 @@
       common / surfacer / veg_rs_mult
       common / surfacer / zt, zta
       common / surfacer / zu, zua
+      common / surfacer / sl_Lmin_type
 
       common / surfacec / sl_func_stab
       common / surfacec / sl_func_unstab

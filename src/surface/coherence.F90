@@ -63,6 +63,9 @@ subroutine coherence3(pvars, ni)
    real, pointer, dimension(:,:) :: zclay, zisoil, zsand, zsnodp, ztglacier, ztsoil, zwsoil,ztpsoil
    ! SVS
    real, pointer, dimension(:) :: zsnodpl, zsnval, zsnvden, zsnvdp, zsnvma, zsnvro, zvegh, zvegl, zwsnv
+   ! SVS 2
+   real, pointer, dimension(:) :: zwveg_vl,zwveg_vh, zhveglpol
+   real, pointer, dimension(:,:) :: zgravel, zbulksoil, zoc
 
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
@@ -73,6 +76,7 @@ subroutine coherence3(pvars, ni)
    MKPTR1D(zgamveg,  gamveg)
    MKPTR1D(zglacier, glacier)
    MKPTR1D(zglsea,   glsea)
+   MKPTR1D(zhveglpol,hveglpol)
    MKPTR1D(zicedp,   icedp)
    !MKPTR1D(zisoil,   isoil)
    MKPTR1D(zlai,     lai)
@@ -96,9 +100,14 @@ subroutine coherence3(pvars, ni)
    MKPTR1D(zwsnow,   wsnow)
    MKPTR1D(zwsnv,    wsnv)
    MKPTR1D(zwveg,    wveg)
-
+   MKPTR1D(zwveg_vh,    wveg_vh)
+   MKPTR1D(zwveg_vl,    wveg_vl)
+   
+   MKPTR2D(zbulksoil , bulksoil)
    MKPTR2D(zclay,    clay)
+   MKPTR2D(zgravel , gravel)
    MKPTR2D(zisoil,   isoil)
+   MKPTR2D(zoc , oc)
    MKPTR2D(zsand,    sand)
    MKPTR2D(zsnodp,   snodp)
    MKPTR2D(ztglacier,tglacier)
@@ -228,6 +237,42 @@ subroutine coherence3(pvars, ni)
          endif  
 
       endif IF_SVS
+      
+      IF_SVS_V2:  if (schmsol.EQ.'SVS2') then
+         do i=1,ni
+            if (zmg(i).lt.critmask) then
+               ! OVER WATER, FOR ESTHETIC PURPOSE ONLY
+               do k=1,nl_svs
+                  zwsoil(i,k)   = 1.0
+                  zisoil(i,k)   = 0.0
+                  ztpsoil(i,k)   = -1.0
+               enddo
+               zwveg_vl    (i)      = 0.0
+               zwveg_vh    (i)      = 0.0
+               zrootdp  (i)      = 0.0
+               zvegfrac (i)      = 0.0
+               zvegh    (i)      = 0.0
+               zvegl    (i)      = 0.0
+               zsnodpl(i) = 0.0
+               zsnoma(i)  = 0.0
+               zwsnow(i)  = 0.0
+               zsnvdp(i)  = 0.0
+               zsnvma(i)  = 0.0
+               zwsnv(i)   = 0.0
+               if (read_oc) then
+                   do k=1,nl_stp
+                      zgravel(i,k) = 0.0
+                      zbulksoil(i,k) = 0.0
+                      zoc(i,k) = 0.0
+                   enddo
+               endif
+               if(read_hveglpol) then
+                   zhveglpol(i) = -1.0 
+               endif
+            endif
+         enddo      
+      endif IF_SVS_V2
+
 
    endif NEW_MG_MASK
 
@@ -353,6 +398,46 @@ subroutine coherence3(pvars, ni)
          end do
 
       end if IF_SVS2
+
+      IF_SVS_V2_2: if (schmsol == 'SVS2') then
+
+!VDIR NODEP
+         do i=1,ni
+            if (zglacier(i) > 1.-critmask) then
+
+               do k=1,nl_svs
+                  zwsoil(i,k)   = 1.0
+                  zisoil(i,k)   = 0.0
+                  ztpsoil(i,k)   = -1.0
+               enddo
+
+               zwveg_vl    (i)      = 0.0
+               zwveg_vh    (i)      = 0.0
+               zrootdp  (i)      = 0.0
+               zvegfrac (i)      = 0.0
+               zvegh    (i)      = 0.0
+               zvegl    (i)      = 0.0
+               zsnodpl(i) = 0.0
+               zsnoma(i)  = 0.0
+               zwsnow(i)  = 0.0
+               zsnvdp(i)  = 0.0
+               zsnvma(i)  = 0.0
+               zwsnv(i)   = 0.0
+               if(read_hveglpol) then
+                   zhveglpol(i) = -1.0
+               endif
+               if (read_oc) then
+                   do k=1,nl_stp
+                      zgravel(i,k) = 0.0
+                      zbulksoil(i,k) = 0.0
+                      zoc(i,k) = 0.0
+                   enddo
+               endif
+            end if
+         end do
+
+      end if IF_SVS_V2_2
+
    endif NEW_GL_MASK
 
 
@@ -387,7 +472,7 @@ subroutine coherence3(pvars, ni)
          end do
       end if IF_ISBA3
 
-      IF_SVS3: if (schmsol.EQ.'SVS') then
+      IF_SVS3: if (schmsol.EQ.'SVS' .OR. schmsol.EQ.'SVS2') then
 !VDIR NODEP
 
          ! Calculate density

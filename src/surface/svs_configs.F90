@@ -130,6 +130,12 @@ module svs_configs
 !
 !     Thermal roughness for snow
   REAL, PARAMETER :: Z0HSNOW = 0.010
+
+!   Thermal roughness for snow
+  REAL, PARAMETER :: Z0HSNOW_CRO = 0.0001 ! Default value in Crocus
+!     Momentum roughness for snow (CG: addition to avoid using Z0M_TO_Z0H)
+  REAL, PARAMETER :: Z0MSNOW_CRO = 0.001 ! With Crocus default values
+
 !
 !     Momentum roughness for bare ground 
   REAL, PARAMETER :: Z0MBG = 0.05

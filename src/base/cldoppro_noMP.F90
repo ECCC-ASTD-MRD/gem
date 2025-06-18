@@ -11,7 +11,7 @@ contains
    subroutine cldoppro_noMP1(pvars,taucs, omcs, gcs, taucl, omcl, gcl, &
         liqwcin, icewcin, &
         liqwpin, icewpin, cldfrac, &
-        tt, sig, ps, trnch, m, &
+        tt, sig, ps, dontneedall, trnch, m, &
         ni, nkm1, nk)
       use debug_mod, only: init2nan
       use tdpack_const
@@ -33,6 +33,7 @@ contains
       real, intent(inout), dimension(ni,nkm1) :: cldfrac
       real, intent(in), dimension(ni,nkm1) :: tt, sig
       real, intent(in), dimension(ni)    :: ps
+      logical, intent(in) :: dontneedall                   ! .true. = need only band1 in SW and band6 in LW
 
       !@Authors p. vaillancourt, d. talbot, j. li, rpn, cmc, cccma; (may 2006)
       !
@@ -89,7 +90,7 @@ contains
       include "nocld.cdk"
       real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
 
-      integer :: i, j, k
+      integer :: i, j, k, swi, swf, lwi, lwf
       real :: rec_grav
       real :: epsilon, epsilon2, betan, betad
       real :: rew2, rew3, dg, dg2, dg3, tausw, omsw, gsw, tausi, omsi, gsi, y1, y2, taulw
@@ -283,7 +284,13 @@ contains
       !        but in practice, rei must be below 70microns or the model crashes
       !----------------------------------------------------------------------
 
-      DO_LOOP1: do j = 1, nbs
+     if(dontneedall) then
+      swi=1;swf=1;lwi=6;lwf=6
+     else
+      swi=1;swf=nbs;lwi=1;lwf=nbl
+     endif
+
+      DO_LOOP1: do j = swi, swf
          do k = 1, nkm1
             do i = 1, ni
                if (cldfrac(i,k) <= cldfth) then
@@ -346,7 +353,7 @@ contains
          enddo
       enddo DO_LOOP1
 
-      DO_LOOP2: do j = 1, nbl
+      DO_LOOP2: do j = lwi, lwf
          do k = 1, nkm1
             do i = 1, ni
                if (cldfrac(i,k) <= cldfth) then

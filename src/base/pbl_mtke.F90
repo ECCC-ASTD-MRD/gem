@@ -6,7 +6,7 @@ module pbl_mtke
 
 contains
 
-  subroutine moistke(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
+  subroutine moistke(en,enold,zn,znt,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
        fngauss,fnnonloc,gama,gamaq,gamal,hpbl,lh,hpar, &
        wthl_ng,wqw_ng,uw_ng,vw_ng, &
        u,v,t,tve,q,qe,ps,st,s,se, &
@@ -52,12 +52,13 @@ contains
     real, dimension(n,nk), intent(in) :: s            !sigma for momentum levels
     real, dimension(n,nk), intent(in) :: se           !sigma for energy levels
     real, dimension(n,ens_nc2d), intent(in) :: mrk2   !Markov chains for stochastic parameters
-    real, dimension(*), intent(in) :: vcoef           !coefficients for vertical interpolation
+    real, pointer, dimension(:,:,:), contiguous :: vcoef !coefficients for vertical interpolation
     real, dimension(n,nk), intent(in) :: z            !height of e-levs (m)
     real, dimension(n,nk), intent(in) :: gzmom        !height of momentum levels (m)
     real, dimension(n), intent(inout) :: hpar         !height of parcel ascent (m)
     real, dimension(n,nk), intent(inout) :: en        !TKE (m2/s2)
-    real, dimension(n,nk), intent(inout) :: zn        !mixing length (m)
+    real, dimension(n,nk), intent(inout) :: zn        !momentum mixing length (m)
+    real, dimension(n,nk), intent(inout) :: znt       !thermal mixing length (m)
     real, dimension(n,nk), intent(inout) :: zd        !dissipation length (m)
     real, dimension(n,nk), intent(inout) :: qc        !PBL cloud water content
     real, dimension(n,nk), intent(inout) :: fngauss   !Gaussian (local) cloud fraction
@@ -145,6 +146,7 @@ contains
              zn(:,k)=min(KARMAN*(z(:,k)+z0(:)),ML_LMDA)
           enddo
        endif
+       if (.not.ISPHYIN('znt')) znt = zn
        if (.not.ISPHYIN('qtbl')) qc = 0.
        if (.not.ISPHYIN('fnn')) fnn = 0.
        if (.not.ISPHYIN('fblgauss')) fngauss = 0.
@@ -200,9 +202,9 @@ contains
 
     ! Compute mixing and dissipation length scales
     mlen(:) = ens_spp_get('longmel', mrk2, default=ilongmel)
-    stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, zero, fnn, z, gzmom, z, &
+    stat = ml_compute(zn, znt, zd, pri, mlen, t, qe, qc, zero, fnn, z, gzmom, z, &
          st, s, se, ps, enold, buoy, rig, w_cld, f_cs, turbreg, z0, &
-         hpbl, lh, hpar, vcoef, mrk2, dxdy, tau, kount)
+         hpbl, lh, hpar, std_p_prof, vcoef, mrk2, dxdy, tau, kount)
     if (stat /= PHY_OK) then
        call physeterror('moistke', 'error returned by mixing length calculation')
        return

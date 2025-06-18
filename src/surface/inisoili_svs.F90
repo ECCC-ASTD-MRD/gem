@@ -49,14 +49,16 @@ subroutine inisoili_svs(pvars, ni)
    
    ! "geo" variables are on the levels of the geophysical soil texture datbase
    REAL, dimension(ni,nl_stp) :: wsat_geo, wwilt_geo, wfc_geo, b_geo, psisat_geo, &
-           ksat_geo, wfcint_geo, fb_geo, quartz_geo,rhosoil_geo,conddry_geo,condsld_geo , wunfrz_geo
-   real, pointer, dimension(:) :: zcgsat, zgrkef, zdraindens, zslop
+           ksat_geo, wfcint_geo, fb_geo, quartz_geo,rhosoil_geo,conddry_geo, condminfac_geo, condsld_geo , wunfrz_geo, wmpfac_geo
+   real, pointer, dimension(:) :: zcgsat, zgrkef, zdraindens, zslop, zagrifrac
 
    ! variables on the levels of SVS
-   real, pointer, dimension(:,:) :: zbcoef, zclay, zfbcof, zksat, zpsisat, zsand, zwfc, zwfcint, zwsat, zwwilt, & 
-                                         zconddry, zcondsld , zquartz, zrhosoil,zwunfrz 
+   real, pointer, dimension(:,:) :: zbcoef, zclay, zfbcof, zksat, zksatnat, zpsisat, zsand, zwfc, zwfcint, zwsat, &
+                               zwwilt, zconddry, zcondminfac, zcondsld , zquartz, zrhosoil, zwunfrz, zwmpfac 
 
-  
+   ! SVS multiplying coefficient to adjust ksat in agricultural areas
+   real, pointer, dimension(:) :: zkasmod_a
+
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
 #define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => pvars(vd%NAME2%idxv)%data(:)
 
@@ -64,24 +66,27 @@ subroutine inisoili_svs(pvars, ni)
    MKPTR1D(zdraindens, draindens)
    MKPTR1D(zgrkef, grkef)
    MKPTR1D(zslop, slop)
+   MKPTR1D(zagrifrac, agrifrac)
+   MKPTR1D(zkasmod_a, kasmod_a)
 
    MKPTR2D(zbcoef, bcoef)
    MKPTR2D(zclay, clay)
    MKPTR2D(zfbcof, fbcof)
    MKPTR2D(zksat, ksat)
+   MKPTR2D(zksatnat, ksatnat)
    MKPTR2D(zpsisat , psisat)
    MKPTR2D(zsand, sand)
    MKPTR2D(zwfc, wfc)
    MKPTR2D(zwfcint, wfcint)
    MKPTR2D(zwsat, wsat)
    MKPTR2D(zwunfrz, wunfrz)
+   MKPTR2D(zwmpfac, wmpfac)
    MKPTR2D(zwwilt , wwilt)
    MKPTR2D(zconddry , conddry)
+   MKPTR2D(zcondminfac , condminfac)
    MKPTR2D(zcondsld , condsld)
    MKPTR2D(zrhosoil , rhosoil)
    MKPTR2D(zquartz , quartz)
-
-   
 
    ! calculate soil parameters on native GEO layers, and then map them unto model layers. 
    ! calculate weights to be used in phybusinit.... because here... we are
@@ -151,6 +156,14 @@ subroutine inisoili_svs(pvars, ni)
         conddry_geo(i,k) = (0.135*rhosoil_geo(i,k) + 64.7) / &
                         (2700. - 0.947*rhosoil_geo(i,k))
 
+!       factor used to compute the thermal conductivity of soil mineral (only relevant if soil_cond = TIAN2016)
+        condminfac_geo(i,k) = (0.182*zsand(i,k)/100 + 0.00775*zclay(i,k)/100 + 0.0534*(100 - zsand(i,k) - zclay(i,k))/100)
+
+        !Use the physical model from Tian et al. (2016) [https://doi.org/10.1111/ejss.12366]
+        if (soil_cond == 'TIAN2016') then    
+            condsld_geo(i,k) = 7.7**(zsand(i,k)/100)*1.93**(zclay(i,k)/100)*2.74**((100 - zsand(i,k) - zclay(i,k))/100)
+        endif
+        
 !       Unfrozen residual water content obtained from Niu and Yang (2006)
 !       Average value between -10 and -2 deg C
         wunfrz_geo(i,k) = 0. 
@@ -158,7 +171,13 @@ subroutine inisoili_svs(pvars, ni)
             ts =263.15+ 2.*jj
             wunfrz_geo(i,k)     =  wunfrz_geo(i,k)+ wsat_geo(i,k)*(CHLF*(ts-273.15)/(ts*(-1.0*psisat_geo(i,k))*9.81))**(-1.0*usb)
         enddo
-        wunfrz_geo(i,k) =  wunfrz_geo(i,k)/5.   
+        wunfrz_geo(i,k) =  wunfrz_geo(i,k)/5.
+
+!       Multiplicative factor applied to wsat to estimate the activation threshold for macropores
+!       mp_alpha is arbitrarily defined based on a sensitivity analysis
+!       mp_beta is a Weighted sand-to-clay ratio for the average tile over the GLSL domain
+        wmpfac_geo(i,k) = 0.0
+        if (lmacropores_svs1) wmpfac_geo(i,k) = (mp_alpha + (1 - mp_alpha)*(zclay(i,k) -zsand(i,k)/mp_beta)/100)
          
       enddo
    enddo
@@ -177,12 +196,25 @@ subroutine inisoili_svs(pvars, ni)
             zksat  (i,k)  = zksat  (i,k) + ksat_geo  (i,kk)  * weights( k , kk)
             zwfcint(i,k)  = zwfcint(i,k) + wfcint_geo(i,kk)  * weights( k , kk)
             zconddry  (i,k)  = zconddry  (i,k) + conddry_geo  (i,kk)  * weights( k , kk)
+            zcondminfac (i,k)  = zcondminfac (i,k) + condminfac_geo (i,kk)  * weights( k , kk)
             zcondsld  (i,k)  = zcondsld  (i,k) + condsld_geo  (i,kk)  * weights( k , kk)
             zquartz   (i,k)  = zquartz   (i,k) + quartz_geo   (i,kk)  * weights( k , kk)
             zrhosoil  (i,k)  = zrhosoil  (i,k) + rhosoil_geo  (i,kk)  * weights( k , kk)  
             zwunfrz   (i,k)  = zwunfrz   (i,k) + wunfrz_geo   (i,kk)  * weights( k , kk)
+            zwmpfac   (i,k)  = zwmpfac   (i,k) + wmpfac_geo   (i,kk)  * weights( k , kk)
             
          enddo
+
+         ! Modify ksat with multiplying coefficient in agricultural areas, to represent the effect
+         ! of ploughing, which generally affects soils down to 20cm, so the first 3 soil layers
+         ! The KASMOD_A coefficient only applies in agricultural areas so weigthed average is computed
+         IF(svs_tdrains_plough) then
+           zksatnat(i,k) = zksat(i,k)
+           IF(k.le.kplough)THEN
+             zksat(i,k) = zksat(i,k) * ( 1.0 - zagrifrac(i) + zkasmod_a(i) * zagrifrac(i) )
+           ENDIF
+         ENDIF
+
       enddo
       ! compute thermal coeff. 
       ! for 1st model layer only --- here simply use 1st GEO soil texture !!! Do not map !

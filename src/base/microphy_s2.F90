@@ -45,7 +45,8 @@ contains
        psp, psm, s, tau, &
        prflx, swflx, f12, fevp, icefrac, &
        mrk2, ni, nlev)
-    use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, PI, foqst, fodqs
+    use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, PI, foqsa, foqst, &
+         fodqs, fodqa
     use phy_options, only: cond_evap, cond_hmrst, cond_hu0max, cond_hu0min, cond_iceacc, &
          cond_sgspdf, cond_drhc
     use ens_perturb, only: ens_nc2d, ens_spp_get
@@ -151,7 +152,8 @@ contains
     !                   CONDENSATION
     !       HU0MAX      MAXIMUN ALLOWABLE VALUE OF MODIFIED HU00
     !       HU0MIN      MINIMUN ALLOWABLE VALUE OF MODIFIED HU00
-    !       STPEVP      EVAPORATION COEFFICIENT FOR STRATIFORM PRECIPITATION
+    !       STPEVP      EVAPORATION COEFFICIENT FOR RAIN
+    !       STPSUB      SUBLIMATION COEFFICIENT FOR SNOW
     !       TABDE       DIFFERENCE IN SATURATION VAPOUR PRESSURE OVER
     !                   WATER AND ICE
     !       TABFBF      BERGERON-FINDEISEN EFFECT FROM (DEWI*TABICE)
@@ -167,7 +169,7 @@ contains
          XP     , QINCR  , HP0    , HE273  , HEDR   , &
          HDLDCP , HELDR  , HEDLDR , CONAE  , AECON  , CFREEZ , &
          COALES , SIGMIN , XKM    , XKC    , XADIST , &
-         XBDIST 
+         XBDIST , HDLVCP , HDLSCP , SUBSNOW, STPSUB
     real    CBFEFF , CTFRZ1 ,  & 
          HKMELT , XDT    , DSNMAX , XSNOW  , &
          rTAU   , SNOW   , PRCP   , CONET  , &
@@ -177,7 +179,7 @@ contains
          temp2  , XB     , XBB    , xo
 
     integer il     , jk,inr
-    real xxp_t,xhj_t,xf_t,xfprim_t,hsq,huz00t,hu,hcondt
+    real xxp_t,xhj_t,xf_t,xfprim_t,hsq,huz00t,hu
     real xwrk,HACCES
 
     real, dimension(NI     ) :: HCST
@@ -189,9 +191,9 @@ contains
     real, dimension(NI     ) :: HSCT
     real, dimension(NI     ) :: HDQMX
     real, dimension(NI     ) :: HDPMX
-    real, dimension(NI     ) :: HCOND
+    real, dimension(NI     ) :: HEVAP
+    real, dimension(NI     ) :: HSUB
     real, dimension(NI,NLEV) :: HQSAT
-    real, dimension(NI,NLEV) :: HQSATP
     real, dimension(NI     ) :: HLDCP
     real, dimension(NI     ) :: HDCWAD
     real, dimension(NI,NLEV) :: DPRG
@@ -199,7 +201,6 @@ contains
     real, dimension(NI     ) :: HDTAD
     real, dimension(NI,NLEV) :: HPK
     real, dimension(NI,NLEV) :: PRESP
-    real, dimension(NI,NLEV) :: PRESM
     real, dimension(NI     ) :: XPRBT
     real, dimension(NI     ) :: XDET
     real, dimension(NI     ) :: XDET1
@@ -249,6 +250,8 @@ contains
     HEDR = EPS1/RGASD
     HEDLDR = EPS1*CHLF/RGASD
     HDLDCP = CHLF/CPD
+    HDLVCP = CHLC/CPD
+    HDLSCP = (CHLF + CHLC)/CPD
 
     !-----------------------------------------------------------------------
     ! V) PARAMATER VALUES IN SI UNITS
@@ -292,6 +295,7 @@ contains
     CBFEFF = 4.0
     CTFRZ1 = 263.
     HKMELT = 3.E-5
+    STPSUB = 2.*GRAV * 4.E-4
     xo = 1.E-16
     HCST(:)   = ens_spp_get('cond_hcst', mrk2, default=1.E-4)
     STPEVP(:) = 2.*GRAV * ens_spp_get('cond_evap', mrk2, default=cond_evap)
@@ -323,10 +327,8 @@ contains
           HLDCP(il) = exp(-(((max(TM(il,jk),tci)-tci)/tscale)**2))
           xwrk = max(((apri*(HLDCP(il)-1.0))+1.0),0.0)
           HLDCP(il) = (CHLC + (CHLF * xwrk))/CPD
-          PRESM(il,jk) = S(il,jk)*PSM(il)
-          HQSAT(il,jk) = foqst(TM(il,jk),PRESM(il,jk))
-          HSQ = FODQS( HQSAT(il,jk) , TM(il,jk) )
-          HCIMP(il) = 1. / ( 1. + HLDCP(il) * HSQ )
+          xprbt(il)=xwrk
+          PRESP(il,jk) = S(il,jk)*PSP(il)
 
           HELDR = HEDR * CPD * HLDCP(il)
           xdet(il) = exp(HELDR*(T0I - 1. / TM(il,jk)))
@@ -429,7 +431,6 @@ contains
           if (ZCWP.lt.1.0e-09) F12(il,jk)=0.0
           ICEFRAC(il,jk) = max(((apri*(xdet(il)-1.0))+1.0),0.0)
 
-
           PRCPST(il) = PRCPST(il) +       XPRADD
           STSNOW(il) = STSNOW(il) + PRMODt(il)*XPRADD
 
@@ -458,25 +459,54 @@ contains
           STSNOW(il) = amax1( 0. , STSNOW(il) - DMELT )
 
           ! ------------------------------------------------------------
-          ! Evaporation of stratiform precipitation
+          ! Evaporation of rain
 
-          PRCP = PRCPST(il)
+          PRCP = PRCPST(il) - STSNOW(il)
+          HQSAT(il,jk) = foqsa(TP(il,jk),PRESP(il,jk))
+          HSQ = FODQA( HQSAT(il,jk) , TP(il,jk) )          
+          HCIMP(il) = 1. / ( 1. + HDLVCP * HSQ )
           XN = STPEVP(il) * TAU / HCIMP(il)
-          HDPMX(il) = -(QM(il,jk) - HQSAT(il,jk)) * HCIMP(il) * rTAU * DPRG(il,jk)
+          HDPMX(il) = max(-(QP(il,jk) - HQSAT(il,jk)) * HCIMP(il) * rTAU * DPRG(il,jk), 0.)
+          
           x = amax1( PRCP , 1.E-16 )
           x = sqrt ( x )          
           y = 0.5 * XN * HDPMX(il) / x
           y = XBB * y / ( z + 0.5 * XN * x )
-          y = amin1( y , 1. )
+          y = min( y , 1. )
           XP = PRCP * ( XB + ( 1. - XB ) * ( 1. -  y ) ** 2 )
 
-          EVAPRI = amin1( PRCP - XP ,  XBB * HDPMX(il) )
+          EVAPRI = min( PRCP - XP ,  XBB * HDPMX(il) )
 
-          if (PRCPST(il).gt.0.) FEVP(il,jk) = EVAPRI/(PRCPST(il)+1.0E-28)
+          if (PRCP.gt.0.) FEVP(il,jk) = EVAPRI/(PRCP+1.0E-28)
 
-          PRCPST(il) = amax1( 0. , PRCPST(il) - EVAPRI )
-          STSNOW(il) = amax1( 0. , STSNOW(il) - EVAPRI )
-          HCOND(il) = - EVAPRI / DPRG(il,jk)
+          PRCPST(il) = max( 0. , PRCPST(il) - EVAPRI )
+          HEVAP(il) = - EVAPRI / DPRG(il,jk)
+
+          ! ------------------------------------------------------------
+          ! Sublimation of snow
+          
+          PRCP = STSNOW(il)
+          HQSAT(il,jk) = foqst(TP(il,jk),PRESP(il,jk))  !FIXME: should be wrt ice instead of mixed
+          HSQ = FODQS( HQSAT(il,jk) , TP(il,jk) )       !FIXME: should be wrt ice instead of mixed
+          HCIMP(il) = 1. / ( 1. + HDLSCP * HSQ )
+          XN = STPSUB * TAU / HCIMP(il)
+          HDPMX(il) = max(-(QP(il,jk) - HQSAT(il,jk)) * HCIMP(il) * rTAU * DPRG(il,jk), 0.)
+          
+          x = amax1( PRCP , 1.E-16 )
+          x = sqrt ( x )          
+          y = 0.5 * XN * HDPMX(il) / x
+          y = XBB * y / ( z + 0.5 * XN * x )
+          y = min( y , 1. )
+          XP = PRCP * ( XB + ( 1. - XB ) * ( 1. -  y ) ** 2 )
+
+          SUBSNOW = min( min( PRCP - XP ,  XBB * HDPMX(il) ), STSNOW(il))
+
+          STSNOW(il) = max( 0. , STSNOW(il) - SUBSNOW )
+          PRCPST(il) = max( 0. , PRCPST(il) - SUBSNOW )
+          HSUB(il) = - SUBSNOW / DPRG(il,jk)
+
+          ! ------------------------------------------------------------
+          ! Update precipitation area fraction
 
           COVBAR(il) = XBB * ( 1. - XB ) + XB
 
@@ -484,8 +514,8 @@ contains
           ! TEMPERATURE AND MOISTURE TENDENCIES, PRECIPITATION FLUXES
           ! ------------------------------------------------------------
 
-          STT(il,jk) = - DTMELT + HCOND(il) * HLDCP(il)
-          SQT(il,jk) = - HCOND(il)
+          STT(il,jk) = - DTMELT + HDLVCP * HEVAP(il) + HDLSCP * HSUB(il)
+          SQT(il,jk) = - HEVAP(il) - HSUB(il)
 
           PRFLX(il,jk+1) =  PRCPST(il)
           SWFLX(il,jk+1) =  STSNOW(il)

@@ -60,19 +60,58 @@ Here is the basics on using them with GEM/SCM
 
 ### GDB
 
-```
 Running in SCM
+```
 runscm -exp expname -debug gdb
 ```
 
-### DDT
-In the following example, DDT is used with its graphical interface and thus need to run on an interactive node with a defined `DISPLAY` (see how we can use this on the back/compute node)
+Running in GEM
 ```
+gemrun expname --debug gdb
+```
+
+### DDT for SCM (interactive)
+
+In the following example, DDT is used with its graphical interface and thus need to run on an interactive node with a defined `DISPLAY` (see how we can use this on the back/compute node)
+```bash
 # Loading
-. ssmuse-sh -x /fs/ssm/main/opt/forge/23.1
-# Running in SCM
+# . ssmuse-sh -x /fs/ssm/main/opt/forge/23.1
+. ssmuse-sh -x /fs/ssm/main/opt/forge/24.1.1
 runscm -exp expname -debug ddt
 ```
+
+### DDT for GEM (Compute node)
+You'll need a modified `scripts/gem_mpirun.sh` script; add these right after the `cclargs` "lines"
+```
+   which mpirun
+   ddt mpirun -np $((npex*npey)) lance.sh ${pgm}
+	exit $?
+```
+
+Get a compute node (may not need to be iteractive) resourses
+```bash
+qsub2mom is aliased to `qsub -I -lselect=1:ncpus=80:mpiprocs=80:ompthreads=1:mem=160gb -N openmp_mpi -l place=scatter -l walltime=4:0:0'
+```
+
+In another interactive shell session, Figure out which process it's running on using the pbs job id:
+```bash
+jobst -u ${USER}  ## grab job id from first column of output
+export PBS_JOBID=[jobid]
+NODE=$(qstat -n ${PBS_JOBID} |tail -1|awk -F/ '{print $1}')
+ssh -Y -oSendEnv=PBS_JOBID ${NODE} # "$@"
+```
+
+You now have a shell on the machine where resources where reserved.
+Load model and DDT then run the model interactively:
+```
+cd /PATH/TO/YOUR/GEMDEV/EXP
+. .ssmuse_gem
+. ssmuse-sh -x /fs/ssm/main/opt/forge/24.1.1
+gemrun CFGNAME
+```
+
+You will be greeted with a new window with several options.
+You'll need to click the "run/arrow" button to start.
 
 Profiling the code
 ----------------------
