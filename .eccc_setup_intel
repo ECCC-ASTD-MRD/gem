@@ -22,8 +22,8 @@ case ${INTEL_SCRIPT_NAME} in
     .eccc_setup_intel_2023.2.0)
         export COMPILER_VERSION=2023.2.0
         ;;
-    .eccc_setup_intel_2024.2.0)
-        export COMPILER_VERSION=2024.2.0
+    .eccc_setup_intel_2025.1.0)
+        export COMPILER_VERSION=2025.1.0
         ;;
 esac
 
@@ -44,9 +44,9 @@ if  [[ ${ORDENV_DIST} = "rhel" ]]; then
     elif [[ ${COMPILER_VERSION} = "2021.4.0" ]]; then
         . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01
         export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01/rhel-8-amd64-64
-    elif [[ ${COMPILER_VERSION} = "2024.2.0" ]]; then
-        . r.load.dot hpco/exp/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01
-        export FFTW_ROOT=/fs/ssm/hpco/exp/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/rhel-8-amd64-64
+    elif [[ ${COMPILER_VERSION} = "2025.1.0" ]]; then
+        . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01
+        export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/rhel-9-amd64-64
     fi
 fi
 
