@@ -627,7 +627,10 @@ contains
          F_istat = priv_find(F_cfg, F_ivar, F_cfgvar, F_cfgfile, F_fld, &
               fileidx, F_status, F_iter, F_vgridout_S)
          if (RMN_IS_OK(F_istat)) then
-            exit
+             msg_S = '(inputio) '//trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S)// &
+                 ' Found in file "'//trim(F_cfgvar%files_S(ifile))//'"'
+             call msg(MSG_INFO, msg_S)
+           exit
          else
             msg_S = '(inputio) '//trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S)// &
                  ' Not found in file "'//trim(F_cfgvar%files_S(ifile))//'"'
@@ -669,7 +672,7 @@ contains
       integer,target :: ip1list(NMAX_LEVELS)
       type(vgrid_descriptor) :: vgrid, vgrid0
       integer, pointer :: pip1list(:), pk1(:), pk2(:)
-      character(len=32) :: dummy_S, typvar_S, vn_S, msg_S, lvl_type_S, typvarlist_S(5), alt_S
+      character(len=32) :: dummy_S, typvar_S, vn_S, msg_S, lvl_type_S, typvarlist_S(5), alt_S, tmp_S
       logical :: ispressin_L, ispressout_L, usealtin_L
       !------------------------------------------------------------------
       call msg(MSG_DEBUG, '(inputio) find [BEGIN]')
@@ -859,20 +862,26 @@ contains
                nkeys = fstmpio_find_3d_0(pk1, funit, vn_S, &
                     cmcdatev, pip1list, ip2, RMN_ANY_I, &
                     datevfuzz, fuzztype, F_typvar_S=typvarlist_S(itypvar))
-               if (.not.RMN_IS_OK(nkeys)) then
+               if (nkeys <= 0) then
                   !#TODO: should we do this?, what if the alt field is date independent
                   cmcdatev = RMN_ANY_DATE
+                  ip2 = RMN_ANY_I
                   nkeys = fstmpio_find_3d_0(pk1, funit, vn_S, &
                        cmcdatev, pip1list, ip2, RMN_ANY_I, &
                        datevfuzz, fuzztype, F_typvar_S=typvarlist_S(itypvar))
                endif               
-               if (RMN_IS_OK(nkeys)) exit DO_TYPVAR1
+               if (nkeys > 0) exit DO_TYPVAR1
             enddo DO_TYPVAR1
-            if (nkeys /= F_fld%nkeys .or. .not.RMN_IS_OK(nkeys)) then
+            if (nkeys /= F_fld%nkeys .or. nkeys <= 0) then
                F_istat = RMN_ERR
                F_fld%nkeys = 0
                call msg(MSG_WARNING, '(inputio) Problem finding alt vgd coor field (' &
                     //trim(vn_S)//') for: '//trim(F_fld%vn1_S)//' datev='//trim(cmcdate_toprint(cmcdatev))//' typv='//typvarlist_S(itypvar))
+            else
+               call str_concat_i(tmp_S, pk1, ', ')
+               write(msg_S, '(i4,1x,a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
+               call msg(MSG_INFO, '(inputio) Found alt vgd coor field (' &
+                    //trim(vn_S)//') for: '//trim(F_fld%vn1_S)//' datev='//trim(cmcdate_toprint(cmcdatev))//' typv='//typvarlist_S(itypvar)//': '//msg_S)               
             endif
          endif IF_ALT
 
@@ -880,28 +889,35 @@ contains
             IF_SFC: if (F_fld%sfc_S(nn) /= ' ') then
                vn_S = F_fld%sfc_S(nn)
                vn_S = RM_PREFIX2(vn_S)
-               ip1list = -1
+               ip1list = RMN_ANY_I
                pip1list => ip1list(1:1)
                pk1 => F_fld%ks(nn:nn)
                DO_TYPVAR: do itypvar = 1, ntypvar
-                  istat = fstmpio_find_3d_0(pk1, funit, vn_S, &
+                  nkeys = fstmpio_find_3d_0(pk1, funit, vn_S, &
                        cmcdatev, pip1list, ip2, RMN_ANY_I, &
                        datevfuzz, fuzztype, F_typvar_S=typvarlist_S(itypvar))
-                  if (.not.RMN_IS_OK(istat)) then
+                  if (nkeys <= 0) then
                      !#TODO: should we do this?, what if the sfc field is date independent like ME
                      cmcdatev = RMN_ANY_DATE
-                     istat = fstmpio_find_3d_0(pk1, funit, vn_S, &
+                     ip2 = RMN_ANY_I
+                     nkeys = fstmpio_find_3d_0(pk1, funit, vn_S, &
                           cmcdatev, pip1list, ip2, RMN_ANY_I, &
                           datevfuzz, fuzztype, F_typvar_S=typvarlist_S(itypvar))
-                  endif
-                  if (RMN_IS_OK(istat)) exit DO_TYPVAR
+                 endif
+                  if (nkeys > 0) exit DO_TYPVAR
                enddo DO_TYPVAR
-               if (.not.RMN_IS_OK(istat)) then
+               if (nkeys <= 0) then
                   F_istat = RMN_ERR
                   F_fld%nkeys = 0
                   call msg(MSG_WARNING, '(inputio) Problem finding sfc ref field (' &
                        //trim(RM_PREFIX2(F_fld%sfc_S(nn)))//') for: '// &
                        trim(RM_PREFIX2(F_fld%vn1_S)))
+               else
+                  call str_concat_i(tmp_S, pk1, ', ')
+                  write(msg_S, '(i4,1x,a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
+                  call msg(MSG_INFO, '(inputio) Found sfc ref field (' &
+                       //trim(RM_PREFIX2(F_fld%sfc_S(nn)))//') for: '// &
+                       trim(RM_PREFIX2(F_fld%vn1_S))//': '//msg_S)
                endif
             endif IF_SFC
          enddo DO_SFC
@@ -934,7 +950,7 @@ contains
       integer, pointer :: pfunit(:), phstats(:), pk1(:), pk2(:)
       logical :: isassoc_L, isassoc2_L
       !------------------------------------------------------------------
-      call msg(MSG_DEBUG, '(inputio) read [BEGIN]')
+      call msg(MSG_DEBUG, '(inputio) read [BEGIN] '//trim(F_fld%vn1_S)//' '//trim(F_fld%vn2_S))
       F_istat = RMN_ERR
 
       hints_S(1) = F_cfgvar%hint_S
@@ -1002,7 +1018,11 @@ contains
          endif IF_BLOCIO1
          !#TODO: review hstat and error checking
 !!$         hstat = maxval(hstats2(1:F_fld%nkeys))
+         call str_concat_i(tmp_S, pk1, ', ')
+         write(msg_S, '(i4,1x,a)') size(pk1), ' levels [ip1='//trim(tmp_S)//']'
          if (RMN_IS_OK(istat)) then
+            call msg(MSG_INFO, '(inputio) Read Alt vcoor ' &
+                 //trim(F_fld%alt_S)//': '//msg_S)
 !!$            F_fld%hstat = max(F_fld%hstat, maxval(phstats))
             if (.not.isassoc2_L) F_fld%altalloc_L = .true.
             if (associated(F_fld%palt)) then
@@ -1016,7 +1036,7 @@ contains
          else
             F_istat = RMN_ERR
             call msg(MSG_WARNING, '(inputio) Problem reading alt vgd coor fld: ' &
-                 //trim(F_fld%alt_S))
+                 //trim(F_fld%alt_S)//': '//msg_S)
             return
          endif
          
@@ -1048,7 +1068,12 @@ contains
                      F_fld%psfc(:,:,ivar) = F_fld%psfc(:,:,ivar) * MB2PA
                   endif
                enddo
-            endif
+               call msg(MSG_INFO, '(inputio) Read sfc ref fld: ' &
+                    //trim(F_fld%sfc_S(1))//' '//trim(F_fld%sfc_S(2)))
+            else
+               call msg(MSG_WARNING, '(inputio) no ptr for sfc ref fld on reading: ' &
+                    //trim(F_fld%sfc_S(1))//' '//trim(F_fld%sfc_S(2)))
+           endif
          else
             F_istat = RMN_ERR
             call msg(MSG_WARNING, '(inputio) Problem reading sfc ref fld: ' &
@@ -1132,7 +1157,7 @@ contains
       character(len=64) :: vn_S, msg_S
       integer :: tint
       !------------------------------------------------------------------
-      call msg(MSG_DEBUG, '(inputio) tint_status [BEGIN]')
+      call msg(MSG_DEBUG, '(inputio) tint_status [BEGIN] '//trim(ADD_PREFIX(F_fld%id, F_fld%vn1_S))//":"//F_cfgvar%tint_S(1:4))
       F_istat = RMN_ERR
 
       IF_NONE: if (any(F_cfgvar%tint_S(1:4) == (/'none', 'any '/))) then
@@ -1169,7 +1194,7 @@ contains
       logical :: inrestart_L
       character(len=64) :: vn_S, msg_S
       !------------------------------------------------------------------
-      call msg(MSG_DEBUG, '(inputio) tint_set [BEGIN]')
+      call msg(MSG_DEBUG, '(inputio) tint_set [BEGIN] '//trim(ADD_PREFIX(F_fld%id, F_fld%vn1_S))//":"//F_cfgvar%tint_S(1:4))
       F_istat = RMN_ERR
 
       IF_NONE: if (any(F_cfgvar%tint_S(1:4) == (/'none', 'any '/))) then
@@ -1225,7 +1250,7 @@ contains
       integer(INT64) :: jdatev
       integer :: istat
       !------------------------------------------------------------------
-      call msg(MSG_DEBUG, '(inputio) tint_get [BEGIN]')
+      call msg(MSG_DEBUG, '(inputio) tint_get [BEGIN] '//trim(ADD_PREFIX(F_fld%id, F_fld%vn1_S))//":"//F_cfgvar%tint_S(1:4))
       F_istat = RMN_ERR
 
       IF_NONE: if (any(F_cfgvar%tint_S(1:4) == (/'none', 'any '/))) then
@@ -1290,7 +1315,7 @@ contains
       integer,pointer :: ip1list(:)
       type(vgrid_descriptor) :: vgrid
       !------------------------------------------------------------------
-      call msg(MSG_DEBUG, '(inputio) vint [BEGIN]')
+      call msg(MSG_DEBUG, '(inputio) vint [BEGIN] '//trim(F_fldin%vn1_S)//":"//trim(F_cfgvar%vint_S))
       F_istat = RMN_ERR
       if (.not.(associated(F_fldin%d1) .and. &
            (F_fldin%vn2_S == ' ' .or. associated(F_fldin%d2)))) then
