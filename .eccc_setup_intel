@@ -28,11 +28,11 @@ case ${INTEL_SCRIPT_NAME} in
 esac
 
 # Load code-tools 
-. r.load.dot rpn/code-tools/20250521/env/inteloneapi-${COMPILER_VERSION}
+. r.load.dot rpn/code-tools/20240719/env/inteloneapi-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot mrd/rpn/libs/20250604-beta
-. r.load.dot mrd/rpn/utils/20250604-beta
+. r.load.dot mrd/rpn/libs/20241105-alpha
+. r.load.dot mrd/rpn/utils/20241105-alpha
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 # Load cnccpl for GEM-NEMO
