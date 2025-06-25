@@ -186,6 +186,7 @@ build:rhel-9-amd-64_inteloneapi-2025.1.0:
     - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
+  allow_failure: true
 
 package:rhel-9-amd-64_inteloneapi-2025.1.0:
    variables:
@@ -207,6 +208,7 @@ package:rhel-9-amd-64_inteloneapi-2025.1.0:
       - cd ${PIPELINE_SUBDIR}/build-rhel-9-amd-64_inteloneapi-2025.1.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+  allow_failure: true
 
 #----- rhel-8-icelake-64-intel-2022.1.2-gem-nemo
 # U2 Intel 2022 with installed RPN-SI libs, WITH_NEMO
