@@ -109,7 +109,7 @@ contains
            zprctns,zpritns,qti1p, nti1p, zti1p, zfsc, zqlsc, zqssc, &
            zumfs, ztpostshal, zhupostshal, zcqce, zcqe, zcte, zen, zkt, &
            zareaup, zdmfkfc, zkfcrf, zkfcsf, zqldi, zqrkfc, zqsdi, zumfkfc, &
-           zqcz, zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
+           zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
            zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2
 
       logical :: kfcmom
@@ -202,7 +202,6 @@ contains
       MKPTR2Dm1(zpritns, pritns, pvars)
       MKPTR2Dm1(zqckfc, qckfc, pvars)
       MKPTR2Dm1(zmqce, mqce, pvars)
-      MKPTR2Dm1(zqcz, qcz, pvars)
       MKPTR2Dm1(zqdifv, qdifv, pvars)
       MKPTR2Dm1(zqlsc, qlsc, pvars)
       MKPTR2Dm1(zqssc, qssc, pvars)
@@ -495,36 +494,40 @@ contains
       endif MIDLEVEL_CONVECTION
       if (phy_error_L) return
 
-      ! Adjust midlevel tendencies to impose conservation
-      if (pb_conserve(mid_conserve, zmte, zmqe, pvars, &
-           F_dqc=zprctnm, F_dqi=zpritnm, F_rain=ztlcm) /= PHY_OK) then
-         call physeterror('cnv_main', &
-              'Cannot correct conservation for '//trim(conv_mid))
-         return
-      endif
+      MIDLEVEL_CONS_TEND: if (conv_mid /= 'NIL') then
+         
+         ! Adjust midlevel tendencies to impose conservation
+         if (pb_conserve(mid_conserve, zmte, zmqe, pvars, &
+              F_dqc=zprctnm, F_dqi=zpritnm, F_rain=ztlcm) /= PHY_OK) then
+            call physeterror('cnv_main', &
+                 'Cannot correct conservation for '//trim(conv_mid))
+            return
+         endif
 
-      ! Apply midlevel convective tendencies for non-condensed state variables
-      if (associated(zumid) .and. associated(zvmid)) then
-         call apply_tendencies(ttp,  qqp,  uu,    vv, &
-              &                zmte, zmqe, zumid, zvmid, &
-              &                ztdmaskxdt, ni, nk, nkm1)
-      else
-         call apply_tendencies(ttp,  qqp, &
-              &                zmte, zmqe, ztdmaskxdt, ni, nk, nkm1)
-      endif
-      
-      ! Apply mid-level convective tendencies for condensed variables
-      call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, &
-            qti1p, nti1p, zti1p, ztdmaskxdt, ni, nk, nkm1)
+         ! Apply midlevel convective tendencies for non-condensed state variables
+         if (associated(zumid) .and. associated(zvmid)) then
+            call apply_tendencies(ttp,  qqp,  uu,    vv, &
+                 &                zmte, zmqe, zumid, zvmid, &
+                 &                ztdmaskxdt, ni, nk, nkm1)
+         else
+            call apply_tendencies(ttp,  qqp, &
+                 &                zmte, zmqe, ztdmaskxdt, ni, nk, nkm1)
+         endif
 
-      ! Post-midlevel budget analysis
-      if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, pvars, &
-           delt, nkm1, F_rain=ztlcm) /= PHY_OK) then
-         call physeterror('cnv_main', &
-              'Problem computing final budget for '//trim(conv_mid))
-         return
-      endif
-      
+         ! Apply mid-level convective tendencies for condensed variables
+         call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, &
+              qti1p, nti1p, zti1p, ztdmaskxdt, ni, nk, nkm1)
+
+         ! Post-midlevel budget analysis
+         if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, pvars, &
+              delt, nkm1, F_rain=ztlcm) /= PHY_OK) then
+            call physeterror('cnv_main', &
+                 'Problem computing final budget for '//trim(conv_mid))
+            return
+         endif
+         
+      endif MIDLEVEL_CONS_TEND
+
       call msg_toall(MSG_DEBUG, 'cnv_main [END]')
       !----------------------------------------------------------------
       return

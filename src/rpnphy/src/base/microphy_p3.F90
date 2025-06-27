@@ -11695,8 +11695,6 @@ SUBROUTINE access_lookup_table_coll_3mom_LF(dumzz,dumjj,dumii,dumll,dumj,dumi,in
          'ICE_MASS_TEND    ', &
          'ICE_EFF_RAD      ', &
          'RATE_PRECIP_TYPES', &
-         'PARTICLE_DIAMETER', &
-         'CCN_NUM          ', &
          'MPDIAG_2D        ', &
          'MPDIAG_3D        ', &
          'MPVIS            ', &

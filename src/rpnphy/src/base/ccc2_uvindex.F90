@@ -7,7 +7,7 @@ subroutine ccc2_uvindex2(il1,il2,ilg,fctb,fatb,salb,iuvc,iuva,iuv_method)
    integer :: il1,il2,ilg
    real, dimension(ilg,RAD_NUVBRANDS) :: fatb,fctb
    real, dimension(ilg)               :: iuvc,iuva,salb
-   character(len=10), optional        :: iuv_method
+   character(len=10)                  :: iuv_method
 
    !@Authors  Y.J.Rochon, Feb 2016, Oct 2017, Oct-Dec 2018
    !
@@ -127,7 +127,7 @@ subroutine ccc2_uvindex2(il1,il2,ilg,fctb,fatb,salb,iuvc,iuva,iuv_method)
    ! ----------------------------------------------------------------------
 
    imethod='INTEGFIT'
-   if (present(iuv_method)) then
+!!$   if (present(iuv_method)) then
       if (any(iuv_method == IUV_METHOD_OPT)) then
          imethod = trim(iuv_method) 
       else
@@ -135,7 +135,7 @@ subroutine ccc2_uvindex2(il1,il2,ilg,fctb,fatb,salb,iuvc,iuva,iuv_method)
          iuva=0.0
          return
       end if
-   end if
+!!$   end if
 
    ! Scale fluxes as needed
 

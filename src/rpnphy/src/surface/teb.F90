@@ -319,7 +319,7 @@ subroutine TEB2(PT_CANYON, PQ_CANYON, PU_CANYON,                         &
 !               ------------
 
 use MODD_CSTS,     only : XTT, XSTEFAN
-use MODD_SNOW_PAR, only : XEMISSN, XANSMAX,SWE_CRIT
+use MODD_SNOW_PAR_TEB, only : XEMISSN, XANSMAX,SWE_CRIT
 use SFC_OPTIONS,   only : THERMAL_STRESS
 
 use MODE_THERMOS

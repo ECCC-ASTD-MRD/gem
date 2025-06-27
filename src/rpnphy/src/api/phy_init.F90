@@ -137,7 +137,7 @@ contains
       integer, external :: msg_getUnit, phydebu2, sfc_init1, itf_cpl_init
 
       logical :: print_L
-      integer :: unout, options, itype, isizeof, ntr, nsurf
+      integer :: unout, options, itype, isizeof, ntr, nsurf, nextra
       integer :: ier, p_ni, p_nj, master_pe, n
       integer :: type1, sizeof1, options1
       integer :: mini, maxi, lni, lnimax, li0
@@ -186,15 +186,33 @@ contains
       nphyoutlist = -1
       ier = wb_get_meta('itf_phy/PHYOUT', type1, sizeof1, nphyoutlist, options1)
       if (.not.WB_IS_OK(ier)) nphyoutlist = -1
-      allocate(phyoutlist_S(max(1,nphyoutlist)))
+      nextra = 0
+      if (ptp_L) nextra = 3
+      allocate(phyoutlist_S(max(1,nphyoutlist+nextra)))
       phyoutlist_S(:) = ' '
       if (nphyoutlist > 0) then
          ier = wb_get('itf_phy/PHYOUT', phyoutlist_S, nphyoutlist)
-         if (.not.WB_IS_OK(ier)) nphyoutlist = 0
-         do n=1,nphyoutlist
-            ier = clib_toupper(phyoutlist_S(n))
-         enddo
+         if (.not.WB_IS_OK(ier)) then
+            call msg(MSG_WARNING,'(phy_init) Problem getting itf_phy/PHYOUT, reverting to allocate and compute all diags')
+            nphyoutlist = -1
+         else
+            if (all(phyoutlist_S(1:nphyoutlist) == ' ')) nphyoutlist = 0
+            do n=1,nphyoutlist
+               ier = clib_toupper(phyoutlist_S(n))
+            enddo
+         endif
       endif
+      if (nphyoutlist == 0) then
+         call msg(MSG_WARNING, 'No Phy output resquested')
+      else
+         call msg(MSG_WARNING, 'Unknown phy output resquests, allocating and computing all diagnostics')
+      endif
+      if (ptp_L) then
+         phyoutlist_S(nphyoutlist+1) = 'UP00'
+         phyoutlist_S(nphyoutlist+2) = 'VP00'
+         phyoutlist_S(nphyoutlist+3) = 'TP00'
+      endif
+      nphyoutlist = nphyoutlist + nextra
 
       ier = wb_get('itf_phy/DYNOUT', dynout)
       if (.not.WB_IS_OK(ier)) dynout = .false.

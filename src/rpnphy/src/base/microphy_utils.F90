@@ -141,7 +141,7 @@ contains
          missing_list = trim(missing_list)//' mp_iwc'
     if (len_trim(missing_list) /= 0) then
        call physeterror('microphy_utils::mp_init', &
-            'Failed to initialize microphysics API components for ', &
+            'Failed to initialize microphysics API components for '// &
             trim(stcond)//': '//trim(missing_list))
        return
     endif

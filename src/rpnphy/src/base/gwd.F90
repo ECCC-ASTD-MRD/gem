@@ -111,7 +111,7 @@ contains
       MKPTR2DN(zhuplus, huplus, ni, nk, pvars)
       MKPTR2DN(ztplus, tplus, ni, nk, pvars)
 
-      MKPTR2DN(zmrk2, mrk2,  ni, nk, pvars)
+      MKPTR2D(zmrk2, mrk2, pvars)
       
       MKPTR3D(zvcoef, vcoef, pvars)
 

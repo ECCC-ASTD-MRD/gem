@@ -14,11 +14,11 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 !   ######################################################################
-    SUBROUTINE SURFACE_AERO_COND(PRI, PZREF, PUREF, PVMOD, PZ0,&
+    SUBROUTINE SURFACE_AERO_COND_TEB(PRI, PZREF, PUREF, PVMOD, PZ0,&
                                     PZ0H, PAC                     )
 !   ######################################################################
 !
-!!****  *SURFACE_AERO_COND*  
+!!****  *SURFACE_AERO_COND_TEB*  
 !!
 !!    PURPOSE
 !!    -------
@@ -63,6 +63,7 @@
 !!    -------------
 !!      Original    20/01/98 
 !!                  02/04/01 (P Jabouille) limitation of Z0 with 0.5 PUREF
+!!                  2025/01/10 (M Abrahamowicz) Rename with _TEB to avoid conflict with updated SURFEX equivalent imported as part of SVS2 merge 2025/01/10
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -158,4 +159,4 @@ CONTAINS
 !-------------------------------------------------------------------------------
 !
 !
-END SUBROUTINE SURFACE_AERO_COND
+END SUBROUTINE SURFACE_AERO_COND_TEB
