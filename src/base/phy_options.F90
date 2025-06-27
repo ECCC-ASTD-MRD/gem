@@ -259,6 +259,7 @@ module phy_options
    character(len=16) :: longmel      = 'BLAC62'
    namelist /physics_cfgs/ longmel
    namelist /physics_cfgs_p/ longmel
+!!$   character(len=*), parameter :: LONGMEL_OPT(:) = ML_CLOSURES(:)%name
 
    !# Time length (hours) for special time averaged physics variables
    integer           :: moyhr = 0

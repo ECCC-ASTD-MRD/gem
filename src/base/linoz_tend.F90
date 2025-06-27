@@ -2,7 +2,7 @@
 module linoz_tend_mod
    implicit none
    private
-   public :: linoz_tend
+   public :: linoz_tend, linoz_tend_ghg
    
 contains
    
@@ -80,16 +80,15 @@ subroutine linoz_tend(o3, &
    do7dt = 0.
    if (associated(do8dt)) do8dt = 0.
 
-   ! --------------------
-   !  Loop on longitudes
-   ! -------------------
-   DO_I1: do i = 1, ni
+   ! ----------------------------
+   ! Loop on all vertical levels
+   ! ----------------------------
+   DO_K1: do k=1,lay
 
-      ! ----------------------------
-      ! Loop on all vertical levels
-      ! ----------------------------
-
-      DO_K1: do k=1,lay
+      ! --------------------
+      !  Loop on longitudes
+      ! -------------------
+      DO_I1: do i = 1, ni
 
          hu_ppm = consth * qq(i,k)      ! units ppmv <- kg kg-1
          ptop = shtj(i,k)  *ps(i)       ! pressure (Pa) at the upper interface
@@ -199,14 +198,12 @@ subroutine linoz_tend(o3, &
          do3dt(i,k) = (o3_new(i,k) - o3(i,k)) / timestep               !mole/mole/sec
 
 
-      end do DO_K1
-   end do DO_I1
+      end do DO_I1
+   end do DO_K1
 
    !----------------------------------------------------------------
    return
 end subroutine linoz_tend
-
-end module linoz_tend_mod
 
 
 !/@*
@@ -276,16 +273,15 @@ subroutine linoz_tend_ghg( &
    integer :: i,k
    real :: ptop, hu_ppm
    
-   ! --------------------
-   !  Loop on longitudes
-   ! -------------------
-   DO_I2: do i = 1, ni
+   ! ----------------------------
+   ! Loop on all vertical levels
+   ! ----------------------------
+   DO_K2: do k=1,lay
 
-      ! ----------------------------
-      ! Loop on all vertical levels
-      ! ----------------------------
-
-      DO_K2: do k=1,lay
+      ! --------------------
+      !  Loop on longitudes
+      ! -------------------
+      DO_I2: do i = 1, ni
 
          ! Apply LINOZ tendencies above tropopause, defined as specific humidity 'hu_linoz=10ppmv' or pressure 'p_linoz_tropo=100mb'
          hu_ppm = consth * qq(i,k)      ! units ppmv <- kg kg-1
@@ -338,9 +334,11 @@ subroutine linoz_tend_ghg( &
          !        ' f11vmr, f11new, f11tend=',  f11(i,k), f11_new(i,k), df11dt(i,k), &
          !        ' f12vmr, f12new, f12tend=',  f12(i,k), f12_new(i,k), df12dt(i,k)
 
-      end do DO_K2
-   end do DO_I2
+      end do DO_I2
+   end do DO_K2
 
    !----------------------------------------------------------------
    return
 end subroutine linoz_tend_ghg
+
+end module linoz_tend_mod

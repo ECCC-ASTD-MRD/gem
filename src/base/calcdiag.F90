@@ -55,7 +55,11 @@ contains
       real, parameter :: EC_Z_ROUGH=40.                !Fixed height for ECMWF diagnostics in rough terrain
       real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
       character(len=*), parameter :: EC_INTERP='cubic' !Type of vertical interpolation for ECMWF diagnostics
-
+      character(len=4), parameter :: REFRACVAR(12) = (/ &
+              'DCBH', 'DCNB', 'DCLL', 'DC1M', 'DC1I', 'DCMR', &
+              'DC2M', 'DC2I', 'DCST', 'DCTH', 'DC3M', 'DC3I' &
+           /)
+      
       logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr, is_mp, is_consun, &
            is_pcptype_nil, is_pcptype_sps, is_pcptype_b3d, is_fluvert_nil, is_fluvert_sfc, is_hrl, is_hrli
       integer :: i, k, moyhr_steps, istat, istat1, nkm1
@@ -64,10 +68,9 @@ contains
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
            vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw
       real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
-      real, dimension(ni,nk) :: presinv, t2inv, tiinv, lwcp, iwcp
+      real, target :: zero2d(ni,nk)
+      real, dimension(ni,nk) :: rtmp2d, presinv
       real, dimension(ni,nk-1) :: q_grpl, iiwc, prest
-
-!!$      real, target :: dummy1Dni(ni), dummy2Dnk(ni,nk)
 
 #define PHYPTRDCL
 #include "calcdiag_ptr.hf"
@@ -84,8 +87,9 @@ contains
       call init2nan(uvs, vmod, vdir, th_air, hblendm, ublend)
       call init2nan(vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw)
       call init2nan(en0, pw0, en1, pw1)
-      call init2nan(presinv, t2inv, tiinv, q_grpl, iiwc, lwcp, iwcp)
+      call init2nan(rtmp2d, presinv, q_grpl, iiwc, prest)
 
+      zero2d = 0.
       w_p3v5 = 0.
       if (stcond == 'MP_P3') w_p3v5 = 1.
       w_my2 = 0.
@@ -121,6 +125,7 @@ contains
       endif
 
       !# Final PBL height
+      !#TODO: could this be optional? (if it's not diag but needed for next step, moved elsewhere...
       istat = blheight(zhpbl,ztplus,zhuplus,zuplus,zvplus,zgzmom,zgztherm,zsigt, &
            ztsurf,zqsurf,zpplus,zz0_ag,zz0t_ag,zdlat,zfcor,ni,nk-1)
 
@@ -143,9 +148,25 @@ contains
       endif COMPUTE_SLT_WINDS
 
       ! Sum dissipative wind tendencies from applicable sources (for SKEB)
-      if (associated(zudis)) zudis(:,:) = zugwd(:,:) + zugno(:,:) + zufcp(:,:)
-      if (associated(zvdis)) zvdis(:,:) = zvgwd(:,:) + zvgno(:,:) + zvfcp(:,:)
-
+      if (associated(zudis)) then
+         if (associated(zugwd) .and. associated(zugno)) then
+            zudis = zugwd + zugno + zufcp
+         else
+            zudis = zufcp
+            if (associated(zugwd)) zudis = zudis + zugwd
+            if (associated(zugno)) zudis = zudis + zugno
+         endif
+      endif
+      if (associated(zvdis)) then
+         if (associated(zvgwd) .and. associated(zvgno)) then
+            zvdis = zvgwd + zvgno + zvfcp
+         else
+            zvdis = zvfcp
+            if (associated(zvgwd)) zvdis = zvdis + zvgwd
+            if (associated(zvgno)) zvdis = zvdis + zvgno
+         endif
+      endif
+      
       !****************************************************************
       !     Screen-level fields
       !     ---------------------------
@@ -154,19 +175,29 @@ contains
       if (.not.(lkount0 .and. .not.is_fluvert_nil) .or. is_fluvert_sfc) then
 
          ! Clip the screen level relative humidity to a range from 0-1
-         call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
-         zrhdiag(1:ni) = max(min(zrhdiag(1:ni), 1.0), 0.)
+         if (ISREQSTEP("RH") .or. ISREQOUTL((/"HRMX","HRMN"/))) then
+            call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
+            zrhdiag(1:ni) = max(min(zrhdiag(1:ni), 1.0), 0.)
+         endif
 
          ! Screen level dewpoint depression
-         call mhuaes3(zesdiag, zqdiag, ztdiag, zpplus, .false., ni, 1, ni)
-         zesdiag(1:ni) = max(zesdiag(1:ni),0.)
-         ztdew(1:ni) = ztdiag(1:ni) - zesdiag(1:ni)
-         call mhuaes3(zesdiag, zqdiagstn, ztdiagstn, zpplus, .false., ni, 1, ni)
-         zesdiag(1:ni) = max(zesdiag(1:ni),0.)
-         ztddiagstn(1:ni) = ztdiagstn(1:ni) - zesdiag(1:ni)
-         call mhuaes3(zesdiag, zqdiagstnv, ztdiagstnv, zpplus, .false., ni, 1, ni)
-         zesdiag(1:ni) = max(zesdiag(1:ni),0.)
-         ztddiagstnv(1:ni) = ztdiagstnv(1:ni) - zesdiag(1:ni)         
+         if (ISREQSTEP("TDK")) then
+            call mhuaes3(esdiagec, zqdiag, ztdiag, zpplus, .false., ni, 1, ni)
+            ztdew(1:ni) = ztdiag(1:ni) - max(esdiagec(1:ni),0.)
+         endif
+
+         if (ISREQSTEP("TDS")) then
+            call mhuaes3(esdiagec, zqdiagstn, ztdiagstn, zpplus, .false., ni, 1, ni)
+            ztddiagstn(1:ni) = ztdiagstn(1:ni) - max(esdiagec(1:ni),0.)
+         endif
+
+         if (ISREQSTEPL((/"ED  ","TDSV"/))) then
+            call mhuaes3(zesdiag, zqdiagstnv, ztdiagstnv, zpplus, .false., ni, 1, ni)
+            zesdiag(1:ni) = max(zesdiag(1:ni),0.)
+
+            if (ISREQSTEP("TDSV")) &
+                 ztddiagstnv(1:ni) = ztdiagstnv(1:ni) - zesdiag(1:ni)         
+         endif
 
       endif
 
@@ -207,11 +238,10 @@ contains
             call physeterror('calcdiag', 'Problem with EC screen-level diagnostic')
             return
          endif
-         call mhuaes3(esdiagec, zqdiagec, ztdiagec, zpplus, .false., ni, 1, ni)
-         do i=1,ni
-            esdiagec(i) = max(esdiagec(i), 0.)
-            ztddiagec(i) = ztdiagec(i) - esdiagec(i)
-         enddo
+         if (ISREQSTEP('TDEC')) then
+            call mhuaes3(esdiagec, zqdiagec, ztdiagec, zpplus, .false., ni, 1, ni)
+            ztddiagec = ztdiagec - max(esdiagec, 0.)
+         endif
 
       endif ECMWF_SCREEN
       
@@ -240,6 +270,8 @@ contains
          IF_BOURG3D: if (is_pcptype_b3d .and. is_consun) then
             !AZR3D: Accumulation des precipitations verglaclacantes en 3D
             !AIP3D: Accumulation des precipitations re-gelees en 3D
+            if (.not.associated(zkfmrf)) zkfmrf => zero2d
+            if (.not.associated(zkfmsf)) zkfmsf => zero2d
             do k = 1,nk-1
                do i = 1, ni
                   ! Flux de consun1
@@ -276,10 +308,10 @@ contains
             if (sw_dhmax > 0 .and. w_p3v5 > 0.) zsw_dhmax(i) = max(zsw_dhmax(i)*w_reset,a_diag_dhmax(i,nkm1))
 
             !taux des precipitations de la convection profonde
-            zry(i) = ztsc(i) + ztlc(i)
+            if (associated(zry)) zry(i) = ztsc(i) + ztlc(i)
 
             !taux des precipitations de la convection restreinte
-            zrz(i) = ztscs(i) + ztlcs(i)
+            if (associated(zrz)) zrz(i) = ztscs(i) + ztlcs(i)
 
             !taux des precipitations liquides implicites
             zrlc(i) = ztlc(i) + ztlcm(i) + ztlcs(i)
@@ -423,18 +455,20 @@ contains
       endif IF_KOUNT_NOT_0
 
       if (lrefract) then
-         call refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
-              zdct_lvlmin, zdct_sndmax, zdct_sndmin, zdct_str, zdct_thick, &
-              zdct_trdmax, zdct_trdmin, zdct_moref, &
-              zpplus, zgztherm, zsigm, ztplus, zhuplus, ni, nk)
+         if (ISREQSTEPL(REFRACVAR)) then
+            call refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
+                 zdct_lvlmin, zdct_sndmax, zdct_sndmin, zdct_str, zdct_thick, &
+                 zdct_trdmax, zdct_trdmin, zdct_moref, &
+                 zpplus, zgztherm, zsigm, ztplus, zhuplus, ni, nk)
+         endif
       endif
 
-      if (llight) then
+      if (llight .and. (ISREQSTEP("FDRE") .or. ISREQOUT("FDAC"))) then
          if (stcond(1:5)=='MP_P3') then
             do k = 1, nk-1
                do i = 1, ni
                   q_grpl(i,k) = a_qi_4(i,k) + a_qi_5(i,k)
-                  iiwc(i,k)   = a_qi_1(i,k) + a_qi_2(i,k) + a_qi_3(i,k) +     &
+                  iiwc(i,k) = a_qi_1(i,k) + a_qi_2(i,k) + a_qi_3(i,k) +     &
                        a_qi_4(i,k) + a_qi_5(i,k) + a_qi_6(i,k)
                enddo
             enddo
@@ -443,7 +477,7 @@ contains
             do k = 1, nk-1
                do i = 1, ni
                   q_grpl(i,k) = zqgplus(i,k)
-                  iiwc(i,k)   = zqiplus(i,k) + zqnplus(i,k) + zqgplus(i,k)
+                  iiwc(i,k) = zqiplus(i,k) + zqnplus(i,k) + zqgplus(i,k)
                enddo
             enddo
             call lightning2(zfoudre,zp0_plus,zsigm,ztplus,zwplus,q_grpl,iiwc,ni,nk)
@@ -454,28 +488,37 @@ contains
       !     Energy budget diagnostics
       !     ---------------------------------
 
-      zrtrauw = zrt*RAUW
+      
+      if (ebdiag .or. lcons) zrtrauw = zrt*RAUW
       
       ! Compute Q1, Q2 apparent heat source / moisture sink on request
       Q1_BUDGET: if (ebdiag) then
-         do k=1,nk
-            do i = 1, ni
-               presinv(i,nk-(k-1)) = zpplus(i)*zsigt(i,k)
-               t2inv(i,nk-(k-1)) = zt2(i,k)
-               tiinv(i,nk-(k-1)) = zti(i,k)
+         istat = INT_OK ; istat1 = INT_OK
+         if (associated(zt2i) .or. associated(ztii)) then
+            do k=1,nk
+               presinv(:,nk-(k-1)) = zpplus(:)*zsigt(:,k)
             enddo
-         enddo
-         istat  = int_profile(zt2i,t2inv,presinv,presinv(:,nk),presinv(:,1))
-         istat1 = int_profile(ztii,tiinv,presinv,presinv(:,nk),presinv(:,1))
+         endif
+         if (associated(zt2i)) then
+            do k=1,nk
+               rtmp2d(:,nk-(k-1)) = zt2(:,k)
+            enddo
+            istat  = int_profile(zt2i,rtmp2d,presinv,presinv(:,nk),presinv(:,1))
+         endif
+         if (associated(ztii)) then
+            do k=1,nk
+               rtmp2d(:,nk-(k-1)) = zti(:,k)
+            enddo
+            istat1 = int_profile(ztii,rtmp2d,presinv,presinv(:,nk),presinv(:,1))
+         endif
          if (istat /= INT_OK .or. istat1 /= INT_OK) then
             call physeterror('calcdiag', 'Problem in radiative tendency integrals')
             return
          endif
-         
-         do i = 1, ni
-            zq1app(i) = CPD*(zt2i(i)+ztii(i))/GRAV + CHLC*zrtrauw(i) + zfc_ag(i)
-            zq2app(i) = CHLC*(zrtrauw(i) - zflw(i))
-         enddo
+         if (associated(zq1app)) &
+              zq1app = CPD*(zt2i+ztii)/GRAV + CHLC*zrtrauw + zfc_ag
+         if (associated(zq2app)) &
+              zq2app = CHLC*(zrtrauw - zflw)
       endif Q1_BUDGET
 
       IF_CONS: if (lcons) then
@@ -483,7 +526,7 @@ contains
          if (conephy > 0 .or. conqphy > 0) then
             en0(:) = dble(zcone0(:))
             pw0(:) = dble(zconq0(:))
-            zconephy = 0.
+!!$            zconephy = 0.
             if (pb_residual(zconephy, zconqphy, en0, pw0, pvars, &
                  delt, nkm1, F_rain=zrtrauw, F_shf=zfc_ag, F_wvf=zflw, &
                  F_rad=znetrad) /= PHY_OK) then
@@ -497,7 +540,7 @@ contains
          if (conetot > 0 .or. conqtot > 0) then
             en1(:) = dble(zcone1(:))
             pw1(:) = dble(zconq1(:))
-            zconetot = 0.
+!!$            zconetot = 0.
             if (pb_residual(zconetot, zconqtot, en1, pw1, pvars, &
                  delt, nkm1, F_rain=zrtrauw, F_shf=zfc_ag, F_wvf=zflw, &
                  F_rad=znetrad) /= PHY_OK) then
@@ -522,7 +565,7 @@ contains
          
       endif IF_CONS
    
-      ! Compute surface energy budget (
+      ! Compute surface energy budget
       if (ISREQOUT('AG') .or. ISREQSTEP('FL')) then
          zfl(:) = zfns(:) - zfv_ag(:) - zfc_ag(:)
       else
@@ -559,7 +602,8 @@ contains
       if (lkount0 .or. lreset) w_reset = 0.
          
       if (laccum) then
-         uvs = sqrt(zudiag*zudiag + zvdiag*zvdiag)
+         if (associated(zuvsmax) .or. associated(zuvsavg)) &
+              uvs = sqrt(zudiag*zudiag + zvdiag*zvdiag)
          
          DO_MAX(zhrsmax, zrhdiag, w_reset)
          DO_MIN(zhrsmin, zrhdiag, w_reset)
@@ -776,12 +820,12 @@ contains
          DO_ACC(zalcs, ztlcs, dt, w_reset)
          DO_ACC(zass,  ztss,  dt, w_reset)
          DO_ACC(zals,  ztls,  dt, w_reset)
-         zpc  = zalc + zasc + zalcs + zascs + zalcm
-         zpy  = zalc + zasc
-         zpz  = zalcs + zascs
-         zacm = zalcm
-         zae  = zals + zass
-         zpr  = zpc + zae
+         if (associated(zpc)) zpc  = zalc + zasc + zalcs + zascs + zalcm
+         if (associated(zpy)) zpy  = zalc + zasc
+         if (associated(zpz)) zpz  = zalcs + zascs
+         if (associated(zacm)) zacm = zalcm
+         if (associated(zae))  zae  = zals + zass
+         if (associated(zpr))  zpr  = zpc + zae
          
          !# Accumulation of precipitation (in m)
          DO_ACC(zrainaf, zrainrate, dt, w_reset)

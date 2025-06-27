@@ -406,7 +406,7 @@ contains
 
          call radfac4(zo3fk, zoztoit, sig, nk, nkm1, npcl, zdlat, ps, ni, ni, &
               p2, p3, p4, p5, p6, p7, p8, nlacl, &
-              goz(fozon), goz(clat), goz(pref))
+              goz(fozon:), goz(clat:), goz(pref:))
          if (phy_error_L) return
 
          ! must modify oztoit to fit the needs of raddriv who expects an average

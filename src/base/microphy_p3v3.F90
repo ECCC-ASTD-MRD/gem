@@ -6222,8 +6222,6 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
          'ICE_MASS_TEND    ', &
          'ICE_EFF_RAD      ', &
          'RATE_PRECIP_TYPES', &
-         'PARTICLE_DIAMETER', &
-         'CCN_NUM          ', &
          'MPDIAG_2D        ', &
          'MPDIAG_3D        ', &
          'MPVIS            ', &

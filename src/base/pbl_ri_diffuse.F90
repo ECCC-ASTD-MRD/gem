@@ -101,7 +101,7 @@ contains
 
     MKPTR2DN(zfc, fc, ni, nagrege, F_pvars)
     MKPTR2DN(zfv, fv, ni, nagrege, F_pvars)
-    MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, F_pvars)
+    MKPTR2D(zmrk2, mrk2, F_pvars)
 
     MKPTR2D(zturbqf, turbqf, F_pvars)
     MKPTR2D(zturbtf, turbtf, F_pvars)

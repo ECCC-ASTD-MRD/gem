@@ -45,59 +45,53 @@ contains
 
       ! Local variables
       integer :: i, istat, nkm1
-      real    :: wk1(ni,nk), wk2(ni,nk), rcdt1
-      real, dimension(ni,nk), target :: zero
+      real    :: rcdt1
       real(REAL64), dimension(ni) :: l_en0, l_pw0
       real, pointer, dimension(:,:), contiguous :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zqcplus, zwplus
-      real, pointer, dimension(:), contiguous   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, zps, ztdmaskxdt
-      real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zflw
-      real, pointer, dimension(:) :: zfc  !#TODO: should be contiguous
+      real, pointer, dimension(:), contiguous   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, ztdmaskxdt
+      real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zflw, zfc
       real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, &
-           zwdifv, zqcdifv, ztmoins, zqmoins, ztve, zvcoef
+           zwdifv, zqcdifv, ztmoins, zqmoins, ztve
       logical :: dqc_applied
 
-      ! External symbols
-      integer, external :: pbl_simple
-
-      call init2nan(wk1,wk2)
       call init2nan(l_en0,l_pw0)
 
       MKPTR2D(zqmoins, humoins, pvars)
       MKPTR2D(zqplus, huplus, pvars)
       MKPTR2D(ztmoins, tmoins, pvars)
       MKPTR2D(ztplus, tplus, pvars)
-      MKPTR2D(zumoins, umoins, pvars)
       MKPTR2D(zuplus, uplus, pvars)
-      MKPTR2D(zvmoins, vmoins, pvars)
       MKPTR2D(zvplus, vplus, pvars)
       MKPTR2D(zqcplus, qcplus, pvars)
       MKPTR2D(zwplus, wplus, pvars)
-      MKPTR1D(zps, pmoins, pvars)
       MKPTR1D(zqdiag, qdiag, pvars)
       MKPTR1D(ztdiag, tdiag, pvars)
       MKPTR1D(zudiag, udiag, pvars)
       MKPTR1D(zvdiag, vdiag, pvars)
-      MKPTR1D(zz0, z0, pvars)
       MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR1D(zconepbl, conepbl, pvars)
       MKPTR1D(zconqpbl, conqpbl, pvars)
       MKPTR1DK(zfc, fc, indx_agrege, pvars)
       MKPTR1D(zflw, flw, pvars)
-      MKPTR2D(zkm, km, pvars)
-      MKPTR2D(zkt, kt, pvars)
-      MKPTR2D(zgzmom, gzmom, pvars)
-      MKPTR2D(zgztherm, gztherm, pvars)
       MKPTR2D(zqcdifv, qcdifv, pvars)
       MKPTR2D(zqdifv, qdifv, pvars)
       MKPTR2D(ztve, tve, pvars)      
       MKPTR2D(ztdifv, tdifv, pvars)
       MKPTR2D(zudifv, udifv, pvars)
       MKPTR2D(zvdifv, vdifv, pvars)
-      MKPTR2D(zvcoef, vcoef, pvars)
       MKPTR2D(zwdifv, wdifv, pvars)
+
+      ! if (fluvert == 'SIMPLE') then
+         MKPTR2D(zumoins, umoins, pvars)
+         MKPTR2D(zvmoins, vmoins, pvars)
+         MKPTR1D(zz0, z0, pvars)
+         MKPTR2D(zkm, km, pvars)
+         MKPTR2D(zkt, kt, pvars)
+         MKPTR2D(zgzmom, gzmom, pvars)
+         MKPTR2D(zgztherm, gztherm, pvars)
+      ! endif
       
       ! Initialization
-      zero = 0.
       rcdt1 = 1./cdt1
       nkm1 = nk-1
       

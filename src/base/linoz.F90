@@ -15,7 +15,8 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use linoz_param
-      use linoz_tend_mod, only: linoz_tend
+      use linoz_tend_mod, only: linoz_tend, linoz_tend_ghg
+      use linoz_xcol, only: linoz_xcol1, ghg_xcol1
       use tendency, only: apply_tendencies
       implicit none
 #include <arch_specific.hf>
@@ -153,18 +154,17 @@ contains
          enddo
       enddo
 
-      ! --------------------
-      !  Loop on longitudes
-      ! -------------------
-      DO_I1: do i = 1, ni
+      ! ----------------------------
+      ! Loop on all vertical levels  
+      ! ----------------------------
+      DO_K1: do k = 1, nkm1 !nk-1 layers, 1=TOA-layer, nk=SFC-layer
 
-         ! ----------------------------
-         ! Loop on all vertical levels  
-         ! ----------------------------
+         ! --------------------
+         !  Loop on longitudes
+         ! -------------------
+         DO_I1: do i = 1, ni
 
-         DO_K1: do k = 1, nkm1 !nk-1 layers, 1=TOA-layer, nk=SFC-layer
-
-            ptop(i,k) = shtj(i,k)  *zpplus(i)       ! pressure (Pa) at the upper interface
+           ptop(i,k) = shtj(i,k)  *zpplus(i)       ! pressure (Pa) at the upper interface
             pbot(i,k) = shtj(i,k+1)*zpplus(i)       ! pressure (Pa) at the bottom interface
 
             IF_AGE: if (age_linoz) then
@@ -202,8 +202,8 @@ contains
             ! Ignore P-L term on RHS above p_linoz_c4=10hPa
             if (ptop(i,k) < p_linoz_c4) zlin4(i,k) = 0.
 
-         enddo DO_K1
-      enddo DO_I1
+         enddo DO_I1
+      enddo DO_K1
 
       IF_HET: if (linoz_het) then
          !           Hetchem begin : if hetchem...
@@ -247,20 +247,20 @@ contains
       
       ! Total Column LINOZ ozone (D.U.)
       if (associated(zo3col)) then
-         call linoz_xcol(o3_vmr, pbot, ptop, zo3col,ni,nkm1)
+         call linoz_xcol1(o3_vmr, pbot, ptop, zo3col,ni,nkm1)
          if (associated(zo3tc)) zo3tc(:) = zo3col(:,nkm1)   !D.U.
       endif
 
       ! Tropospheric column LINOZ ozone (molec cm-2)
       if (associated(zo3xcol)) then
          hu_vmr(:,1:nkm1) = consth * zhuplus(:,1:nkm1)       !mole /mole vmr <-- kg/kg air ! Units ppmv
-         call tropo_xcol(o3_vmr, hu_vmr, pbot, ptop, zo3xcol, ni, nkm1)
+         call ghg_xcol1(o3_vmr, pbot, ptop, zo3xcol, ni, nkm1, hu_vmr)
          if (associated(zo3xtc)) zo3xtc(:) = zo3xcol(:,nkm1)  ! (molec /cm2)
       endif
 
       ! Total column ERA5-FK-HALOE ozone climatology (D.U.)
       if (associated(zo3ccol)) then
-         call linoz_xcol(o3c_vmr, pbot, ptop, zo3ccol,ni,nkm1)
+         call linoz_xcol1(o3c_vmr, pbot, ptop, zo3ccol,ni,nkm1)
          if (associated(zo3ctc)) zo3ctc(:) = zo3ccol(:,nkm1)  !D.U.
       endif
 
@@ -335,36 +335,36 @@ contains
 
       IF_LINGHG3: if (llingh) then
 
-         do i = 1,ni
-            do k = 1, nkm1    !1=TOA, nk-1=SFC
+         do k = 1, nkm1    !1=TOA, nk-1=SFC
+            do i = 1,ni
                ptop(i,k) = shtj(i,k)  *zpplus(i)       ! pressure (Pa) at the upper interface
                pbot(i,k) = shtj(i,k+1)*zpplus(i)       ! pressure (Pa) at the bottom interface
-            end do !k-loop
-         end do !i-loop
+            end do
+         end do
 
          IF_OUT: if (out_linoz) then
             
             ! Total column prognostic ch4 (molec cm-2)
             if (associated(zch4col)) then
-               call ghg_xcol(ch4_vmr, pbot, ptop, zch4col,ni,nkm1)
+               call ghg_xcol1(ch4_vmr, pbot, ptop, zch4col,ni,nkm1)
                if (associated(zch4tc)) zch4tc(:) = zch4col(:,nkm1)
             endif
 
             ! Total column prognostic n2o (molec cm-2)
             if (associated(zn2ocol)) then
-               call ghg_xcol(n2o_vmr, pbot, ptop, zn2ocol,ni,nkm1)
+               call ghg_xcol1(n2o_vmr, pbot, ptop, zn2ocol,ni,nkm1)
                if (associated(zn2otc)) zn2otc(:) = zn2ocol(i,nkm1)
             endif
 
             ! Total column prognostic f11 (molec cm-2)
             if (associated(zf11col)) then
-               call ghg_xcol(f11_vmr, pbot, ptop, zf11col,ni,nkm1)
+               call ghg_xcol1(f11_vmr, pbot, ptop, zf11col,ni,nkm1)
                if (associated(zf11tc)) zf11tc(:) = zf11col(:,nkm1)
             endif
 
             ! Total column prognostic f12 (molec cm-2)
             if (associated(zf12col)) then
-               call ghg_xcol(f12_vmr, pbot, ptop, zf12col,ni,nkm1)
+               call ghg_xcol1(f12_vmr, pbot, ptop, zf12col,ni,nkm1)
                if (associated(zf12tc)) zf12tc(:) = zf12col(:,nkm1)
             endif
             

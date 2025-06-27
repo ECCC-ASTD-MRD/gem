@@ -152,7 +152,6 @@
 
    MKPTR1DK(zfc_ag, fc, indx_agrege, pvars)
    MKPTR1D(zfcaf, fcaf, pvars)
-   MKPTR1D(zfca, fca, pvars)
    MKPTR1D(zfcmy, fcmy, pvars)
    MKPTR1D(zfcor, fcor, pvars)
    MKPTR1D(zfdsi, fdsi, pvars)

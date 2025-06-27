@@ -990,7 +990,7 @@ contains
          dtfm(ltop1:kx) = 0.
          omga(ltop1:kx) = 0.
          thadv(ltop1:kx) = 0.
-         qadv(ltop1:kx) = 0.
+         qadv(ltop1:kx) = 0.  !#TODO: never used?
          omg(ltop1:kx) = 0.
          ems(ltop1:kx) = dpp(i,ltop1:kx)*dxsq/GRAV
          emsd(ltop1:kx) = 1./ems(ltop1:kx)

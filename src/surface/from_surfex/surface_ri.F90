@@ -1,22 +1,10 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
-!   ######################################################################
-
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+!     #########
     SUBROUTINE SURFACE_RI(PTG, PQS, PEXNS, PEXNA, PTA, PQA,   &
-                             PZREF, PUREF, PDIRCOSZW, PVMOD, PRI )
+                               PZREF, PUREF, PDIRCOSZW, PVMOD, PRI )  
 !   ######################################################################
 !
 !!****  *SURFACE_RI*  
@@ -51,7 +39,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson           * Meteo-France *
+!!      V. Masson           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -61,10 +49,15 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS,ONLY : XRV, XRD, XG
+USE MODD_CSTS,     ONLY : XRV, XRD, XG
+USE MODD_SURF_ATM, ONLY : XRIMAX
+USE MODI_WIND_THRESHOLD
 !
-implicit none
-!!!#include <arch_specific.hf>
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
@@ -94,7 +87,9 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PRI      ! Richardson number
 !*      0.2    declarations of local variables
 !
 !
-REAL, DIMENSION(SIZE(PTG)) :: ZTHVA, ZTHVS
+REAL, DIMENSION(SIZE(PTG))   :: ZTHVA, ZTHVS
+REAL, DIMENSION(SIZE(PVMOD)) :: ZVMOD
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 !       1.     Richardson number
@@ -105,14 +100,22 @@ REAL, DIMENSION(SIZE(PTG)) :: ZTHVA, ZTHVS
 !                                                 first atmospheric level and
 !                                                 at the surface
 !
+IF (LHOOK) CALL DR_HOOK('SURFACE_RI',0,ZHOOK_HANDLE)
+!
 ZTHVA(:)=PTA(:)/PEXNA(:)*( 1.+(XRV/XRD-1.)*PQA(:) )   
 ZTHVS(:)=PTG(:)/PEXNS(:)*( 1.+(XRV/XRD-1.)*PQS(:) )
 !                                                 
+ZVMOD(:) = WIND_THRESHOLD(PVMOD(:),PUREF(:))
 !
                                                 ! Richardson's number
+!                                                                                
 PRI(:) = XG * PDIRCOSZW(:) * PUREF(:) * PUREF(:)              &
-        * (ZTHVA(:)-ZTHVS(:)) / (0.5 * (ZTHVA(:)+ZTHVS(:)) )  &
-        / (PVMOD(:)*PVMOD(:)) /PZREF(:)
+          * (ZTHVA(:)-ZTHVS(:)) / (0.5 * (ZTHVA(:)+ZTHVS(:)) )  &
+          / (ZVMOD(:)*ZVMOD(:)) /PZREF(:)  
+!
+PRI(:) = MIN(PRI(:),XRIMAX)
+!
+IF (LHOOK) CALL DR_HOOK('SURFACE_RI',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SURFACE_RI
