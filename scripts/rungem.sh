@@ -15,6 +15,9 @@ eval `cclargs_lite -D "" $0 \
   -dom_start "1"     "1"     "[Starting domain number         ]"\
   -dom_end   "1"     "1"     "[Ending domain number           ]"\
   -inorder   "0"     "5"     "[Ordered listing                ]"\
+  -cpl       "no"    "yes"   "[Run coupled                    ]"\
+  -instance  ""      ""      "[Instance name for coupled run  ]"\
+  -instancedir ""    ""      "[Instance dir for coupled run   ]"\
   -barrier   "0"     "0"     "[DO NOT run binary              ]"\
   -debug     "0"     "gdb"   "[Debug option: gdb, ddt         ]"\
   -_status   "ABORT" "ABORT" "[return status                  ]"\
@@ -39,6 +42,11 @@ set -x
 export OMP_NUM_THREADS=$nomp
 export MKL_NUM_THREADS=1
 set ${SETMEX:-+x}
+
+instances_args=""
+if [ ${cpl} = "yes" ] ; then
+  instance_args="-instancedir ${instancedir} -instances ${instance} -env CCARD_ARGS"
+fi
 
 printf "\n Running `readlink ${TASK_BIN}/ATM_MOD.Abs` on $npe_total ($npex x $npey) PEs:\n"
 printf " OMP_STACKSIZE=$OMP_STACKSIZE\n"
@@ -78,9 +86,9 @@ else
      done < ${mimd}
      #all_apps=$(echo $all_apps | sed -E 's/(.*):/\1/')
      #CMD="mpirun $all_apps"
-      CMD="${TASK_BIN}/r.mpirun -npex ${total_cpus} -npey $ndomains -pgm ${all_apps} $INORDER -minstdout ${inorder} -nocleanup"
+      CMD="${TASK_BIN}/r.mpirun -npex ${total_cpus} -npey $ndomains -pgm ${all_apps} $INORDER -minstdout ${inorder} -nocleanup ${instance_args}"
   else
-     CMD="${TASK_BIN}/r.mpirun -pgm ${TASK_BIN}/ATM_MOD.Abs -npex $((npex*npey)) -npey $ndomains $INORDER -minstdout ${inorder} -nocleanup"
+     CMD="${TASK_BIN}/r.mpirun -pgm ${TASK_BIN}/ATM_MOD.Abs -npex $((npex*npey)) -npey $ndomains $INORDER -minstdout ${inorder} -nocleanup ${instance_args}"
   fi
   if [[ "x${debug}" != "x0" ]] ; then
      [[ "x${debug}" == "xgdb" || "x${debug}" == "x1"  ]] && export debug=gdb || true

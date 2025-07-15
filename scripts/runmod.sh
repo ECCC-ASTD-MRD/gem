@@ -17,6 +17,9 @@ eval `cclargs_lite -D " " $0 \
    -along_Y       "1"          "0"         "[Distribute PEs alog Y axis first]"\
    -nodespec      "NoNe"       "NoNe"      "[Node distribution specification]"\
    -inorder       "0"          "5"         "[Order listing]"\
+   -cpl           "no"         "yes"       "[Run coupled]"\
+   -instance      ""           ""          "[Instance name for coupled run]"\
+   -instancedir   ""           ""          "[Instance dir for coupled run]"\
    -debug         "0"          "gdb"       "[Debug session: gdb, ddt]"\
    -task_basedir  "RUNMOD"     "RUNMOD"    "[Task dir name]"\
    -no_setup      "0"          "1"         "[Do not run setup]"\
@@ -195,6 +198,7 @@ while [ ${DOM} -le ${DOMAIN_end} ] ; do
    . r.call.dot ${TASK_BIN}/rungem.sh \
       -npex $((npex*ngrids)) -npey $npey -nomp $nomp \
       -mimd ${MIMD_cfg} \
+      -cpl ${cpl} -instancedir ${instancedir} -instance ${instance} \
       -dom_start ${DOM} -dom_end ${last_domain} -debug $debug \
       -barrier ${barrier} -inorder ${inorder}
 
