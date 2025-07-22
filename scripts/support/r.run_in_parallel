@@ -462,7 +462,7 @@ expand_node() {
       for hnum in $(seq ${hlist}) ; do
          ((npe=npe0))
          tty -s && ((hnum=hnum%nhost-1))    # number of hosts is phony (often 1) if interactive
-         while ((npe>0)) ; do echo ${ListOfHosts[$((hnum))]} ; ((npe=npe-1)) ;done
+         while ((npe>0)) ; do echo ${ListOfHosts[$((hnum-1))]} ; ((npe=npe-1)) ;done
       done
    done
 }
