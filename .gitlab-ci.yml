@@ -11,6 +11,7 @@ stages:
   - run_intel_icelake
   - run_gnu_9.3.0
   - run_gnu_12.1.0
+  - run_gnu_14.1.0
   - package
   - deploy
 
@@ -180,6 +181,7 @@ build:rhel-8-amd64_gnu-12.1.0:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
+    - unset SSMUSE_LD_PREPEND
     - . ./.eccc_setup_gnu_12
     - git submodule update --recursive --init
     - set -e
@@ -197,6 +199,40 @@ build:rhel-8-amd64_gnu-12.1.0:
     expire_in: 4 hrs
     paths:
     - work-rhel-8-amd64-64-gnu-12.1.0
+    - gem_dbase
+
+#----- rhel-8-amd64_gnu-14.1.0
+build:rhel-8-amd64_gnu-14.1.0:
+  variables:
+     ORD_SOUMET_CPUS: "4"
+     ORD_SOUMET_W: "30"
+     ORD_SOUMET_M: "8G"
+     ORD_SOUMET_TMPFS: "1G"
+  stage: build
+  tags:
+    - concurrent
+  when: always
+  script:
+    - set +e
+    - . ${ECCI_ENV}/latest/profile.sh
+    - unset SSMUSE_LD_PREPEND
+    - . ./.eccc_setup_gnu_14
+    - git submodule update --recursive --init
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.1.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-14.1.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-14.1.0 . 
+    - ./scripts/link-dbase.sh
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.1.0
+    - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
+  allow_failure: true
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-8-amd64-64-gnu-14.1.0
     - gem_dbase
 
 #----- rhel-8-icelake-64-intel-2022.1.2 with sources
@@ -1279,6 +1315,34 @@ THEO_schar_gnu:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu_12
+    - set -e
+    - cd $GEM_WORK
+    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -inorder 1;
+      fi
+    - test "${_status}" == "ED"
+
+#----- Running one configuration for rhel-8-amd64_gnu-14.1.0
+5.2GEM_GY_FISL_H_gnu_12:
+  stage: run_gnu_14.1.0
+  tags:
+    - U2
+  dependencies:
+  - build:rhel-8-amd64_gnu-14.1.0
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ${ECCI_ENV}/latest/profile.sh
+    - . ./.eccc_setup_gnu_14
     - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
