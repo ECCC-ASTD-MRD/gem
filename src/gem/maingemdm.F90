@@ -18,7 +18,7 @@ program gem
    call app_libregister(APP_LIBPHY,phy_VERSION//c_null_char)
    call app_libregister(APP_LIBMDLUTIL,modelutils_VERSION//c_null_char)
 #ifdef WITH_MACH
-   call app_libregister(APP_LIBMACH,mach_VERSION)
+   call app_libregister(APP_LIBMACH,mach_VERSION//c_null_char)
 #endif
 
    call MPI_INIT(ierror)
