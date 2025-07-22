@@ -16,6 +16,7 @@ CMD_sleep=$(which sleep)
 CMD_true=$(which true)
 CMD_sed=$(which sed)
 CMD_env=$(which env)
+CMD_tee=$(which tee)
 CMD_wc=$(which wc)
 CMD_touch=$(which touch)
 CMD_sort=$(which sort)
@@ -34,29 +35,29 @@ list_message() {
 #################################################################################################################################
 #    node_to_rank ${MY_NODEFILE} ${ThreadsInWorld[${MpiCommWorld}]}
 node_to_rank() {
-  ((r=0))
-  ((rr=-1))
-  Increment=${2:-1}
-  Thinning=${3:-${Increment}}
-  rm -f ${1}.thinned
-  for Target in $(cat ${1}) ; do
-    ((rr=rr+1))
-    if ((rr%Thinning!=0)) ; then continue ; fi
-    echo "$Target" >>${1}.thinned
-    BaseCore=${nodecore[$Target]}
-    if ((MaxCores <  BaseCore+Increment)) ; then
-      log_print ERROR "World ${MpiCommWorld}: cores available = $MaxCores, cores needed = $((BaseCore+Increment))" 1>&2
-      return 1
-    fi
-    if ((Increment>1)) ; then
-      echo "Rank $r=$Target  slot=${BaseCore}-$((BaseCore+Increment-1))"
-    else
-      echo "Rank $r=$Target  slot=${BaseCore}"
-    fi
-    ((nodecore[$Target]=nodecore[$Target]+Increment))
-    ((r=r+1))
-  done
-  mv ${1}.thinned ${1}
+   ((r=0))
+   ((rr=-1))
+   Increment=${2:-1}
+   Thinning=${3:-${Increment}}
+   rm -f ${1}.thinned
+   for Target in $(cat ${1}) ; do
+      ((rr=rr+1))
+      if ((rr%Thinning!=0)) ; then continue ; fi
+      echo "$Target" >>${1}.thinned
+      BaseCore=${nodecore[$Target]}
+      if ((MaxCores <  BaseCore+Increment)) ; then
+         log_print ERROR "World ${MpiCommWorld}: cores available = $MaxCores, cores needed = $((BaseCore+Increment))" 1>&2
+         return 1
+      fi
+      if ((Increment>1)) ; then
+         echo "Rank $r=$Target  slot=${BaseCore}-$((BaseCore+Increment-1))"
+      else
+         echo "Rank $r=$Target  slot=${BaseCore}"
+      fi
+      ((nodecore[$Target]=nodecore[$Target]+Increment))
+      ((r=r+1))
+   done
+   mv ${1}.thinned ${1}
 }
 
 # Try to find out which MPI is available
@@ -78,8 +79,9 @@ which aprun 2>/dev/null 1>/dev/null && flavour=`aprun -n 1 $TMPDIR/which_mpi`
 which ${mpirun} 2>/dev/null 1>/dev/null && flavour=`${mpirun} -n 1 $TMPDIR/which_mpi`
 rm -f $TMPDIR/which_mpi
 
-  echo ${flavour}
+   echo ${flavour##*$'\n'}
 }
+
 
 
 # MPI prelauncher for Linux systems using mpich, openmpi or aprun.
@@ -166,10 +168,6 @@ mpi_exec_linux_launch() {
    shift
 
    ((npe_total=TotalInstances))
-
-   if [[ "${nodespec}" != NoNe && -z ${APRUN} ]] ; then
-      split_nodes
-   fi
 
    unset PE_HOSTFILE                                                             # Dorval EC clusters
 
@@ -318,21 +316,21 @@ print_separator() {
 # line tagging already done
 #
 cat_output() {  #  cat captured stdout/stderr files into stdout with appropriate tagging
-  OutputFound=""
-  for OUTDIR in $* ; do
-    [[ -r ${OUTDIR}/stdout ]] && cat ${OUTDIR}/stdout && OutputFound="yes"
-  done
-  [[ ${OutputFound} == yes ]] && return
-# Output preprocessing within MPI was not done for some reason, process outputs the hard way
-  for the_file in ${tmpdir}/[0-9][0-9][0-9][0-9][0-9]/stdout.*
-  do
-    MP_Tag=${the_file##*.}
-    [[ -f ${the_file} ]] && \
-    cat ${the_file} | sed "s/^/${Prefix2}${MP_Tag}: /"
-    [[ -f ${the_file%/*}/stderr ]] && \
-    echo "${Prefix3}${MP_Tag}: ============== stderr ${MP_Tag} ==============" && \
-    cat ${the_file%/*}/stderr | sed "s/^/${Prefix3}${MP_Tag}: /"
-  done
+   OutputFound=""
+   for OUTDIR in $* ; do
+      [[ -r ${OUTDIR}/stdout ]] && cat ${OUTDIR}/stdout && OutputFound="yes"
+   done
+   [[ ${OutputFound} == yes ]] && return
+   # Output preprocessing within MPI was not done for some reason, process outputs the hard way
+   for the_file in ${tmpdir}/[0-9][0-9][0-9][0-9][0-9]/stdout.*
+   do
+      MP_Tag=${the_file##*.}
+      [[ -f ${the_file} ]] && \
+      cat ${the_file} | sed "s/^/${Prefix2}${MP_Tag}: /"
+      [[ -f ${the_file%/*}/stderr ]] && \
+      echo "${Prefix3}${MP_Tag}: ============== stderr ${MP_Tag} ==============" && \
+      cat ${the_file%/*}/stderr | sed "s/^/${Prefix3}${MP_Tag}: /"
+   done
 }
 
 #################################################################################################################################
@@ -341,12 +339,12 @@ cat_output() {  #  cat captured stdout/stderr files into stdout with appropriate
 # these programs will be built to fail for process N (N may be higher than actual number of PEs for the call)
 #
 make_cf_test() {
-[[ ${selftest} == *.fail.* ]] && selftest_fail=${selftest##*fail.}
-selftest_fail=${selftest_fail:--1}
-[[ ${selftest} == *fail* ]] && log_print INFO "Test program(s) will be configured to fail in process ${selftest_fail}"
-log_print INFO "Creating C test program source mpi_c_test.c"
-#
-cat >${tmpdir}/mpi_c_test.c <<EOT
+   [[ ${selftest} == *.fail.* ]] && selftest_fail=${selftest##*fail.}
+   selftest_fail=${selftest_fail:--1}
+   [[ ${selftest} == *fail* ]] && log_print INFO "Test program(s) will be configured to fail in process ${selftest_fail}"
+   log_print INFO "Creating C test program source mpi_c_test.c"
+   
+   cat >${tmpdir}/mpi_c_test.c <<EOT
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -369,8 +367,8 @@ void main(int argc, char **argv)
 }
 EOT
 
-log_print INFO "Creating Fortran test program source mpi_f_test.f90"
-cat >${tmpdir}/mpi_f_test.f90 <<EOT
+   log_print INFO "Creating Fortran test program source mpi_f_test.f90"
+   cat >${tmpdir}/mpi_f_test.f90 <<EOT
 program demo
 implicit none
 include 'mpif.h'
@@ -390,30 +388,30 @@ subroutine wrong(div)
 call div(0)
 end
 EOT
-#
-log_print INFO "Compiling C test program mpi_c_test.c into mpi_c_test"
-which mpicc 2>/dev/null 1>/dev/null && \
-  mpicc -o ${tmpdir}/mpi_c_test ${tmpdir}/mpi_c_test.c
-log_print INFO "Removing C test program source mpi_c_test.c"
-rm ${tmpdir}/mpi_c_test.c
-#
-log_print INFO "Compiling Fortran test program mpi_f_test.f90 into mpi_f_test"
-which mpif90 2>/dev/null 1>/dev/null && \
-  mpif90 ${tmpdir}/mpi_f_test.f90 -mp -o ${tmpdir}/mpi_f_test 2>/dev/null || \
-  mpif90 ${tmpdir}/mpi_f_test.f90 -o ${tmpdir}/mpi_f_test
-log_print INFO "Removing Fortran test source program mpi_f_test.f90"
-rm ${tmpdir}/mpi_f_test.f90
+
+   log_print INFO "Compiling C test program mpi_c_test.c into mpi_c_test"
+   which mpicc 2>/dev/null 1>/dev/null && \
+   mpicc -o ${tmpdir}/mpi_c_test ${tmpdir}/mpi_c_test.c
+   log_print INFO "Removing C test program source mpi_c_test.c"
+   rm ${tmpdir}/mpi_c_test.c
+   
+   log_print INFO "Compiling Fortran test program mpi_f_test.f90 into mpi_f_test"
+   which mpif90 2>/dev/null 1>/dev/null && \
+   mpif90 ${tmpdir}/mpi_f_test.f90 -mp -o ${tmpdir}/mpi_f_test 2>/dev/null || \
+   mpif90 ${tmpdir}/mpi_f_test.f90 -o ${tmpdir}/mpi_f_test
+   log_print INFO "Removing Fortran test source program mpi_f_test.f90"
+   rm ${tmpdir}/mpi_f_test.f90
 }
 
 #################################################################################################################################
 # process  -geometry option
 expand_geometry_map() {
-  log_print WARNING "-geometry option not implemented yet"
-  return 1
-#
-  if [[ -f "${PARALLEL_NODEFILE}" ]] ; then  # PARALLEL_NODEFILE used, override computed node list
-    cp ${PARALLEL_NODEFILE} ${MY_NODEFILE}
-  fi
+   log_print WARNING "-geometry option not implemented yet"
+   return 1
+   
+   if [[ -f "${PARALLEL_NODEFILE}" ]] ; then  # PARALLEL_NODEFILE used, override computed node list
+      cp ${PARALLEL_NODEFILE} ${MY_NODEFILE}
+   fi
 }
 
 #################################################################################################################################
@@ -423,14 +421,14 @@ expand_geometry_map() {
 #                 range = start-end
 #          example : -pemap 0-7,16,17,8-15,18,19
 expand_pe_map() {
-  for i in $(echo "$@" | tr ',' ' ')
-  do
-   if [[ $i == *-* ]] ; then
-     printf "%d " $(seq ${i%-*} ${i#*-})
-   else
-     printf "%d " $i
-   fi
-  done
+   for i in $(echo "$@" | tr ',' ' ')
+   do
+      if [[ $i == *-* ]] ; then
+         printf "%d " $(seq ${i%-*} ${i#*-})
+      else
+         printf "%d " $i
+      fi
+   done
 }
 
 #################################################################################################################################
@@ -441,71 +439,91 @@ expand_pe_map() {
 #          (alternate form : si:npi , npi PEs on host si, equivalent to si,si:npi or si,1,si:npi )
 # example: -nodemap 0:1 5:3 6,2,10:4     (1 PE on host 0, 3PEs on host 5, 4 PEs on hosts 6, 8, 10 )
 expand_node_map() {
-  [[ -z ${APRUN} ]]          || return   # Not for Cray
-  [[ "$hostos" == Linux ]]   || return   # Linux only
+   [[ -z ${APRUN} ]]          || return   # Not for Cray
+   [[ "$hostos" == Linux ]]   || return   # Linux only
 
-  [[ "${nodemap}" == @* ]] && [[ -r "${nodemap#@}" ]] && nodemap="$(cat ${nodemap#@})"   # -nodemap @readable_file
-# expand_node_map (expand a series of number doublets/triplets into a full list)
-  ListOfHosts=($(uniq ${nodefile}))
-  NumberOfHosts=${#ListOfHosts[@]}
-  for Entry in ${nodemap} ; do
-    npe0=${Entry#*:}
-    hlist="$(echo ${Entry%:*} | tr , ' ')"                          # replace , with space for seq
-    [[ "${Entry%:*}" != *,* ]] && hlist="${Entry%:*} ${Entry%:*}"   # single number si:npi
-    for hnum in $(seq ${hlist}) ; do
-      ((npe=npe0))
-      tty -s && ((hnum=hnum%NumberOfHosts))    # number of hosts is phony (often 1) if interactive
-      while ((npe>0)) ; do echo ${ListOfHosts[$((hnum))]} >>${MY_NODEFILE} ; ((npe=npe-1)) ;done
-    done
-  done
+   ListOfHosts=($(uniq ${nodefile}))
+   NumberOfHosts=${#ListOfHosts[@]}
+
+   expand_node ${NumberOfHosts} ${ListOfHosts}
+}
+
+# Expand a series of number doublets/triplets into a full list)
+expand_node() {
+
+   nhost=$1
+
+   [[ "${nodemap}" == @* ]] && [[ -r "${nodemap#@}" ]] && nodemap="$(cat ${nodemap#@})"   # -nodemap @readable_file
+
+   for Entry in ${nodemap} ; do
+      npe0=${Entry#*:}
+      hlist="$(echo ${Entry%:*} | tr , ' ')"                          # replace , with space for seq
+      [[ "${Entry%:*}" != *,* ]] && hlist="${Entry%:*} ${Entry%:*}"   # single number si:npi
+      for hnum in $(seq ${hlist}) ; do
+         ((npe=npe0))
+         tty -s && ((hnum=hnum%nhost-1))    # number of hosts is phony (often 1) if interactive
+         while ((npe>0)) ; do echo ${ListOfHosts[$((hnum))]} ; ((npe=npe-1)) ;done
+      done
+   done
 }
 
 ########################################################################
 # process  split list of nodes among sub jobs
 #          -nodespec nb1,nb2,...nbN:jobnN
 # example: -nodespec 4,1,3:1 (4 nodes for job 1, 1 node for job 2 and 3 nodes for job 3, produce map for job 1)
-split_nodes() {
+expand_node_spec() {
 
-  ListOfHosts=($(uniq ${nodefile}))
-  map="${nodespec%:*}"
-  no="${nodespec#*:}"
-  oifs=$IFS; IFS=',';read -r -a map <<< $map; IFS=$oifs
-  pes=0
-  no=$(($no-1))
-  for ((m=0; m<$no; m++)); do
-     pes=$(($pes+${map[$m]}))
-  done
+   [[ -z ${APRUN} ]]          || return   # Not for Cray
+   [[ "$hostos" == Linux ]]   || return   # Linux only
 
-  end=$(($pes+${map[$no]}))
-  nhosts=${map[$no]}
-  hosts=${ListOfHosts[@]:$pes:$nhosts}
-  if [[ -z ${hosts} ]] ; then
-     log_print ERROR "Not enough nodes available"
-     rm -rf ${tmpdir}
-     exit 1
-  fi
+   ListOfHosts=($(uniq ${nodefile}))
+   NumberOfHosts=${#ListOfHosts[@]}
 
-  nprocs=$npe_total 
-  if [[ $nprocs -eq 0 ]]; then
-     nprocs=$((nhosts*MaxCores))
-  fi 
+   map="${nodespec%:*}"
+   no="${nodespec#*:}"
+   oifs=$IFS; IFS=', ';read -r -a map <<< $map; IFS=$oifs
+   pes=0
+   no=$(($no-1))
+   for ((m=0; m<$no; m++)); do
+      pes=$(($pes+${map[$m]}))
+   done
 
-  ((loops=(nprocs+nhosts-1)/nhosts))   # number of tasks per host (rounded up)
-  if ((loops*OMP_NUM_THREADS > MaxCores)) ; then
-     echo "ERROR: not enough cores available on node, $((loops*OMP_NUM_THREADS)) requested, $((MaxCores)) available"
-     rm -rf ${tmpdir}
-     exit 1
-  fi
+   end=$(($pes+${map[$no]}))
+   nhosts=${map[$no]}
+   hosts=${ListOfHosts[@]:$pes:$nhosts}
 
-  for i in $hosts ; do
-     for j in $(seq $loops) ; do
-        echo "${i}"
-     done
-  done >${MY_NODEFILE}  # one entry per task
+   if [[ -z ${hosts} ]] ; then
+      log_print ERROR "Not enough nodes available"
+      rm -rf ${tmpdir}
+      exit 1
+   fi
 
-  ListOfNodes=($(cat ${MY_NODEFILE}))
-  NumberOfNodes=${#ListOfNodes[@]}
-  log_print DEBUG "Distributed node list = ${ListOfNodes[*]}"
+   nprocs=$npe_total 
+   if [[ $nprocs -eq 0 ]]; then
+      nprocs=$((nhosts*MaxCores))
+   fi 
+
+   ((loops=(nprocs+nhosts-1)/nhosts))   # number of tasks per host (rounded up)
+   if ((loops*OMP_NUM_THREADS > MaxCores)) ; then
+      echo "ERROR: not enough cores available on node, $((loops*OMP_NUM_THREADS)) requested, $((MaxCores)) available"
+      rm -rf ${tmpdir}
+      exit 1
+   fi
+
+   if [[ "${nodemap}" != NoNe ]]; then
+      oifs=$IFS; IFS=', ';read -r -a ListOfHosts <<< $hosts; IFS=$oifs
+      (expand_node $loops) >${MY_NODEFILE}
+   else
+     for i in $hosts ; do
+         for j in $(seq $loops) ; do
+            echo "${i}"
+         done
+      done >${MY_NODEFILE}
+   fi
+
+   ListOfNodes=($(cat ${MY_NODEFILE}))
+   NumberOfNodes=${#ListOfNodes[@]}
+   log_print DEBUG "Distributed node list = ${ListOfNodes[*]}"
 }
 
 #################################################################################################################################
@@ -515,25 +533,25 @@ split_nodes() {
 #
 # example: -coremap 0,1,6 12,2,23   ( 0 thru 6 , 12 thru 23 by 2)
 expand_core_map() {
-  [[ -z ${APRUN} ]]          || return   # Not for Cray
-  [[ "$hostos" == Linux ]]   || return   # Linux only
+   [[ -z ${APRUN} ]]          || return   # Not for Cray
+   [[ "$hostos" == Linux ]]   || return   # Linux only
 
-  [[ "${coremap}" == @* ]] && [[ -r "${coremap#@}" ]] && coremap="$(cat ${coremap#@})"   # -coremap @readable_file
-  coremap=${coremap:-0,${OMP_NUM_THREADS},$((TotalThreads-1))}        # by default, use all threads from all PEs in order
-  # expand a series of number doublets/triplets into a full list
-  CoreMapArray=( $(for i in ${coremap} ; do ii="${i}" ; [[ "${ii}" == 0 ]] && ii="0 0" ; seq $(echo ${ii} | tr , ' ') ; done) )
-  NumberOfCores=${#CoreMapArray[@]}
-  ListOfHosts=($(cat ${nodefile}))
-  NumberOfHosts=${#ListOfHosts[@]}
-  ((r=0))
-  while ((r<NumberOfCores)) ; do
-    h=${CoreMapArray[$r]}
-    ((h>=NumberOfHosts)) && log_print ERROR "Host number (${h}) > maximum ($((NumberOfHosts-1)))" && rm -rf ${tmpdir} && log_end -1
-    echo "${ListOfHosts[$h]}" >>${MY_NODEFILE}
-    ((r=r+1))
-  done
-  log_print DEBUG "Cores map entries = $NumberOfCores"
-  log_print DEBUG "Base core map = ${CoreMapArray[@]}"
+   [[ "${coremap}" == @* ]] && [[ -r "${coremap#@}" ]] && coremap="$(cat ${coremap#@})"   # -coremap @readable_file
+   coremap=${coremap:-0,${OMP_NUM_THREADS},$((TotalThreads-1))}        # by default, use all threads from all PEs in order
+   # expand a series of number doublets/triplets into a full list
+   CoreMapArray=( $(for i in ${coremap} ; do ii="${i}" ; [[ "${ii}" == 0 ]] && ii="0 0" ; seq $(echo ${ii} | tr , ' ') ; done) )
+   NumberOfCores=${#CoreMapArray[@]}
+   ListOfHosts=($(cat ${nodefile}))
+   NumberOfHosts=${#ListOfHosts[@]}
+   ((r=0))
+   while ((r<NumberOfCores)) ; do
+      h=${CoreMapArray[$r]}
+      ((h>=NumberOfHosts)) && log_print ERROR "Host number (${h}) > maximum ($((NumberOfHosts-1)))" && rm -rf ${tmpdir} && log_end -1
+      echo "${ListOfHosts[$h]}" >>${MY_NODEFILE}
+      ((r=r+1))
+   done
+   log_print DEBUG "Cores map entries = $NumberOfCores"
+   log_print DEBUG "Base core map = ${CoreMapArray[@]}"
 }
 
 #################################################################################################################################
@@ -541,26 +559,26 @@ expand_core_map() {
 # usage: remap_nodes node_list > new_reordered_node_list
 #
 remap_pass2() {
-  ((Host=-1))
-  while read Line
-  do
-    ((Host=Host+1))
-    for i in $Line
-    do
-      echo $i ${HostList[$Host]} # task_number host_name
-    done
-  done
+   ((Host=-1))
+   while read Line
+   do
+      ((Host=Host+1))
+      for i in $Line
+      do
+         echo $i ${HostList[$Host]} # task_number host_name
+      done
+   done
 }
 
 remap_nodes() {
-  [[ -r "${1}" && -r "${geometry}" ]] || return 1
-  ((Host=-1))
-  for i in $(uniq ${1}) # build list of host names
-  do
-   ((Host=Host+1))
-   HostList[$Host]=$i
-  done
-  cat ${geometry} | remap_pass2 | sort -n | cut '-d ' -f2
+   [[ -r "${1}" && -r "${geometry}" ]] || return 1
+   ((Host=-1))
+   for i in $(uniq ${1}) # build list of host names
+   do
+      ((Host=Host+1))
+      HostList[$Host]=$i
+   done
+   cat ${geometry} | remap_pass2 | sort -n | cut '-d ' -f2
 }
 
 #################################################################################################################################
@@ -575,39 +593,39 @@ remap_nodes() {
 # this is why 'sort -u' has been replaced with 'uniq'
 #
 make_node_file() {   # this will be rewritten
-  # if there is a geometry file, remap the node list file
-  # remapping will fail if there is no node file pointed to by MY_NODEFILE
-  ThreadCount=${1:-1}   # number of threads per process
+   # if there is a geometry file, remap the node list file
+   # remapping will fail if there is no node file pointed to by MY_NODEFILE
+   ThreadCount=${1:-1}   # number of threads per process
 
-  if [[ -z ${MY_NODEFILE} ]] ; then  # no node file has been found
-    if tty -s ; then   # interactive, create a node file
-      ((npe_temp=npe_total*ThreadCount))
-      while (( npe_temp > 0 )) ; do ((npe_temp=npe_temp-1)) ; echo $(hostname) >> ${TMPDIR}/MY_NODEFILE ; done
-    fi
-  fi
+   if [[ -z ${MY_NODEFILE} ]] ; then  # no node file has been found
+      if tty -s ; then   # interactive, create a node file
+         ((npe_temp=npe_total*ThreadCount))
+         while (( npe_temp > 0 )) ; do ((npe_temp=npe_temp-1)) ; echo $(hostname) >> ${TMPDIR}/MY_NODEFILE ; done
+      fi
+   fi
 
-  if [[ -f "${MY_NODEFILE}" ]] ; then  # node file exists
-        rm -f $TMPDIR/MY_NODEFILE
-        nhosts=$(sort -u ${MY_NODEFILE} | wc -l | sed -e 's/ //g')   # number of hosts
-        ((loops=(npe_total+nhosts-1)/nhosts))   # number of tasks per host
-        for i in $(uniq < $MY_NODEFILE) ; do
-          for j in $(seq $loops) ; do
+   if [[ -f "${MY_NODEFILE}" ]] ; then  # node file exists
+      rm -f $TMPDIR/MY_NODEFILE
+      nhosts=$(sort -u ${MY_NODEFILE} | wc -l | sed -e 's/ //g')   # number of hosts
+      ((loops=(npe_total+nhosts-1)/nhosts))   # number of tasks per host
+      for i in $(uniq < $MY_NODEFILE) ; do
+         for j in $(seq $loops) ; do
             echo ${i} >>${TMPDIR}/MY_NODEFILE   # one entry per task
-          done
-        done
-  fi
+         done
+      done
+   fi
 
-  if [[ -f "${PARALLEL_NODEFILE}" ]] ; then  # PARALLEL_NODEFILE used, override computed node list
-    cp ${PARALLEL_NODEFILE} $TMPDIR/MY_NODEFILE
-  fi
+   if [[ -f "${PARALLEL_NODEFILE}" ]] ; then  # PARALLEL_NODEFILE used, override computed node list
+      cp ${PARALLEL_NODEFILE} $TMPDIR/MY_NODEFILE
+   fi
 
-  if [[ -f "${geometry}" && -z "${PARALLEL_NODEFILE}" ]] ; then   # task geometry and no overrride of node list
-    mv $TMPDIR/MY_NODEFILE $TMPDIR/MY_NODEFILE.old
-    remap_nodes $TMPDIR/MY_NODEFILE.old >$TMPDIR/MY_NODEFILE
-    rm $TMPDIR/MY_NODEFILE.old
-  fi
+   if [[ -f "${geometry}" && -z "${PARALLEL_NODEFILE}" ]] ; then   # task geometry and no overrride of node list
+      mv $TMPDIR/MY_NODEFILE $TMPDIR/MY_NODEFILE.old
+      remap_nodes $TMPDIR/MY_NODEFILE.old >$TMPDIR/MY_NODEFILE
+      rm $TMPDIR/MY_NODEFILE.old
+   fi
 
-  export MY_NODEFILE=$TMPDIR/MY_NODEFILE
+   export MY_NODEFILE=$TMPDIR/MY_NODEFILE
 }
 
 #################################################################################################################################
@@ -711,26 +729,28 @@ wait_for() {
                                # Implement workaround for lustre filesystem coherence problem, https://gitlab.science.gc.ca/hpc_migrations/hpcr_upgrade_1/issues/474#note_124516
 #Version="1.1.33  2019/12/04"  # Double check for mkdir before passing to mpirun
 #Version="1.1.34  2020/01/22"  # Add calls to sync as a workaround to a lustre version 2.12.0.2_cray_34_g0ca7348 coherency issue 
-#Version="1.2.0  2020/07/17"  # Add flag to enable sync workaround to a lustre version 2.12.0.2_cray_34_g0ca7348 coherency issue 
-                             # New r.makedirs checks the directories, no need to do it in bash, unless not found
-                             # Use verbose flag to enable verbose in aprun (-D2)
+#Version="1.2.0  2020/07/17"   # Add flag to enable sync workaround to a lustre version 2.12.0.2_cray_34_g0ca7348 coherency issue 
+                               # New r.makedirs checks the directories, no need to do it in bash, unless not found
+                               # Use verbose flag to enable verbose in aprun (-D2)
 #Version="1.2.1-a  2021/08/18" # Adapt to PPP5t
+#Version="2.0.0 2022/11/25"    # Change -ddt flag to -debug to enable more debuggers in the future. Currently support gdb,gdb:file,ddt,ddt:batch
+                               # Remove -gdb flag, now managed by -debug gdb:[file]
+                               # Add -profile flag. Currently supports map and map:batch
+                               # Add -prerun to prefix aprun with a command (ex: ddt)
+                               # Define better process placement, spreading by numa, in non round-robbin mode for PPP/GPSC
+                               # Use new logging mechanism
+                               # Verbose is now controlled with the -verbose flag instead of -debug (for the debugger)
+                               # DEBUG verbose now display process placement map
+                               # set -x trace level now triggered by verbose mode EXTRA
+                               # Use -mpiflavour to force an mpi implementation instead or -mpich,-openmpi,-alpspd
+                               # Use -pdomain to define a pdomain instaed of -alpspd
+                               # Add node list spliting (-nodespec) among multi sub-job (ie: coupled modeled in non MPMD) 
+                               # Fixed issues for gridengine host file 
+                               # Fixed issues with SLURM scheduler
+                               # Added -nodepack mode for filling nodes
+#Version="2.1.0 2024/05/16"    # Added possibility to combine -nodemap and -nodespec
 true
-Version="2.0.0 2022/11/25"   # Change -ddt flag to -debug to enable more debuggers in the future. Currently support gdb,gdb:file,ddt,ddt:batch
-                             # Remove -gdb flag, now managed by -debug gdb:[file]
-                             # Add -profile flag. Currently supports map and map:batch
-                             # Add -prerun to prefix aprun with a command (ex: ddt)
-                             # Define better process placement, spreading by numa, in non round-robbin mode for PPP/GPSC
-                             # Use new logging mechanism
-                             # Verbose is now controlled with the -verbose flag instead of -debug (for the debugger)
-                             # DEBUG verbose now display process placement map
-                             # set -x trace level now triggered by verbose mode EXTRA
-                             # Use -mpiflavour to force an mpi implementation instead or -mpich,-openmpi,-alpspd
-                             # Use -pdomain to define a pdomain instaed of -alpspd
-                             # Add node list spliting (-nodespec) among multi sub-job (ie: coupled modeled in non MPMD) 
-                             # Fixed issues for gridengine host file 
-                             # Fixed issues with SLURM scheduler
-                             # Added -nodepack mode for filling nodes
+Version="2.1.1 2024/11/25"    # Fixes for IOserver
 
 MY_NODEFILE=${PARALLEL_NODEFILE:-${GECOSHEP_PNET_HOSTFILE:-${LOADL_HOSTFILE:-${PBS_NODEFILE:-${HOME}/.NODEFILE}}}}
 #SLURM uses SLURM_JOB_NODELIST env variable
@@ -878,7 +898,7 @@ fi
 [[ "$pernuma" == 9999 ]] && ((pernuma=CoresPerNode/OMP_NUM_THREADS/NumasPerNode))
 ((corespernuma=CoresPerNode/NumasPerNode))
 if(((corespernuma%OMP_NUM_THREADS)>0)) ; then
-  log_print WARNING "The number of OpenMP threads requested (${OMP_NUM_THREADS}) is not efficient for the target architecture (it should be a divisor of ${corespernuma})"
+   log_print WARNING "The number of OpenMP threads requested (${OMP_NUM_THREADS}) is not efficient for the target architecture (it should be a divisor of ${corespernuma})"
 fi
 ((CoresPerNode<=0)) && CoresPerNode=1
 ((MaxCores=CoresPerNode))
@@ -922,22 +942,22 @@ log_print INFO "Cores for job: ${TotalCoresAvail}, Cores per Node: $CoresPerNode
 #################################################################################################################################
 # do we have co-running master/slave instances ?
 if [[ -d "${instancedir}" && -n "${instances}" ]] ; then     
-  # We have co-running instances only if both are defined
-  slaves=$(echo ${instances} | wc -w)   # if 1 it is a slave, if >1 it is the master
-  if ((slaves>1)) ; then  
-    # The master instance, there is MORE THAN ONE item  in instances
-    log_print INFO "(master) START of ${slaves} slaves '${instances}' "
-    # Wait for all slaves to submit their resource needs
-    wait_for creation ${timeout} ${instancedir} ${instances}
+   # We have co-running instances only if both are defined
+   slaves=$(echo ${instances} | wc -w)   # if 1 it is a slave, if >1 it is the master
+   if ((slaves>1)) ; then  
+      # The master instance, there is MORE THAN ONE item  in instances
+      log_print INFO "(master) START of ${slaves} slaves '${instances}' "
+      # Wait for all slaves to submit their resource needs
+      wait_for creation ${timeout} ${instancedir} ${instances}
 
-    # Build compound launch parameters using ${instancedir}/${instances} files
-    for i in ${instances} ; do
-       log_print INFO "(master) creating ${instancedir}/${i}.ACK"
-       # Acknowledge reception of slave task requirements
-       touch ${instancedir}/${i}.ACK
-       [[ -n ${sync} ]] && sync ${instancedir}/${i}.ACK
-    done
-    sleep 2
+      # Build compound launch parameters using ${instancedir}/${instances} files
+      for i in ${instances} ; do
+         log_print INFO "(master) creating ${instancedir}/${i}.ACK"
+         # Acknowledge reception of slave task requirements
+         touch ${instancedir}/${i}.ACK
+         [[ -n ${sync} ]] && sync ${instancedir}/${i}.ACK
+      done
+      sleep 2
 
 #   execute MPI tasks on behalf of slaves
 #   -instances -instancedir : used, not passed on
@@ -948,52 +968,52 @@ if [[ -d "${instancedir}" && -n "${instances}" ]] ; then
 #   -mpirun -coremap -nodemap -openmpi -mpich -verbose : passthrough
 #   all other arguments : ignored
 #
-    unset PARALLEL_INSTANCES_DIR
-    MasterPgm="%%${OMP_NUM_THREADS} ::${npex}x${npey} /./$(pwd -P) ${pgm}"
-    [[ "$pgm" == NoNe ]] && MasterPgm=""
-    set -x
-    ${0} -npex ${pes:-${npex}} -npey 1 -processorder "${processorder}" -tmpdir "${tmpdir}" -minstdout ${minstdout} \
-         -coremap "${coremap}" -nodemap "${nodemap}" -verbose "${verbose}" \
-         -tag "${tag}" -spliteo "${spliteo}" -splittmp "${splittmp}" -nodepack "${nodepack}" -nodespec "${nodespec}" -nocleanup "${nocleanup}" -geometry "${geometry}" \
-         -outp "${outp}" -errp "${errp}" -preexec "${preexec}" -prerun "${prerun}" -packoutput "${packoutput}" -dryrun "${dryrun}" \
-         -offset "${offset}" -mpiargs "${mpiargs}" -selftest "${selftest}" \
-         -mpirun "${mpirun}" -mpiflavour "${mpiflavour}" \
-         -pgm $(cd ${instancedir} ; cat ${instances} | xargs) ${MasterPgm}
-    StAtUs=$?
-    set +x
-    echo ""
-    for i in ${instances} ; do
-       mv ${instancedir}/${i} ${instancedir}/${i}.DONE      # remove slave work requests
-       # Acknowledge completion of all slave tasks by creating DONE and then deleting ACK
-       rm ${instancedir}/${i}.ACK                  # remove acknowledge flag
-       log_print INFO "(master) ${instancedir}/${i}.DONE"
-    done
-    log_print INFO "(master) END of ${slaves} slave(s) '${instances}'"
-    exit  ${StAtUs}                                        # master job done
-  else                    # a slave instance, there is ONE AND ONLY ONE item  in instances
+      unset PARALLEL_INSTANCES_DIR
+      MasterPgm="%%${OMP_NUM_THREADS} ::${npex}x${npey} /./$(pwd -P) ${pgm}"
+      [[ "$pgm" == NoNe ]] && MasterPgm=""
+      set -x
+      ${0} -npex ${pes:-${npex}} -npey 1 -processorder "${processorder}" -tmpdir "${tmpdir}" -minstdout ${minstdout} \
+            -coremap "${coremap}" -nodemap "${nodemap}" -verbose "${verbose}" \
+            -tag "${tag}" -spliteo "${spliteo}" -splittmp "${splittmp}" -nodepack "${nodepack}" -nodespec "${nodespec}" -nocleanup "${nocleanup}" -geometry "${geometry}" \
+            -outp "${outp}" -errp "${errp}" -preexec "${preexec}" -prerun "${prerun}" -packoutput "${packoutput}" -dryrun "${dryrun}" \
+            -offset "${offset}" -mpiargs "${mpiargs}" -selftest "${selftest}" \
+            -mpirun "${mpirun}" -mpiflavour "${mpiflavour}" \
+            -pgm $(cd ${instancedir} ; cat ${instances} | xargs) ${MasterPgm}
+      StAtUs=$?
+      set +x
+      echo ""
+      for i in ${instances} ; do
+         mv ${instancedir}/${i} ${instancedir}/${i}.DONE      # remove slave work requests
+         # Acknowledge completion of all slave tasks by creating DONE and then deleting ACK
+         rm ${instancedir}/${i}.ACK                  # remove acknowledge flag
+         log_print INFO "(master) ${instancedir}/${i}.DONE"
+      done
+      log_print INFO "(master) END of ${slaves} slave(s) '${instances}'"
+      exit  ${StAtUs}                                        # master job done
+   else                    # a slave instance, there is ONE AND ONLY ONE item  in instances
 #
 #   -instances -instancedir : used, not passed on
 #   -npex -npey -pgm : massaged and passed on to master
 #   -args : ignored, cannot be used in this context
 #   all other arguments : ignored
 #
-    (( 1 == $(echo ${pgm} | wc -w) )) && pgm=" ${pgm} 0 1 $((npe_total-1)) @@ "  # transform -pgm name  into -pgm name first increment last
-    echo "%%${OMP_NUM_THREADS} /./$(pwd -P) ::${npex}x${npey} ${pgm} " >${instancedir}/${instances}.tmp || exit 1
-    mv ${instancedir}/${instances}.tmp ${instancedir}/${instances}  || exit 1
-    log_print INFO "START of slave instance ${instances}"
-    if wait_for creation ${timeout} ${instancedir} ${instances}.ACK # wait for master to acknowledge resources (ACK created)
-    then
-      wait_for deletion 2000000000 ${instancedir} ${instances}.ACK  # wait for master to signal job done (infinite timeout)
-      wait_for creation ${timeout} ${instancedir} ${instances}.DONE # done is signalled by creating DONE and then deleting ACK
-      rm ${instancedir}/${instances}.DONE
-      log_print INFO "(slave ${instances}) ${instances}.DONE received"
-      log_print INFO "END of slave instance ${instances}"
-      exit $?     # slave job done
-    else
-      log_print ERROR "Instance ${instances} never found ${instances}.ACK"
-      exit 1
-    fi
-  fi # master or slave instance
+      (( 1 == $(echo ${pgm} | wc -w) )) && pgm=" ${pgm} 0 1 $((npe_total-1)) @@ "  # transform -pgm name  into -pgm name first increment last
+      echo "%%${OMP_NUM_THREADS} /./$(pwd -P) ::${npex}x${npey} ${pgm} " >${instancedir}/${instances}.tmp || exit 1
+      mv ${instancedir}/${instances}.tmp ${instancedir}/${instances}  || exit 1
+      log_print INFO "START of slave instance ${instances}"
+      if wait_for creation ${timeout} ${instancedir} ${instances}.ACK # wait for master to acknowledge resources (ACK created)
+      then
+         wait_for deletion 2000000000 ${instancedir} ${instances}.ACK  # wait for master to signal job done (infinite timeout)
+         wait_for creation ${timeout} ${instancedir} ${instances}.DONE # done is signalled by creating DONE and then deleting ACK
+         rm ${instancedir}/${instances}.DONE
+         log_print INFO "(slave ${instances}) ${instances}.DONE received"
+         log_print INFO "END of slave instance ${instances}"
+         exit $?     # slave job done
+      else
+         log_print ERROR "Instance ${instances} never found ${instances}.ACK"
+         exit 1
+      fi
+   fi # master or slave instance
 fi  # co-running
 
 #################################################################################################################################
@@ -1049,7 +1069,7 @@ fi  # No nodefile supplied
 
 [[ ! -f ${nodefile} ]] && log_print ERROR "No node file found, ABORTING" 1>&2 && log_end -1
 ((TotalThreads=npe_total*OMP_NUM_THREADS))
-if [[ "${coremap}" == NoNe && "${nodemap}" == NoNe && -z ${APRUN} ]] ; then
+if [[ "${coremap}" == NoNe && "${nodemap}" == NoNe && "${nodespec}" == NoNe && -z ${APRUN} ]] ; then
    nhosts=$(uniq ${nodefile} | wc -l | sed -e 's/ //g')   # number of hosts in node file
    ((loops=(npe_total+nhosts-1)/nhosts))   # number of tasks per host (rounded up)
    if ((loops*OMP_NUM_THREADS > MaxCores)) ; then
@@ -1068,7 +1088,7 @@ if [[ "${coremap}" == NoNe && "${nodemap}" == NoNe && -z ${APRUN} ]] ; then
             echo ${i}
          done
       done | head -${npe_total} >>${MY_NODEFILE}  # One entry per task
-    fi
+   fi
 fi
 
 if [[ "${coremap}" != NoNe && "${nodemap}" != NoNe ]] ; then
@@ -1076,8 +1096,9 @@ if [[ "${coremap}" != NoNe && "${nodemap}" != NoNe ]] ; then
    log_end -1
 fi
 
-[[ "${coremap}" != NoNe ]] && expand_core_map
-[[ "${nodemap}" != NoNe ]] && expand_node_map
+[[ "${coremap}"  != NoNe ]]                            && expand_core_map
+[[ "${nodemap}"  != NoNe && "${nodespec}" == "NoNe" ]] && expand_node_map
+[[ "${nodespec}" != NoNe ]]                            && expand_node_spec
 
 if [[ -z ${APRUN} ]] ; then
    ListOfNodes=($(cat ${MY_NODEFILE}))
@@ -1106,12 +1127,11 @@ if [[ -x ${tmpdir}/mpi_c_test && ${selftest} == *c.* ]] ; then ${tmpdir}/mpi_c_t
 if [[ -x ${tmpdir}/mpi_f_test && ${selftest} == *f.* ]] ; then ${tmpdir}/mpi_f_test || exit 1 ; fi
 sleep \${1:-5}
 EOT
-  chmod 755 ${selftest}
-  [[ ${nompi} == run_with_mpi ]] && \
-  [[ ${selftest} == *c.* || ${selftest} == *f.* ]] && \
-  make_cf_test  # Create programs and compile them only if requested and using MPI
+   chmod 755 ${selftest}
+   [[ ${nompi} == run_with_mpi ]] && \
+   [[ ${selftest} == *c.* || ${selftest} == *f.* ]] && \
+   make_cf_test  # Create programs and compile them only if requested and using MPI
 fi
-
 
 # Primary and secondary launching scripts
 export MpiRunScript=${tmpdir}/MpiRunScript_$$       # secondary script(s), one per "MPI" world
@@ -1130,7 +1150,6 @@ export  Prefix2="${outp}${errp}-"   # prepare for stderr not split from stdout
 [[ "${spliteo}" == yes ]] && Prefix2="${outp}-"
 [[ "${tag}" == none    ]] && Prefix2="" && Prefix3=""
 [[ "${tag}" == stderr  ]] && Prefix2="" && Prefix3="stderr: "
-
 
 # Communication variables for RPN_COMM toolkit
 RPN_COMM_DOM=""
@@ -1151,31 +1170,31 @@ set -- $pgm @@
 ########################SPMD#########################################################################################################
 # Simple or complex sequence, SPMD or MPMD, (automatic multiple MPI worlds with @@)
 # Note: multiple worlds not supported yet on Cray (ALPS)
-  unset ProGrams Directories  ProgramIndex ProgramNames DirNames
+  unset ProGrams Directories ProgramIndex ProgramNames DirNames
 #################################################################################################################################
-  while [[ -n "${1}" ]]
-  do
-    [[ "${1}" == "@@" && "${2}" == "@@" ]]          && shift && continue   # two @@ flags back to back, eliminate first one
-    [[ "${1}" == /./* ]]  && SetCurrentDir=${1#/./} && shift && continue   # used by master from slave to set slave base work directory
-    [[ "${1}" == %%* ]]   && NLThreads=${1#%%}      && shift && continue   # from slave to set number of threads per task
-    NLThreads=${NLThreads:-${OMP_NUM_THREADS:-1}}
-    ((NLThreads!=DefaultNumberOfThreads)) && DefaultNumberOfThreads=0      # used to detect non constant threading in MPMD application
-    if [[  "${1}" == ::* ]] ; then  # used by master from slave to set number of tasks for this slave
+while [[ -n "${1}" ]]
+do
+   [[ "${1}" == "@@" && "${2}" == "@@" ]]          && shift && continue   # two @@ flags back to back, eliminate first one
+   [[ "${1}" == /./* ]]  && SetCurrentDir=${1#/./} && shift && continue   # used by master from slave to set slave base work directory
+   [[ "${1}" == %%* ]]   && NLThreads=${1#%%}      && shift && continue   # from slave to set number of threads per task
+   NLThreads=${NLThreads:-${OMP_NUM_THREADS:-1}}
+   ((NLThreads!=DefaultNumberOfThreads)) && DefaultNumberOfThreads=0      # used to detect non constant threading in MPMD application
+   if [[  "${1}" == ::* ]] ; then  # used by master from slave to set number of tasks for this slave
       npe_total=${1#::}
       if [[ ${npe_total} == *x* ]] ; then
-        npey=${npe_total#*x}
-        npex=${npe_total%x*}
+         npey=${npe_total#*x}
+         npex=${npe_total%x*}
       else
-        npey=1
-        npex=${npe_total}
+         npey=1
+         npex=${npe_total}
       fi
       ((npe_total=npex*npey))
       shift
       continue
-    fi
+   fi
 #==================================================================================================
 #==================================================================================================
-    if [[ "${1}" == "@@" ]] ; then  #  wrap up a world
+   if [[ "${1}" == "@@" ]] ; then  #  wrap up a world
       NLThreads=${NLThreads:-${OMP_NUM_THREADS:-1}}
       PeInWorld[${MpiCommWorld}]=${Instances}
       MembersInWorld[${MpiCommWorld}]=${npey}  # number of members in this world
@@ -1193,7 +1212,7 @@ set -- $pgm @@
 #
       cat <<EOT > ${MpiRunScript}.${MpiCommWorld}
 #!/bin/bash
-export RPN_COMM_DOM='${NDomains}${RPN_COMM_DOM}'
+#export RPN_COMM_DOM='${NDomains}${RPN_COMM_DOM}'
 export RPN_COMM_DIRS="${RPN_COMM_DIRS}"        # RPN_COMM_DIRS no longer needed by RPN_COMM_init as cd is now performed by script
 #export OMP_NUM_THREADS=${NLThreads}
 ((WORLD_CHILD=MP_CHILD-${InstanceOffset}))
@@ -1218,27 +1237,29 @@ Status=\$?
 ((Status==0)) && $CMD_rm -f ${tmpdir}/\${MP_SeqNum}/fail.\${MP_Tag}.\${MP_SeqNum}
 echo "END of child \${WORLD_CHILD}, status = \${Status} \$($CMD_date)"
 EOT
-[[ -n ${sync} ]] && sync ${MpiRunScript}.${MpiCommWorld}
+
+      [[ -n ${sync} ]] && sync ${MpiRunScript}.${MpiCommWorld}
 #==================================================================================================
 #======== Prepare parameters file, sourced by MpiRunScript, itself sourced by ParallelScript ======
 #==================================================================================================
       [[ "$pemap" == @* ]] && [[ -r ${pemap#@} ]] && pemap="$(cat ${pemap#@})"
       Nindex=${#ProgramIndex[@]}
       if [[ "$pemap" != NoNe ]] ; then  # remap ProgramIndex according to PE map
-        ProgramIndex=( $(for i in $(expand_pe_map $pemap ) ; do printf "%d " ${ProgramIndex[$i]} ; done) )
-        if (( Nindex != ${#ProgramIndex[@]} )) ; then
-          log_print ERROR "Expecting ${Nindex} entries in -pemap, got ${#ProgramIndex[@]} instead" 1>&2 
-          local_cleanup
-        fi
+         ProgramIndex=( $(for i in $(expand_pe_map $pemap ) ; do printf "%d " ${ProgramIndex[$i]} ; done) )
+         if (( Nindex != ${#ProgramIndex[@]} )) ; then
+            log_print ERROR "Expecting ${Nindex} entries in -pemap, got ${#ProgramIndex[@]} instead" 1>&2 
+            local_cleanup
+         fi
       fi
-#
+
       cat <<EOT >${MpiRunParms}.${MpiCommWorld}
 CoresPerNode=${MaxCores}
 MaxChild=$((${Instances}-1))
 PIndex=(${ProgramIndex[@]})
 NThreads=(${NThreads[@]})
 EOT
-[[ -n ${sync} ]] && sync ${MpiRunParms}.${MpiCommWorld}
+
+      [[ -n ${sync} ]] && sync ${MpiRunParms}.${MpiCommWorld}
 #==================================================================================================
 #==================================================================================================
       ((InstanceOffset=TotalInstances))
@@ -1253,63 +1274,64 @@ EOT
       unset NLThreads ProgramIndex ProgramNames DirNames NThreads
       shift
       continue
-    fi  #  if "${1}" == "@@"  wrap up a world
+   fi  #  if "${1}" == "@@"  wrap up a world
 #==================================================================================================
 #==================================================================================================
-    Temp="${1}"
-    [[  "${1}" == /* ]] || Temp="${SetCurrentDir}/${1}"  # Relative path, add "current" directory
-    Directory="${SetCurrentDir}"
-    [[ -d "${Temp}" ]] && Directory="${Temp}" && shift   # $1 was pointing to a directory
+   Temp="${1}"
+   [[  "${1}" == /* ]] || Temp="${SetCurrentDir}/${1}"  # Relative path, add "current" directory
+   Directory="${SetCurrentDir}"
+   [[ -d "${Temp}" ]] && Directory="${Temp}" && shift   # $1 was pointing to a directory
 
-    Program="$1"
-    [[  "${Program}" == /* ]] || Program="${SetCurrentDir}/${Program}"  # Relative path, add "current" directory
-    [[ -x "$Program" ]] || Program="$(which ${1} 2>/dev/null)"
-    if [[ !  -x "$Program" ]] ; then log_print ERROR "Program ${Program:-${1}} does not exist or is not executable"; fi
-    shift
+   Program="$1"
+   [[  "${Program}" == /* ]] || Program="${SetCurrentDir}/${Program}"  # Relative path, add "current" directory
+   [[ -x "$Program" ]] || Program="$(which ${1} 2>/dev/null)"
+   if [[ !  -x "$Program" ]] ; then log_print ERROR "Program ${Program:-${1}} does not exist or is not executable"; fi
+   shift
 
-    temp=${1}
-    [[ "${temp}" == @@ ]] && temp="+${npe_total}"  # Replace @@ with +npe_total
-    if [[ $temp = +* ]] ; then
-       temp=${temp#+}
-       ((First=Next))
-       ((Increment=1))
-       ((Last=First+temp-1))
-       ((Next=Last+1))
-       [[ "${1}" != @@ ]] && shift   # Do not shift @@
-    else
+   temp=${1}
+   [[ "${temp}" == @@ ]] && temp="+${npe_total}"  # Replace @@ with +npe_total
+   if [[ $temp = +* ]] ; then
+      temp=${temp#+}
+      ((First=Next))
+      ((Increment=1))
+      ((Last=First+temp-1))
+      ((Next=Last+1))
+      [[ "${1}" != @@ ]] && shift   # Do not shift @@
+   else
       ((First=${1}))
       ((Increment=${2}))
       Last=${3}
       if [[ "${Last}" == @ ]] ; then ((Last=npe_total-1)) ; fi
       shift ; shift ; shift
-    fi
-    RPN_COMM_DOM="$RPN_COMM_DOM,${First},${Increment},${Last}"
-    RPN_COMM_DIRS="$RPN_COMM_DIRS,'.'"  # No longer needed, we do the cd ..... in the script, so every directory becomes . :-)
-    ((LocalInstances=0))
-    ProgramNames[${NDomains}]=$Program
-    DirNames[${NDomains}]=$Directory
-    NThreads[$NDomains]=${NLThreads:-${OMP_NUM_THREADS}}
-    for i in $(seq ${First} ${Increment} ${Last} )
-    do
+   fi
+
+   RPN_COMM_DOM="$RPN_COMM_DOM,${First},${Increment},${Last}"
+   RPN_COMM_DIRS="$RPN_COMM_DIRS,'.'"  # No longer needed, we do the cd ..... in the script, so every directory becomes . :-)
+   ((LocalInstances=0))
+   ProgramNames[${NDomains}]=$Program
+   DirNames[${NDomains}]=$Directory
+   NThreads[$NDomains]=${NLThreads:-${OMP_NUM_THREADS}}
+   for i in $(seq ${First} ${Increment} ${Last} )
+   do
       ((Instances=Instances+1))
       ((LocalInstances=LocalInstances+1))
       ((TotalInstances=TotalInstances+1))
       ((TotalInstances>TotalTasks)) && log_print ERROR "Too many tasks requested (${TotalInstances}), only ${TotalTasks} available"
       if [[ -n "${ProGrams[$i]}" ]] ; then
-        log_print ERROR "Duplicate program assignment ${ProGrams[$i]} vs $Program in slot $i"
+         log_print ERROR "Duplicate program assignment ${ProGrams[$i]} vs $Program in slot $i"
       else
-        ProGrams[$i]="$Program"
-        Directories[$i]=$Directory
-        ProgramIndex[$i]=${NDomains}
-        ((i>MaxPe)) && ((MaxPe=i))
+         ProGrams[$i]="$Program"
+         Directories[$i]=$Directory
+         ProgramIndex[$i]=${NDomains}
+         ((i>MaxPe)) && ((MaxPe=i))
       fi
-    done
-    log_print INFO "${LocalInstances} instances of '$Program' ( $((InstanceOffset+First)) to $((InstanceOffset+Last)) by ${Increment} ) in MPI world ${MpiCommWorld}"
-    ((NDomains=NDomains+1))
-  done # while [[ "$1" != "" ]]
+   done
+   log_print INFO "${LocalInstances} instances of '$Program' ( $((InstanceOffset+First)) to $((InstanceOffset+Last)) by ${Increment} ) in MPI world ${MpiCommWorld}"
+   ((NDomains=NDomains+1))
+done # while [[ "$1" != "" ]]
 
 #==================================================================================================
-  if ((${LOG_ERRORS} > 0)); then local_cleanup; fi
+if ((${LOG_ERRORS} > 0)); then local_cleanup; fi
 #==================================================================================================
 #=================== Prepare primary launch scripts (one per world) ===============================
 #==================================================================================================
@@ -1317,13 +1339,12 @@ MpiCommWorld=0
 export WorldOffset=0
 
 # Prepare tagging format and contents
-
 [[ "${tag}" == full ]] && ((MpiCommWorlds>1)) && F_world='%1d-' && V_world='${RP_CommWorld}'
-[[ "${tag}" == full ]] && F_member='%5.5d-' && V_member='${RP_Member}' && \
-                          F_child='%5.5d' && V_child='${RP_MemberChild}'
+[[ "${tag}" == full ]] && F_member='%5.5d-' && V_member='${RP_Member}' && F_child='%5.5d' && V_child='${RP_MemberChild}'
 [[ "${tag}" == member ]] && F_member='%5.5d-' && V_member='${RP_Member}'
 [[ "${tag}" == child ]]  && F_child='%5.5d' && V_child='${RP_MemberChild}'
 [[ "${tag}" == seq ]]    && F_seq='%5.5d' && V_seq='${MP_SeqNum}'
+
 export F_world V_world F_member V_member F_child V_child F_seq V_seq
 
 #==================================================================================================
@@ -1332,12 +1353,12 @@ export F_world V_world F_member V_member F_child V_child F_seq V_seq
 #==================================================================================================
 while ((MpiCommWorld < MpiCommWorlds))
 do
-# ${PeInWorld[${MpiCommWorld}]} ${MembersInWorld[${MpiCommWorld}]} $WorldOffset
-  ((npex=${PeInWorld[${MpiCommWorld}]}/${MembersInWorld[${MpiCommWorld}]}))
+   # ${PeInWorld[${MpiCommWorld}]} ${MembersInWorld[${MpiCommWorld}]} $WorldOffset
+   ((npex=${PeInWorld[${MpiCommWorld}]}/${MembersInWorld[${MpiCommWorld}]}))
 
-  # There is only one instance of the ${ParallelScript}.${MpiCommWorld} script.
-  # Since variables are escaped, when executed, values are specific to each PE
-  cat <<EOT > ${ParallelScript}.${MpiCommWorld}
+   # There is only one instance of the ${ParallelScript}.${MpiCommWorld} script.
+   # Since variables are escaped, when executed, values are specific to each PE
+   cat <<EOT > ${ParallelScript}.${MpiCommWorld}
 #!/bin/bash
 ulimit -s ${stack}
 [[ ${LOG_LEVEL} = "EXTRA" ]] && set -x
@@ -1361,18 +1382,19 @@ script=./${MpiRunScript#${tmpdir}/}.${MpiCommWorld}
 
 # https://gitlab.science.gc.ca/hpc_migrations/hpcr_upgrade_1/issues/474
 if [[ ! -s \$script ]]; then
-    /usr/bin/printf "(ERROR) \$script not found (HOSTNAME=\$(hostname) PWD=\$PWD)\n"
-    lfs path2fid \$script
-    /usr/bin/ls -l \$script
-    # Delete the current job because it won't go anywhere
-    echo "(INFO) \$(date -Ins) - Waiting 10s to give time to the other nodes to signal the issue before killing the job ..."
-    sleep 10
-    echo "(INFO) \$(date -Ins) - Deleting the job because it won't go anywhere"
-    jobdel \$PBS_JOBID
-    exit 1
+   /usr/bin/printf "(ERROR) \$script not found (HOSTNAME=\$(hostname) PWD=\$PWD)\n"
+   lfs path2fid \$script
+   /usr/bin/ls -l \$script
+   # Delete the current job because it won't go anywhere
+   echo "(INFO) \$(date -Ins) - Waiting 10s to give time to the other nodes to signal the issue before killing the job ..."
+   sleep 10
+   echo "(INFO) \$(date -Ins) - Deleting the job because it won't go anywhere"
+   jobdel \$PBS_JOBID
+   exit 1
 fi
 
 source \$script ${RedirectStdout} ${RedirectStderr}
+
 [[ -n "${processorder}" ]] || exit 0     # no listings to process, exit
 cd ${tmpdir}
 # Tell that listing is there and should be complete
@@ -1403,11 +1425,12 @@ for dir in \${MP_SeqNum%??}?? ; do
 done
 true
 EOT
-  chmod 755 ${ParallelScript}.${MpiCommWorld}
-  [[ -n ${sync} ]] && sync ${ParallelScript}.${MpiCommWorld}
-#==================================================================================================
-  ((WorldOffset=WorldOffset+${PeInWorld[${MpiCommWorld}]}))
-  ((MpiCommWorld=MpiCommWorld+1))
+
+   chmod 755 ${ParallelScript}.${MpiCommWorld}
+   [[ -n ${sync} ]] && sync ${ParallelScript}.${MpiCommWorld}
+   #==================================================================================================
+   ((WorldOffset=WorldOffset+${PeInWorld[${MpiCommWorld}]}))
+   ((MpiCommWorld=MpiCommWorld+1))
 done    # while ((MpiCommWorld<MpiCommWorlds))
 
 [[ ${verbose} == "EXTRA" ]] && \
