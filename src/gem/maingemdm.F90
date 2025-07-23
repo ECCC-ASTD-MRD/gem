@@ -44,4 +44,5 @@ program gem
 !   call MPI_FINALIZE(ierror)  
 
    app_status=app_end(-1)
+   call rpn_comm_FINALIZE(ierror)
 end program gem
