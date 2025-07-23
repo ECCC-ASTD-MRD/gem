@@ -169,8 +169,8 @@ If you choose the debug version (`cado cmake-debug`), some flags are added to th
 ```
 With `cado cmake-debug-extra`:
 ```
--- (EC) CMAKE_C_FLAGS=-fp-model precise -traceback -Wtrigraphs -xICELAKE-SERVER -diag-disable=10441 -Wall -qmkl 
--- (EC) CMAKE_Fortran_FLAGS=-convert big_endian -align array32byte -assume byterecl -fp-model source -fpe0 -traceback -stand f08 -xICELAKE-SERVER -diag-disable=5268,7025,7373 -warn all -check all -qmkl -static-intel
+-- (EC) CMAKE_C_FLAGS_DEBUG=-O0 -g -ftrapuv -Wall
+-- (EC) CMAKE_Fortran_FLAGS_DEBUG=-O0 -g -ftrapuv -warn all -check all -qopt-report=5 -C -init=snan,arrays -warn nointerfaces -check noarg_temp_created
 ```
 
 *Important note*: if you want to change the compilation type, for example, first, you compiled with the debug version (`cado cmake-debug`), and then you want to use the release version (`cado cmake`), you need to remove the contents of the build directory between these two commands. You can use the following command: `. ./.initial_setup` which will empty the build and work directories, and then you can proceed from the start with the `cado cmake` configure command.
