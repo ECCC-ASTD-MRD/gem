@@ -64,6 +64,7 @@ subroutine iau_apply (F_kount)
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
+   include 'mpif.h'
    include "rpn_comm.inc"
 
    integer, parameter :: STATS_PRECISION = 8

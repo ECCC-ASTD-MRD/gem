@@ -36,6 +36,7 @@
       type(fst_query) :: query
       
 #include <rmnlib_basics.hf>
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       logical wrapit_L, iope_L
