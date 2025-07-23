@@ -14,6 +14,7 @@ module rpn_comm_itf_mod
    public
    !@objective Module form of rpn_comm include file
 !*@/
+   include 'mpif.h'
    include "rpn_comm.inc"
 
 end module rpn_comm_itf_mod
