@@ -183,7 +183,8 @@ message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
-list(APPEND BINARIES maingemdm)
+set(gem_exe maingemdm)
+list(APPEND BINARIES ${gem_exe})
 if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
   list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/editfst/editfst)
