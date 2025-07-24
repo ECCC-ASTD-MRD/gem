@@ -180,10 +180,11 @@ else()
 endif()
 message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 
+# set gem_exe before adding 'src' subdirectory, so it can be changed when building WITH_CPL
+set(gem_exe maingemdm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
-set(gem_exe maingemdm)
 list(APPEND BINARIES ${gem_exe})
 if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )

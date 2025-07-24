@@ -50,6 +50,10 @@ if (WITH_CPL)
   else()
     message(ERROR " -- (EC) You set WITH_CPL=TRUE, but no cplocn directory was found!")
   endif()
+  # set executable name
+  set(gem_nemo_exe ${gem_exe}-cpl)
+  set(gem_exe ${gem_nemo_exe})
+  set(gem_exe ${gem_nemo_exe} PARENT_SCOPE)
 endif()
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
