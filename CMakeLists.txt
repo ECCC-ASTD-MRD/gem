@@ -29,7 +29,11 @@ endif()
 
 # Set SUPER_PROJECT_NAME as we won't add include files and libraries from
 # the components if not packaging GEM
-set(SUPER_PROJECT_NAME ${NAME} CACHE INTERNAL "Super project name used for package creation" FORCE)
+set(super_name ${NAME})
+if (WITH_CPL)
+  set(super_name ${NAME}-nemo)
+endif()
+set(SUPER_PROJECT_NAME ${super_name} CACHE INTERNAL "Super project name used for package creation" FORCE)
 
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)

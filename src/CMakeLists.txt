@@ -89,7 +89,7 @@ if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
 endif()
 
 # To be installed only with GEM package
-if (NOT WITH_MACH)
+if (NOT (WITH_MACH OR WITH_CPL))
   install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
   install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
 
