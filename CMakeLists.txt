@@ -165,7 +165,7 @@ else()
 endif()
 message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 
-# set gem_exe before adding 'src' subdirectory, so it can be changed when building WITH_CPL
+# set gem_exe before adding 'src' subdirectory, so it can be changed when building WITH_NEMO
 set(gem_exe maingemdm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
@@ -208,6 +208,8 @@ endif()
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
+set(CPL_BUILD_DIR "" CACHE PATH "Directory where GEM-NEMO is built, to package it along with GEM")
+
 set(CPACK_GENERATOR "TGZ")
 set(CPACK_PACKAGE_VENDOR "ECCC")
 set(CPACK_PACKAGE_CONTACT "${MAINTAINER}")
@@ -217,4 +219,14 @@ set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/package")
 set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NAME}")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${GEM_VERSION}")
+if (WITH_MACH)
+   # Replace ssm variables in post-install file
+   configure_file(.ssm.d/post-install-mach.in ${CMAKE_BINARY_DIR}/.ssm.d/post-install @ONLY)
+endif()
+if(CPL_BUILD_DIR)
+  set(CPACK_INSTALL_CMAKE_PROJECTS
+      "${CPL_BUILD_DIR}/;${NAME}-nemo;ALL;/"
+      "${CMAKE_CURRENT_BINARY_DIR};${NAME};ALL;/"
+  )
+endif()
 include(CPack)
