@@ -220,6 +220,8 @@ ec_package_name()      # Define package prefix
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
+set(CPL_BUILD_DIR "" CACHE PATH "Directory where GEM-NEMO is built, to package it along with GEM")
+
 set(CPACK_GENERATOR "TGZ")
 set(CPACK_PACKAGE_VENDOR "ECCC")
 set(CPACK_PACKAGE_CONTACT "${MAINTAINER}")
@@ -232,5 +234,11 @@ set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${GEM_VERSION}")
 if (WITH_MACH)
    # Replace ssm variables in post-install file
    configure_file(.ssm.d/post-install-mach.in ${CMAKE_BINARY_DIR}/.ssm.d/post-install @ONLY)
+endif()
+if(CPL_BUILD_DIR)
+  set(CPACK_INSTALL_CMAKE_PROJECTS
+      "${CPL_BUILD_DIR}/;${NAME}-nemo;ALL;/"
+      "${CMAKE_CURRENT_BINARY_DIR};${NAME};ALL;/"
+  )
 endif()
 include(CPack)
