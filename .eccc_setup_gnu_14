@@ -4,12 +4,9 @@
 # - Load module for gnu 14 (on science only)
 # - Load a script for common setup to all compilers
 
-# We need a more recent version of cmake than the one available by default
-. ssmuse-sh -d main/opt/cmake/cmake-3.30.0
+# Load code-tools 
+. r.load.dot rpn/code-tools/20250728/env/exp/gnu-14.2.0
 
-export MODULEPATH=~sidr000/modules:$MODULEPATH
-module load gcc14
-export ORDENV_PLAT=rhel-8-amd64-64
 export EC_ARCH=rhel-8-amd-64/gnu-14.1.0
 export COMP_ARCH=gnu-14.1.0
 export COMPILER_SUITE=gnu
