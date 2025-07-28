@@ -4,6 +4,9 @@
 # - Load module for gnu 14 (on science only)
 # - Load a script for common setup to all compilers
 
+# to avoid linking with libgfortran.so in /lib64
+unset SSMUSE_LD_PREPEND
+
 # Load code-tools 
 . r.load.dot rpn/code-tools/20250728/env/exp/gnu-14.2.0
 
