@@ -83,7 +83,13 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_Fortran_COMPILE
   # flags in addition to extra checks defined in cmake_rpn compiler presets
   # https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/alphabetical-option-list.html
   if (EXTRA_CHECKS)
-    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -qopt-report=5 -C -init=snan,arrays -warn nointerfaces -check noarg_temp_created")
+    if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2025)
+      # maximum is 3 with Intel 2025
+      set(OPT-REPORT "3")
+    else()
+      set(OPT-REPORT "5")
+    endif()
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -qopt-report=${OPT-REPORT} -C -init=snan,arrays -warn nointerfaces -check noarg_temp_created")
   endif()
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
