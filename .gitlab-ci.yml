@@ -71,7 +71,7 @@ package:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - . ./.eccc_setup_intel_2025
+      - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0
       - make package
@@ -249,7 +249,7 @@ package:rhel-8-icelake-64-intel-2025.1.0:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
       - make package
