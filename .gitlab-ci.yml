@@ -179,7 +179,7 @@ build:rhel-9-amd-64_inteloneapi-2025.1.0:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel_2025
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-amd-64_inteloneapi-2025.1.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-amd-64_inteloneapi-2025.1.0
