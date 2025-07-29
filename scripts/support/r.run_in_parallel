@@ -839,7 +839,9 @@ which s.jio-prof-linux-64.so 2>/dev/null 1>/dev/null || unset jio
    JIO_PRELOAD="LD_PRELOAD=$jio JIO_DIAG=\${JIO_DIAG:-\${TMPDIR}/JIO_DIAG_TEMP} OMP_NUM_THREADS=\${OMP_NUM_THREADS:-1}"
 
 #----- Check for debugger
+exec_prefix=""
 if [[ -n ${debug} ]]; then
+   exec_prefix="exec"
    case "${debug}" in
       gdb*)
          preexec="$(which gdb) -batch -ex run -ex where"                                 # -debug gdb
@@ -1232,7 +1234,7 @@ then
   export TMPDIR=\$TMPDIR/\$HOSTNAME.\$\$
   $CMD_mkdir -p \$TMPDIR
 fi
-${preexec} \${PNames[\${Index}]} ${args}
+${exec_prefix} ${preexec} \${PNames[\${Index}]} ${args}
 Status=\$?
 ((Status==0)) && $CMD_rm -f ${tmpdir}/\${MP_SeqNum}/fail.\${MP_Tag}.\${MP_SeqNum}
 echo "END of child \${WORLD_CHILD}, status = \${Status} \$($CMD_date)"
