@@ -543,7 +543,7 @@ findtopo:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - /^dev_5\.[0-9]*$/
+  - /^dev_5\.[0-9].*$/
   - tags
   allow_failure: true
   script:
@@ -671,7 +671,7 @@ GEM_cfgs_intel:
   - build:rhel-8-icelake-64-intel-2022.1.2
   when: always
   only:
-  - /^dev_5\.[0-9]*$/
+  - /^dev_5\.[0-9].*$/
   - tags
   allow_failure: true
   script:
@@ -1042,7 +1042,7 @@ GEM_cfgs_gnu:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - /^dev_5\.[0-9]*$/
+  - /^dev_5\.[0-9].*$/
   - tags
   allow_failure: true
   script:
@@ -1305,7 +1305,7 @@ THEO_schar_gnu:
   - build:rhel-8-amd64_gnu-12.1.0
   when: always
   only:
-  - /^dev_5\.[0-9]*$/
+  - /^dev_5\.[0-9].*$/
   - tags
   allow_failure: true
   script:
@@ -1333,7 +1333,7 @@ THEO_schar_gnu:
   - build:rhel-8-amd64_gnu-14.1.0
   when: always
   only:
-  - /^dev_5\.[0-9]*$/
+  - /^dev_5\.[0-9].*$/
   - tags
   allow_failure: true
   script:
