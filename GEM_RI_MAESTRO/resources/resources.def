@@ -1,0 +1,3 @@
+FRONTEND = ppp6
+BACKEND = robert
+SEQ_DEFAULT_MACHINE = ppp6
