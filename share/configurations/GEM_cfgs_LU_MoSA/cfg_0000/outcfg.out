@@ -42,7 +42,7 @@
         TSN,TSNV,TVG,TGR,
         ISOL,WSOL],                                           grid, 1, levels, 1, steps, 2)
 
- sortie_p([RTSU,GTSU,DXSU,GXSU,RTFS],                         grid, 1, levels, 1, steps, 2)
+ sortie_p([RTSU,GTSU,DXSU,GXSU,RTFS,N3,RNAC],                         grid, 1, levels, 1, steps, 2)
 
  sortie([TT,GZ,ES,UU,VV,WW,UV],                   grid, 1, levels, 2, steps, 2)
  sortie([ME],                                     grid, 1, levels, 1, steps, 1)
