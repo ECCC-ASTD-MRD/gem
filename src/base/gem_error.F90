@@ -7,6 +7,7 @@
       character(len=*) :: F_FromSubName
       character(len=*) :: F_Message
 
+   include 'mpif.h'
    include "rpn_comm.inc"
       integer :: errcode, err
 !
