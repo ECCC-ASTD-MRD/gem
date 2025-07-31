@@ -172,8 +172,8 @@ endif()
 
 if(EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
   configure_file(${CMAKE_SOURCE_DIR}/share/gem-maestro/version.in ${CMAKE_SOURCE_DIR}/share/gem-maestro/GEM_module/VERSION @ONLY)
-  configure_file(${CMAKE_SOURCE_DIR}/share/gem-maestro/version.in ${CMAKE_SOURCE_DIR}/share/gem-maestro/nostage_module/VERSION @ONLY)
 endif()
+
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   if(DEFINED ENV{GEM_WORK})
@@ -202,7 +202,7 @@ if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/voir/voir)
   install(FILES ${LINKS} DESTINATION ${WORK_PREFIX}/bin)
 endif()
-list(APPEND BINARIES yy2global flipit yydecode yyencode test_integrals)
+list(APPEND BINARIES yy2global flipit yydecode yyencode serverOUT serverIN  test_integrals)
 if ("${phy_LIBRARIES}" STREQUAL "rpnphy" )
   list(APPEND BINARIES feseri prphynml )
 endif()
