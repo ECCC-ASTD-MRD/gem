@@ -19,8 +19,8 @@ export COMPILER_SUITE=gnu
 export COMPILER_VERSION=14.1.0
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20250710
-. r.load.dot rpn/utils/20250710
+. r.load.dot rpn/libs/20250804
+. r.load.dot rpn/utils/20250804
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
