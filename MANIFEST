@@ -8,15 +8,16 @@ MAINTAINER : Chantal Pic - Chantal.Pic@ec.gc.ca
 URL        : https://gitlab.science.gc.ca/MIG/gem
 
 # Components
-modelutils = 1.7.1
-rpnphy = 6.2.5
-gemdyn = 5.2.5
+modelutils = 1.7.5-u3
+rpnphy = 6.2.5-u3
+gemdyn = 5.2.5-u3
 mach = 3.2.1
 
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-rmn  >= 20.0.10
-tdpack >= 1.6.3.11
-vgrid >= 6.9.8
-rpncomm >= 4.6.6.1
+rmn  = 20.0.11
+tdpack = 1.6.3.12
+vgrid = 6.9.9
+rpncomm = 4.6.7
+fst-tools = 20.0.9.1
