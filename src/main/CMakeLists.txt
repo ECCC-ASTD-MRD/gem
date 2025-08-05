@@ -34,6 +34,6 @@ target_link_libraries(yyencode
   ${LAPACK_LIBRARIES}
   ${BLAS_LIBRARIES} )
 
-if (NOT WITH_MACH)
+if (NOT (WITH_MACH OR WITH_CPL))
   install(TARGETS yy2global flipit yydecode yyencode RUNTIME DESTINATION bin)
 endif()
