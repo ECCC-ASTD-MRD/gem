@@ -21,7 +21,9 @@ function sfc_nml2(F_namelist) result(F_istat)
    use str_mod, only: str_concat, str_toreal
    use sfc_options
    use sfcbus_mod
+#ifdef HAVE_CPL
    use cpl_itf, only: cpl_nml
+#endif
    use sfclayer, only: sl_put, SL_OK
    implicit none
 !!!#include <arch_specific.hf>
@@ -57,13 +59,19 @@ function sfc_nml2(F_namelist) result(F_istat)
    if (.not.RMN_IS_OK(err)) return
 
    unout = msg_getUnit(MSG_INFO)
+#ifdef HAVE_CPL
    err   = cpl_nml(F_namelist, unout)
+#else
+   err   = 0
+#endif
    if (.not.RMN_IS_OK(err)) then
       call msg(MSG_ERROR,'(sfc_nml) Probleme in cpl_nml')
       return
    endif
    cplocn = (err ==  CPL_NML_OK)
+#ifdef HAVE_CPL
    if (cplocn) err = cpl_nml('print', unout)
+#endif
 
    F_istat = SFC_NML_OK
    !-------------------------------------------------------------------

@@ -19,7 +19,9 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
      n, m, nk)
    use tdpack
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
+#ifdef HAVE_CPL
    use cpl_itf     , only: cpl_update
+#endif
    use sfc_options
    use sfcbus_mod
    implicit none
@@ -376,6 +378,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
 
    end do
 
+#ifdef HAVE_CPL
    if (cplocn) then
       ! Update with fluxes and diagnostic variables from ocean model
       cplupd=.false.
@@ -434,6 +437,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
          ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
       endif
    endif
+#endif
 
 
    ! 5.     Prognostic evolution of SST (based on Zeng and Beljaars; GRL 2005)

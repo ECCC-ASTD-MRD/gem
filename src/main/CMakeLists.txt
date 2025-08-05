@@ -25,6 +25,6 @@ target_link_libraries(prphynml
 )
 add_dependencies(prphynml rpnphy ${modelutils_SRC})
 
-if (NOT WITH_MACH)
+if (NOT (WITH_MACH OR WITH_CPL))
   install(TARGETS feseri prphynml RUNTIME DESTINATION bin)
 endif()

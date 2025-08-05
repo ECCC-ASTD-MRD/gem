@@ -14,7 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_istat)
+#ifdef HAVE_CPL
    use cpl_itf, only: cpl_init
+#endif
    use phygridmap, only: drv_glb_ni, drv_glb_nj, drv_lcl_ni, drv_lcl_nj, &
         phy_lcl_i0, phy_lcl_j0, phy_lcl_in, phy_lcl_jn, phydim_nk
    use sfc_options
@@ -37,10 +39,12 @@ function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_ista
    F_istat = 0
    if (.not.cplocn) return
 
+#ifdef HAVE_CPL
    istat = cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt, &
         drv_glb_ni, drv_glb_nj, drv_lcl_ni, drv_lcl_nj, &
         phy_lcl_i0, phy_lcl_j0, phy_lcl_in, phy_lcl_jn, &
         phydim_nk, z0mtype, z0ttype, Z0TLAT)
+#endif
 
    if (istat < 0) then
       F_istat = -1
