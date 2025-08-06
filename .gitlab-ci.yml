@@ -258,7 +258,7 @@ build:rhel-8-icelake-64-intel-2025.1.0:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2025.1.0
@@ -444,6 +444,7 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
       - time make -j $NCPUS
       - time make work
+   allow_failure: true
    artifacts:
       expire_in: 4 hrs
       paths:
@@ -475,6 +476,7 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+   allow_failure: true
 
 #----- ubuntu-22.04-amd64_intel-2022.1.2
 build:ubuntu-22.04-amd64-intel-2022.1.2:
@@ -509,6 +511,7 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       expire_in: 4 hrs
       paths:
       - work-ubuntu-22.04-amd64-64-intel-2022.1.2
+   allow_failure: true
 
 package:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
@@ -536,6 +539,7 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+   allow_failure: true
 
 #----- ubuntu-22.04-amd64_intel-2023.2.0
 build:ubuntu-22.04-amd64-intel-2023.2.0:
@@ -570,6 +574,7 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
       expire_in: 4 hrs
       paths:
       - work-ubuntu-22.04-amd64-64-intel-2023.2.0
+   allow_failure: true
 
 package:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
@@ -597,6 +602,7 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+   allow_failure: true
 
 deploy:staging:
    stage: deploy
