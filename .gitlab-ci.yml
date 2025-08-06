@@ -36,6 +36,9 @@ build:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
+    - export ORDENV_PLAT=rhel-9-graniterapids-64
+    - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
+    - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0
@@ -71,6 +74,9 @@ package:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
+      - export ORDENV_PLAT=rhel-9-graniterapids-64
+      - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
+      - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0
