@@ -1,5 +1,5 @@
 NAME       : gem
-VERSION    : 5.2.5
+VERSION    : 5.2.5-u3
 MACH_VERSION : 3.2.1
 BUILD      : RelWithDebInfo
 DESCRIPTION: ECCC-MRD Global Environmental Multi-scale model - GEM
