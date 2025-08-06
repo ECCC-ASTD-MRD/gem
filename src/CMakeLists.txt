@@ -98,23 +98,23 @@ if (NOT (WITH_MACH OR WITH_CPL))
   endif()
 
   # Generate version specific nml
-  install(CODE "
-   message(STATUS \"Generating nml\")
-   execute_process(
-     COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
-     COMMAND_ERROR_IS_FATAL ANY
-    )
-   execute_process(
-     COMMAND ${CMAKE_SOURCE_DIR}/scripts/rpy/rpy.nml_get -v -f ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
-     OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv
-     COMMAND_ERROR_IS_FATAL ANY
-     )
-   execute_process(
-     COMMAND cut ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv -d= -f1
-     OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k
-     COMMAND_ERROR_IS_FATAL ANY)
-     ")
-  # install nml reference files, physics_input_table file, and scripts
+  # install(CODE "
+  #  message(STATUS \"Generating nml\")
+  #  execute_process(
+  #    COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
+  #    COMMAND_ERROR_IS_FATAL ANY
+  #   )
+  #  execute_process(
+  #    COMMAND ${CMAKE_SOURCE_DIR}/scripts/rpy/rpy.nml_get -v -f ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
+  #    OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv
+  #    COMMAND_ERROR_IS_FATAL ANY
+  #    )
+  #  execute_process(
+  #    COMMAND cut ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.kv -d= -f1
+  #    OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k
+  #    COMMAND_ERROR_IS_FATAL ANY)
+  #    ")
+  # # install nml reference files, physics_input_table file, and scripts
   install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
   install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)
   install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/rpnphy/bin/rpnphy_nml_mkref" DESTINATION scripts)
