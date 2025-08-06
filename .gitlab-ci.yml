@@ -39,8 +39,8 @@ build:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64_inteloneapi-2025.1.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64_inteloneapi-2025.1.0 .
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0 .
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64_inteloneapi-2025.1.0
@@ -50,7 +50,7 @@ build:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
   artifacts:
     expire_in: 4 hrs
     paths:
-    - work-rhel-9-graniterapids-64_inteloneapi-2025.1.0
+    - work-rhel-9-graniterapids-64-intel-2025.1.0
 
 package:rhel-9-graniterapids-64_inteloneapi-2025.1.0:
    variables:
