@@ -10,7 +10,6 @@ fc="@CMAKE_Fortran_COMPILER_ID@ @CMAKE_Fortran_COMPILER_VERSION@"
 cflags="@EC_C_FLAGS@"
 fflags="@EC_Fortran_FLAGS@"
 defs="@EC_CMAKE_DEFINITIONS@"
-libs=CMAKE_LIBS
 
 version=@PROJECT_VERSION@
 env=@EC_CI_ENV@
@@ -90,10 +89,6 @@ while test $# -gt 0; do
 
         --defs)
        	    echo ${defs}
-       	    ;;
-
-        --libs)
-       	    echo ${libs}
        	    ;;
 
         --has-rmn)
