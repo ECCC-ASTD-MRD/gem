@@ -20,9 +20,6 @@ stable version, used in production at the Canadian Meteorological Centre,
   stable version, [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.2-branch/README.md)
 - [5.3 branch](https://github.com/ECCC-ASTD-MRD/gem/tree/5.3-branch):
   current development version, [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.3-branch/README.md)
-- [benchmarks
-branch](https://github.com/ECCC-ASTD-MRD/gem/tree/benchmarks): for
-the latest benchmarks, see
-[README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/benchmarks/README.md),
-for ITQ benchmarks, see 
-[README-ITQ.md](https://github.com/ECCC-ASTD-MRD/gem/blob/benchmarks/README-ITQ.md).
+- [benchmark-5.3
+branch](https://github.com/ECCC-ASTD-MRD/gem/tree/benchmark-5.3): for benchmarks
+[README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/benchmark-5.3/README.md)
