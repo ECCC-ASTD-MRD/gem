@@ -14,10 +14,13 @@ INTEL_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 case ${INTEL_SCRIPT_NAME} in
     .eccc_setup_intel)
-        export COMPILER_VERSION=2022.1.2
+        export COMPILER_VERSION=2025.1.0
         ;;
     .eccc_setup_intel_2021.4.0)
         export COMPILER_VERSION=2021.4.0
+        ;;
+    .eccc_setup_intel_2022.1.2)
+        export COMPILER_VERSION=2022.1.2
         ;;
     .eccc_setup_intel_2023.2.0)
         export COMPILER_VERSION=2023.2.0
