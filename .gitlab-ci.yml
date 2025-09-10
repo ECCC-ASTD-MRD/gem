@@ -10,6 +10,7 @@ stages:
   - build
   - run_intel_icelake
   - run_gnu_9.3.0
+  - run_gnu_14.2.0
   - package
   - deploy
 
@@ -18,6 +19,108 @@ before_script:
   - source ~/ci-admin/env/init.sh
   - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/precaution/${CI_PROJECT_PATH}/${CI_BUILD_REF_NAME}/${CI_PIPELINE_ID}
 
+#----- rhel-9-graniterapids-64-intel-2025.1.0
+# U3 Intel 2025 with installed RPN-SI libs
+build:rhel-9-graniterapids-64-intel-2025.1.0:
+  variables:
+     ORD_SOUMET_MACH: ppp6t
+     ORD_SOUMET_CPUS: "4"
+     ORD_SOUMET_W: "30"
+     ORD_SOUMET_M: "8G"
+     ORD_SOUMET_TMPFS: "1G"
+  stage: build
+  tags:
+    - concurrent
+  when: always
+  script:
+    - set +e
+    - . ${ECCI_ENV}/latest/profile.sh
+    - export ORDENV_PLAT=rhel-9-graniterapids-64
+    - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
+    - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
+    - . ./.eccc_setup_intel_2025.1.0
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0 .
+    - ./scripts/link-dbase.sh
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DCPL_BUILD_DIR=${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-9-graniterapids-64-intel-2025.1.0
+  allow_failure: true
+
+#----- rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+# U3 Intel 2025 with installed RPN-SI libs, WITH_CPL
+build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
+  variables:
+     ORD_SOUMET_MACH: ppp6t
+     ORD_SOUMET_CPUS: "4"
+     ORD_SOUMET_W: "30"
+     ORD_SOUMET_M: "8G"
+     ORD_SOUMET_TMPFS: "1G"
+  stage: build
+  tags:
+    - concurrent
+  when: always
+  script:
+    - set +e
+    - . ${ECCI_ENV}/latest/profile.sh
+    - export ORDENV_PLAT=rhel-9-graniterapids-64
+    - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
+    - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
+    - . ./.eccc_setup_intel_2025.1.0
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo .
+    - export GEM_WORK=work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - ./scripts/link-dbase.sh
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DWITH_CPL=1 ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+    - gem_dbase
+
+package:rhel-9-graniterapids-64-intel-2025.1.0:
+   variables:
+      ORD_SOUMET_MACH: ppp6t
+      ORD_SOUMET_CPUS: "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - tags
+      - /^dev_5\.[0-9]*$/
+      - schedules
+   dependencies:
+      - build:rhel-9-graniterapids-64-intel-2025.1.0
+      - build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
+   script:
+      - set +e
+      - . ${ECCI_ENV}/latest/profile.sh
+      - export ORDENV_PLAT=rhel-9-graniterapids-64
+      - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
+      - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
+      - . ./.eccc_setup_intel_2025.1.0
+      - set -e
+      - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
+      - make package
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+    
 #----- rhel-8-amd64_gnu-9.3.0
 build:rhel-8-amd64_gnu-9.3.0:
   variables:
@@ -96,7 +199,7 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - export WITH_SYSTEM_RPN=FALSE
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
@@ -106,9 +209,65 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
     - time make -j $NCPUS
   allow_failure: true
 
+#----- rhel-8-icelake-64-intel-2025.1.0
+# U2 Intel 2025 with installed RPN-SI libs
+# Used for testing configs and for SSM package
+build:rhel-8-icelake-64-intel-2025.1.0:
+  variables:
+     ORD_SOUMET_CPUS: "4"
+     ORD_SOUMET_W: "30"
+     ORD_SOUMET_M: "8G"
+     ORD_SOUMET_TMPFS: "1G"
+  stage: build
+  tags:
+    - concurrent
+  when: always
+  script:
+    - set +e
+    - . ${ECCI_ENV}/latest/profile.sh
+    - . ./.eccc_setup_intel_2025.1.0
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2025.1.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2025.1.0 .
+    - ./scripts/link-dbase.sh
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
+    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-8-icelake-64-intel-2025.1.0
+    - gem_dbase
+
+package:rhel-8-icelake-64-intel-2025.1.0:
+   variables:
+      ORD_SOUMET_CPUS: "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - tags
+      - /^dev_5\.[0-9]$/
+      - schedules
+   dependencies:
+      - build:rhel-8-icelake-64-intel-2025.1.0
+   script:
+      - set +e
+      - . ${ECCI_ENV}/latest/profile.sh
+      - . ./.eccc_setup_intel_2025.1.0
+      - set -e
+      - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
+      - make package
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
 #----- rhel-8-icelake-64-intel-2022.1.2
 # U2 Intel 2022 with installed RPN-SI libs
-# Used for testing configs and for SSM package
 build:rhel-8-icelake-64-intel-2022.1.2:
   variables:
      ORD_SOUMET_CPUS: "4"
@@ -122,7 +281,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2
@@ -157,62 +316,11 @@ package:rhel-8-icelake-64-intel-2022.1.2:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-
-#----- rhel-9-amd-64_inteloneapi-2025.1.0
-# U3 Intel 2025 with installed RPN-SI libs
-build:rhel-9-amd-64_inteloneapi-2025.1.0:
-  variables:
-     ORD_SOUMET_MACH    : ppp6t
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel_2025.1.0
-    - set -e
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-amd-64_inteloneapi-2025.1.0
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-amd-64_inteloneapi-2025.1.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-amd-64_inteloneapi-2025.1.0 .
-    - ./scripts/link-dbase.sh
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-9-amd-64_inteloneapi-2025.1.0
-    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
-  allow_failure: true
-
-package:rhel-9-amd-64_inteloneapi-2025.1.0:
-   variables:
-      ORD_SOUMET_MACH    : ppp6t
-   stage: package
-   tags:
-      - concurrent
-   only:
-      - tags
-      - /^dev_5\.[0-9]$/
-      - schedules
-   needs:
-      - build:rhel-9-amd-64_inteloneapi-2025.1.0
-   script:
-      - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - . ./.eccc_setup_intel
-      - set -e
-      - cd ${PIPELINE_SUBDIR}/build-rhel-9-amd-64_inteloneapi-2025.1.0
-      - make package
-      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-   allow_failure: true
 
 #----- rhel-8-icelake-64-intel-2022.1.2-gem-nemo
 # U2 Intel 2022 with installed RPN-SI libs, WITH_NEMO
@@ -229,7 +337,7 @@ build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo:
   script:
     - set +e
     - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-gem-nemo
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2-gem-nemo
@@ -265,7 +373,7 @@ package:rhel-8-icelake-64-intel-2022.1.2-gem-nemo:
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - export PATH="${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2-gem-nemo/bin/:$PATH"
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-gem-nemo
@@ -331,7 +439,70 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
-#----- ubuntu-22.04-amd64_inteloneapi-2022.1.2
+#----- ubuntu-24.04-amd64_intel-2025.1.0
+build:ubuntu-24.04-amd64-intel-2025.1.0:
+   variables:
+      ORD_SOUMET_CPUS: "4"
+      ORD_SOUMET_W: "30"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: build
+   tags:
+     - concurrent
+   only:
+     - /^dev_5\.[0-9]$/
+     - tags
+   environment:
+      name: ubuntu24
+   script:
+      - set +e
+      - . ${ECCI_ENV}/latest/profile.sh
+      - . r.env.dot --arch amd64
+      - . ./.eccc_setup_intel_2025.1.0
+      - set -e
+      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
+      - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-intel-2025.1.0
+      - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-intel-2025.1.0
+      - SRC_DIR=$(pwd)
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
+      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+      - time make -j $NCPUS
+      - time make work
+   allow_failure: true
+   artifacts:
+      expire_in: 4 hrs
+      paths:
+      - work-ubuntu-24.04-amd64-intel-2025.1.0
+
+package:ubuntu-24.04-amd64-intel-2025.1.0:
+   variables:
+      ORD_SOUMET_CPUS    : "2"
+      ORD_SOUMET_W: "10"
+      ORD_SOUMET_M: "8G"
+      ORD_SOUMET_TMPFS: "1G"
+   stage: package
+   tags:
+      - concurrent
+   only:
+      - /^dev_5\.[0-9]$/
+      - tags
+      - schedules
+   dependencies:
+      - build:ubuntu-24.04-amd64-intel-2025.1.0
+   environment:
+      name: ubuntu24
+   script:
+      - set +e
+      - . ${ECCI_ENV}/latest/profile.sh
+      - . r.env.dot --arch amd64
+      - . ./.eccc_setup_intel_2025.1.0
+      - set -e
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
+      - make package
+      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+   allow_failure: true
+
+#----- ubuntu-22.04-amd64_intel-2022.1.2
 # ord_soumet variables are saved in CI/CD settings
 build:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
@@ -351,7 +522,7 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2
@@ -388,14 +559,14 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
    allow_failure: true
 
-#----- ubuntu-22.04-amd64_inteloneapi-2023.2.0
+#----- ubuntu-22.04-amd64_intel-2023.2.0
 # ord_soumet variables are saved in CI/CD settings
 build:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
@@ -481,13 +652,13 @@ deploy:staging-gem-nemo:
    script:
       - ~/ci-admin/bin/ci-stage-ssm.sh gem-nemo gem-nemo "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
 
-#----- Testing findtopo for rhel-8-icelake-64-intel-2022.1.2
+#----- Testing findtopo for rhel-8-icelake-64-intel-2025.1.0
 findtopo:
   stage: run_intel_icelake
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -507,7 +678,7 @@ findtopo:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -534,7 +705,7 @@ CANO_W7cascP_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   allow_failure: true
   only:
@@ -561,7 +732,7 @@ CANO_dcmip163r100_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -588,7 +759,7 @@ CANO_wil7_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -615,7 +786,7 @@ GEM_cfgs_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -642,7 +813,7 @@ GEM_GY_FISL_P_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -669,7 +840,7 @@ GEM_GY_FISL_H_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -696,7 +867,7 @@ GEM_GY_spnGC_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -723,7 +894,7 @@ GEM_LU_FISL_H_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -750,7 +921,7 @@ GEM_LU_OFFC_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -777,7 +948,7 @@ GEM_LU_EXP_P_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -804,7 +975,7 @@ GEM_LU_MoSA_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -831,7 +1002,7 @@ GEM_LU_TEB_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -858,7 +1029,7 @@ GEM_LU_THM_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -885,7 +1056,7 @@ OPS_GYens_ic4_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -912,7 +1083,7 @@ OPS_GY_ic4_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -939,7 +1110,7 @@ OPS_LU_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -966,7 +1137,7 @@ PTOPO_GYH_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -993,7 +1164,7 @@ PTOPO_LUP_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1020,7 +1191,7 @@ RSTRT_GYP_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1047,7 +1218,7 @@ THEO_bubbleG_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1070,7 +1241,7 @@ THEO_schar_intel:
   tags:
     - U2
   needs:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1673,4 +1844,33 @@ THEO_schar_gnu:
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
     - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+    - test "${_status}" == "ED"
+
+
+#----- Running one configuration for rhel-8-amd64_gnu-14.2.0
+5.2GEM_GY_FISL_H_gnu_14:
+  stage: run_gnu_14.2.0
+  tags:
+    - U2
+  dependencies:
+  - build:rhel-8-amd64_gnu-14.2.0
+  when: always
+  only:
+  - /^dev_5\.[0-9].*$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ${ECCI_ENV}/latest/profile.sh
+    - . ./.eccc_setup_gnu_14
+    - set -e
+    - cd $GEM_WORK
+    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -inorder 1;
+      fi
     - test "${_status}" == "ED"
