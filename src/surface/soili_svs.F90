@@ -140,12 +140,7 @@ include "isbapar.cdk"
 
 !
       INTEGER I, K
-!
-      REAL LAMI, CI, DAY, RHOI, RHOW, CW, LAMW
-! 
-      REAL ADRYSAND, AWETSAND, ADRYCLAY, AWETCLAY
-      REAL EDRYSAND, EWETSAND, EDRYCLAY, EWETCLAY
-!      
+!    
       REAL LOG_CONDI, LOG_CONDW, XF, XU, WORK1, WORK2, WORK3, CONDSAT
       REAL LAM_ZERO, k_min, k_air, k_ice 
       REAL SATDEG, KERSTEN
@@ -160,36 +155,6 @@ include "isbapar.cdk"
       ENDIF
 !
 !***********************************************************************
-!
-!
-!
-!                                    Define some constants for
-!                                    the ice
-!
-!                                    NOTE:  these definitions should
-!                                           be put in a COMMON
-!
-      LAMI   = 2.22
-      CI     = 2.106E3
-      RHOI   = 917.  
-      DAY    = 86400.
-
-      LAMW = 0.57 ! Thermal conductivity of water
-      CW   = 4.218E+3
-      RHOW = 1000
-!                       Albedo values from literature
-      ADRYSAND = 0.35
-      AWETSAND = 0.24
-      ADRYCLAY = 0.15
-      AWETCLAY = 0.08
-!                       Emissivity values from van Wijk and Scholte Ubing (1963)
-      EDRYSAND = 0.95
-      EWETSAND = 0.98
-      EDRYCLAY = 0.95
-      EWETCLAY = 0.97
-
-!
-!
 !
 !
 !
@@ -227,10 +192,10 @@ include "isbapar.cdk"
 !
       DO I=1,N
         LAMS(I) = LAMI * RHOS(I)**1.88
-        ZCS(I) = 2.0 * SQRT( PI/( LAMS(I) * 1000* RHOS(I) *CI*DAY) )
+        ZCS(I) = 2.0 * SQRT( PI/( LAMS(I) * 1000* RHOS(I) *CICE*DAY) )
 !
         LAMSV(I) = LAMI * RHOSV(I)**1.88
-        ZCSV(I) = 2.0 * SQRT( PI/(LAMSV(I)* 1000*RHOSV(I) *CI*DAY) )
+        ZCSV(I) = 2.0 * SQRT( PI/(LAMSV(I)* 1000*RHOSV(I) *CICE*DAY) )
 !
       END DO    
 !
@@ -599,8 +564,8 @@ include "isbapar.cdk"
               ENDIF
 
 !             Heat capacity (J m-3 K-1)
-              SOILHCAPZ(I,K) = (1. - WSAT(I,K)) * 2700. * 733. + WD(I,K) * CW * RHOW &
-                             + WF(I,K) * CI * RHOI
+              SOILHCAPZ(I,K) = (1. - WSAT(I,K)) * 2700. * 733. + WD(I,K) * CWAT * RHOW &
+                             + WF(I,K) * CICE * RHOI
 
           END DO
 

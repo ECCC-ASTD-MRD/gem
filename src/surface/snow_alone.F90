@@ -94,17 +94,12 @@
 ! RHOSNO      density of snow (kg/m3) for output only
 ! RESA        aerodynamical surface resistance for snow
 !
-include "isbapar.cdk"
-
 !
       INTEGER I
 !
 !
-      REAL LAMI, CICE, DAY, CWAT, DT_12MIN
-      
-      REAL EMISSN, RAIN1, RAIN2, MLTRAIN 
-      REAL CRMIN, CRMAX, TAUHOUR, RHOE,  MYOMEGA
-      REAL RSNOW_DAY, RHOICE, ANSMIN, MAX_EFLUX
+      REAL MLTRAIN 
+      REAL RSNOW_DAY, MAX_EFLUX
 
       real, dimension(n) :: lams, zcs, zqs, ctu, zqsat, zdqsat, zqsatt, &
            rora, a, b, c, tsnst, tsndt, rhomax, fmltrain, &
@@ -119,38 +114,14 @@ include "isbapar.cdk"
 !
 !
 !
-!                                THE FOLLOWING SHOULD BE PUT IN 
-!                                A COMMON COMDECK
-!
-!
-      LAMI    = 2.22 
-      CICE    = 2.106E3  ! specific heat of ice 
-      DAY     = 86400.
-      EMISSN  = 0.97
-      CRMIN   = 0.03
-      CRMAX   = 0.10
-      RHOE    = 0.20
-      TAUHOUR = 3600.
-      RHOICE  = 0.9
-      ANSMIN  = 0.5
-      MYOMEGA   = ( 2*PI )/ DAY
-      CWAT    = 4.187E3  ! Specific heat of water
-      DT_12MIN = 12.*60. ! 12 min in sec     
-      
-!
-      RAIN1   = 2.8e-5 ! mm/s
-      RAIN2   = 2.8e-4 ! mm/s
-!
-!
-!
 !*            REFRESH ALL INPUT VARIABLES IF THERE IS NEGLIGIBLE SNOW
 !                -----------------------------------------------------
 !         CHECK THAT THIS INITIALIZATION MAKES SENSE
 !
       DO I=1,N
          IF (SM(I).LT.CRITSNOWMASS) THEN
-            ALPHAS(I)   = ANSMAX
-            RHOSL(I)    = RHOSDEF
+            ALPHAS(I)   = ANSMAX_SVS
+            RHOSL(I)    = RHOSDEF_SVS
             !                             For snow temperature, set it to AIR temperature
 !                             capped at the triple point of water
             TSNS(I)     = MIN(T(I),TRPL)
@@ -383,7 +354,7 @@ include "isbapar.cdk"
          else
             freez_l1(i)=0.0
             melt_l1(I)=0.0
-            rhomax(I)=RHOSDEF
+            rhomax(I)=RHOSDEF_SVS
          endif
          !
          ! layer 2
@@ -415,12 +386,12 @@ include "isbapar.cdk"
 !
     IF(SVS_SNOW_RAIN=='BELAIR03' .OR. SVS_SNOW_RAIN=='BELAIR03_DTGEM') THEN
       DO I=1,N
-        IF (RR(I).LT.RAIN1) THEN
+        IF (RR(I).LT.RAIN1_SNW) THEN
           FMLTRAIN(I) = 0.
-        ELSE IF (RR(I).GT.RAIN2) THEN
+        ELSE IF (RR(I).GT.RAIN2_SNW) THEN
           FMLTRAIN(I) = 1.
         ELSE
-          FMLTRAIN(I) = ( RR(I) - RAIN1 ) / ( RAIN2 - RAIN1 )
+          FMLTRAIN(I) = ( RR(I) - RAIN1_SNW ) / ( RAIN2_SNW - RAIN1_SNW )
         END IF
       END DO
 !
@@ -454,7 +425,7 @@ include "isbapar.cdk"
             MELT_RAIN(I) = 0.0
       END DO
  
-   ELSE IF (SVS_SNOW_RAIN =='L21' ) THEN
+   ELSE IF (SVS_SNOW_RAIN =='LEONARDINI21' ) THEN
  
      !  Assume all the energy brought by rain is used ot melt the snowpack.
      ! Parameterization used in Vionnet et al. (2020) and Leonardini et al. (2021)
@@ -646,28 +617,28 @@ include "isbapar.cdk"
 !
         IF (SMT(I).GT.0.0.AND.DSNOWDT(I).LT.0.0) THEN
 !
-!                                       when there is freezing
+!                                       when there is snow melt
 !
-           ALPHAST(I) = (ALPHAS(I)-ANSMIN)*EXP(-0.01*DT/3600.) &  
-                +  ANSMIN & 
-                +  SR(I)*DT/WCRN*(ANSMAX-ANSMIN)
-!
+           ALPHAST(I) = (ALPHAS(I)-ANSMIN_SVS)*EXP(-0.01*DT/3600.) &  
+                +  ANSMIN_SVS & 
+                +  SR(I)*DT/WCRN_ALB_SVS*(ANSMAX_SVS-ANSMIN_SVS)
+
 !
         ELSE IF (SMT(I).GT.0.0.AND.DSNOWDT(I).GE.0.0) THEN
 !
-!                                       when there is melting
+!                                       when snow is dry
 !
-           ALPHAST(I) = ALPHAS(I) - TODRY*DT/DAY  &   
-                + SR(I)*DT/WCRN*(ANSMAX-ANSMIN)
+           ALPHAST(I) = ALPHAS(I) - TODRY_SVS*DT/DAY  &   
+                + SR(I)*DT/WCRN_ALB_SVS*(ANSMAX_SVS-ANSMIN_SVS)
 !
 !
         ELSE
-           ALPHAST(I) = ANSMAX
+           ALPHAST(I) = ANSMAX_SVS
         ENDIF
 !                                       limits of the albedo
 !
-        ALPHAST(I) = MAX( ANSMIN, ALPHAST(I) )       
-        ALPHAST(I) = MIN( ANSMAX, ALPHAST(I) )
+        ALPHAST(I) = MAX( ANSMIN_SVS, ALPHAST(I) )       
+        ALPHAST(I) = MIN( ANSMAX_SVS, ALPHAST(I) )
 !
       END DO
 !
@@ -683,9 +654,9 @@ include "isbapar.cdk"
         IF (SMT(I).GT.0.0) THEN
            RHOSFALL(I) = 109. + 6.*(T2M(I)-TRPL) +   &
                               26.*(U10M(I)**2+V10M(I)**2)**0.25
-           RHOSFALL(I) = MIN(MAX((RHOSFALL(I)*0.001),RHOMIN), 0.250)
+           RHOSFALL(I) = MIN(MAX((RHOSFALL(I)*0.001),RHOMIN_SVS), 0.250)
         ELSE
-           RHOSFALL(I) = RHOSDEF
+           RHOSFALL(I) = RHOSDEF_SVS
         END IF
       END DO
 
@@ -710,7 +681,7 @@ include "isbapar.cdk"
                         + (SR(I)*DT) * RHOSFALL(I)) / SMX(I)
          ELSE
             ! default
-            RHOSLT(I) = RHOSDEF
+            RHOSLT(I) = RHOSDEF_SVS
          END IF
       END DO
 !
@@ -733,7 +704,7 @@ include "isbapar.cdk"
                         / ( SMT(I) + FREEZ_L1(I) * DT )
 !                          Make sure within bounds 
           RHOSLT(I) = MIN( RHOICE, RHOSLT(I) )
-          RHOSLT(I) = MAX( RHOMIN, RHOSLT(I) )
+          RHOSLT(I) = MAX( RHOMIN_SVS, RHOSLT(I) )
 
         END IF
       END DO
@@ -770,8 +741,8 @@ include "isbapar.cdk"
 !
       DO I=1,N
         IF (SM(I).LT.CRITSNOWMASS) THEN
-          ALPHAS(I)   = ANSMAX
-          RHOSL(I)    = RHOSDEF
+          ALPHAS(I)   = ANSMAX_SVS
+          RHOSL(I)    = RHOSDEF_SVS
           RHOSNO(I)   = RHOSLT(I)*RAUW
           TSNS(I)     = 300.0
           TSND(I)     = 300.0

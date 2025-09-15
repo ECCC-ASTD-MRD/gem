@@ -109,12 +109,6 @@ contains
       if (.not.RMN_IS_OK(err)) return
       call phy_nml_print()
 
-      err = check_options2()
-      if (.not.RMN_IS_OK(err)) then
-         call msg(MSG_ERROR, '(phy_nml) invalid options values in check_options')
-         return
-      endif
-
       phy_init_ctrl = PHY_CTRL_NML_OK
       F_status = PHY_OK
       !-------------------------------------------------------------------
@@ -238,13 +232,13 @@ contains
       istat = clib_toupper(lhn_stop_S)
       istat = clib_toupper(lhn_ramp_S)
 
-      if (gwdrag == 'NIL') then
-         call msg(MSG_INFO, '(phy_nml_check) gwdrag = NIL : setting sgo_tdfilter = -1')
-         sgo_tdfilter = -1
+      if (linoz_chm /= 'NIL' .and. .not.any(radia == (/'CCCMARAD ', 'CCCMARAD2'/)) ) then
+         call msg(MSG_ERROR,'(phy_nml_check) Cannot use Linoz_chm without CCCMARAD or CCCMARAD2')
+         return
       endif
-      if (lhn == 'NIL') then
-         call msg(MSG_INFO, '(phy_nml_check) lhn = NIL : setting lhn_filter = -1')
-         lhn_filter = -1
+      if (rad_linoz_l .and. radia /= 'CCCMARAD2') then
+         call msg(MSG_ERROR,'(phy_nml_check) Cannot use Linoz_rad_L=T without CCCMARAD2')
+         return
       endif
 
       if (fluvert /= "SURFACE" .and. any(pcptype == (/'SPS_W19', 'SPS_FRC', 'SPS_H13'/))) then
@@ -252,10 +246,28 @@ contains
          return
       end if
 
-      if (stcond(1:3) /= "MP_") mpdiag_for_sfc = .false.
-
       if (.not.any(sfcflx_filter_order == (/ -1, 2, 4 /))) then
          call msg(MSG_ERROR, '(phy_nml_check) sfcflx_filter_order must be -1, 2 or 4')
+         return
+      endif
+      
+      if (stcond(1:5) == 'MP_P3' .and. (p3_ncat < 1 .or. p3_ncat > 4)) then
+         write(msg_S, '(a,i2,a)') '(phy_nml_check) stcond = MP_P3 option ' // &
+              'p3_ncat =', p3_ncat, ' (must be between 1 and 4)'
+         call msg(MSG_ERROR, msg_S)
+         return
+      endif
+
+      if (radslope .and. radia(1:8) /= 'CCCMARAD') then
+         call msg(MSG_ERROR,'(phy_nml_check) option mismatch: ' // &
+              'radslope = .true. and radia='//trim(radia))
+         return
+      endif
+      
+      if (nsloflux > NSLOFLUXMAX) then
+         write(msg_S, '(a,i3)') &
+              '(phy_nml_check) nsloflux cannot exceed a value of ', NSLOFLUXMAX
+         call msg(MSG_ERROR, msg_S)
          return
       endif
 
@@ -284,24 +296,16 @@ contains
 
       !# Mixing length module init
       if (ml_init(longmel, ilongmel) /= PHY_OK) then
-         call msg_toall(MSG_ERROR,'(phy_nml) Problem with ml_init')
+         call msg_toall(MSG_ERROR,'(phy_nml_post) Problem with ml_init')
          return
       endif
       istat = ml_put('mlblac_max',pbl_mlblac_max)
       if (istat /= PHY_OK) then
-         call msg(MSG_ERROR,'(phy_nml) cannot configure mixing length module')
+         call msg(MSG_ERROR,'(phy_nml_post) cannot configure mixing length module')
          return
       endif
 
-      !# Set Linoz flags
-      if (linoz_chm /= 'NIL' .and. .not.any(radia == (/'CCCMARAD ', 'CCCMARAD2'/)) ) then
-         call msg(MSG_ERROR,'(phy_nml) Cannot use Linoz_chm without CCCMARAD or CCCMARAD2')
-         return
-      endif
-      if (rad_linoz_l .and. radia /= 'CCCMARAD2') then
-         call msg(MSG_ERROR,'(phy_nml) Cannot use Linoz_rad_L=T without CCCMARAD2')
-         return
-      endif
+      !# 
       llinoz  = ( &
            any(radia /= (/ &
            'CCCMARAD ', &
@@ -317,9 +321,18 @@ contains
            'GHG     ', &
            'OZONEGHG' /)))
 
-      if (lhn_filter >= 0. .and. lhn == 'NIL')  then
-         call msg(MSG_WARNING,'(phy_nml) lhn_filter ignored since lhn="NIL"')
-         lhn_filter = -1.
+      !# Options consistency
+      if (sgo_tdfilter >= 0. .and. gwdrag == 'NIL') then
+         call msg(MSG_INFO, '(phy_nml_post) gwdrag = NIL : setting sgo_tdfilter = -1')
+         sgo_tdfilter = -1
+      endif
+      if (lhn_filter >= 0. .and. lhn == 'NIL') then
+         call msg(MSG_INFO, '(phy_nml_post) lhn = NIL : setting lhn_filter = -1')
+         lhn_filter = -1
+      endif
+      if (mpdiag_for_sfc .and. stcond(1:3) /= "MP_") then
+         call msg(MSG_INFO, '(phy_nml_post) stcond /= MP_* : setting  mpdiag_for_sfc = .F.')
+         mpdiag_for_sfc = .false.
       endif
 
       m_istat = RMN_OK

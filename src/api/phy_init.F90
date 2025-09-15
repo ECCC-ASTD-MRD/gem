@@ -17,6 +17,7 @@ module phy_init_mod
    use sfcexch_options, only: sfcexch_options3
    use ens_perturb, only: ptp_L, ptp_nc, spp_L, spp_nc, ptpenvu, ptpenvb, ptpcape, ptpcritw, &
         ptpfacreduc, ens_nc2d, ens_spp_init, ENS_OK
+   use check_options, only: check_options2
    private
    public :: phy_init
 
@@ -450,6 +451,12 @@ contains
          return
       endif
 
+      ier = check_options2()
+      if (.not.RMN_IS_OK(ier)) then
+         call msg(MSG_ERROR, '(phy_init) invalid options values in check_options')
+         return
+      endif
+           
       !# Print list of physics var
       if (print_L) then
          call printbus('E')
