@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
       SUBROUTINE EBUDGET_SVS2(TSA, WD, WF , &
-                   TGRS,TGRD,TGRVS,TVGLS,TVGHS,TVGHD, TP, TPERM,  &
+                   TGRS,TGRVS,TVGLS,TVGHS, TP, TPERM,  &
                    PGRNDFLUX, PGRNDFLUXV, DT, VMOD, VDIR, LAT, &
                    RG, RGCAN, ALVG, LAI, GAMVEG, ALVL, ALVH,  &
                    ALGR, EMGR, ALGRV, EMGRV, &
@@ -52,7 +52,7 @@
       use sfclayer, only: sl_sfclayer,SL_OK
       use sfc_options
       use svs_configs
-      use canopy_csts, only: EMSNV, ABARK, ALSNV
+      use canopy_csts, only: EMSNV, ALSNV
       use svs2_tile_configs
 
       implicit none
@@ -63,7 +63,7 @@
 
       REAL TSA(N),  DT, VMOD(N)
       REAL VDIR(N), LAT(N), PGRNDFLUX(N), PGRNDFLUXV(N)
-      REAL TGRS(N), TGRD(N), TGRVS(N), TVGLS(N), TVGHS(N), TVGHD(N)
+      REAL TGRS(N), TGRVS(N), TVGLS(N), TVGHS(N) 
       REAL TSNS(N,NSL), TSVS(N,NSL)
       REAL TP(N,NL_SVS), TPERM(N)
       REAL WD(N,NL_SVS), WF(N,NL_SVS)
@@ -130,11 +130,9 @@
 !
 !          - Input/Output -
 ! TGRS      (bare) ground temperature -- S for "skin"
-! TGRD      mean ground temperature -- D for "deep"
 ! TGRVS     skin temperature of ground below high veg -- S for "skin"
 ! TVGLS     low vegetation temperature -- S for "skin"
 ! TVGHS     high vegetation temperature -- S for "skin"
-! TVGHD     mean high vegetation temperature -- D for "deep"
 ! TS        surface  temperature (new) as seen from ground
 ! Z0H       agg. thermal roughness length for land surface
 !           Output only when svs_dynamic_z0h=.true.
@@ -415,14 +413,6 @@
           TGRST(I) = BBG(I)/ABG(I)
 
        END DO
-!!            TGRD AT TIME 'T+DT': VV To be changed
-!               -----------------
-!
-      DO I=1,N
-        TGRDT(I) = (TGRD(I) + DT*TGRST(I)/86400.) /   &
-                      (1.+DT/86400.)
-      END DO
-
 !
 !
 !!       3B.     COEFFICIENTS FOR THE TIME INTEGRATION OF
@@ -486,79 +476,9 @@
 !        3B2. Calculation for high vegetation
 !               --------------------------------------------
 !
-       IF (.not. LCANO_SVS2) THEN
-!               formulation SVS1, force restore
-
-           DO I=1,N
-              IF ( WTG(I,indx_svs2_vh) .GE.EPSILON_SVS ) THEN
-                 ! HIGH VEGETATION PRESENT
-!
-!                    Thermodynamic functions
-!
-
-                 ZQSATVGH(I)  = FOQST( TVGHS(I),PS(I) )
-                 ZDQSATVGH(I) = FODQS( ZQSATVGH(I),TVGHS(I) )
-!
-!                         function zrsra
-!
-                 RORAVGH(I) = RHOA(I) / RESA_VH(I)
-!
-!
-!                             terms za, zb, and zc for the
-!                               calculation of tvgs(t)
-                 A3H(I) = 1. / DT + CVP(I) *  &
-                        (4. * EMVH_SN(I) * STEFAN * (TVGHS(I)**3)  &
-                        +  RORAVGH(I) * ZDQSATVGH(I) * CHLC * HV_VH(I) &
-                        +  RORAVGH(I) * CPD )  &
-                        + 2. * PI / 86400.
-!
-                 B3H(I) = 1. / DT + CVP(I) *   &
-                        (3. * EMVH_SN(I) * STEFAN * (TVGHS(I)** 3)  &
-                        + RORAVGH(I) * ZDQSATVGH(I) * CHLC* HV_VH(I) )
-!
-                 C3H(I) = 2. * PI * TVGHD(I) / 86400. &
-                         + CVP(I) *  &
-                         ( RORAVGH(I) * CPD * THETAA(I)  &
-                         + RG(I) * (1. - ALVGLAI(I)) + EMVH_SN(I)*RAT(I)  &
-                         - RORAVGH(I) * CHLC * HV_VH(I) * (ZQSATVGH(I)-HU(I)) )
-
-
-                 TVGHST(I) =  ( TVGHS(I)*B3H(I) + C3H(I) ) / A3H(I)
-
-              ELSE
-                 ! NO VEGETATION -- USE BARE GROUND VALUES or ZERO to fill arrays to avoid numerical errors
-                 ZQSATVGH(I)  =  ZQSATGR(I)
-                 ZDQSATVGH(I) = ZDQSATGR(I)
-                 RORAVGH(I) = RORAGR(I)
-!                 FRACH(I) = 0.0
-                 TVGHST(I) = TGRST(I)
-              ENDIF
-
-
-           ENDDO
-
-
-!!               TVGD AT TIME 'T+DT': Mean temperature from FR scheme for
-!                          high veg
-!                   -----------------
-!
-           DO I=1,N
-!                       Note that as an added precaution,
-!                       we set the vegetation temperature to
-!                       that of the ground, when no vegetation is present
-!
-             IF(WTG(I,indx_svs2_vh) .GE. EPSILON_SVS)THEN
-                TVGHDT(I) = (TVGHD(I) + DT*TVGHST(I)/86400.) / (1.+DT/86400.)
-             ELSE
-                TVGHDT(I) = TGRDT(I)
-             ENDIF
-
-           END DO
-
-       ELSE
 !              Formulation SVS2, (1LHM, Gouttevin et al., 2015)
 
-           DO I=1,N
+       DO I=1,N
               IF ( WTG(I,indx_svs2_vh).GE.EPSILON_SVS ) THEN
                   ! HIGH VEGETATION PRESENT
 
@@ -618,21 +538,9 @@
                  TVGHST(I) = TGRST(I)
               ENDIF
 
-           ENDDO
+        ENDDO
 
-           DO I=1,N
-!                       Note that as an added precaution,
-!                       we set the vegetation temperature to
-!                       that of the ground, when no vegetation is present
-!
-             IF(WTG(I,indx_svs2_vh) .GE. EPSILON_SVS)THEN
-                TVGHDT(I) = TVGHST(I) ! No deep temperature here
-             ELSE
-                TVGHDT(I) = TGRDT(I)
-             ENDIF
 
-           END DO
-       ENDIF
 !
 !
 !
@@ -1175,14 +1083,15 @@
 !
 !          Calculate effective land sfc specific humdity
 !
-           ZQS(I) =     WTA(I,indx_svs2_bg)*    HRSURF(I)  * ZQSATGRT(I)/RESAGR(I) &
+           ZQS(I) =  RESAEF(I) *                                                    &
+                      (  WTA(I,indx_svs2_bg)*    HRSURF(I)  * ZQSATGRT(I)/RESAGR(I) &
                       + WTA(I,indx_svs2_sn)                * ZQSATSNO(I)/RESASA(I) &
                       + WTA(I,indx_svs2_sv)                * ZQSATSNV(I)/RESASV(I) &
                       + WTA(I,indx_svs2_gv)*   HRSURFGV(I) * ZQSATGRVT(I)/RESAGRV(I) &
                       +(WTA(I,indx_svs2_vl)*     HV_VL(I)  * ZQSATVGLT(I)          &
                       + WTA(I,indx_svs2_vl)*(1.-HV_VL(I))  * HU(I))/RESA_VL(I)     &
                       +(WTA(I,indx_svs2_vh)*     HV_VH(I)  * ZQSATVGHT(I)         &
-                      + WTA(I,indx_svs2_vh)*(1.-HV_VH(I))*HU(I))/RESA_VH(I)
+                      + WTA(I,indx_svs2_vh)*(1.-HV_VH(I))*HU(I))/RESA_VH(I) )
 
 !
 !          Calculate effective land sfc temperature
@@ -1322,11 +1231,9 @@
 !
       DO I=1,N
         TGRS(I)   = TGRST(I)
-        TGRD(I)   = TGRDT(I)
         TGRVS(I)   = TGRVST(I)
         TVGLS(I)   = TVGLST(I)
         TVGHS(I)   = TVGHST(I)
-        TVGHD(I)   = TVGHDT(I)
 
       ENDDO
 !

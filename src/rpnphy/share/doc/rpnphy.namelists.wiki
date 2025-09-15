@@ -646,9 +646,7 @@ Pressure (in Pa) that defines the bottom emission level for gravity waves
 
 |-
 | nsloflux ||
-Number of timesteps for which surface fluxes "FC" and "FV" are
-gradually set from 0 to their full value in a "slow start fashion"
-at the beginning of a time integration
+
 | 0 || integer
 
 |-
@@ -755,7 +753,7 @@ that total energy (kinetic + internal) is conserved
 |-
 | pbl_dxref ||
 Reference length (m) for variance power law scaling
-| 1000. || real
+| -1. || real
 
 |-
 | pbl_func_stab ||
@@ -1500,11 +1498,6 @@ Lead fraction for ice-covered lakes
 | 'TPERM' || character(len=5)
 
 |-
-| lcano_svs2 ||
-(SVS2) If .true., SVS2 utilizes the canopy module to modify T, U, VMOD, SW, and LW to account for canopy
-| .true. || logical
-
-|-
 | leadfrac ||
 Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac)
 | 0.03 || real
@@ -1628,6 +1621,13 @@ Urban surface processes
 | 'NIL' || character(len=16)
 
 |-
+| sl_diag_type ||
+Type of diagnostic-level calculations to use
+* 'FLUX      ' : Use turbulent surface fluxes to estimate diagnostic-level fields
+* 'INTERP    ' : Use interpolation to estimate diagnostic-level fields
+| 'FLUX' || character(len=16)
+
+|-
 | sl_func_stab ||
 Class of stability functions (stable case) to use in the surface layer
 * 'DELAGE97  ' : Use functions described by Delage (1997; BLM)
@@ -1661,6 +1661,13 @@ Mimimum Obukhov length (L) for soil surfaces
 | sl_lmin_town ||
 Minimum Obukhov length (L) for town
 | -1. || real
+
+|-
+| sl_lmin_type ||
+Type of Lmin calculation to use
+* 'SHEAR     ' : Impose a minimum lowest-level wind speed to guarantee L>L_min
+* 'SFO       ' : Impose a minimum L_min directly in stability function calculations
+| 'SHEAR' || character(len=16)
 
 |-
 | sl_lmin_water ||
@@ -1713,8 +1720,13 @@ Option to compute the heat flux between the soil and the snowpack in the module 
 Soil texture database/calculations for SVS land surface scheme
 * 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)
 * 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)
-* 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC ? World Soil Information
+* 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC World Soil Information
 | 'GSDE' || character(len=16)
+
+|-
+| svs2_crodebug ||
+Logical - Activate Crocus debugging options  if .true. (see README_crodebug.md)
+| .false. || logical
 
 |-
 | svs_aldat ||
@@ -1914,7 +1926,7 @@ Option to read a lookup table of monthly values for VEGDAT for class 17
 
 |-
 | svs_read_vf2ctemdat ||
-Option to change the lookup table VF2CTEMDAT in pĥtsyn_svs.F90
+Option to change the lookup table VF2CTEMDAT in phtsyn_svs.F90
 | .false. || logical
 
 |-

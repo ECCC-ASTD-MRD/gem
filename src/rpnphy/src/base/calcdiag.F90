@@ -52,6 +52,7 @@ contains
 
       real, parameter :: EC_Z0M_GRASS=0.03             !Threshold "flat grass" roughness for ECMWF diagnostics
       real, parameter :: EC_Z0T_GRASS=0.003            !Grass thermodynamic roughness for ECMWF diagnostics
+      real, parameter :: EC_Z0T_MIN=1E-6               !Minimum value (epsilon) for Z0T
       real, parameter :: EC_Z_ROUGH=40.                !Fixed height for ECMWF diagnostics in rough terrain
       real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
       real, parameter :: WGTMIN=1.e-3                  !Minimum weight for a surface type
@@ -68,7 +69,7 @@ contains
       real :: w1, w2, w_p3v5, w_my2, w_reset
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
            vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw, &
-           esdiagst, sldmask 
+           esdiagst, sldmask , z0t2eps
       real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
       real, target :: zero2d(ni,nk)
       real, dimension(ni,nk) :: rtmp2d, presinv
@@ -271,9 +272,10 @@ contains
 
             sldmask(:) = max(0., min(1., zsfcwgt2(:,ik)))
             where (sldmask < WGTMIN) sldmask = 0.
+            z0t2eps = max(EC_Z0T_MIN, zz0t2(:,ik))  !#Note: prevent divison by zero in sfclayer
 
             if (sl_sfclayer(th_air, zhuplus(:,nkm1), vmod, vdir, zgzmom(:,nkm1), zgztherm(:,nkm1),  &
-                 ztsurf2(:,ik), zqsurf2(:,ik), zz02(:,ik), zz0t2(:,ik), &
+                 ztsurf2(:,ik), zqsurf2(:,ik), zz02(:,ik), z0t2eps, &
                  zdlat, zfcor, hghtt_diag=zt, hghtm_diag=zu, &
                  t_diag=ztdiagtyp2(:,ik), q_diag=zqdiagtyp2(:,ik), &
                  u_diag=zudiagtyp2(:,ik), v_diag=zvdiagtyp2(:,ik), &

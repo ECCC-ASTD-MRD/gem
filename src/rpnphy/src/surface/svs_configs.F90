@@ -9,6 +9,8 @@ module svs_configs
   ! >>>> If you plan to add save or allocates... please make sure they are done in NO OPENMP regions <<<<< 
   !----------------------------------------------------------------------------------  !!!!!
 
+  use tdpack_const, only: PI
+  
   ! MODULE to SAVE SVS INFORMATION SPECIFIED in NML, to initialize SVS variables that are NML dependent 
   ! ALSO contains 2 function used in SVS to aggregate the SVS surface tiles (bare ground, vegetation and 2 snowpacks)
 
@@ -125,25 +127,139 @@ module svs_configs
 !  calculated based on veg. height database, and NOT
 !  on look-up table (values are quite weak...)
 !
-!     Conversion factor to convert from momemtum roughness to thermal roughness
+!     Conversion factor to convert from momemtum roughness to thermal roughness [-]
   REAL, PARAMETER :: Z0M_TO_Z0H = 0.2
 !
-!     Thermal roughness for snow
+!     Thermal roughness for snow [m]
   REAL, PARAMETER :: Z0HSNOW = 0.010
 
-!   Thermal roughness for snow
+!   Thermal roughness for snow [m]
   REAL, PARAMETER :: Z0HSNOW_CRO = 0.0001 ! Default value in Crocus
 !     Momentum roughness for snow (CG: addition to avoid using Z0M_TO_Z0H)
   REAL, PARAMETER :: Z0MSNOW_CRO = 0.001 ! With Crocus default values
 
 !
-!     Momentum roughness for bare ground 
+!     Momentum roughness for bare ground [m]
   REAL, PARAMETER :: Z0MBG = 0.05
+
+!---------------------------------------------------------
+! Constants related to SVS1 and SVS2 
+!---------------------------------------------------------
+
+! Thermal conductivity of ice [W/m/K]
+  REAL, PARAMETER :: LAMI    = 2.22 
+
+! Thermal conductivity of water [W/m/K]
+  REAL, PARAMETER :: LAMW    = 0.57  
+
+! Specific heat of ice [J/kg/K]
+  REAL, PARAMETER ::  CICE    = 2.106E3 
+
+! Specific heat of water [J/kg/K]
+  REAL, PARAMETER ::  CWAT    = 4.187E3 
+
+! Relative Density of ice [-]
+  REAL, PARAMETER ::  RHOICE  = 0.9
+
+! Density of ice [kg/m3]
+  REAL, PARAMETER ::  RHOI   = 917.
+
+! Density of water [kg/m3]
+  REAL, PARAMETER ::  RHOW   = 1000.
+
+! Emissivity of snow [-]
+  REAL, PARAMETER ::  EMISSN  = 0.97
+
+! Emissivity of soil [-]
+  REAL, PARAMETER ::  EMSOIL = 0.94
+
+!---------------------------------------------------------
+! Constants related to SVS1 snowpack scheme
+!---------------------------------------------------------
+
+! Temporal constants in SVS1 snow scheme
+  REAL, PARAMETER ::  DAY     = 86400. ! Duration of a day in sec [s]
+  REAL, PARAMETER ::  TAUHOUR = 3600.  ! Duration of an hour in sec [s]
+  REAL, PARAMETER ::  MYOMEGA   = ( 2*PI )/ DAY
+  REAL, PARAMETER ::  DT_12MIN = 12.*60. ! 12 min in sec [s]
+
+! Parameters in SVS1 snow albedo scheme
+  REAL, PARAMETER ::  ANSMIN_SVS  = 0.5 ! Minimum snow albedo [-]
+  REAL, PARAMETER ::  ANSMAX_SVS  = 0.8 ! Minimum snow albedo [-]
+  REAL, PARAMETER ::  WCRN_ALB_SVS = 10.  ! Snow mass to refresh the surface albedo [kg/m2]
+
+! Parameters in SVS1 snow compaction scheme
+  REAL, PARAMETER ::  TODRY_SVS   = 0.008 ! Inverse of time constant for compaction [s-1]
+  REAL, PARAMETER ::  RHOMIN_SVS  = 0.05  ! Minimal relative density [-]
+  REAL, PARAMETER ::  RHOSDEF_SVS = 0.15  ! Default value for snowfall relative density
+
+! Parameters for liquid water evolution in the snowpack with SVS1 
+  REAL, PARAMETER ::  CRMIN   = 0.03  ! Minimum liquid water content (% mass)
+  REAL, PARAMETER ::  CRMAX   = 0.10  ! Maximum liquid water content  (% mass)
+  REAL, PARAMETER ::  RHOE    = 0.20  ! Threshold relative density [-]
+
+! Parameters for melt due tu rain on snow (rain rates) in SVS1
+  REAL, PARAMETER ::  RAIN1_SNW   = 2.8e-5 ! [kg/m2/s]
+  REAL, PARAMETER ::  RAIN2_SNW   = 2.8e-4 ! [kg/m2/s]
+
+!---------------------------------------------------------
+! Constants related to SVS1 and SVS2 energy budget schemes
 !---------------------------------------------------------
 !
  
 
+! Albedo of Bark (S. Wang, Ecological Modelling, 2005) [-]
+  REAL, PARAMETER ::  ABARK  = 0.15
+
+  !                       Albedo values from literature [-]
+  REAL, PARAMETER ::   ADRYSAND = 0.35
+  REAL, PARAMETER ::   AWETSAND = 0.24
+  REAL, PARAMETER ::   ADRYCLAY = 0.15
+  REAL, PARAMETER ::   AWETCLAY = 0.08
+
+!                       Emissivity values from van Wijk and Scholte Ubing (1963) [-]
+  REAL, PARAMETER ::   EDRYSAND = 0.95
+  REAL, PARAMETER ::   EWETSAND = 0.98
+  REAL, PARAMETER ::   EDRYCLAY = 0.95
+  REAL, PARAMETER ::   EWETCLAY = 0.97
+
+!---------------------------------------------------------
+! Constants related to SVS2 snowpack schemes
+!---------------------------------------------------------
+! Note that other constant specific to Crocus are defined in from_surfex/ini_csts
+
+  REAL :: SNM_CRIT = 1. ! Threshold of SWE for snow fraction over bare ground [kg m-2]
+
+!---------------------------------------------------------
+! Constants related to SVS1 and SVS2 hydrology schemes
+!---------------------------------------------------------
+! CONSTANTS for horizontal decay of horizontal hyrdaulic conductivity [-]
+  REAL, PARAMETER :: GRKSAT_C1 = 10.0
+  REAL, PARAMETER :: GRKSAT_C2 = 5.0
+
+!---------------------------------------------------------
+! Constants related to SVS1 soil freezing scheme
+!---------------------------------------------------------
+
+! Option for Niu and Yang snow cover fraction
+  REAL, PARAMETER ::       MFAC   = 1.6    ! [-]
+  REAL, PARAMETER ::       Z0_NIU = 0.01 ! [m]
+  REAL, PARAMETER ::       RHONEW = 100.0  ! [kg/m3]
+
+! Depths for the computation of the net tendency of melting-freezing [m]
+  REAL, PARAMETER ::       HSURF = 0.05
+  REAL, PARAMETER ::       HDEEP = 1.0
   
+!---------------------------------------------------------
+! Constants related to SVS2 soil freezing scheme
+!---------------------------------------------------------
+
+  REAL, PARAMETER   :: INSOLFRZ_VEG = 0.20  ! Vegetation insolation coefficient [-]
+  REAL, PARAMETER   :: INSOLFRZ_LAI = 30.0  ! Vegetation insolation coefficient [m2 m-2]
+  REAL, PARAMETER   :: TAUICE = 3300.       ! Soil freezing characteristic timescale [-]
+!
+!
+!
   private :: weights_soil_texture
 
 

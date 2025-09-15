@@ -1,14 +1,21 @@
 
+module check_options
+   implicit none
+   private
+   public :: check_options2
+
+contains
+
 !/@*
 function check_options2() result(F_istat)
    use phy_options
    use cnv_options
    implicit none
 !!!#include <arch_specific.hf>
-   !@Object Check the consistency of some options
+   !@Object Check the consistency of some options across namelists
    !@Note
-   !  Option validation and derived options setting are now done in
-   !  phy_nml (phy_nml_check and phy_nml_post_init)
+   !  Option validation and derived options setting for signle nml
+   !  are now done in phy_nml (phy_nml_check and phy_nml_post_init)
    !@returns
    integer :: F_istat
    !@Author B. Bilodeau (Feb 2007)
@@ -31,8 +38,8 @@ function check_options2() result(F_istat)
 
 #include <rmn/msg.h>
 #include <rmnlib_basics.hf>
+   include "surface.cdk"
 
-   integer, parameter :: MAXSLOFLUX = 20
    character(len=512) :: str512
    !-------------------------------------------------------------------
    F_istat = RMN_ERR
@@ -67,13 +74,6 @@ function check_options2() result(F_istat)
       return
    endif
    
-   if (NSLOFLUX > MAXSLOFLUX) then
-      write(str512, '(a,i3)') &
-           '(check_options) NSLOFLUX CANNOT EXCEED A VALUE OF ', MAXSLOFLUX
-      call msg(MSG_ERROR, str512)
-      return
-   endif
-
    if ( PCPTYPE == 'BOURGE3D')then
       if (.not.any(STCOND == (/'CONSUN','S2    '/))    .or. &
            (CONVEC /= 'KFC' .and. CONVEC /= 'KFC2' .and. CONVEC /= 'BECHTOLD'))   then
@@ -81,19 +81,6 @@ function check_options2() result(F_istat)
               'PCPTYPE=BOURGE3D you can only use STCOND=CONSUN/S2 or KFC')
          return
       endif
-   endif
-
-   if (stcond(1:5) == 'MP_P3' .and. (p3_ncat < 1 .or. p3_ncat > 4)) then
-      write(str512, '(a,i2,a)') '(check_options) STCOND = MP_P3 option ' // &
-           'P3_NCAT=',p3_ncat,' (MUST BE BETWEEN 1 AND 4)'
-      call msg(MSG_ERROR, str512)
-      return
-   endif
-
-   if (RADSLOPE .and. RADIA(1:8) /= 'CCCMARAD') then
-      call msg(MSG_ERROR,'(check_options) option mismatch: ' // &
-           'RADSLOPE=.true. and RADIA='//trim(RADIA))
-      return
    endif
 
    if (shal == 'BECHTOLD' .and. bkf_closures == 'EQUILIBRIUM' .and. &
@@ -117,8 +104,15 @@ function check_options2() result(F_istat)
 !!$              / '* FUNCTION CHECK_OPTIONS: ILLEGAL VALUE', &
 !!$              / '*   FOR OPTION ',a,': ',a, &
 !!$              / '*   ALLOWED: ',A//58('*'))
+   
+   if (fluvert == 'RPNINT' .and. .not.impflx) then
+      call msg_toall(MSG_ERROR,'(check_options) Not yet implemented: RPNINT with impflx=.false.')
+      return
+   endif
 
    F_istat = RMN_OK
    !-------------------------------------------------------------------
    return
 end function check_options2
+
+end module check_options

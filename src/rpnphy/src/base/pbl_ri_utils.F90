@@ -446,6 +446,7 @@ contains
     ! Local variables
     integer :: i,k
     real :: c1coef, idz
+    real, dimension(F_ni) :: rescale
     real, dimension(F_ni,F_nkm1) :: dqwdz, dthldz, acoef, bcoef, ccoef
     
     ! Pre-compute vertical derivatives of conserved variables (valid on m-levels)
@@ -464,10 +465,15 @@ contains
     ! Compute subgrid standard deviation of supersaturation (s) following Eq. 10 of BCMT95
     call vint_thermo2mom(acoef, bcoef, &
          &               acoef, bcoef, F_vcoef, F_ni, F_nkm1)
+    if (pbl_dxref > 0.) then
+       rescale(:) = sqrt(sqrt(F_dxdy(:))/max(pbl_dxref, 1.))
+    else
+       rescale(:) = 1.
+    endif
     do k=2,F_nkm1
        do i=1,F_ni
           c1coef = sqrt(2. * PBL_RI_CK * F_pri(i,k) / PBL_RI_CAB * F_zn(i,k) * F_ze(i,k))
-          F_sigmas(i,k) = sqrt(sqrt(F_dxdy(i))/max(pbl_dxref, 1.)) &
+          F_sigmas(i,k) = rescale(i) &
                * max(c1coef * abs(acoef(i,k)*dqwdz(i,k) &
                - bcoef(i,k)*dthldz(i,k)), PBL_SDMIN)
        end do

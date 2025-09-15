@@ -25,7 +25,7 @@
       USE MODE_THERMOS
       USE MODD_CSTS
       USE CANOPY_CSTS, only : ALPHA, ZVENT, RADIUS_ICESPH, CLUMPING, &
-            ALBEDO_ICESPH, KS, FRACT, MWAT, RGAZ, CICE, TCNC, TCNM, ZBETA
+            ALBEDO_ICESPH, KS, FRACT, MWAT, RGAZ, TCNC, TCNM, ZBETA
       use svs2_tile_configs
       implicit none
 

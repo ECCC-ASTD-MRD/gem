@@ -373,7 +373,7 @@ contains
             enddo
          enddo
       endif IF_TCCF
-
+      
       IF_NT: if (ISREQSTEP("NT") .or. ISREQOUT("NF")) then
          if (stcond(1:3) == 'MP_') then
             do i=1,ni
@@ -384,49 +384,49 @@ contains
                  tt, ps, sig, zlwc, &
                  cloud, znt, trnch, ni, nk, nkm1)
          endif
+      endif IF_NT
 
-         if (ISREQSTEPL((/"ECTP","ECTT"/))) then
-            !     diagnostics: cloud top pressure (ctp) and temperature (ctt)
-            !     using the cloud optical depth at window region (band 6) to
-            !     calculate the emissivity
+      IF_ECTP: if (ISREQSTEPL((/"ECTP","ECTT"/))) then
+         !     diagnostics: cloud top pressure (ctp) and temperature (ctt)
+         !     using the cloud optical depth at window region (band 6) to
+         !     calculate the emissivity
+         do i = 1, ni
+            zctp(i) = 110000.
+            zctt(i) = 310.
+            top(i)  = .true.
+            transmissint(i,1) = 1. - cloud(i,1) * (1.-trans_exp(i,1) )
+            if ((1. - transmissint(i,1)) > 0.99 .and. top(i)) then
+               zctp(i) = sig(i,1)*ps(i)
+               zctt(i) = tt(i,1)
+               top(i)  = .false.
+            endif
+         enddo
+         do k = 2, nkm1
             do i = 1, ni
-               zctp(i) = 110000.
-               zctt(i) = 310.
-               top(i)  = .true.
-               transmissint(i,1) = 1. - cloud(i,1) * (1.-trans_exp(i,1) )
-               if ((1. - transmissint(i,1)) > 0.99 .and. top(i)) then
-                  zctp(i) = sig(i,1)*ps(i)
-                  zctt(i) = tt(i,1)
+               transmissint(i,k)=transmissint(i,k-1) * (1. - cloud(i,k) * &
+                    (1.-trans_exp(i,k) ) )
+               if ((1. - transmissint(i,k)) > 0.99 .and. top(i)) then
+                  zctp(i) = sig(i,k)*ps(i)
+                  zctt(i) = tt(i,k)
                   top(i)  = .false.
                endif
             enddo
-            do k = 2, nkm1
-               do i = 1, ni
-                  transmissint(i,k)=transmissint(i,k-1) * (1. - cloud(i,k) * &
-                       (1.-trans_exp(i,k) ) )
-                  if ((1. - transmissint(i,k)) > 0.99 .and. top(i)) then
-                     zctp(i) = sig(i,k)*ps(i)
-                     zctt(i) = tt(i,k)
-                     top(i)  = .false.
-                  endif
-               enddo
-            enddo
-         endif
+         enddo
+      endif IF_ECTP
 
-         if (ISREQSTEP("HCBR")) then
-            ! cloud base defined as first level with non zero taucsv (should correspond to first level with CLDR)
-            zhcbr= 20000. ! if no cloud base
-            do i = 1, ni  !#TODO: invert loop order
-               keeplooking = .true.
-               do k = nkm1,1,-1
-                  if (taucsv(i,k) > tiny(1.0) .and. keeplooking) then                  !inside a cloud layer
-                     zhcbr(i) = gz(i,k)
-                     keeplooking = .false.
-                  endif
-               enddo
+      IF_HCBR: if (ISREQSTEP("HCBR")) then
+         ! cloud base defined as first level with non zero taucsv (should correspond to first level with CLDR)
+         zhcbr= 20000. ! if no cloud base
+         do i = 1, ni  !#TODO: invert loop order
+            keeplooking = .true.
+            do k = nkm1,1,-1
+               if (taucsv(i,k) > tiny(1.0) .and. keeplooking) then                  !inside a cloud layer
+                  zhcbr(i) = gz(i,k)
+                  keeplooking = .false.
+               endif
             enddo
-         endif
-      endif IF_NT
+         enddo
+      endif IF_HCBR
 
       !----------------------------------------------------------------
       return

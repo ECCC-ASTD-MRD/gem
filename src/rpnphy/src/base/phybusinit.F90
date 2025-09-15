@@ -201,6 +201,7 @@ subroutine phybusinit(ni,nk)
       i = i+1
    enddo
    fsdiag = (fsdiag .or. debug_alldiag_L .or. nphyoutlist < 0)   
+   fsdiag = (fsdiag .and. fluvert /= 'SURFACE')
 
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.

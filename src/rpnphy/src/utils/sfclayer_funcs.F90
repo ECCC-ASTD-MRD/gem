@@ -248,7 +248,7 @@ contains
     do j=1,2
        sf(j) = a*F_zm(j)*F_ilmo &
             + b*(F_zm(j)*F_ilmo-c/d)*EXP(-d*F_zm(j)*F_ilmo) + b*c/d
-       if (present(F_dfm)) dsf = a*F_zm(j)*F_ilmo &
+       if (present(F_dfm)) dsf(j) = a*F_zm(j)*F_ilmo &
             + b*F_zm(j)*F_ilmo*EXP(-d*F_zm(j)*F_ilmo) &
             - d*F_zm(j)*F_ilmo*b*(F_zm(j)*F_ilmo-c/d)*EXP(-d*F_zm(j)*F_ilmo)
     enddo
@@ -259,7 +259,7 @@ contains
     do j=1,2
        sf(j) = (1.+b*a*F_zh(j)*F_ilmo)**1.5 - 1 &
             + b*(F_zh(j)*F_ilmo-c/d)*EXP(-d*F_zh(j)*F_ilmo) + b*c/d
-       if (present(F_dfh)) dsf = a*F_zh(j)*F_ilmo*(1.+b*a*F_zh(j)*F_ilmo)**0.5 &
+       if (present(F_dfh)) dsf(j) = a*F_zh(j)*F_ilmo*(1.+b*a*F_zh(j)*F_ilmo)**0.5 &
             + b*F_zh(j)*F_ilmo*EXP(-d*F_zh(j)*F_ilmo) &
             - d*F_zh(j)*F_ilmo*b*(F_zh(j)*F_ilmo-c/d)*EXP(-d*F_zh(j)*F_ilmo)
     enddo
@@ -343,7 +343,7 @@ contains
     do j=1,2
        a = (1-16*F_zm(j)*F_ilmo)**(0.25)
        sf(j) = - 2.*LOG(a+1) - LOG(a**2+1) + 2.*ATAN(a)
-       if (present(F_dfm)) dsf = (1./a) - 1
+       if (present(F_dfm)) dsf(j) = (1./a) - 1
     enddo
     F_fmi = sfadjust(F_lzz0, sf, 1.)
     if (present(F_dfm)) F_dfm = sfderiv(dsf, 1.)
@@ -352,7 +352,7 @@ contains
     do j=1,2
        a = (1-16*F_zh(j)*F_ilmo)**(0.5)
        sf(j) = - 2.*LOG(a+1)
-       if (present(F_dfh)) dsf = (1./a) - 1
+       if (present(F_dfh)) dsf(j) = (1./a) - 1
     enddo
     F_fhi = sfadjust(F_lzz0t, sf, F_beta)
     if (present(F_dfh)) F_dfh = sfderiv(dsf, F_beta)
