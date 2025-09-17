@@ -32,7 +32,6 @@
 #include <arch_specific.hf>
 
 #include <rmnlib_basics.hf>
-      include 'mpif.h'
       include "rpn_comm.inc"
 
       character(len=1024),save :: dirstep_S=' ', dirbloc_S=' '

@@ -45,7 +45,6 @@
 ! F_lctl_step              step number
 !----------------------------------------------------------------
 
-      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer,external :: itf_phy_prefold_opr

@@ -56,7 +56,6 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
-   include 'mpif.h'
    include "rpn_comm.inc"
 
    !# The following parameter should be promoted to nml options like iau_* ones
