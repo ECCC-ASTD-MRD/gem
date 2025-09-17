@@ -27,6 +27,7 @@
       integer F_comm_id, F_comm_setno, F_iome, F_comm_io, &
               F_iobcast, F_npes
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer pe_xcoord(F_npes), pe_ycoord(F_npes), err

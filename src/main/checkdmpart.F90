@@ -17,6 +17,7 @@
       implicit none
 
 #include <rmnlib_basics.hf>
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       external dummy_checkdm
@@ -32,8 +33,6 @@
 !
 !-------------------------------------------------------------------
 !
-      call init_component()
-
       if (Ptopo_couleur == 0) then
          call open_status_file3 (trim(Path_input_S)//'/../checkdmpart_status.dot')
          call write_status_file3 ('checkdmpart_status=ABORT')
@@ -158,18 +157,13 @@
          call close_status_file3 ()
       endif
 
-      call gemtime ( Lun_out, 'END OF CHECKDMPART', .true. )
-      call memusage (Lun_out)
-
- 9999 call rpn_comm_FINALIZE(err)
-
  8000 format (/,'========= ABORT ============='/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
 !
 !-------------------------------------------------------------------
 !
-      return
+9999      return
       end
 
 subroutine dummy_checkdm

@@ -15,7 +15,7 @@
 
 !**s/r adz_post_tr_mono - Apply Clipping or ILMC Shape-Preserving schemes or Finalization
 
-      subroutine adz_post_tr_mono_hlt (F_wp)
+      subroutine adz_post_tr_mono (F_wp)
 
       use adz_mem
       use adz_options
@@ -28,8 +28,6 @@
 
       use, intrinsic :: iso_fortran_env
       implicit none
-
-#include <arch_specific.hf>
 
       !object
       !==========================================================================================================
@@ -51,8 +49,6 @@
 !---------------------------------------------------------------------
 !
       LAM_L = .not.Grd_yinyang_L
-
-!      call gtmg_start (38, 'C_TR_POST', 33)
 
       !--------------------------------------------------------------------------------------------------
       !Apply Clipping or ILMC Shape-preserving and Store Localization in Adz_bc for all tracers using B-C
@@ -99,7 +95,7 @@
 
             !Apply ILMC Shape-preserving: Reset Monotonicity without changing Mass: Sorensen et al,ILMC, 2013,GMD
             !----------------------------------------------------------------------------------------------------
-            if (ILMC_L) call ILMC_LAM_hlt ( n, name_tr_S, Adz_i0, Adz_in, Adz_j0, Adz_jn )
+            if (ILMC_L) call ILMC_LAM ( n, name_tr_S, Adz_i0, Adz_in, Adz_j0, Adz_jn )
 
             !Store Localization in Adz_bc for all tracers using Bermejo-Conde
             !----------------------------------------------------------------
@@ -124,7 +120,6 @@
       if (Adz_verbose>0) call adz_post_tr_write_hlt (2)
 !$omp end single
 
-!     call gtmg_stop (38)
 !
 !---------------------------------------------------------------------
 !
@@ -170,4 +165,4 @@ contains
 
       end subroutine adz_post_tr_write_hlt
 
-      end subroutine adz_post_tr_mono_hlt
+      end subroutine adz_post_tr_mono

@@ -91,6 +91,8 @@
 
          allocate ( nest_metric%mc_Jx_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     nest_metric%mc_Jy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    nest_metric%mc_Jxt_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    nest_metric%mc_Jyt_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     nest_metric%mc_iJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                   nest_metric%mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     nest_metric%mc_Ix_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &

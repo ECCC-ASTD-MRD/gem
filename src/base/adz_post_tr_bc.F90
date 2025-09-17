@@ -15,7 +15,7 @@
 
 !**s/r adz_post_tr - Apply a posteriori Bermejo-Conde Mass-fixer
 
-      subroutine adz_post_tr_bc_hlt (F_wp)
+      subroutine adz_post_tr_bc (F_wp)
 
       use adz_mem
       use adz_options
@@ -28,8 +28,6 @@
 
       use, intrinsic :: iso_fortran_env
       implicit none
-
-#include <arch_specific.hf>
 
       !object
       !==========================================================================================================
@@ -135,7 +133,7 @@
 
       !Apply Bermejo-Conde mass-fixer for all tracers in Adz_bc
       !--------------------------------------------------------
-      call Bermejo_Conde_hlt ( Adz_bc, n_bc_TOTAL, i0, in, j0, jn, k0 )
+      call Bermejo_Conde ( Adz_bc, n_bc_TOTAL, i0, in, j0, jn, k0 )
 
       !Store Mass deficit (EPSILON) induced when applying Bermejo-Conde
       !----------------------------------------------------------------
@@ -159,4 +157,4 @@
 !
       return
 
-      end subroutine adz_post_tr_bc_hlt
+      end subroutine adz_post_tr_bc

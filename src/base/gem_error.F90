@@ -7,6 +7,7 @@
       character(len=*) :: F_FromSubName
       character(len=*) :: F_Message
 
+   include 'mpif.h'
    include "rpn_comm.inc"
       integer :: errcode, err
 !
@@ -17,8 +18,8 @@
 
       if (errcode < 0) then
          call app_log(APP_FATAL,F_FromSubName//': '//F_Message)
-         call rpn_comm_FINALIZE(err)
          app_status=app_end(errcode)
+         call rpn_comm_FINALIZE(err)
          stop app_status
       end if
 

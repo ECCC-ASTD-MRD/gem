@@ -25,6 +25,7 @@
       use gem_options
       use glb_ld
       use gmm_geof
+      use gmm_pw
       use gmm_vt0
       use gmm_vt1
       use metric
@@ -41,20 +42,31 @@
       real, dimension(F_minx:F_maxx,F_miny:F_maxy),        intent(out) :: F_p0_4
       real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk+1), intent(out) :: F_pm_8
       real(kind=REAL64), dimension(F_minx:F_maxx,F_miny:F_maxy),        intent(out) :: F_p0_8
+      real(kind=REAL64) :: press
 
       integer :: i, j, k, i0,in,j0,jn
-      real(kind=REAL64) :: pres_m, pres_t, log_pt
+      real(kind=REAL64) :: pres_m, pres_t, log_pt, ztk, wt, tvt
       real, pointer, dimension(:,:,:) :: qt
       real, pointer, dimension(:,:)   :: st
+      real, pointer, dimension(:,:,:) :: tt
+      real, pointer, dimension(:,:,:) :: log_ptd
+
 !
 !     ________________________________________________________________
 !
       if (F_time==1) st => st1
       if (F_time==1) qt => qt1
+      if (F_time==1) tt => tt1
       if (F_time==0) st => st0
       if (F_time==0) qt => qt0
+      if (F_time==0) tt => tt0
+      log_ptd => pw_log_ptd
+
       i0= 1-G_halox ; in= l_ni+G_halox
       j0= 1-G_haloy ; jn= l_nj+G_haloy
+
+      press=0.d0
+      if (Schm_pressure_thm_L) press=1.d0
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
 
@@ -66,18 +78,70 @@
                end do
             end do
          end do
-         do k=1,l_nk
+
+         k=1
+         do j= j0, jn
+            do i= i0, in
+               ztk=0.5d0*(GVM%zmom_8(i,j,k+1)+GVM%ztht_8(i,j,k))
+               wt=(GVM%ztht_8(i,j,k)-ztk)/&
+                  (GVM%ztht_8(i,j,k)-GVM%ztht_8(i,j,k+1))
+               tvt=wt*tt(i,j,k+1)+(1.d0-wt)*tt(i,j,k)
+               log_pt= F_pm_8(i,j,k+1) - grav_8*(GVM%ztht_8(i,j,k) &
+                            - GVM%zmom_8(i,j,k+1))/(rgasd_8*tvt)
+               log_ptd(i,j,k) = log_pt
+
+               F_log_pt_4(i,j,k) =(1.d0-press)*0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))&
+                                  +press*log_pt
+               F_pt_4    (i,j,k)=(1.d0-press)*exp(0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k)))&
+                                  +press*exp(log_pt)
+            end do 
+         end do
+
+         do k=2,l_nk-1
             do j= j0, jn
                do i= i0, in
-                  log_pt= 0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))
-                  F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
-                  F_pm_4    (i,j,k) = F_pm_8(i,j,k)
-                  F_log_pt_4(i,j,k) = log_pt
-                  F_pt_4    (i,j,k) = exp(log_pt)
+                  ztk=0.5d0*(GVM%zmom_8(i,j,k+1)+GVM%ztht_8(i,j,k))
+                  wt=(GVM%ztht_8(i,j,k)-ztk)/&
+                     (GVM%ztht_8(i,j,k)-GVM%ztht_8(i,j,k+1))
+                  tvt=wt*tt(i,j,k+1)+(1.d0-wt)*tt(i,j,k)
+                  log_pt= F_pm_8(i,j,k+1) - grav_8*(GVM%ztht_8(i,j,k) &
+                               - GVM%zmom_8(i,j,k+1))/(rgasd_8*tvt)
+
+                  ztk=0.5d0*(GVM%zmom_8(i,j,k)+GVM%ztht_8(i,j,k))
+                  wt=(ztk - GVM%ztht_8(i,j,k))/&
+                     (GVM%ztht_8(i,j,k-1)-GVM%ztht_8(i,j,k))
+                  tvt=wt*tt(i,j,k-1)+(1.d0-wt)*tt(i,j,k)
+                  log_pt= 0.5d0*log_pt + 0.5d0*(F_pm_8(i,j,k) - grav_8*(GVM%ztht_8(i,j,k) &
+                               - GVM%zmom_8(i,j,k))/(rgasd_8*tvt))
+                  log_ptd(i,j,k)=log_pt
+
+                  F_log_pt_4(i,j,k) = (1.d0-press)*0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k)) &
+                                     +press*log_pt
+                  F_pt_4    (i,j,k) =(1.d0-press)*exp(0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k)))&
+                                     +press*exp(log_pt)
                end do
             end do
          end do
 
+         k=l_nk
+         do j= j0, jn
+            do i= i0, in
+               log_pt= 0.5d0*(F_pm_8(i,j,k+1)+F_pm_8(i,j,k))
+               log_ptd(i,j,k)=log_pt
+               F_log_pt_4(i,j,k) = log_pt
+               F_pt_4    (i,j,k) = exp(log_pt)
+            end do
+         end do
+         
+         do k=1,l_nk
+            do j= j0, jn
+               do i= i0, in
+                  F_pm_8    (i,j,k) = exp(F_pm_8(i,j,k))
+                  F_pm_4    (i,j,k) = F_pm_8(i,j,k)
+               end do
+            end do
+         end do
+         
          k= l_nk+1
          do j= j0, jn
             do i= i0, in
@@ -85,6 +149,7 @@
                F_pm_4    (i,j,k) = F_pm_8    (i,j,k)
                F_pt_4    (i,j,k) = F_pm_4    (i,j,k)
                F_log_pt_4(i,j,k) = F_log_pm_4(i,j,k)
+               log_ptd   (i,j,k) = F_log_pm_4(i,j,k)
             end do
          end do
 
