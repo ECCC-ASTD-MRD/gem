@@ -22,19 +22,36 @@ module hvdif_options
    !# variables  : Horizontal winds, ZDot, W, tracers (_tr var)
 
    !# Background 2 delta-x removal ratio - range(0.0-1.0)
+
+
    real :: Hzd_lnR = -1.
    namelist /hvdif  / Hzd_lnr
    namelist /hvdif_p/ Hzd_lnr
 
-   !# Theta 2 delta-x removal ratio - range(0.0-1.0).
+   real :: Hzd_lnR_z = -1.
+   namelist /hvdif  / Hzd_lnr_z
+   namelist /hvdif_p/ Hzd_lnr_z
+
+
+   !# Theta 2 delta-x removal for TFC diffusion 
    real :: Hzd_lnr_theta = -1.
    namelist /hvdif  / Hzd_lnr_theta
    namelist /hvdif_p/ Hzd_lnr_theta
+
+   !# Theta 2 delta-x removal  for constant z diffusion
+   real :: Hzd_lnr_theta_z = -1.
+   namelist /hvdif  / Hzd_lnr_theta_z
+   namelist /hvdif_p/ Hzd_lnr_theta_z
 
    !# Tracers 2 delta-x removal ratio - range(0.0-1.0)
    real :: Hzd_lnR_tr = -1.
    namelist /hvdif  / Hzd_lnr_tr
    namelist /hvdif_p/ Hzd_lnr_tr
+
+   !# Tracers 2 delta-x removal ratio - range(0.0-1.0)
+   real :: Hzd_lnR_w = -1.
+   namelist /hvdif  / Hzd_lnr_w
+   namelist /hvdif_p/ Hzd_lnr_w
 
    !# Order of the background diffusion operator
    !# 2, 4, 6, 8
@@ -48,10 +65,39 @@ module hvdif_options
    namelist /hvdif  / Hzd_pwr_theta
    namelist /hvdif_p/ Hzd_pwr_theta
 
+!  use DEl2 Along Height as the background diffusion operator on theta
+   integer :: hzd_theta_ALH_it =1
+   namelist /hvdif  /  hzd_theta_ALH_it
+   namelist /hvdif_p/ hzd_theta_ALH_it
+   
+!  use DEl2 Along Height as the background diffusion operator on uvwz 
+   integer :: hzd_uvwz_ALH_it =1
+   namelist /hvdif  /  hzd_uvwz_ALH_it
+   namelist /hvdif_p/ hzd_uvwz_ALH_it
+
    !# Order of the background diffusion operator on tracers
    integer :: Hzd_pwr_tr = -1
    namelist /hvdif  / Hzd_pwr_tr
    namelist /hvdif_p/ Hzd_pwr_tr
+! use DEl2 Along Height for the diffusion of Tracers
+   logical :: Hzd_tr_ALH_L = .false.
+   namelist /hvdif  / Hzd_tr_ALH_L
+   namelist /hvdif_p/ Hzd_tr_ALH_L
+!
+   integer :: hzd_tr_ALH_it =1
+   namelist /hvdif  /  hzd_tr_ALH_it
+   namelist /hvdif_p/ hzd_tr_ALH_it
+!
+! Smagorinsky-like coefficient for hzd_ALH
+   logical  ::  hzd_smago_ALH_L= .false.
+   namelist /hvdif  /  hzd_smago_ALH_L
+   namelist /hvdif  /  hzd_smago_ALH_L
+
+! Hybrid diffusion: number of vert level on TFC
+   integer :: hzd_hyb_nk =-1
+   namelist /hvdif  / hzd_hyb_nk
+   namelist /hvdif_p/ hzd_hyb_nk 
+ 
 
    !# Main Smagorinsky control parameter (usual range 0.1-0.3)
    real :: Hzd_smago_param= -1.

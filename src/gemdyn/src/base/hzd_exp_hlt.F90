@@ -150,7 +150,7 @@ contains
 !$omp end single
 
 !$omp do collapse(2)
-      do k=1, l_nk
+      do k=1,nk
          do j=1-G_haloy, l_nj+G_haloy
             do i=1-G_halox, l_ni+G_halox
                F_wk(i,j,k)= F_f2hzd(i,j,k)
@@ -162,7 +162,7 @@ contains
       do mm=1, nn
          if (mm == 2) then
 !$omp do collapse(2)
-            do k=1, l_nk
+            do k=1, nk
                do j=j0-1, jn+1
                   do i=i0-1, in+1
                      F_wk(i,j,k)= F_f2hzd(i,j,k) - F_wk(i,j,k)
@@ -172,7 +172,7 @@ contains
 !$omp end do
          else if (mm > 2) then
 !$omp do collapse(2)
-            do k=1, l_nk
+            do k=1, nk
                do j=j0-1+south, jn+1-north
                   do i=i0-1+west, in+1-east
                      F_wk(i,j,k)= F_f2hzd(i,j,k) - F_wk(i,j,k)
@@ -183,7 +183,7 @@ contains
          end if
 
          call hzd_flt9pt (F_f2hzd, F_wk, l_minx,l_maxx,l_miny,l_maxy,&
-                                    l_nk, visco, mm, nn, i0,in,j0,jn)
+                                    nk, visco, mm, nn, i0,in,j0,jn)
 
          if (mm /= nn) then
 !$omp single

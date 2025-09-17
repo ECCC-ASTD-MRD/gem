@@ -15,7 +15,7 @@
 !
 !*s/r fislh_rhs - compute the right-hand sides
 
-      subroutine fislh_rhs ( F_dt_8 )
+      subroutine fislh_rhs ( F_dt_8, apply_iau )
       use HORgrid_options
       use gem_options
       use dyn_fisl_options
@@ -29,6 +29,7 @@
       use gmm_contiguous
       use gmm_vt0
       use gmm_vt1
+      use gmm_iau
       use adz_mem
       use mem_tstp
       use mem_tracers
@@ -49,11 +50,15 @@
       integer :: i, j, k, km, kp, n
       real, dimension(:,:,:), pointer :: logT, logP
       real(kind=REAL64) :: div, barz, barzp, u_interp, v_interp,&
-               t_interp, w2, w3, w4, invT_8, invT_nh_8,invT_m_8
+               t_interp, w2, w3, w4, invT_8, invT_nh_8,invT_m_8,i_apply_iau
       real(kind=REAL64), parameter :: one=1.d0, half=0.5d0
+      logical apply_iau
 !
 !     ---------------------------------------------------------------
 !
+      i_apply_iau=0.d0
+      if (apply_iau) i_apply_iau=one
+      
 !$omp do
       do n= 1, ubound(dynt0,1)
          dynt0(n) = dynt1(n)
@@ -154,7 +159,10 @@
                           (              Ver_wp_8%m(k)*phy_tv_tend(i,j,k )/tt1(i,j,k ) + &
                           Ver_onezero(k)*Ver_wm_8%m(k)*phy_tv_tend(i,j,km)/tt1(i,j,km) ) &
                           + (1.0d0-Cstv_bar1_8) * invT_8 * logP(i,j,k)
- 
+
+            orhsc_ext (i,j,k) = orhsc_ext (i,j,k) + i_apply_iau*(1d0/Cstv_bA_8) * &
+                          (              Ver_wp_8%m(k)*iau_tv_tend(i,j,k )/tt1(i,j,k ) + &
+                          Ver_onezero(k)*Ver_wm_8%m(k)*iau_tv_tend(i,j,km)/tt1(i,j,km) ) 
         end do
       end do
       

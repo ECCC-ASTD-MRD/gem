@@ -82,6 +82,16 @@
       if (minval(dgzm)<0. .or. minval(dgzt)<0. ) err=-1
       call gem_error (err,'vertical_metric','Heights NOT monotonically decreasing from model top')
 
+      do k=1,G_nk
+         do j=1-G_haloy+1,l_nj+G_haloy-1
+            do i=1-G_halox+1,l_ni+G_halox-1
+               F_metric%mc_Jxt_8 (i,j,k)=(F_metric%ztht_8(i+1,j,k)-F_metric%ztht_8(i,j,k))*geomh_invDX_8(j)
+               F_metric%mc_Jyt_8 (i,j,k)=(F_metric%ztht_8(i,j+1,k)-F_metric%ztht_8(i,j,k))*geomh_invDY_8
+
+            end do
+         end do
+      end do
+
       do j=1-G_haloy,l_nj+G_haloy
          do k=G_nk,1,-1
             do i=1-G_halox,l_ni+G_halox
@@ -158,6 +168,8 @@
       if (Schm_autobar_L) then
          F_metric%mc_Jx_8   (:,:,:) = 0.
          F_metric%mc_Jy_8   (:,:,:) = 0.
+         F_metric%mc_Jxt_8   (:,:,:) = 0.
+         F_metric%mc_Jyt_8   (:,:,:) = 0.
          F_metric%mc_iJz_8  (:,:,:) = 1.
          F_metric%mc_Ix_8   (:,:,:) = 0.
          F_metric%mc_Iy_8   (:,:,:) = 0.
@@ -347,6 +359,11 @@
 !$omp single
          F_metric%mc_Jx_8   (:,:,:) = 0.
          F_metric%mc_Jy_8   (:,:,:) = 0.
+!
+         F_metric%mc_Jxt_8   (:,:,:) = 0.
+         F_metric%mc_Jyt_8   (:,:,:) = 0.
+
+!
          F_metric%mc_iJz_8  (:,:,:) = 1.
          F_metric%mc_Ix_8   (:,:,:) = 0.
          F_metric%mc_Iy_8   (:,:,:) = 0.

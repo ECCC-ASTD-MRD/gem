@@ -27,6 +27,7 @@ module gmm_pw
       real, pointer, contiguous, dimension (:,:,:) :: pw_gz_plus  => null()
       real, pointer, contiguous, dimension (:,:,:) :: pw_log_pm   => null()
       real, pointer, contiguous, dimension (:,:,:) :: pw_log_pt   => null()
+      real, pointer, contiguous, dimension (:,:,:) :: pw_log_ptd   => null()
 
       real, pointer, contiguous, dimension (:,:,:) :: pw_uu_moins => null()
       real, pointer, contiguous, dimension (:,:,:) :: pw_vv_moins => null()
@@ -66,6 +67,7 @@ module gmm_pw
       character(len=MAXNAMELENGTH), parameter:: gmmk_pw_p0_plus_s = 'PW_P0:P'
       character(len=MAXNAMELENGTH), parameter:: gmmk_pw_log_pm_s = 'PW_LNPM:P'
       character(len=MAXNAMELENGTH), parameter:: gmmk_pw_log_pt_s = 'PW_LNPT:P'
+      character(len=MAXNAMELENGTH), parameter:: gmmk_pw_log_ptd_s = 'PW_LNPTD:P'
       character(len=MAXNAMELENGTH), parameter:: gmmk_pw_pm_plus_8_s= 'PW_PM8:P'
       character(len=MAXNAMELENGTH), parameter:: gmmk_pw_p0_plus_8_s= 'PW_P08:P'
       character(len=MAXNAMELENGTH), parameter:: gmmk_pw_uu_moins_s = 'PW_UU:M'
