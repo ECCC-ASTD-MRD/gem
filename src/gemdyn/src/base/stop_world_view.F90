@@ -63,6 +63,7 @@
       end if
 
       call gemtime ( Lun_out, 'END OF RUN', .true. )
+      call memusage ( Lun_out )
 
       call gtmg_stop ( 1 )
       call gtmg_terminate( Ptopo_myproc, 'GEMDM' )
@@ -94,6 +95,8 @@
             enddo
          endif
       end if
+
+      call rpn_comm_FINALIZE(err)
 
  34   format (i10.10)
 !
