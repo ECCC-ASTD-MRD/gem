@@ -174,7 +174,7 @@ build:rhel-8-amd64_gnu-14.2.0:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.2.0
-    - cmake -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
+    - cmake ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   allow_failure: true
