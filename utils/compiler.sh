@@ -29,7 +29,7 @@ case $1 in
         COMPILER_VERSION=$(clang --version | grep version | sed "s/.*version \([^ ]*\).*$/\1/")
         ;;
     nvhpc)
-        COMPILER_VERSION=$(nvfortran --version | sed -n "/nvfortran/ s/nvfortran \([^ ]*\).*$/\1/p")
+        COMPILER_VERSION=$(nvcc --version | grep release | sed "s/.*V\([^ ]*\).*$/\1/")
         ;;
     pgi)
         COMPILER_VERSION=$(pgfortran --version  | sed -n "/fortran/ s/.*pgfortran \([^ ]*\).*$/\1/p")
