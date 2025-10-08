@@ -11,6 +11,10 @@ MAKEFLAGS += --no-print-directory
 cmake:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake ${gem_DIR} )
 
+# Using installed RPN libraries (rmn, vgrid, rpncomm, tdpack)
+cmake-strict:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DSTRICT=TRUE ${gem_DIR} )
+
 # Using installed RPN libraries (rmn, vgrid, rpncomm, tdpack) and static Intel libraries
 cmake-static:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DSTATIC_INTEL=ON ${gem_DIR} )
@@ -34,6 +38,10 @@ cmake-nvhpc:
 # Use installed RPN libraries and add MACH package
 cmake-mach:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_MACH=TRUE ${gem_DIR} )
+
+# Use installed RPN libraries with -Werror=uninitialized C flag
+cmake-mach-strict:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_MACH=TRUE -DSTRICT=TRUE ${gem_DIR} )
 
 # Using installed RPN libraries (rmn, vgrid, rpncomm, tdpack) and static Intel libraries
 cmake-mach-static:

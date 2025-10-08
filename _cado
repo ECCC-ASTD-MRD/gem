@@ -3,12 +3,14 @@ this_project=`cat MANIFEST | sed -n '/NAME/s/.*: //p'`
 if [[ ${this_project} == gem ]] ; then
 cado_commands=(
     cmake
+    cmake-strict
     cmake-static
     cmake-all
     cmake-debug
     cmake-debug-extra
     cmake-nvhpc
     cmake-mach
+    cmake-mach-strict
     cmake-mach-static
     cmake-all-mach
     cmake-mach-debug
@@ -22,10 +24,12 @@ cado_commands=(
 else
 cado_commands=(
     cmake
+    cmake-strict
     cmake-static
     cmake-all
     cmake-debug
     cmake-debug-extra
+    cmake-nvhpc
     build
     work
     install
