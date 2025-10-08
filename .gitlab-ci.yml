@@ -43,17 +43,16 @@ build:rhel-9-graniterapids-64-intel-2025.1.0:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
-    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DCPL_BUILD_DIR=${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo ${SRC_DIR}
+    - cmake -DTARGET_PROC=graniterapids -DCPL_BUILD_DIR=${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
     expire_in: 4 hrs
     paths:
     - work-rhel-9-graniterapids-64-intel-2025.1.0
-  allow_failure: true
 
 #----- rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
-# U3 Intel 2025 with installed RPN-SI libs, WITH_CPL
+# U3 Intel 2025 with installed RPN-SI libs, WITH_NEMO
 build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
   variables:
      ORD_SOUMET_MACH: ppp6t
@@ -77,7 +76,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
-    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DWITH_CPL=1 ${SRC_DIR}
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DWITH_NEMO=1 ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -280,7 +279,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
-    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DCPL_BUILD_DIR=${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-gem-nemo ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -304,6 +303,7 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - schedules
    needs:
       - build:rhel-8-icelake-64-intel-2022.1.2
+      - build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo
    script:
       - set +e
       - . ${ECCI_ENV}/latest/profile.sh
@@ -345,7 +345,6 @@ build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo:
     paths:
     - work-rhel-8-icelake-64-intel-2022.1.2-gem-nemo
     - gem_dbase
-
 
 #----- rhel-8-icelake-64-intel-2021.4.0
 # U2 Intel 2021 with installed RPN-SI libs
