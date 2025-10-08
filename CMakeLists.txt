@@ -7,10 +7,33 @@ include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
 ec_parse_manifest()        # Parse MANIFEST file
 
+set(WITH_MACH OFF CACHE BOOL "Control whether to build GEM-MACH")
+# Change NAME when building gemmach
+if (WITH_MACH)
+   set(NAME ${NAME}mach)
+   set(DESCRIPTION "ECCC-ARQI Global Environmental Multiscale - Modelling Air quality and Chemistry - GEM-MACH")
+   set(SUMMARY "Global Environmental Multiscale - Modelling Air quality and Chemistry (GEM-MACH) is an atmospheric chemistry prediction numerical model that is embedded within GEM")
+   set(MAINTAINER "ECCC/S&T/ASTD/ARQI")
+endif()
+
 project(${NAME} DESCRIPTION "${DESCRIPTION}" LANGUAGES C Fortran)
 set(PROJECT_VERSION ${VERSION}${STATE})
 set(GEM_VERSION ${PROJECT_VERSION} CACHE INTERNAL "GEM version" FORCE)
-message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
+# Change PROJECT_VERSION when building gemmach (concatenate both versions, from MANIFEST)
+if (WITH_MACH)
+   set(PROJECT_VERSION ${GEM_VERSION}-${MACH_VERSION})
+   message(STATUS "(EC) GEMMACH VERSION = ${PROJECT_VERSION}")
+else()
+  message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
+endif()
+
+# Set SUPER_PROJECT_NAME as we won't add include files and libraries from
+# the components if not packaging GEM
+set(super_name ${NAME})
+if (WITH_NEMO)
+  set(super_name ${NAME}-nemo)
+endif()
+set(SUPER_PROJECT_NAME ${super_name} CACHE INTERNAL "Super project name used for package creation" FORCE)
 
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
@@ -170,7 +193,6 @@ set(gem_exe maingemdm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
-set(gem_exe maingemdm)
 list(APPEND BINARIES ${gem_exe})
 if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
@@ -198,14 +220,7 @@ add_custom_target(work
   )
 
 #----- Packaging
-# Define package prefix
-if(WITH_NEMO)
-    set(GEM_NEMO_NAME ${NAME}-nemo)
-    set(NAME ${GEM_NEMO_NAME})
-    ec_package_name(${GEM_NEMO_NAME})
-else()
-    ec_package_name()
-endif()
+ec_package_name()      # Define package prefix
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
