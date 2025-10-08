@@ -124,7 +124,6 @@ build:rhel-8-amd64_gnu-9.3.0:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
@@ -155,7 +154,6 @@ build:rhel-8-amd64_gnu-14.2.0:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu_14
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.2.0
@@ -188,7 +186,6 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - export WITH_SYSTEM_RPN=FALSE
@@ -214,7 +211,6 @@ build:rhel-8-icelake-64-intel-2025.1.0:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
@@ -249,7 +245,6 @@ package:rhel-8-icelake-64-intel-2025.1.0:
       - build:rhel-8-icelake-64-intel-2025.1.0
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
@@ -270,7 +265,6 @@ build:rhel-8-icelake-64-intel-2022.1.2:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
@@ -306,7 +300,6 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
@@ -327,7 +320,6 @@ build:rhel-8-icelake-64-intel-2022.1.2-gem-nemo:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-gem-nemo
@@ -365,7 +357,6 @@ build:rhel-8-icelake-64-intel-2021.4.0:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel_2021.4.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
@@ -398,7 +389,6 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - build:rhel-8-icelake-64-intel-2021.4.0
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . ./.eccc_setup_intel_2021.4.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
@@ -422,7 +412,6 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       name: ubuntu24
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
@@ -459,7 +448,6 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
       name: ubuntu24
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
@@ -486,7 +474,6 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2022.1.2
       - set -e
@@ -523,7 +510,6 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2022.1.2
       - set -e
@@ -550,7 +536,6 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
       - set -e
@@ -587,7 +572,6 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
       - set -e
@@ -621,7 +605,6 @@ findtopo:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd share/configurations/5.2GEM_cfgs_GY_FISL_H/cfg_0000
@@ -641,7 +624,6 @@ findtopo:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -668,7 +650,6 @@ CANO_W7cascP_intel:
   - tags
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -695,7 +676,6 @@ CANO_dcmip163r100_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -722,7 +702,6 @@ CANO_wil7_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -749,7 +728,6 @@ GEM_cfgs_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -776,7 +754,6 @@ GEM_GY_FISL_P_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -803,7 +780,6 @@ GEM_GY_FISL_H_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -830,7 +806,6 @@ GEM_GY_spnGC_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -857,7 +832,6 @@ GEM_LU_FISL_H_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -884,7 +858,6 @@ GEM_LU_OFFC_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -911,7 +884,6 @@ GEM_LU_EXP_P_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -938,7 +910,6 @@ GEM_LU_MoSA_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -965,7 +936,6 @@ GEM_LU_TEB_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -992,7 +962,6 @@ GEM_LU_THM_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1019,7 +988,6 @@ OPS_GYens_ic4_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1046,7 +1014,6 @@ OPS_GY_ic4_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1073,7 +1040,6 @@ OPS_LU_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1100,7 +1066,6 @@ PTOPO_GYH_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1127,7 +1092,6 @@ PTOPO_LUP_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1154,7 +1118,6 @@ RSTRT_GYP_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1181,7 +1144,6 @@ THEO_bubbleG_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1204,7 +1166,6 @@ THEO_schar_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel
     - set -e
     - cd $GEM_WORK
@@ -1228,7 +1189,6 @@ THEO_schar_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1255,7 +1215,6 @@ CANO_W7cascP_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1282,7 +1241,6 @@ CANO_dcmip163r100_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1309,7 +1267,6 @@ CANO_wil7_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1336,7 +1293,6 @@ GEM_cfgs_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1363,7 +1319,6 @@ GEM_GY_FISL_P_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1390,7 +1345,6 @@ GEM_GY_FISL_H_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1417,7 +1371,6 @@ GEM_GY_spnGC_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1444,7 +1397,6 @@ GEM_LU_FISL_H_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1471,7 +1423,6 @@ GEM_LU_OFFC_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1498,7 +1449,6 @@ GEM_LU_EXP_P_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1525,7 +1475,6 @@ GEM_LU_MoSA_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1552,7 +1501,6 @@ GEM_LU_TEB_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1579,7 +1527,6 @@ GEM_LU_THM_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1606,7 +1553,6 @@ OPS_GYens_ic4_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1633,7 +1579,6 @@ OPS_GY_ic4_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1660,7 +1605,6 @@ OPS_LU_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1687,7 +1631,6 @@ PTOPO_GYH_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1714,7 +1657,6 @@ PTOPO_LUP_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1741,7 +1683,6 @@ RSTRT_GYP_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1768,7 +1709,6 @@ THEO_bubbleG_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1791,7 +1731,6 @@ THEO_schar_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1807,7 +1746,7 @@ THEO_schar_gnu:
   stage: run_gnu_14.2.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-14.2.0
   when: always
   only:
@@ -1816,7 +1755,6 @@ THEO_schar_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu_14
     - set -e
     - cd $GEM_WORK
