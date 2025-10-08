@@ -42,14 +42,14 @@ if  [[ ${ORDENV_DIST} = "rhel" ]]; then
     if [[ ${COMPILER_VERSION} = "2022.1.2" ]]; then
         . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/
         export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/rhel-8-amd64-64
-        . ssmuse-sh -d /fs/ssm/eccc/mrd/rpn/OCEAN/cnccpl/5.5.0
+        . r.load.dot rpn/OCEAN/cnccpl/5.5.0
     elif [[ ${COMPILER_VERSION} = "2021.4.0" ]]; then
         . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01
         export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/inteloneapi-${COMPILER_VERSION}/01/rhel-8-amd64-64
     elif [[ ${COMPILER_VERSION} = "2025.1.0" ]]; then
         . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01
         export FFTW_ROOT=/fs/ssm/main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01/rhel-9-amd64-64
-        . ssmuse-sh -d /fs/ssm/eccc/mrd/rpn/OCEAN/cnccpl/5.5.1
+        . r.load.dot rpn/OCEAN/cnccpl/5.5.1
     fi
 fi
 
