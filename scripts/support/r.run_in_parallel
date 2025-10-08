@@ -778,8 +778,9 @@ wait_for() {
                                # Added -nodepack mode for filling nodes
 #Version="2.1.0 2024/05/16"    # Added possibility to combine -nodemap and -nodespec
 #Version="2.1.1 2024/11/25"    # Fixes for IOserver
+#Version="2.2.0"    # Check for unknown state nodes to count the down nodes
 true
-Version="2.2.0"    # Check for unknown state nodes to count the down nodes
+Version="2.2.1"    # Changed defasult stack form unlimited to 4G
 
 MY_NODEFILE=${PARALLEL_NODEFILE:-${GECOSHEP_PNET_HOSTFILE:-${LOADL_HOSTFILE:-${PBS_NODEFILE:-${HOME}/.NODEFILE}}}}
 #SLURM uses SLURM_JOB_NODELIST env variable
@@ -844,7 +845,7 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY/OpenMPI/MPICH]" \
     -smt "1" "2" "[SMT or hyperthreading]" \
     -spliteo "no" "yes" "[split stderr from stdout]" \
     -splittmp "" "splittmp" "[unique TMPDIR for each PE]"\
-    -stack "unlimited" "" "[Stack size]"\
+    -stack "4000000" "" "[Stack size]"\
     -sync "" "yes" "[force fileystem sync (Lustre coherency patch)]" \
     -tag "child" "full" "[full/child/member/stderr/none/seq]" \
     -timeout "60" "60" "[timeout for multiple instances]" \
