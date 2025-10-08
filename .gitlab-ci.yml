@@ -605,12 +605,12 @@ findtopo:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd share/configurations/5.2GEM_cfgs_GY_FISL_H/cfg_0000
     - findtopo
 
-#----- Running configurations for rhel-8-icelake-64-intel-2022.1.2
+#----- Running configurations for rhel-8-icelake-64-intel-2025.1.0
 5.2GEM_GY_FISL_H_intel:
   stage: run_intel_icelake
   tags:
@@ -624,7 +624,7 @@ findtopo:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
@@ -650,7 +650,7 @@ CANO_W7cascP_intel:
   - tags
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
@@ -676,7 +676,7 @@ CANO_dcmip163r100_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
@@ -702,7 +702,7 @@ CANO_wil7_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
@@ -728,7 +728,7 @@ GEM_cfgs_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs
@@ -754,7 +754,7 @@ GEM_GY_FISL_P_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
@@ -780,7 +780,7 @@ GEM_GY_FISL_H_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
@@ -806,7 +806,7 @@ GEM_GY_spnGC_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_spnGC
@@ -832,7 +832,7 @@ GEM_LU_FISL_H_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
@@ -858,7 +858,7 @@ GEM_LU_OFFC_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
@@ -884,7 +884,7 @@ GEM_LU_EXP_P_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_EXP_P
@@ -910,7 +910,7 @@ GEM_LU_MoSA_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_MoSA
@@ -936,7 +936,7 @@ GEM_LU_TEB_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_TEB
@@ -962,7 +962,7 @@ GEM_LU_THM_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_THM
@@ -988,7 +988,7 @@ OPS_GYens_ic4_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=OPS_cfgs_GYens_ic4
@@ -1014,7 +1014,7 @@ OPS_GY_ic4_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=OPS_cfgs_GY_ic4
@@ -1040,7 +1040,7 @@ OPS_LU_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=OPS_cfgs_LU
@@ -1066,7 +1066,7 @@ PTOPO_GYH_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
@@ -1092,7 +1092,7 @@ PTOPO_LUP_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
@@ -1118,7 +1118,7 @@ RSTRT_GYP_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
@@ -1144,7 +1144,7 @@ THEO_bubbleG_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
@@ -1166,7 +1166,7 @@ THEO_schar_intel:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
