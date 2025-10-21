@@ -77,7 +77,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
-    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DWITH_CPL=1 ${SRC_DIR}
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DTARGET_PROC=graniterapids -DSTRICT=TRUE -DWITH_CPL=1 ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -256,7 +256,7 @@ build:rhel-8-icelake-64-intel-2025.1.0:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
-    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DSTRICT=TRUE ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -310,7 +310,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
-    - cmake ${SRC_DIR}
+    - cmake -DSTRICT=TRUE ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -368,7 +368,7 @@ build:rhel-8-icelake-64-intel-2021.4.0:
     - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0 .
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
-    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+    - cmake -DWITH_SYSTEM_RPN=TRUE -DSTRICT=TRUE ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -425,7 +425,7 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-intel-2025.1.0
       - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
-      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+      - cmake -DWITH_SYSTEM_RPN=TRUE -DSTRICT=TRUE ${SRC_DIR}
       - time make -j $NCPUS
       - time make work
    allow_failure: true
@@ -488,7 +488,7 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2 .
       - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
-      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+      - cmake -DWITH_SYSTEM_RPN=TRUE -DSTRICT=TRUE ${SRC_DIR}
       - time make -j $NCPUS
       - time make work
    artifacts:
@@ -550,7 +550,7 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2023.2.0 .
       - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2023.2.0
-      - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+      - cmake -DWITH_SYSTEM_RPN=TRUE -DSTRICT=TRUE ${SRC_DIR}
       - time make -j $NCPUS
       - time make work
    artifacts:
