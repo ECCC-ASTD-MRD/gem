@@ -223,8 +223,7 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - export WITH_SYSTEM_RPN=FALSE
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
@@ -236,6 +235,7 @@ build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
 
 #----- rhel-8-icelake-64-intel-2025.1.0
 # U2 Intel 2025 with installed RPN-SI libs
+# Used for testing configs and for SSM package
 build:rhel-8-icelake-64-intel-2025.1.0:
   variables:
      ORD_SOUMET_CPUS: "4"
@@ -248,7 +248,6 @@ build:rhel-8-icelake-64-intel-2025.1.0:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
@@ -283,7 +282,6 @@ package:rhel-8-icelake-64-intel-2025.1.0:
       - build:rhel-8-icelake-64-intel-2025.1.0
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
@@ -292,7 +290,6 @@ package:rhel-8-icelake-64-intel-2025.1.0:
 
 #----- rhel-8-icelake-64-intel-2022.1.2
 # U2 Intel 2022 with installed RPN-SI libs
-# Used for testing configs and for SSM package
 build:rhel-8-icelake-64-intel-2022.1.2:
   variables:
      ORD_SOUMET_CPUS: "4"
@@ -305,8 +302,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2022.1.2
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2
@@ -314,7 +310,7 @@ build:rhel-8-icelake-64-intel-2022.1.2:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
-    - cmake -DWITH_SYSTEM_RPN=TRUE ${SRC_DIR}
+    - cmake ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -340,8 +336,7 @@ package:rhel-8-icelake-64-intel-2022.1.2:
       - build:rhel-8-icelake-64-intel-2022.1.2
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
       - make package
@@ -366,7 +361,6 @@ build:rhel-8-icelake-64-intel-2021.4.0:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_intel_2021.4.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
@@ -399,7 +393,6 @@ package:rhel-8-icelake-64-intel-2021.4.0:
       - build:rhel-8-icelake-64-intel-2021.4.0
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . ./.eccc_setup_intel_2021.4.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
@@ -423,7 +416,6 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       name: ubuntu24
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
@@ -460,7 +452,6 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
       name: ubuntu24
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
@@ -470,6 +461,7 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
    allow_failure: true
 
 #----- ubuntu-22.04-amd64_intel-2022.1.2
+# ord_soumet variables are saved in CI/CD settings
 build:ubuntu-22.04-amd64-intel-2022.1.2:
    variables:
       ORD_SOUMET_CPUS: "4"
@@ -486,9 +478,8 @@ build:ubuntu-22.04-amd64-intel-2022.1.2:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2022.1.2
@@ -523,9 +514,8 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
-      - . ./.eccc_setup_intel
+      - . ./.eccc_setup_intel_2022.1.2
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2022.1.2
       - make package
@@ -533,6 +523,7 @@ package:ubuntu-22.04-amd64-intel-2022.1.2:
    allow_failure: true
 
 #----- ubuntu-22.04-amd64_intel-2023.2.0
+# ord_soumet variables are saved in CI/CD settings
 build:ubuntu-22.04-amd64-intel-2023.2.0:
    variables:
       ORD_SOUMET_CPUS: "4"
@@ -549,7 +540,6 @@ build:ubuntu-22.04-amd64-intel-2023.2.0:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
       - set -e
@@ -580,13 +570,12 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
       - /^dev_5\.[0-9]$/
       - tags
       - schedules
-   dependencies:
+   needs:
       - build:ubuntu-22.04-amd64-intel-2023.2.0
    environment:
       name: ubuntu22
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2023.2.0
       - set -e
@@ -606,33 +595,13 @@ deploy:staging:
    script:
       - ~/ci-admin/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
 
-#----- Testing findtopo for rhel-8-icelake-64-intel-2022.1.2
+#----- Testing findtopo for rhel-8-icelake-64-intel-2025.1.0
 findtopo:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
-  when: always
-  only:
-  - /^dev_5\.[0-9].*$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
-    - set -e
-    - cd share/configurations/5.2GEM_cfgs_GY_FISL_H/cfg_0000
-    - findtopo
-
-#----- Running configurations for rhel-8-icelake-64-intel-2022.1.2
-5.2GEM_GY_FISL_H_intel:
-  stage: run_intel_icelake
-  tags:
-    - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -640,8 +609,26 @@ findtopo:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
+    - set -e
+    - cd share/configurations/5.2GEM_cfgs_GY_FISL_H/cfg_0000
+    - findtopo
+
+#----- Running configurations for rhel-8-icelake-64-intel-2025.1.0
+5.2GEM_GY_FISL_H_intel:
+  stage: run_intel_icelake
+  tags:
+    - U2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
@@ -658,8 +645,8 @@ CANO_W7cascP_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   allow_failure: true
   only:
@@ -667,8 +654,7 @@ CANO_W7cascP_intel:
   - tags
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_W7cascP
@@ -685,8 +671,8 @@ CANO_dcmip163r100_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -694,8 +680,7 @@ CANO_dcmip163r100_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_dcmip163r100
@@ -712,8 +697,8 @@ CANO_wil7_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -721,8 +706,7 @@ CANO_wil7_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=CANO_cfgs_wil7
@@ -739,17 +723,16 @@ GEM_cfgs_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
-  - /^dev_5\.[0-9].*$/
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs
@@ -766,8 +749,8 @@ GEM_GY_FISL_P_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -775,8 +758,7 @@ GEM_GY_FISL_P_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_P
@@ -793,8 +775,8 @@ GEM_GY_FISL_H_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -802,8 +784,7 @@ GEM_GY_FISL_H_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_GY_FISL_H
@@ -820,8 +801,8 @@ GEM_LU_FISL_H_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -829,8 +810,7 @@ GEM_LU_FISL_H_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_FISL_H
@@ -847,8 +827,8 @@ GEM_LU_OFFC_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -856,8 +836,7 @@ GEM_LU_OFFC_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=GEM_cfgs_LU_OFFC
@@ -874,8 +853,8 @@ PTOPO_GYH_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -883,8 +862,7 @@ PTOPO_GYH_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_GYH
@@ -901,8 +879,8 @@ PTOPO_LUP_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -910,8 +888,7 @@ PTOPO_LUP_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=PTOPO_cfgs_LUP
@@ -928,8 +905,8 @@ RSTRT_GYP_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -937,8 +914,7 @@ RSTRT_GYP_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=RSTRT_cfgs_GYP
@@ -955,8 +931,8 @@ THEO_bubbleG_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -964,8 +940,7 @@ THEO_bubbleG_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_bubbleG
@@ -978,8 +953,8 @@ THEO_schar_intel:
   stage: run_intel_icelake
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-icelake-64-intel-2022.1.2
+  needs:
+  - build:rhel-8-icelake-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -987,8 +962,7 @@ THEO_schar_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - . ./.eccc_setup_intel
+    - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - cd $GEM_WORK
     - CFG=THEO_cfgs_schar
@@ -1002,7 +976,7 @@ THEO_schar_intel:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1011,7 +985,6 @@ THEO_schar_intel:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1029,7 +1002,7 @@ CANO_W7cascP_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1038,7 +1011,6 @@ CANO_W7cascP_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1056,7 +1028,7 @@ CANO_dcmip163r100_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1065,7 +1037,6 @@ CANO_dcmip163r100_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1083,7 +1054,7 @@ CANO_wil7_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1092,7 +1063,6 @@ CANO_wil7_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1110,16 +1080,15 @@ GEM_cfgs_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - /^dev_5\.[0-9].*$/
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1137,7 +1106,7 @@ GEM_GY_FISL_P_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1146,7 +1115,6 @@ GEM_GY_FISL_P_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1164,7 +1132,7 @@ GEM_GY_FISL_H_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1173,7 +1141,6 @@ GEM_GY_FISL_H_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1191,7 +1158,7 @@ GEM_LU_FISL_H_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1200,7 +1167,6 @@ GEM_LU_FISL_H_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1218,7 +1184,7 @@ GEM_LU_OFFC_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1227,7 +1193,6 @@ GEM_LU_OFFC_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1245,7 +1210,7 @@ PTOPO_GYH_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1254,7 +1219,6 @@ PTOPO_GYH_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1272,7 +1236,7 @@ PTOPO_LUP_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1281,7 +1245,6 @@ PTOPO_LUP_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1299,7 +1262,7 @@ RSTRT_GYP_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1308,7 +1271,6 @@ RSTRT_GYP_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1326,7 +1288,7 @@ THEO_bubbleG_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1335,7 +1297,6 @@ THEO_bubbleG_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1349,7 +1310,7 @@ THEO_schar_gnu:
   stage: run_gnu_9.3.0
   tags:
     - U2
-  dependencies:
+  needs:
   - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
@@ -1358,7 +1319,6 @@ THEO_schar_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu
     - set -e
     - cd $GEM_WORK
@@ -1373,16 +1333,15 @@ THEO_schar_gnu:
   stage: run_gnu_12.1.0
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-amd64_gnu-12.1.0
+  needs:
+  - build:rhel-8-amd64_gnu-9.3.0
   when: always
   only:
-  - /^dev_5\.[0-9].*$/
+  - /^dev_5\.[0-9]$/
   - tags
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu_12
     - set -e
     - cd $GEM_WORK
@@ -1398,11 +1357,11 @@ THEO_schar_gnu:
 
 #----- Running one configuration for rhel-8-amd64_gnu-14.1.0
 5.2GEM_GY_FISL_H_gnu_14:
-  stage: run_gnu_14.1.0
+  stage: run_gnu_14.2.0
   tags:
     - U2
-  dependencies:
-  - build:rhel-8-amd64_gnu-14.1.0
+  needs:
+  - build:rhel-8-amd64_gnu-14.2.0
   when: always
   only:
   - /^dev_5\.[0-9].*$/
@@ -1410,7 +1369,6 @@ THEO_schar_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
     - . ./.eccc_setup_gnu_14
     - set -e
     - cd $GEM_WORK
