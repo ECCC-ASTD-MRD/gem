@@ -35,10 +35,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - export ORDENV_PLAT=rhel-9-graniterapids-64
-    - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
-    - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
+    - . r.env.dot --carch graniterapids
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
@@ -70,10 +67,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
   when: always
   script:
     - set +e
-    - . ${ECCI_ENV}/latest/profile.sh
-    - export ORDENV_PLAT=rhel-9-graniterapids-64
-    - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
-    - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
+    - . r.env.dot --carch graniterapids
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
@@ -111,10 +105,7 @@ package:rhel-9-graniterapids-64-intel-2025.1.0:
       - build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
    script:
       - set +e
-      - . ${ECCI_ENV}/latest/profile.sh
-      - export ORDENV_PLAT=rhel-9-graniterapids-64
-      - export EC_ARCH=${ORDENV_PLAT}/inteloneapi-2025.1.0
-      - export SSMUSE_PLATFORMS="${ORDENV_PLAT} ${SSMUSE_PLATFORMS}"
+      - . r.env.dot --carch graniterapids
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
