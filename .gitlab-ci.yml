@@ -11,7 +11,7 @@ stages:
   - run_intel_icelake
   - run_gnu_9.3.0
   - run_gnu_12.1.0
-  - run_gnu_14.1.0
+  - run_gnu_14.2.0
   - package
   - deploy
 
