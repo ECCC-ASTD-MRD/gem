@@ -372,11 +372,13 @@ subroutine mach_gas_main(busper, busvol, chem_tr, metvar2d, metvar3dnocan, &
 !
  !---- write Jx value to file ---------
    if (sp_JNO2 > 0) then
-      ! Output JNO2 at the lowest model layer
+      ! Output JNO2 across model layers
       do i = 1, ni_nocan
+         ii = imod2(i)
          do k = 1, chm_nk
+            this_ik = ik(ii, k, chm_ni)
             ik0 = ik(i+1, k, ni_nocan)
-            busvol(sm(sp_JNO2) % out_offset + imod2(i) - 1) = real(rjval(ik0, 1))
+            busvol(sm(sp_JNO2) % out_offset + this_ik) = real(rjval(ik0, 1))
          end do
       end do
    end if

@@ -153,6 +153,7 @@ subroutine mach_diffusion(busper, busvol, conc, vd, psurf, dxdy, rho, kt, vt, &
    if (echoice == 1 .or. (.not. chm_vit_l)) then
 !
 !     Meteorological modulation of aerosol emissions
+      fmet = 1.0
       if (chm_met_modulation_s /= 'NIL') then
          do i = 1, dni
             fmet(i) = busvol(sm(sp_FMET) % out_offset + nmod(i) - 1)
