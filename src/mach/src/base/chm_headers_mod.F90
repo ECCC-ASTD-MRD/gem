@@ -48,7 +48,7 @@ subroutine chm_businit(F_ni, F_nk)
 end subroutine chm_businit
 
 subroutine chm_exe(busdyn     , busper        , busvol     ,   &
-                    slab_index , step)
+                   slab_index , step)
    integer(kind=4), intent   (in) :: slab_index, step
    real(kind=4), dimension(:), pointer, contiguous :: busdyn, busper, busvol
 end subroutine chm_exe

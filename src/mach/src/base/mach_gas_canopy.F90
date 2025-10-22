@@ -499,11 +499,14 @@ subroutine mach_gas_canopy(busper, busvol, chem_tr, tracers_can, metvar2d, &
 !
  !---- write Jx value to output ---------
    if (sp_JNO2 > 0) then
-      ! Output JNO2 at the lowest model layer
+      ! Output JNO2 across model layers
       do ic = 1, ni_can
+         ii = imod(ic)
          do kk = 1, chm_nk
-            ik0 = ik(ic+1, kk, ni_can)
-            busvol(sm(sp_JNO2) % out_offset + imod(ic) - 1) = real(rjval(ik0, 1))
+            k = kmod(ic, kk)
+            this_ik = ik(ii, kk, chm_ni)
+            ik0 = ik(ic+1, k, ni_can)
+            busvol(sm(sp_JNO2) % out_offset + this_ik) = real(rjval(ik0, 1))
          end do
       end do
    end if

@@ -263,7 +263,7 @@ Miscellaneous Fields
 | HSTC | KPP-solver internal time step on the additional canopy vertical levels ; Used in gas mechanisms using KPP rodas solver (output) |
 
 
-Debug variables
+Debug Variables
 ---------------
 
 Depending on the debugging needs, developers can assign values of internal model variables to the debug variables.
@@ -274,7 +274,7 @@ Names of these debug variables are automatically created based on their requeste
 * The first 3 characters are `2DB` for 2D variables, and `3DB` for 3D variables
 * The forth character depends on the number of variables requested.
  * For the maximum of 18 variables, the values are: `1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F, G, H, I`.
- * For any number less than 18, the values are a subset of the above list, starting with 1 and ending with the chacarcter corresponding to the requested number of variables.
+ * For any number less than 18, the values are a subset of the above list, starting with 1 and ending with the character corresponding to the requested number of variables.
 
 Examples:
 

@@ -6,7 +6,7 @@ def error(msg):
 
 # Get list of all declared chemistry options.
 options = []
-with open("CHEM/chm_nml_mod.ftn90",'r') as f:
+with open("src/base/chm_nml_mod.F90",'r') as f:
   reading_namelist = False
   for line in f.readlines():
     line = line.strip()
@@ -20,7 +20,7 @@ options = [o.lower() for o in options if o not in ('','namelist','/chemistry_cfg
 
 # Get list of all initialized chemistry options.
 init_options = []
-with open("CHEM/chm_nml.ftn90",'r') as f:
+with open("src/base/chm_nml.F90",'r') as f:
   for line in f.readlines():
     line = line.strip()
     if line.startswith('!'): continue
@@ -37,7 +37,7 @@ if len(uninitialized) > 0:
 
 # Get list of documented options.
 documented = []
-with open("README_namelist.md",'r') as f:
+with open("readme/README_namelist.md",'r') as f:
   chem_doc = False
   for line in f.readlines():
     line = line.replace(' ','')
