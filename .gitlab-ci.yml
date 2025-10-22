@@ -415,6 +415,7 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
+      - export EC_ARCH=ubuntu-24.04-amd-64/inteloneapi-2025.1.0
       - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
       - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-intel-2025.1.0
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-intel-2025.1.0
@@ -451,6 +452,7 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
       - . r.env.dot --arch amd64
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
+      - export EC_ARCH=ubuntu-24.04-amd-64/inteloneapi-2025.1.0
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
