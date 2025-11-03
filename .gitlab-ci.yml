@@ -1333,7 +1333,7 @@ THEO_schar_gnu:
   tags:
     - U2
   needs:
-  - build:rhel-8-amd64_gnu-9.3.0
+  - build:rhel-8-amd64_gnu-12.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
