@@ -10,7 +10,6 @@ eval `cclargs_lite -D " " $0  \
    -npey_high    "0"    "0"    "[(upper bound for npey)       ]"\
    -omp          "1"    "1"    "[(number of omp threads)      ]"\
    -smt          "1"    "2"    "[(smt levels)                 ]"\
-   -corespernode "80"   "80"   "[(number of cores in one node)]"\
    -nml          "gem_settings.nml" "gem_settings.nml" "[/PATH/TO/gem_settings.nml]"\
    ++ $arguments`
 
@@ -19,6 +18,9 @@ if [ ! -e ${nml} ] ; then
    exit 1
 fi
 
+corespernode=256
+U3=$(true_path $HOME | cut -d "/" -f3 | grep homeu3 | wc -w)
+if [ $U3 -lt 1 ] ; then corespernode=80 ; fi
 
 GRDTYP=$(rpy.nml_get -f ${nml} grid/Grd_typ_S | sed "s/'//g" | tr 'a-z' 'A-Z')
 #GRDTYP=$(fetchnml.sh grd_typ_s grid ${nml})
