@@ -1328,7 +1328,10 @@ THEO_schar_gnu:
     - test "${_status}" == "ED"
 
 #----- Running one configuration for rhel-8-amd64_gnu-12.1.0
-5.2GEM_GY_FISL_H_gnu_12:
+# Add needed mpi flag for gnu 12
+GEM_GY_FISL_H_gnu_12:
+  variables:
+    ORD_SOUMET_MPI : mpi
   stage: run_gnu_12.1.0
   tags:
     - U2
@@ -1344,7 +1347,7 @@ THEO_schar_gnu:
     - . ./.eccc_setup_gnu_12
     - set -e
     - cd $GEM_WORK
-    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - CFG=GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
@@ -1355,7 +1358,10 @@ THEO_schar_gnu:
     - test "${_status}" == "ED"
 
 #----- Running one configuration for rhel-8-amd64_gnu-14.2.0
-5.2GEM_GY_FISL_H_gnu_14:
+# Add needed mpi flag for gnu 14
+GEM_GY_FISL_H_gnu_14:
+  variables:
+    ORD_SOUMET_MPI : mpi
   stage: run_gnu_14.2.0
   tags:
     - U2
@@ -1371,7 +1377,7 @@ THEO_schar_gnu:
     - . ./.eccc_setup_gnu_14
     - set -e
     - cd $GEM_WORK
-    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - CFG=GEM_cfgs_GY_FISL_H
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
