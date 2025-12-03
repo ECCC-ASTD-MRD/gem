@@ -18,15 +18,17 @@
 !
 subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use, intrinsic :: iso_fortran_env, only: INT64
-   use phy_status, only: phy_error_L
+   use phy_status, only: phy_error_L, physeterror
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
    use sfcbus_mod
    use sfc_options, only: atm_external, atm_tplus, radslope, jdateo, &
         use_photo, nclass, zu, zt, sl_Lmin_soil, VAMIN, svs_local_z0m, &
         vf_type, nsl, lunique_profile_svs2, lsnow_interception_svs2,  &
-        cano_ref_forcing, lwater_ponding_svs,critwater, z0snow_svs2
+        cano_ref_forcing, lwater_ponding_svs,critwater, z0snow_svs2, &
+         lsfclayer_crocus_svs2
    use svs_configs
+   use suncos, only: suncos2
 
    use tdpack
    USE MODD_CSTS,     ONLY : XRHOLW
@@ -163,7 +165,6 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: ptref_veg  ! Forcing height for temperature/humidity under high vegetation
    real,dimension(n) :: PZ0HVH  ! Canopy roughness length for heat
    real,dimension(n) :: zz0nat, zz0hnat ! Local variables for grid box average roughness length
-   real,dimension(n) :: RESA_SV_forest, RESA_SV_open ! Surface aerodynamic resistances for turbulent fluxes
    real,dimension(n) :: phm_can ! Heat mass for the high vegetation layer (J K-1 m-2)
    real,dimension(n) :: pscap ! Vegetation layer snow capacities (kg m-2)
    real,dimension(n) :: pfcans ! Canopy layer snowcover fractions from FSM2
@@ -377,9 +378,6 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
             !PCT(I)= 1./(30000.)
             PZ0HVH(I) = Z0M_TO_Z0H * BUS(x(Z0MVH  ,1,1)) ! Z0M_TO_Z0H = 0.2 from svs_configs,
 
-
-            RESA_SV_OPEN(I) = 0.
-            RESA_SV_FOREST(I) = 0.
 
             DO J=1,NL_SVS
                PD_G(I,J)=DL_SVS(J)
@@ -636,7 +634,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(VGH_DENS,1,1)), BUS(x(Z0MVH  ,1,1)),  BUS(x(Z0MVL  ,1,1)), PZ0LOC_SNOW, PZ0H_SNOW, &
            bus(x(VGH_HEIGHT   ,1,1)),BUS(x(LAIVH  ,1,1)), bus(x(VCA,1,1)),PFCANS,bus(x(SNCMA,1,1)),  &
            bus(x(RESAGR,1,1)),bus(x(RESAGRV,1,1)), &
-           bus(x(RESA_VL,1,1)),bus(x(RESA_VH,1,1)), pres_snca, RESA_SV_FOREST, &
+           bus(x(RESA_VL,1,1)),bus(x(RESA_VH,1,1)), pres_snca, bus(x(RESASA,1,1)), bus(x(RESASV,1,1)), &
            bus(x(HUSURF,1,1)),bus(x(HUSURFGV,1,1)),   &
            HRSURF, HRSURFGV,      &
            bus(x(HV_VL,1,1)),bus(x(HV_VH,1,1)), HVSN_VH, DEL_VL, DEL_VH,     &
@@ -662,7 +660,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                          ps,tt,zfsolis,     &
                          hu, VMOD, PWIND_DRIFT_OPEN, &
                          bus(x(FDSI,1,1)),         &
-                         RAINRATE_MM, SNOWRATE_MM,PUNLOAD_OPEN,RESA_SV_OPEN,                    &
+                         RAINRATE_MM, SNOWRATE_MM,PUNLOAD_OPEN,bus(x(RESASA,1,1)),                   &
                          RHOA, bus(x(zusl,1,1)),  bus(x(ztsl,1,1)),             &
                          BUS(X(ALGR,1,1)), PD_G, PDZG,                          &
                          bus(x(RSNOWSA,1,1)), bus(x(GFLUXSA,1,1)),bus(x(RNETSA,1,1)),bus(x(HFLUXSA,1,1)) , &
@@ -699,7 +697,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                              ps, bus(x(TCA,1,1)),bus(x(SWCA,1,1)),     &
                              bus(x(QCA,1,1)), bus(x(VCA,1,1)), bus(x(VCA_DRIFT,1,1)), &
                              bus(x(LWCA,1,1)),         &
-                             RAINRATE_MM_VEG, SNOWRATE_MM_VEG,PUNLOAD_FOREST, RESA_SV_FOREST,               &
+                             RAINRATE_MM_VEG, SNOWRATE_MM_VEG,PUNLOAD_FOREST, bus(x(RESASV,1,1)),              &
                              RHOA,  PUREF_VEG,   PTREF_VEG,            &
                              BUS(X(ALGR,1,1)), PD_G, PDZG,                          &
                              bus(x(RSNOWSV,1,1)), bus(x(GFLUXSV,1,1)),bus(x(RNETSV,1,1)) , bus(x(HFLUXSV ,1,1)), &
@@ -879,7 +877,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
             ! SHould probably use VEGF_EVOL
             !
 
-            CALL PHTSYN_SVS ( BUS(x(LAIVF26,1,1))  , BUS(x(VEGF,1,1)), &
+            CALL PHTSYN_SVS2 ( BUS(x(LAIVF26,1,1))  , BUS(x(VEGF,1,1)), &
                         PTVEGE  , ps, &
                         BUS(x(RESAVG ,1,1))  , hu, &
                         zFSOLIS              , BUS(x(WSOIL ,1,1)), &

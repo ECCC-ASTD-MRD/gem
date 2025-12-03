@@ -1,3 +1,8 @@
+module convect_uv_transport_shal_mod
+   implicit none
+   public
+
+contains
 
 subroutine CONVECT_UV_TRANSPORT_SHAL1(KLON, KLEV, PU, PV, PUC, PVC,  &
      & KDPL, KPBL, KLCL, KCTL,      &
@@ -217,3 +222,4 @@ subroutine CONVECT_UV_TRANSPORT_SHAL1(KLON, KLEV, PU, PV, PUC, PVC,  &
 
 end subroutine CONVECT_UV_TRANSPORT_SHAL1
 
+end module convect_uv_transport_shal_mod

@@ -1,3 +1,8 @@
+module convect_trigger_funct_mod
+   implicit none
+   public
+
+contains
 
 subroutine CONVECT_TRIGGER_FUNCT3(KLON, KLEV, &
      & PPRES, PTH, PTHV, PTHES,               &
@@ -78,6 +83,7 @@ subroutine CONVECT_TRIGGER_FUNCT3(KLON, KLEV, &
    use YOE_CONVPAR
    use YOE_CONVPAREXT
    use cnv_options
+   use convect_satmixratio_mod, only: convect_satmixratio
 
    implicit none
 !!!#include <arch_specific.hf>
@@ -496,3 +502,4 @@ subroutine CONVECT_TRIGGER_FUNCT3(KLON, KLEV, &
 
 end subroutine CONVECT_TRIGGER_FUNCT3
 
+end module convect_trigger_funct_mod

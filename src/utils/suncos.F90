@@ -1,7 +1,7 @@
 
 module suncos
    private
-   public :: suncos1, suncos3
+   public :: suncos1, suncos3, suncos2
 
 contains
 
@@ -104,12 +104,8 @@ contains
       return
    end subroutine suncos3
 
-end module suncos
-
-
 !/@*
 subroutine suncos2(scos, ssin, stan, bsin, bcos, lmx, xlat, xlon, hz, dayofyear, slope_l)
-   use suncos, only: suncos1
    use tdpack_const, only: PI
    implicit none
 !!!#include <arch_specific.hf>
@@ -193,3 +189,5 @@ subroutine suncos2(scos, ssin, stan, bsin, bcos, lmx, xlat, xlon, hz, dayofyear,
    !----------------------------------------------------------------
    return
 end subroutine suncos2
+
+end module suncos

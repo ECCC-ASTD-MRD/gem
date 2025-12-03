@@ -1,3 +1,8 @@
+module litozon_mod
+   implicit none
+   public
+
+contains
 
 !/@*
 subroutine litozon(F_file_S, F_myproc)
@@ -44,3 +49,4 @@ subroutine litozon(F_file_S, F_myproc)
    return
 end subroutine litozon
 
+end module litozon_mod

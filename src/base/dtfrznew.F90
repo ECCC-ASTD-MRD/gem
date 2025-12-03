@@ -1,3 +1,9 @@
+module dtfrznew_mod
+   implicit none
+   private
+   public :: dtfrznew2
+
+contains
 
 subroutine DTFRZNEW2(TU,P,THTEU,QVAP,QLIQ,QICE,RATIO2, &
      QNWFRZ,RL,FRC1,EFFQ,IFLAG,XLV0,XLV1,XLS0,XLS1, &
@@ -200,3 +206,5 @@ subroutine DTFRZNEW2(TU,P,THTEU,QVAP,QLIQ,QICE,RATIO2, &
 
    return
 end subroutine DTFRZNEW2
+
+end module dtfrznew_mod

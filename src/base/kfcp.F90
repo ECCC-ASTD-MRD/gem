@@ -1,9 +1,8 @@
-!COMP_ARCH=inteloneapi-2022.1.2 ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-5.2.82  ; -suppress=-std08
-!COMP_ARCH=intel-19.0.3.199 ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-6.0.5  ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-6.0.5-19.0.5.281  ; -suppress=-std08
+module kfcp_mod
+   implicit none
+   public
 
+contains
 
 subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
      ub,vb,scr3, &
@@ -18,6 +17,12 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
    use tdpack_const
    use cnv_options
    use tpdd, only: tpdd1
+   use condload_mod, only: condload
+   use tpmix_mod, only: tpmix
+   use envirtht_mod, only: envirtht
+   use prof5_mod, only: prof5
+   use dtfrznew_mod, only: dtfrznew2
+   use phy_status, only: physeterror
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -264,11 +269,6 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
    real, dimension(ix,kx) :: tt0,  tv00,   q00,  u00,    v00,   ww0,    &
         dzp,  dpp,    qst1, pp0,    thts, z0g,     &
         sigkfc, ql0,  qi0
-
-   external tpmix
-   external condload
-   external envirtht
-   external prof5
 
    ! Basic parameters
 
@@ -3338,4 +3338,6 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !!$       endif
 
     return
-end
+end subroutine kfcp8
+
+end module kfcp_mod

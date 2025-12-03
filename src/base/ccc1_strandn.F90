@@ -1,3 +1,8 @@
+module ccc1_strandn_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc1_strandn(tran, attn, attntop, rmu, dp, o3, rmu3, ib, &
      ig, lev1, il1, il2, ilg, lay, lev)
@@ -102,3 +107,5 @@ subroutine ccc1_strandn(tran, attn, attntop, rmu, dp, o3, rmu3, ib, &
 
    return
 end subroutine ccc1_strandn
+
+end module ccc1_strandn_mod

@@ -1,8 +1,14 @@
+module serfin_mod
+   implicit none
+   public
+   
+contains
 
 subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
      DGRW, LAT, LON, &
      DEGRAD, MODELE, IG)
    use tdpack_const, only: PI
+   use indseri_mod, only: indseri
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -51,8 +57,6 @@ subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
    ! MODELE   model name (EFR or GEF)
    ! IG       IG1,IG2,IG3 and IG4 of the GEF grid descriptors
 
-   integer, external :: INDSERI
-
    integer IELAU,IELAV,IELATU
    integer IELATV,IELAGU,IELAGV
    integer IELAUD,IELAVD,IELAWS,IELAWD
@@ -86,3 +90,5 @@ subroutine serfin2(VS,VV,SURFACE,PROFILS,NT,NK,NSURF,NPROF, &
 
    return
 end subroutine serfin2
+
+end module serfin_mod

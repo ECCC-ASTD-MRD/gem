@@ -15,10 +15,10 @@
 !-------------------------------------- LICENCE END --------------------------------------
 SUBROUTINE HYDRO_SVS ( DT, &
      EG, ER, ETR, RR, RSNOW, RSNOWV, &
-     IMPERVU, VEGL, VEGH, PSN, PSNVH, ACROOT, WRMAX, WMPFAC, &
+     IMPERVU, VEGL, VEGH, PSN, PSNVH, ACROOT, WRMAX,    &
      WSAT, KSAT, KSATNAT, PSISAT, BCOEF, FBCOF, WFCINT, &
-     GRKEF, SNM, SVM, WR, WRT, WD, WDT, WF, WFT, &
-     KSATC, KSATNATC, MAXPND, KHC, PSI, GRKSAT, WFCDP, &
+     GRKEF, SNM, SVM, WR, WRT, WD, WDT, WF, WFT,        &
+     KSATC, KSATNATC, MAXPND, KHC, PSI, GRKSAT, WFCDP,  &
      F, LATFLW, RUNOFF, WATPND, GRKSAT_MOD_A, AGFRAC, N)
   !
   use sfc_options
@@ -41,7 +41,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n)        :: eg, er, etr, rr, impervu
   real, dimension(n)        :: psn, psnvh, vegh, vegl
   real, dimension(n,nl_svs) :: bcoef, fbcof, acroot, ksat, ksatnat
-  real, dimension(n,nl_svs) :: psisat, wfcint, wsat, wmpfac
+  real, dimension(n,nl_svs) :: psisat, wfcint, wsat
   real, dimension(n)        :: grkef, rsnow, rsnowv, wrmax, snm, svm 
   real, dimension(n)        :: grksat_mod_a
   real, dimension(n)        :: agfrac
@@ -114,7 +114,6 @@ SUBROUTINE HYDRO_SVS ( DT, &
   ! FBCOF (NL_SVS) parameter derived from BCOEF per layer to determine field capacity (Soulis et al. 2011)
   ! WFCINT(NL_SVS) volumetric water content at field capacity for interflow (per layer) [m3/m3]
   ! GRKEF          ratio of tile slope to tile length (needed for watdrain to calculate lateral flow) [m-1]
-  ! WMPFAC(NL_SVS) Multiplicative factor applied to wsat to estimate the activation threshold for macropores [ unitless ]
   !
   !          --- Prognostic variables of SVS not modified by HYDRO_SVS ---
   !
@@ -387,7 +386,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
         
 	!Macropore threshold water content and hydraulic conductivity
         IF (lmacropores_svs1) THEN
-            WMP = WSATC(I,K)*WMPFAC(I,K)                   
+            WMP = WSATC(I,K)*mp_alpha                   
             IF (WD(I,K) >= WMP) THEN
         		KSATC(I,K) = KSAT(I,K)		
             ENDIF
@@ -571,7 +570,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
                  ! Downward liquid water flux is limited to avoid the saturation of the layer below  
                  IF(K.NE.NL_SVS) THEN
                     IF (lmacropores_svs1) THEN 
-                        WMP = WSATC(I,K+1)*WMPFAC(I,K+1)
+                        WMP = WSATC(I,K+1)*mp_alpha
                         IF (WDT(I,K+1) >= WMP) THEN
                             WAT_DOWN = W*(WDT(I,K)-WSATC(I,K))*DELZ(K)
                         ELSE

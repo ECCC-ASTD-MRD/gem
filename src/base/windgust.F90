@@ -1,4 +1,9 @@
+module windgust_mod
+   implicit none
+   public
 
+contains
+   
 subroutine WINDGUST(WGE, WGMAX, WGMIN, THVE, EN, U, V, UD, VD, &
      ZE, H, N, NK)
    use tdpack_const
@@ -164,4 +169,6 @@ subroutine WINDGUST(WGE, WGMAX, WGMIN, THVE, EN, U, V, UD, VD, &
 !
 !
       return
-      end
+   end subroutine WINDGUST
+
+end module windgust_mod

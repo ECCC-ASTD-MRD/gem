@@ -83,8 +83,9 @@ subroutine sfc_businit(moyhr,ni,nk)
    character(len=2) :: nm, nagg, nrow
    !--------   FOR CSLM -----------------
    integer :: tke, hdpth, lkiceh, sniceh, expw, dtemp, delu, gred, rhomix, tsed, roficeh, &
-              snol, rhosnol, tsnowl, albsnol, wsnowl, tlak, lst, hlaksil, gridarea, &
-             ficl, lakd, lfxi, lfxo, lstd, lstf, lakearea, lakefr, riverfr, evlak
+              snol, rhosnol, tsnowl, albsnol, wsnowl, tlak, lst, hlaksil, &
+              ficl, lakd, lfxi, lfxo, lstd, lstf, lakearea, lakefr, riverfr, evlak
+   
    character(len=2) :: nlklv
    !--------   FOR SVS and SVS2 -----------------
    character(len=2) :: ngl, nglp1, nstel, nstpl, iemib, iicel, izp, izvg2, ipnd, ixcoefs, itperm, itpsoil
@@ -109,7 +110,7 @@ subroutine sfc_businit(moyhr,ni,nk)
 
    !--------   Speficic parameter FOR SVS -----------------
    
-   integer :: condminfac, frootdyn, ksatnat, ksatnatc, wmpfac, wunfrz 
+   integer :: condminfac, frootdyn, ksatnat, ksatnatc, wunfrz 
 
    !!-------SVS multiplying coefficients for agricultural areas-------
    integer :: grkmod_a,grkmod_aen,kasmod_a,kasmod_aen
@@ -482,7 +483,6 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(wflux,        'VN=wflux        ;ON=M8  ;VD=water flux from surface to atm.                                   ;VB=v0')
 ! wfluxaf --- seems to be replaced by accevap in SVS... 
 !      PHYVAR2D1(wfluxaf,      'VN=wfluxaf      ;ON=N7  ;VD=acc. of soil surface upward water flux                            ;VB=p0')
-      PHYVAR3D1(wmpfac,       'VN=wmpfac       ;ON=WMPF;VD=mult. factor applied for macropore activation  ;VS=A*'//ngl//'  ;VB=p0')
       PHYVAR3D1(wsat,         'VN=wsat         ;ON=WSAT;VD=vol. water content at saturation               ;VS=A*'//ngl//'  ;VB=p0')
       PHYVAR2D1(wsnow,        'VN=wsnow        ;ON=WSN ;VD=water in low-veg/bare-grnd snowpack                               ;VB=p1        ;MIN=0')
       PHYVAR2D1(wsnv,         'VN=wsnv         ;ON=WSV ;VD=water in under-high-veg snowpack                                  ;VB=p1        ;MIN=0')
@@ -796,7 +796,6 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(evlak,        'VN=evlak        ;ON=EVLA    ;VD=accumulated lake evaporation removed from runoff (kg/m2)      ;VB=p0')
       PHYVAR2D1(lstd,         'VN=lstd         ;ON=LSTD    ;VD=initial lake water storage (kg/m2)                            ;VB=p0')
       PHYVAR2D1(lstf,         'VN=lstf         ;ON=LSTF    ;VD=final lake water storage (kg/m2)                              ;VB=p0')
-      PHYVAR2D1(gridarea,     'VN=gridarea     ;ON=AREA    ;VD=surface area (m2) of grid cell                                ;VB=p0')
       PHYVAR2D1(lakearea,     'VN=lakearea     ;ON=LACS    ;VD=surface area (km2) of lake                                    ;VB=p1')
       PHYVAR2D1(lakd,         'VN=lakd         ;ON=LAKD;    VD=Mean lake depth (m)                                           ;VB=p1; IN=DEEP;')
       PHYVAR2D1(lst,          'VN=lst          ;ON=LST     ;VD=lake surface temperature                                      ;VB=p1')

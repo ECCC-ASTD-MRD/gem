@@ -1,3 +1,8 @@
+module ccc1_tline1_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc1_tline1(taug, coef1, qq, ng, dp, dip, &
      dt, inpt, lev1, gh, lc, iplus, &
@@ -130,3 +135,5 @@ subroutine ccc1_tline1(taug, coef1, qq, ng, dp, dip, &
 
    return
 end subroutine ccc1_tline1
+
+end module ccc1_tline1_mod

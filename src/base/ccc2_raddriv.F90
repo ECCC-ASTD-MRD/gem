@@ -28,7 +28,17 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    use ccc2_gasopts, only: ccc2_gasopts5
    use ccc2_gasoptl, only: ccc2_gasoptl7
    use ccc2_gasoptlgh, only: ccc2_gasoptlgh7
+   use ccc2_strandn_mod, only: ccc2_strandn3
    use ccc2_strandngh, only: ccc2_strandngh4
+   use ccc2_planck_mod, only: ccc2_planck
+   use ccc2_raylev_mod, only: ccc2_raylev2
+   use ccc2_stranup_mod, only: ccc2_stranup3
+   use ccc2_preintr_mod, only: ccc2_preintr3
+   use ccc2_lattenu_mod, only: ccc2_lattenu4
+   use ccc2_sattenu_mod, only: ccc2_sattenu4
+   use ccc_raylei_mod, only: ccc_raylei
+   use ccc_swtran_mod, only: ccc_swtran
+   use ccc_cldifm_mod, only: ccc_cldifm1
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
@@ -1115,7 +1125,7 @@ include "nocld.cdk"
          !    reusing space o3g for dbf
          !----------------------------------------------------------------------
 
-         call ccc2_planck2(bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
+         call ccc2_planck(bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
               1, ni, ni, lay, lev)
 
          gh = .false.

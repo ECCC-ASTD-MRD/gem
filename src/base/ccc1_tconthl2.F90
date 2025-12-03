@@ -1,4 +1,8 @@
-
+module ccc1_tconthl_mod
+   implicit none
+   
+contains
+   
 subroutine ccc1_tconthl3(taug, coef1, coef2, qq, dp, dip, dir, dt, &
      inptr, inpt, mcont, il1, il2, ilg, lay)
 
@@ -209,4 +213,6 @@ subroutine ccc1_tconthl3(taug, coef1, coef2, qq, dp, dip, dir, dt, &
   300 continue
        
       return
-      end
+   end subroutine ccc1_tconthl3
+
+end module ccc1_tconthl_mod

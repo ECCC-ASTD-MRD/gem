@@ -21,6 +21,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
+   use phy_status, only: physeterror
 
 #ifdef HAVE_NEMO
    use cpl_itf     , only: cpl_update

@@ -1,3 +1,9 @@
+module ccc1_preintp_mod
+   implicit none
+   public
+
+contains
+
 !**S/P PREINTP - DETERMINES THE PRESSURE INTERPOLATION POINTS
 !
       subroutine ccc1_preintp (inpt, inptm, dip, dip0, pp, il1, il2, ilg,lay)
@@ -113,4 +119,6 @@
 !       endif
 !
       return
-      end
+      end subroutine ccc1_preintp 
+
+end module ccc1_preintp_mod

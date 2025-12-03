@@ -1,3 +1,10 @@
+module intozon_mod
+   implicit none
+   private
+   public :: intozon2
+
+contains
+
 
 !/@*
 subroutine intozon2(jour, mois)
@@ -76,3 +83,5 @@ subroutine intozon2(jour, mois)
    !-----------------------------------------------------------------
    return
 end subroutine intozon2
+
+end module intozon_mod

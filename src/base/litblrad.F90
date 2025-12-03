@@ -1,6 +1,13 @@
+module litblrad_mod
+   implicit none
+   public
+
+contains
+
 !/@*
 subroutine litblrad (F_file_S, F_myproc)
    use phyrdfile, only: phyrdfile1, READRAD
+   use phy_status, only: physeterror
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -119,3 +126,5 @@ subroutine litblrad (F_file_S, F_myproc)
 !
       return
    end subroutine litblrad
+
+end module litblrad_mod

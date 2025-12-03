@@ -24,11 +24,14 @@ contains
       use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use series_mod, only: series_xst, series_isstep
       use phy_options
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, physeterror
       use phybusidx, except=>znt
       use phymem, only: phyvar
       use ens_perturb, only: ens_spp_get
       use suncos, only: suncos3
+      use radfac_mod, only: radfac4
+      use ccc1_raddriv_mod, only: ccc1_raddriv3
+      use ccc_aerooppro_mod, only: ccc_aerooppro2
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>

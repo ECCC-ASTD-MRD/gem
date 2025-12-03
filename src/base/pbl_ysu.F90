@@ -18,6 +18,7 @@ contains
     use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
     use module_bl_ysu, only: ysu2d
     use vintphy, only: vint_mom2thermo, vint_thermo2mom
+    use phy_status, only: physeterror
     implicit none
 #include <rmnlib_basics.hf>
     !@Object Wrapper for Yonsei University (YSU) PBL scheme

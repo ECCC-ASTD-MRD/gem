@@ -12,7 +12,7 @@ contains
       use debug_mod, only: init2nan
       use phybudget, only: pb_compute, pb_conserve, pb_residual, INT_TYPE_LINEAR
       use phy_options
-      use phy_status, only: phy_error_L, PHY_OK
+      use phy_status, only: phy_error_L, PHY_OK, physeterror
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies

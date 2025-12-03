@@ -1,3 +1,9 @@
+module convect_closure_adjust_shal_mod
+   implicit none
+   public
+
+contains
+
 !    #########################################################################
      SUBROUTINE CONVECT_CLOSURE_ADJUST_SHAL( KLON, KLEV, PADJ,               &
                                    &  PUMF, PZUMF, PUER, PZUER, PUDR, PZUDR  )
@@ -103,3 +109,4 @@ IKE  = KLEV - JCVEXT
 
 END SUBROUTINE CONVECT_CLOSURE_ADJUST_SHAL
 
+end module convect_closure_adjust_shal_mod

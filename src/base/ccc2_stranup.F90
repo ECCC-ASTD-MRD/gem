@@ -1,4 +1,10 @@
-!**S/P STRANUP - CALCULATION OF THE UPWARD SOLAR
+module ccc2_stranup_mod
+   implicit none
+   public
+
+contains
+
+   !**S/P STRANUP - CALCULATION OF THE UPWARD SOLAR
 !
       subroutine ccc2_stranup3 (refl, dp, dt, o3, o2, ib, ig, lev1, &
                           il1, il2, ilg, lay, lev)
@@ -99,4 +105,6 @@
       endif
 !
       return
-      end
+      end subroutine ccc2_stranup3
+
+end module ccc2_stranup_mod

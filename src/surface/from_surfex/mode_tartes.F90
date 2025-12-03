@@ -1514,18 +1514,18 @@ END SUBROUTINE TREAT_ICE_LAYER
 
 !--------------------------------------------------------------------------------
 !--------------------------------------------------------------------------------
-SUBROUTINE SNOWCRO_TARTES(PSNOWDIAMOPT,PSNOWSPHERI,PSNOWRHO,PSNOWDZ,PSNOWG0,PSNOWY0,PSNOWW0,PSNOWB0, &
+SUBROUTINE SNOWCRO_TARTES(PSNOWDIAMOPT, PSNOWSPHERI, PSNOWRHO, PSNOWDZ, PSNOWG0, PSNOWY0, PSNOWW0, PSNOWB0, &
                           PSNOWIMPUR, PALB, PSW_RAD, PZENITH, PAZIM, PDIRCOSZW,  PSLOPEDIR, KNLVLS_USE,     &
-                          PSNOWALB,PRADSINK,PRADXS,ODEBUG,HSNOWMETAMO,P_DIR_SW, P_SCA_SW, PSNOWALB_SP,&
-                          PSPEC_DIR, PSPEC_DIF,OATMORAD,PSNOWALB_FB)
+                          PSNOWALB, PRADSINK, PRADXS, ODEBUG, HSNOWMETAMO, P_DIR_SW, P_SCA_SW, PSNOWALB_SP, &
+                          PSPEC_DIR, PSPEC_DIF, OATMORAD, PSNOWALB_FB)
 
 ! Interface between Tartes and Crocus
 ! M. Lafaysse 26/08/2013
 !
-USE MODD_PREP_SNOW,   ONLY : NIMPUR
-USE MODD_SNOW_METAMO,  ONLY : XUEPSI
-USE MODD_CONST_TARTES,   ONLY : XSNOWIMP_DENSITY
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_PREP_SNOW,     ONLY : NIMPUR
+USE MODD_SNOW_METAMO,   ONLY : XUEPSI
+USE MODD_CONST_TARTES,  ONLY : XSNOWIMP_DENSITY
+USE MODD_SURF_PAR,      ONLY : XUNDEF
 USE MODD_CSTS,          ONLY : XPI
 !
 IMPLICIT NONE
@@ -1544,7 +1544,7 @@ REAL, DIMENSION(:), INTENT(IN)     :: PALB ! soil/vegetation albedo (npoints)
 !
 REAL, DIMENSION(:), INTENT(IN)     :: PSW_RAD ! global broadband incident light (W/m^2) (npoints)
 REAL, DIMENSION(:,:), INTENT(IN)   :: P_DIR_SW, P_SCA_SW ! diffuse and direct spectral irradiance (npoints, jpnbands_atm)
-REAL, DIMENSION(:), INTENT(IN)     :: PZENITH ! zenithal solar angle (npoints)
+REAL, DIMENSION(:), INTENT(IN)     :: PZENITH    ! zenithal solar angle (npoints)
 REAL, DIMENSION(:), INTENT(IN)     :: PAZIM      ! azimuthal angle      (radian from North, clockwise)
 REAL, DIMENSION(:), INTENT(IN)     :: PDIRCOSZW  ! Cosinus of the angle between the
 !                                                  normal to the surface and the vertical
@@ -1648,12 +1648,12 @@ IF ( IPOINTDAY>=1 ) THEN
     !
     JJ = IDAYMASK(JJ_P)
     !
-    ZALB_P      (JJ_P) = PALB      (JJ)
-    ZSW_RAD_P   (JJ_P) = PSW_RAD   (JJ)
-    ZZENITH_P   (JJ_P) = PZENITH   (JJ)
+    ZALB_P      (JJ_P) = PALB       (JJ)
+    ZSW_RAD_P   (JJ_P) = PSW_RAD    (JJ)
+    ZZENITH_P   (JJ_P) = PZENITH    (JJ)
     ZANGLILLUM_P(JJ_P) = ZANGL_ILLUM(JJ)
-    INLVLS_USE_P(JJ_P) = KNLVLS_USE(JJ)
-    ZDIRCOSZW_P   (JJ_P) = PDIRCOSZW(JJ)
+    INLVLS_USE_P(JJ_P) = KNLVLS_USE (JJ)
+    ZDIRCOSZW_P (JJ_P) = PDIRCOSZW  (JJ)
     !
   END DO
   !
@@ -1672,7 +1672,7 @@ IF ( IPOINTDAY>=1 ) THEN
       ZSNOWG0_P     (JJ_P,JL) = PSNOWG0     (JJ,JL)
       ZSNOWY0_P     (JJ_P,JL) = PSNOWY0     (JJ,JL)
       ZSNOWW0_P     (JJ_P,JL) = PSNOWW0     (JJ,JL)
-      ZSNOWB0_P     (JJ_P,JL) = PSNOWB0     (JJ,JL)      
+      ZSNOWB0_P     (JJ_P,JL) = PSNOWB0     (JJ,JL)
       ZSNOWDZ_P     (JJ_P,JL) = PSNOWDZ     (JJ,JL)
       !
     END DO

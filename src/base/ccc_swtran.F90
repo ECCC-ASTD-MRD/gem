@@ -1,3 +1,9 @@
+module ccc_swtran_mod
+   implicit none
+   public
+
+contains
+
 
 subroutine ccc_swtran(refl, tran, cumdtr, tran0, taua, &
      taur, taug, tauoma, tauomga, f1, &
@@ -525,3 +531,5 @@ subroutine ccc_swtran(refl, tran, cumdtr, tran0, taua, &
 
    return
 end subroutine ccc_swtran
+
+end module ccc_swtran_mod

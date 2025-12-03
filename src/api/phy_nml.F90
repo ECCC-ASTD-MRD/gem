@@ -7,6 +7,7 @@ module phy_nml_mod
    use phy_status, only: PHY_ERROR, PHY_NONE, PHY_OK, PHY_CTRL_NML_OK, phy_init_ctrl
    use phy_options
    use cnv_options
+   use cnv_nml_mod, only: cnv_nml2
 #ifdef HAVE_NEMO
       use cpl_itf, only: cpl_nml
 #endif
@@ -41,7 +42,7 @@ contains
       integer, external :: chm_nml
 #endif
 
-      integer, external :: sfc_nml2, cnv_nml2, check_options2, msg_getUnit
+      integer, external :: sfc_nml2, msg_getUnit
 
       integer :: err, unout
       character(len=1024) :: msg_S
@@ -207,6 +208,7 @@ contains
       if (priv_stropt(pbl_diss,        'pbl_diss',        PBL_DISS_OPT) == RMN_ERR) return
       if (priv_stropt(pbl_dissheat,    'pbl_dissheat',    PBL_DISSHEAT_OPT) == RMN_ERR) return
       if (priv_stropt(pbl_conserve,    'pbl_conserve',    PBL_CONSERVE_OPT) == RMN_ERR) return
+      if (priv_stropt(pbl_fnn,         'pbl_fnn',         PBL_FNN_OPT) == RMN_ERR) return
       if (priv_stropt(pbl_func_stab,   'pbl_func_stab',   PBL_FUNC_STAB_OPT) == RMN_ERR) return
       if (priv_stropt(pbl_func_unstab, 'pbl_func_unstab', PBL_FUNC_UNSTAB_OPT) == RMN_ERR) return
       if (priv_stropt(pbl_mlblac_max,  'pbl_mlblac_max',  PBL_MLBLAC_MAX_OPT) == RMN_ERR) return

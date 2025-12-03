@@ -1,3 +1,9 @@
+module convect_closure_thrvlcl_mod
+   implicit none
+   public
+
+contains
+
 !######################################################################
  SUBROUTINE CONVECT_CLOSURE_THRVLCL( KLON, KLEV,                      &
                               &  PPRES, PTH, PRV, PZ, OWORK1,         &
@@ -67,6 +73,7 @@
 USE YOMCST
 USE YOE_CONVPAR
 USE YOE_CONVPAREXT
+use convect_satmixratio_mod, only: convect_satmixratio
 
 IMPLICIT NONE
 !!!#include <arch_specific.hf>
@@ -252,3 +259,4 @@ END WHERE
 
 END SUBROUTINE CONVECT_CLOSURE_THRVLCL
 
+end module convect_closure_thrvlcl_mod

@@ -1,3 +1,9 @@
+module ccc2_uvindex_mod
+   implicit none
+   private
+   public :: ccc2_uvindex2
+
+contains
 
 !/@*
 subroutine ccc2_uvindex2(il1,il2,ilg,fctb,fatb,salb,iuvc,iuva,iuv_method)
@@ -226,8 +232,10 @@ subroutine ccc2_uvindex2(il1,il2,ilg,fctb,fatb,salb,iuvc,iuva,iuv_method)
 
    end select
 
+   return
+   
 contains
-
+   
    !===========================================================================
    subroutine uvindex_scale_tflux(f,salb,index)
       ! Creation       : Y.J. Rochon, Dec 2015, Oct-Nov 2018 
@@ -592,3 +600,4 @@ contains
 
 end subroutine ccc2_uvindex2
 
+end module ccc2_uvindex_mod

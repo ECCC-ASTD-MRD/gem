@@ -89,7 +89,9 @@
                   RHOMAX(I)=450.0-(204.7/ZSNOW(I))*(1.0-EXP(-ZSNOW(I)/0.673))                        
               ELSE                                                      
                   RHOMAX(I)=700.0-(204.7/ZSNOW(I))*(1.0-EXP(-ZSNOW(I)/0.673))                        
-              ENDIF                                                     
+              ENDIF
+          ELSE
+             RHOMAX(I)=0.0
           ENDIF                                                         
 !                                                                       
           IF(FI(I).GT.0. .AND. ZSNOW(I).GT.0.0001 .AND. RHOSNO(I).LT.(RHOMAX(I)-0.01)) THEN  

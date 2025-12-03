@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !   ######################################################################
-    SUBROUTINE SURFACE_AERO_COND(PRI, PZREF, PUREF, PVMOD, PZ0,&
-                                     PZ0H, PRESA_SV, PAC, PRA, PCH    ,HSNOWRES       )
+    SUBROUTINE SURFACE_AERO_COND(PRI, PZREF, PUREF, PVMOD, PZ0,    &
+                                     PZ0H, PRESA_SN, PAC, PRA, PCH    ,HSNOWRES       )
 !   ######################################################################
 !
 !!****  *SURFACE_AERO_COND*  
@@ -81,7 +81,7 @@ REAL, DIMENSION(:), INTENT(IN)    :: PUREF    ! reference height of the wind
                                               ! NOT when coupled to a model (MesoNH)
 REAL, DIMENSION(:), INTENT(IN)    :: PZ0      ! roughness length for momentum
 REAL, DIMENSION(:), INTENT(IN)    :: PZ0H     ! roughness length for heat
-REAL, DIMENSION(:), INTENT(IN)    :: PRESA_SV ! aerodynamic surface resistance from external scheme (0 if not used) 
+REAL, DIMENSION(:), INTENT(INOUT)    :: PRESA_SN ! aerodynamic surface resistance from external scheme (0 if not used) 
 
 !
 REAL, DIMENSION(:), INTENT(OUT)   :: PAC      ! aerodynamical conductance
@@ -143,7 +143,7 @@ DO JI=1,INI
 !
   ZCHSTAR(JI) = CHSTAR(ZMU(JI))
   ZPH    (JI) = PH(ZMU(JI))
-! 
+!
 ENDDO
 !
 IF(YSNOWRES=='RIL' .OR. YSNOWRES=='DEF' .OR. YSNOWRES=='RI1' .OR. YSNOWRES=='RI2') THEN
@@ -156,24 +156,27 @@ IF(YSNOWRES=='RIL' .OR. YSNOWRES=='DEF' .OR. YSNOWRES=='RI1' .OR. YSNOWRES=='RI2
      IF (PRI(JI)< 0.0) THEN
         ZDI(JI) = 1.0 / ( ZVMOD(JI)+ZCHSTAR(JI)*ZCDN(JI)*15.*ZWORK2(JI)**ZPH(JI)*ZFH(JI)*SQRT(-ZSTA(JI)) ) 
         PAC(JI) = ZCDN(JI)*(ZVMOD(JI)-15.0*ZSTA(JI)*ZDI(JI))*  ZFH(JI)
-      ELSE
+     ELSE
         ZDI(JI) = SQRT(ZWORK3(JI) + 5.0* ZSTA(JI))
         PAC(JI) = ZCDN(JI)*ZVMOD(JI)/(1.0+15.0*ZSTA(JI)*ZDI(JI)/ZWORK3(JI)/ZVMOD(JI))*ZFH(JI)    
-      ENDIF
+     ENDIF
 !
-     IF (PRESA_SV(JI) == 0) THEN  ! Use formulation from SURFEX
+     IF (PRESA_SN(JI) < 0) THEN  ! Use formulation from SURFEX
         PRA(JI) = 1. / PAC(JI) 
      ELSE ! Use resistance calculated outside SURFEX
-        PRA(JI) = PRESA_SV(JI)
+        PRA(JI) = PRESA_SN(JI)
         PAC(JI) = 1. / PRA(JI) 
       ENDIF
      PCH(JI) = 1. / (PRA(JI) * ZVMOD(JI))
+
+     ! output RESA_SN
+     PRESA_SN(JI) = PRA(JI)
 !
   ENDDO
 !
 ELSEIF (YSNOWRES=='M98')THEN
 !
-  ! Martin and Lejeune 1998 ; Cluzet et al 2016
+!   Martin and Lejeune 1998 ; Cluzet et al 2016
 !
   DO JI=1,INI
 !
@@ -186,27 +189,30 @@ ELSEIF (YSNOWRES=='M98')THEN
            ZMARTIN(JI) = 1. + (7./  ( 0.83*(ZCDN_M98(JI))**(-0.62) )  ) &
                        * LOG(1.-0.83*(ZCDN_M98(JI))**(-0.62)*PRI(JI))
         ENDIF          
-    ELSE
+     ELSE
         IF (PRI(JI)<0.2) THEN
            ZMARTIN(JI) = MAX(0.75,( 1. - 5.*PRI(JI))**2)!
-            !Nota B. Cluzet : le min servait à empêcher le CH de remonter pour 
-            !des Ri >0.4 c'est une erreur car cela seuille le Ch dès Ri =0 au lieu de le faire dès Ri=0.026
+           !Nota B. Cluzet : le min servait à empêcher le CH de remonter pour 
+           !des Ri >0.4 c'est une erreur car cela seuille le Ch dès Ri =0 au lieu de le faire dès Ri=0.026
         ELSE
            ZMARTIN(JI) = 0.75
         ENDIF
-    ENDIF
+     ENDIF
 !    
-    IF (PRESA_SV(JI) == 0) THEN ! Use formulation from SURFEX
-      PCH(JI) = ZMARTIN(JI) * ZCDN_M98(JI)
-      PRA(JI)=1./(PCH(JI)*ZVMOD(JI))  ! Nota B. Cluzet : checked in noilhan and mahfouf seems ok
-    ELSE ! In the forest, resistance calculated in drag_svs2
-      PRA(JI) = PRESA_SV(JI)
-      PCH(JI)=1./(PRA(JI)*ZVMOD(JI))  ! Nota B. Cluzet : checked in noilhan and mahfouf seems ok
-    ENDIF
+     IF (PRESA_SN(JI) < 0) THEN ! Use formulation from SURFEX
+       PCH(JI) = ZMARTIN(JI) * ZCDN_M98(JI)
+       PRA(JI)=1./(PCH(JI)*ZVMOD(JI))  ! Nota B. Cluzet : checked in noilhan and mahfouf seems ok
+     ELSE ! In the forest, resistance calculated in drag_svs2
+       PRA(JI) = PRESA_SN(JI)
+       PCH(JI)=1./(PRA(JI)*ZVMOD(JI))  ! Nota B. Cluzet : checked in noilhan and mahfouf seems ok
+     ENDIF
 
-    PAC(JI) = 1./(PRA(JI))
+     PAC(JI) = 1./(PRA(JI))
+
+     ! output RESA_SN
+     PRESA_SN(JI) = PRA(JI)
 !
-ENDDO
+  ENDDO
 !
 ENDIF
 !

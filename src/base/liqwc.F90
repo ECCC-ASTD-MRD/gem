@@ -1,3 +1,10 @@
+module liqwc_mod
+   implicit none
+   private
+   public :: liqwc
+
+contains
+
 !**S/R LIQWC
 !
       SUBROUTINE LIQWC(LWC, SIG, T, PSOL, LMX, LEV, MM, SATUCO)
@@ -118,4 +125,6 @@
       ENDDO
       ENDDO
       RETURN
-      END
+   END SUBROUTINE LIQWC
+
+end module liqwc_mod

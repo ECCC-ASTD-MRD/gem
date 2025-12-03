@@ -1,4 +1,8 @@
+module phyput_input_param_mod
+   implicit none
+   public
 
+contains
 
 function phyput_input_param() result(istat)
    use, intrinsic :: iso_fortran_env, only: INT64
@@ -42,3 +46,4 @@ function phyput_input_param() result(istat)
    return
 end function  phyput_input_param
 
+end module phyput_input_param_mod

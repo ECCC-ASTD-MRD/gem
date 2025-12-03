@@ -20,6 +20,7 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
+   use phy_status, only: physeterror
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Calculate the surface temperature (and specific humidity) and

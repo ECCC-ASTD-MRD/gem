@@ -173,6 +173,9 @@ module svs_configs
 ! Emissivity of soil [-]
   REAL, PARAMETER ::  EMSOIL = 0.94
 
+! Assumed fraction of organic content (% by weight)
+  REAL, PARAMETER ::  DEFAULT_ORGANIC_CONTENT = 2.5
+
 !---------------------------------------------------------
 ! Constants related to SVS1 snowpack scheme
 !---------------------------------------------------------
@@ -202,16 +205,35 @@ module svs_configs
   REAL, PARAMETER ::  RAIN1_SNW   = 2.8e-5 ! [kg/m2/s]
   REAL, PARAMETER ::  RAIN2_SNW   = 2.8e-4 ! [kg/m2/s]
 
+! Parameters in CLASS snow albedo scheme
+  REAL, PARAMETER ::  ANSOLD_DRY  = 0.7 ! Old dry snow albedo [-]
+  REAL, PARAMETER ::  ANSOLD_WET  = 0.5 ! Old wet snow albedo [-]
+  REAL, PARAMETER ::  WCRN_ALB_CLASS = 1  ! Snow mass to refresh the surface albedo [kg/m2]
+  REAL, PARAMETER ::  ANSMAX_CLASS  = 0.84 ! Maximum snow albedo [-]
+
+! Parameters for snow cover fraction (adjusted approach of Lalande et al., 2023)
+  REAL, PARAMETER ::  Z0BG_LA23 = 0.01  ! [m] Roughness coefficient used for bare ground 
+  REAL, PARAMETER ::  Z0LV_LA23 = 0.015 ! [m] Roughness coefficient used for low vegetation
+  REAL, PARAMETER ::  Z0HV_LA23 = 0.015 ! [m] Roughness coefficient used for ground below high-vegetation
+  REAL, PARAMETER ::  MFAC_LA23 = 1.6   ! [-]  Adjusted value for SVS  
+  REAL, PARAMETER ::  NFAC_LA23 = 3.    ! [-]
+  REAL, PARAMETER ::  RHON_LA23 = 50.   ! [kg m-3] 
+  REAL, PARAMETER ::  BETA_LA23  = 3E-6 ! [-] 
+
+! Parameters for snow cover fraction (approach of Abolafia-Rosenzweig et al. (2025))
+  REAL, PARAMETER ::  SCF_AR25 = 0.056 ! [m] ! Value optimized for the HRDPS grid at 2.5 km 
+  REAL, PARAMETER ::  MFAC_AR25 = 1.92 ! [-]  ! Value optimized for the HRDPS grid at 2.5 km 
+  REAL, PARAMETER ::  RHON_AR25 = 100. ! [kg m-3] 
+
 !---------------------------------------------------------
 ! Constants related to SVS1 and SVS2 energy budget schemes
 !---------------------------------------------------------
 !
- 
 
 ! Albedo of Bark (S. Wang, Ecological Modelling, 2005) [-]
   REAL, PARAMETER ::  ABARK  = 0.15
 
-  !                       Albedo values from literature [-]
+!                       Albedo values from literature [-]
   REAL, PARAMETER ::   ADRYSAND = 0.35
   REAL, PARAMETER ::   AWETSAND = 0.24
   REAL, PARAMETER ::   ADRYCLAY = 0.15

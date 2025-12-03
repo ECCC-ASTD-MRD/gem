@@ -155,7 +155,7 @@ contains
 
   ! Define bus requirements
   function kessler_phybusinit() result(F_istat)
-    use phy_status, only: PHY_OK, PHY_ERROR
+    use phy_status, only: PHY_OK, PHY_ERROR, physeterror
     use bus_builder, only: bb_request
     implicit none
     integer :: F_istat                          !Function return status

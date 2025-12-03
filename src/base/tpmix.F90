@@ -1,3 +1,9 @@
+module tpmix_mod
+   implicit none
+   public
+
+contains
+
 !** S/P TPMIX
        SUBROUTINE TPMIX(P,THTU,TU,QU,QLIQ,QICE,QNEWLQ,QNEWIC,RATIO2,RL, &
                          XLV0,XLV1,XLS0,XLS1, &
@@ -326,4 +332,6 @@
 !
 !
       RETURN
-      END
+      END SUBROUTINE TPMIX
+
+end module tpmix_mod

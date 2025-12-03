@@ -1,3 +1,8 @@
+module ccc2_preintr_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc2_preintr3(inpr, dir, qq, co2, rhc, il1, il2, ilg, lay)
    implicit none
@@ -81,3 +86,5 @@ subroutine ccc2_preintr3(inpr, dir, qq, co2, rhc, il1, il2, ilg, lay)
 
    return
 end subroutine ccc2_preintr3
+
+end module ccc2_preintr_mod

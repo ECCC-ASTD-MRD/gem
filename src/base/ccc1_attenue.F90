@@ -1,3 +1,9 @@
+module ccc1_attenue_mod
+   implicit none
+   public
+
+contains
+
 !**S/P ATTENUE - CALCULATES THE DOWNWARD FLUX ATTENUATION
 !
       subroutine ccc1_attenue (atten, coef1, o3, qq, dp, dip, dt, dt0, &
@@ -142,4 +148,5 @@
       endif
 !
       return
-      end
+      end subroutine ccc1_attenue
+end module ccc1_attenue_mod

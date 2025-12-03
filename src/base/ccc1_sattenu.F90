@@ -1,9 +1,15 @@
+module ccc1_sattenu_mod
+   implicit none
+   public
+
+contains
+
 !**S/P  SATTENU - CALCULATION OF SOLAR ATTENUATION
 !
       subroutine ccc1_sattenu (atten, ib, ig, rmu, o3, &
                           qq, dp, dip, dt, dt0, &
                           inpt, gh, il1, il2, ilg, s1)
-!
+      use ccc1_attenue_mod, only: ccc1_attenue
       implicit none
 !!!#include <arch_specific.hf>
 !
@@ -117,4 +123,6 @@
       endif
 !
       return
-      end
+      end subroutine ccc1_sattenu
+
+end module ccc1_sattenu_mod

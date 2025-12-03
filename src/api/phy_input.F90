@@ -27,6 +27,8 @@ module phy_input
    use physimple_transforms, only: physimple_transforms3d
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phyfillbus, only: phyfillbus1
+   use intozon_mod, only: intozon2
+   use mod_handle_error, only: collect_error
 
    use rmn_gmm
 

@@ -13,6 +13,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use series_mod, only: series_xst
+      use suncos, only: suncos2
       implicit none
 !!!#include <arch_specific.hf>
 

@@ -1,6 +1,13 @@
+module ccc1_gasopts_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc1_gasopts(taug, gw, dp, ib, ig, o3, qq, inpt, dip, dt, &
      rmu3, lev1, gh, il1, il2, ilg, lay, urbf)
+   use ccc1_tline1_mod, only: ccc1_tline1
+   use ccc1_tline2_mod, only: ccc1_tline2
    implicit none
 !!!#include <arch_specific.hf>
  
@@ -183,3 +190,5 @@ subroutine ccc1_gasopts(taug, gw, dp, ib, ig, o3, qq, inpt, dip, dt, &
 
    return
 end subroutine ccc1_gasopts
+
+end module ccc1_gasopts_mod

@@ -1,7 +1,13 @@
+module ozoref_mod
+   implicit none
+   public
+
+contains
 
 !*@/
 subroutine OZOREF3(O3F,LREF,DLAT,NP,NMAX,LBL,NLAT,ALAT,F)
    use tdpack, only: PI
+   use phy_status, only: physeterror
    implicit none
 !!!#include <arch_specific.hf>
    integer LREF,NP,NMAX,IB,I,J,K,L,NLAT
@@ -80,3 +86,5 @@ subroutine OZOREF3(O3F,LREF,DLAT,NP,NMAX,LBL,NLAT,ALAT,F)
 
    return
 end subroutine OZOREF3
+
+end module ozoref_mod

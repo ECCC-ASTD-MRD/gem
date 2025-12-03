@@ -1,3 +1,8 @@
+module seralc_mod
+   implicit none
+   public
+   
+contains
 
 subroutine SERALC2(NI,NJ,NK)
    use, intrinsic :: iso_fortran_env, only: REAL64
@@ -58,4 +63,6 @@ subroutine SERALC2(NI,NJ,NK)
       end do
 
       return
-      end
+      end subroutine SERALC2
+
+ end module seralc_mod

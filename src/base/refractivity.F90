@@ -1,3 +1,8 @@
+module refractivity_mod
+   implicit none
+   public
+
+contains
 
 subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
         zdct_lvlmin, zdct_sndmax, zdct_sndmin, zdct_str, zdct_thick, &
@@ -243,3 +248,5 @@ subroutine refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
    end do
    return
 end subroutine refractivity2
+
+end module refractivity_mod

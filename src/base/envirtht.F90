@@ -1,3 +1,9 @@
+module envirtht_mod
+   implicit none
+   public
+   
+contains
+
 !** S/P ENVIRTHT
       SUBROUTINE ENVIRTHT(P1,T1,Q1,THT1,R1,RL, &
          ALIQ,BLIQ,CLIQ,DLIQ,AICE,BICE,CICE,DICE)
@@ -96,4 +102,6 @@
 !
 !
       RETURN
-      END
+   END SUBROUTINE ENVIRTHT
+   
+end module envirtht_mod

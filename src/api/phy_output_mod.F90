@@ -14,6 +14,7 @@ module phy_output_mod
    use ptr_store
    use convert_units_mod
    use statfld_dm_mod
+   use mod_handle_error, only: collect_error
    implicit none
    private
    !@objective

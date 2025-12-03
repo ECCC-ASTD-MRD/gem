@@ -1,3 +1,9 @@
+module convect_mixing_funct_mod
+   implicit none
+   public
+
+contains
+
 !     #######################################################
       SUBROUTINE CONVECT_MIXING_FUNCT( KLON,                &
                                      & PMIXC, KMF, PER, PDR )
@@ -124,3 +130,4 @@ END WHERE
 
 END SUBROUTINE CONVECT_MIXING_FUNCT
 
+end module convect_mixing_funct_mod

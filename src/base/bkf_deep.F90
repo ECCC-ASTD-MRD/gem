@@ -1,4 +1,10 @@
-subroutine bkf_deep4(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA, &
+module bkf_deep_mod
+   implicit none
+   public
+
+contains
+
+   subroutine bkf_deep4(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA, &
      & PDTCONV,  ODOWN, KICE,                              &
      & KENSM,                                              &
      & PPABS, PZZ, PDXDY, PHSFLX,                          &
@@ -12,6 +18,9 @@ subroutine bkf_deep4(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA, &
      & OCHTRANS, KCH1, PCH1, PCH1TEN,                      &
      & PUDR, PDDR, PKKFC, PSP, XLAT, MG, MLAC)
    use phy_status, only: phy_error_L
+   use convect_deep_mod, only: convect_deep2
+   use sucst_mod, only: sucst
+   use su_convpar_mod, only: su_convpar, su_convpar1
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -666,3 +675,5 @@ subroutine bkf_deep4(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA, &
    end if
 
 end subroutine bkf_deep4
+
+end module bkf_deep_mod
