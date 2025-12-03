@@ -1,3 +1,9 @@
+module ccc1_tlinehc_mod
+   implicit none
+   public
+
+contains
+
 !**S/P TLINEHC - OPTICAL DEPTH FOR H2O AND CO2
 !
       subroutine ccc1_tlinehc (taug, coef1u, coef1d, &
@@ -269,4 +275,6 @@
  200  continue
 !
       return
-      end
+      end subroutine ccc1_tlinehc
+
+end module ccc1_tlinehc_mod

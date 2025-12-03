@@ -22,7 +22,7 @@
                               FCOR, Z0HA, WTG, &
                               VGH_DENS, Z0MVH,Z0MVL, Z0SNOW, Z0HSN,VGH_HEIGHT,  &
                               LAIVH, ZVCAN, FCANS,SNCMA, &
-                              RESAGR,RESAGRV, RESA_VL, RESA_VH, RES_SNCA, RESA_SV, &
+                              RESAGR,RESAGRV, RESA_VL, RESA_VH, RES_SNCA, RESA_SN, RESA_SV, &
                               HUSURF,HUSURFGV, &
                               HRSURF,HRSURFGV, &
                               HV_VL, HV_VH, HVSN_VH, DEL_VL, DEL_VH,  &
@@ -35,6 +35,7 @@
       use MODD_CSTS
       use svs2_tile_configs
       use canopy_csts
+      use phy_status, only: physeterror
 !
       implicit none
 !!!#include <arch_specific.hf>
@@ -45,7 +46,7 @@
       REAL LAI_VL(N), LAI_VH(N),WRMAX_VH(N),WRMAX_VL(N), ZUSL(N), ZTSL(N), LAT(N)
       REAL FCOR(N), Z0HA(N), Z0HBG(N), Z0HVL(N), Z0HVH(N), Z0HGV(N), FCANS(N)
       REAL VGH_DENS(N), Z0MVH(N), Z0MVL(N), VGH_HEIGHT(N), LAIVH(N), ZVCAN(N)
-      REAL RESAGR(N),RESAGRV(N), RESA_VL(N), RESA_VH(N), RES_SNCA(N), RESA_SV(N)
+      REAL RESAGR(N),RESAGRV(N), RESA_VL(N), RESA_VH(N), RES_SNCA(N), RESA_SN(N), RESA_SV(N)
       REAL HUSURF(N),HUSURFGV(N), HV_VL(N), HV_VH(N), HVSN_VH(N), DEL_VL(N), DEL_VH(N)
       REAL HRSURF(N),HRSURFGV(N), WD1(N), Z0SNOW(N), Z0HSN(N), PSNVH(N)
       REAL WTG(N,svs2_tilesp1), TGRVS(N), SNCMA(N), RHOA(N)
@@ -78,8 +79,6 @@
 !Arguments
 !
 !          - Input/Output -
-! RESAGR    aerodynamical surface resistance for bare ground
-! RESAGRV    aerodynamical surface resistance for bare ground
 ! RESA_VL    aerodynamical surface resistance for low vegetation
 ! RESA_VH    aerodynamical surface resistance for high vegetation
 !
@@ -133,7 +132,7 @@
 ! HUSURFGV   specific humidity of the snow-free ground below high veg
 ! HV_VL        Halstead coefficient of low vegetation canopy
 ! HV_VH        Halstead coefficient of the high vegetation canopy
-! HVSN_VH        Halstead coefficient of the high vegetation canopy accounting for intercepted snow
+! HVSN_VH   Coefficient for the evapotranspiration of the high vegetation canopy accounting for intercepted snow
 ! DEL_VL    fraction of low veg. canopy covered by intercepted water
 ! DEL_VH    fraction of high veg canopy covered by intercepted water
 ! Z0HBG     Bare ground thermal roughness
@@ -141,15 +140,19 @@
 ! Z0HVL     LOW Vegetation thermal roughness
 ! Z0HVH     HIGH Vegetation thermal roughness
 ! Z0MVH      local mom roughness length for high veg.
-! Z0MVL      local mom roughness length for high veg.
-! RES_SNCA  Resistance for sublimation of the intercepted snow in high canopy (
+! Z0MVL     local mom roughness length for low veg.
+! RESAGR    aerodynamical surface resistance for bare ground
+! RESAGRV   aerodynamical surface resistance for bare ground under high vegetation
+! RESA_SN   aerodynamical surface resistance for snow in the open
+! RESA_SV   aerodynamical surface resistance for snow under high vegetation
+! RES_SNCA  Resistance for sublimation of the intercepted snow in high canopy 
   
 !
       INTEGER I, zopt
 
-      real, dimension(n) :: temp, coef_vh, qsatgr, qsat_vl, qsat_vh, qsat_sv, &
-           zqs_vl, zqs_vh, ctugr, ctugrv, ctuvh, ctuvl, wcrit_hrsurf, z0bg_n,ra,&
-           z0gv_n, qsatgrv,wcrit_hrsurfgv, z0hg, zz0hgv, ZZ0HVH, ZZ0HVL, TSV_CORR
+      real, dimension(n) :: temp, coef_vh, qsatgr, qsat_vl, qsat_vh, qsat_sv, qsat_sn,&
+           zqs_vl, zqs_vh, zqs_sn, ctugr, ctugrv, ctuvh, ctuvl, ctusn, ctusv, wcrit_hrsurf, z0bg_n,ra,&
+           z0gv_n, qsatgrv,wcrit_hrsurfgv, z0hg, zz0hgv, ZZ0HVH, ZZ0HVL, TSV_CORR, TS_CORR
      real, dimension(n) :: ZUGV, ZTGV, ZZ0MGV, ZDH, QSATI_VH, VSUBL, Z0MVH_EFF, &
                            ZDISPLCAN, ZBELOW, ZUREF_VH,ZTREF_VH,ZDIAG_TOP,ZZ0_TOP, &
                            STABM_VH, ZUSTAR_VH,LZZ0M_VH, & ! Related to VGH
@@ -556,11 +559,11 @@
            ! including the displacement height  (as in urban_drag, TEB)
            ZTREF_VH(I) = ZTSL(I) +  VGH_HEIGHT(I) - ZDISPLCAN(I)
 
-           ! Compute height use to compute the wind speed at the top of
+           ! Compute height used to compute the wind speed at the top of
            ! the canopy (taking into account the displacement height)
            ZDIAG_TOP(I) = VGH_HEIGHT(I)-ZDISPLCAN(I)
 
-           ! Compute height use derive the stability term used
+           ! Compute height used to derive the stability term used
            ! in the resistance above the canopy 
            ZZ0_TOP(I) = VGH_HEIGHT(I)-ZDISPLCAN(I)
 
@@ -607,7 +610,7 @@
 
          ! Second call to sfc_layer to determine the stability term used
          ! in the resistance above the canopy (see left term in Eq 60 of
-         ! Esery et al. (2024)
+         ! Essery et al. (2024))
           i = sl_sfclayer( THETAA, HU, VMOD, VDIR,ZUREF_VH, ZTREF_VH, &
               TVGHS, ZQS_VH, Z0MVH_EFF, ZZ0_TOP , LAT, FCOR, &
               L_min=sl_Lmin_soil,stabt=STABT_VH,lzz0t=LZZ0T_VH)
@@ -704,7 +707,7 @@
 
       else
          i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
-              TGRS, HUSURF, Z0, Z0HG, LAT, FCOR, &
+              TGRS, HUSURF, Z0BG_N, Z0HG, LAT, FCOR, &
               L_min=sl_Lmin_soil, &
               coeft=CTUGR )
 
@@ -865,21 +868,115 @@
                  ! Total resistance between the surface and the atmospheric forcing level 
                  RESA_SV(I) = RESA_VH(I) + ZRSURF(I)
             ELSE
-                 ! Set to 0 in that case. If it's 0, aero resistance for snow is calculated in surface_aero_cond
-                 RESA_SV(I) = 0. 
+                 ! Set to -999. in that case and aero resistance for snow is calculated in Crocus (surface_aero_cond.F90)
+                 RESA_SV(I) = -999. 
             ENDIF
          ENDDO
 
 
      ELSE ! O2F or FOREST 
 
-         DO i=1,N
-            ! Set to 0 in that case. If it's 0, aero resistance for snow is calculated in surface_aero_cond
-            RESA_SV(I) = 0.
+         IF (lsfclayer_crocus_svs2) THEN ! Use aerodynamic resistance from SVS in Crocus
+
+            if ( svs_dynamic_z0h ) then
+               zopt=9
+               i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+                  TSV_CORR, QSAT_SV, Z0LOC, Z0HSN, LAT, FCOR, optz0=zopt ,&
+                  z0mloc=z0loc, L_min=sl_Lmin_soil, &
+                  coeft=CTUSV, z0t_optz0=Z0HSN )
+
+               if (i /= SL_OK) then
+                  call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+                  return
+               endif
+
+            else
+               i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+                  TSV_CORR, QSAT_SV, Z0SNOW, Z0HSN, LAT, FCOR, &
+                  L_min=sl_Lmin_soil, &
+                  coeft=CTUSV )
+
+               if (i /= SL_OK) then
+                  call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+                  return
+               endif
+               
+
+            endif
+
+            DO I=1,N
+               RESA_SV(I) = 1. / CTUSV(I)
+            END DO
+
+         ELSE
+
+            ! Set to -999. in that case and aero resistance for snow is calculated in Crocus (surface_aero_cond.F90)
+            DO I=1,N
+               RESA_SV(I) = -999.
          ENDDO
 
      ENDIF
 
+     ENDIF
+
+!**     2.F     SURFACE TRANSFER COEFFICIENTS FOR TURBULENT FLUXES FOR SNOW IN THE OPEN
+!*             ---------------------------------------------------------------
+!
+!                      *************************************
+!                      DANS LE CALL DE FLXSURF, LE Z0H DEVRAIT ETRE
+!                      REMPLACER PAR UN Z0H_LOCAL JUSTE POUR LE SOL NU
+!                      *************************************
+!
+
+      DO I=1,N
+            IF (TS(I,1) .LT. EPSILON_SVS) THEN ! If there is no snow, TS == 0 and it creates issues
+               TS_CORR(I) = 273.15
+            ELSE
+               TS_CORR(I) = TS(I,1)
+            ENDIF   
+      ENDDO
+
+      QSAT_SN(:) = QSATI( TS_CORR(:), PS(:) )
+      
+      IF (lsfclayer_crocus_svs2) THEN ! Use aerodynamic resistance from SVS in Crocus
+
+         if ( svs_dynamic_z0h ) then
+            zopt=9
+            i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+               TS_CORR, QSAT_SN, Z0LOC, Z0HSN, LAT, FCOR, optz0=zopt ,&
+               z0mloc=z0loc, L_min=sl_Lmin_soil, &
+               coeft=CTUSN, z0t_optz0=Z0HSN )
+
+            if (i /= SL_OK) then
+               call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+               return
+            endif
+
+         else
+            i = sl_sfclayer( THETAA, HU, VMOD, VDIR, ZUSL, ZTSL, &
+               TS_CORR, QSAT_SN, Z0SNOW, Z0HSN, LAT, FCOR, &
+               L_min=sl_Lmin_soil, &
+               coeft=CTUSN )
+
+            if (i /= SL_OK) then
+               call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+               return
+            endif
+            
+
+         endif
+
+         DO I=1,N
+            RESA_SN(I) = 1. / CTUSN(I)
+         END DO
+
+      ELSE
+         ! Set to -999. in that case and aero resistance for snow is calculated in Crocus (surface_aero_cond.F90)
+         DO I=1,N
+            RESA_SN(I) = -999.
+         END DO
+
+      ENDIF
 
 
 !*       3.     Resistance of the snow intercepted in the high vegetation (RES_SNCA)

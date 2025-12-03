@@ -1,3 +1,9 @@
+module su_convpar_shal_mod
+   implicit none
+   public
+
+contains
+
 !     ###########################
       SUBROUTINE SU_CONVPAR_SHAL
 !     ###########################
@@ -79,3 +85,4 @@ XCDEPTH_D   = kfcdepth  ! maximum allowed shallow cloud depth (m)
 
 END SUBROUTINE SU_CONVPAR_SHAL
 
+end module su_convpar_shal_mod

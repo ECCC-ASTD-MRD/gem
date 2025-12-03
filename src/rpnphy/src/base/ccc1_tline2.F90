@@ -1,3 +1,8 @@
+module ccc1_tline2_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc1_tline2(taug, coef1, coef2, qq, o3, &
      ng2, dp, dip, dt, inpt, &
@@ -145,3 +150,5 @@ subroutine ccc1_tline2(taug, coef1, coef2, qq, o3, &
 
    return
 end subroutine ccc1_tline2
+
+end module ccc1_tline2_mod

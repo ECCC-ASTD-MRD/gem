@@ -1,3 +1,9 @@
+module ccc1_lwtran_mod
+   implicit none
+   public
+
+contains
+
 
 subroutine ccc1_lwtran (fu, fd, slwf, tauci, omci, &
      gci, fl, taual, taug, bf, &
@@ -730,3 +736,5 @@ subroutine ccc1_lwtran (fu, fd, slwf, tauci, omci, &
 
    return
 end subroutine ccc1_lwtran
+
+end module ccc1_lwtran_mod

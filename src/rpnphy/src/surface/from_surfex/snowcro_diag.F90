@@ -303,12 +303,12 @@ DO JJ=1,SIZE(PSNOWSWE,1)
   DO JST = 1,SIZE(PSNOWSWE,2)
     IF ( PSNOWSWE(JJ,JST)>0. ) THEN
       INLVLS_USE(JJ) = JST
-      IF (IMAX_USE < JST) IMAX_USE= JST 
-    ELSE 
+      IF (IMAX_USE < JST) IMAX_USE= JST
+    ELSE
       EXIT
     ENDIF
   ENDDO  !  end loop snow layers
-  
+
 ENDDO    ! end loop grid points
 !IMAX_USE = MAXVAL(INLVLS_USE)
 !
@@ -330,16 +330,16 @@ DO JST=1,IMAX_USE
       ! This complicates everything and is about to change.
       ! For now :
       !
-      GDENDRITIC = ( PSNOWDIAMOPT(JJ,JST)<XVDIAM6*(4.-PSNOWSPHERI(JJ,JST))-XUEPSI )   
+      GDENDRITIC = ( PSNOWDIAMOPT(JJ,JST)<XVDIAM6*(4.-PSNOWSPHERI(JJ,JST))-XUEPSI )
 !
       IF (GDENDRITIC) THEN
 !     Dendritic case
 !
-!  
+!
         PSNOWSIZE(JJ,JST)  = XUNDEF
         PSNOWSPHER(JJ,JST) = PSNOWSPHERI(JJ,JST)
         PSNOWDEND(JJ,JST)  = MAX(0.,MIN(1.,((1/XVDIAM6) * PSNOWDIAMOPT(JJ,JST)-4. + PSNOWSPHER(JJ,JST)) / &
-                                                 (PSNOWSPHER(JJ,JST) - 3.))) 
+                                                 (PSNOWSPHER(JJ,JST) - 3.)))
 !
 !       10 classes of dendricity 0:[0,0.1[, ..., 9:[0.9,1.0[ (value 1.0 does not exist)
         ICLASS_DEND = MIN(INT(10 * PSNOWDEND(JJ,JST)), 9)
@@ -353,10 +353,10 @@ DO JST=1,IMAX_USE
 !
       ELSE
 !     Non dendritic case
-!       
+!
         PSNOWDEND(JJ,JST)=0.
         PSNOWSPHER(JJ,JST) = PSNOWSPHERI(JJ,JST)
-        
+
         IF ((HSNOWMETAMO == 'B21') .OR. (HSNOWMETAMO == 'F06').OR. &
            (HSNOWMETAMO == 'S-F').OR.(HSNOWMETAMO == 'T07'))  THEN
             CALL GETGRAINSIZE_B21(PSNOWDIAMOPT(JJ,JST),PSNOWSPHERI(JJ,JST),PSNOWSIZE(JJ,JST))
@@ -364,7 +364,7 @@ DO JST=1,IMAX_USE
             ! take care strange results with that
             CALL GETGRAINSIZE(PSNOWDIAMOPT(JJ,JST),PSNOWSPHERI(JJ,JST),PSNOWSIZE(JJ,JST),HSNOWMETAMO)
         ENDIF
-!        
+!
 !       10 classes of sphericity 0:[0,0.05[, 1:[0.05,0.15[, ..., 9:[0.85,1.0]. Strange
         ICLASS_SPHER = MIN(INT(10 * PSNOWSPHER(JJ,JST) + 0.05),9)
 !
@@ -514,7 +514,7 @@ DO JST=1,IMAX_USE
           ZLWCMAX = XPERCENTAGEPORE * XRHOLW * (1 - ZDRYDENSITY/XRHOLI)
 !         ZLWCMAX =  SNOWCROHOLD_0D(PSNOWRHO(JJ,JST), PSNOWLIQ(JJ,JST), PSNOWDZ(JJ,JST) * PDIRCOSZW(JJ)) *  &
 !                   XRHOLW / (PSNOWDZ(JJ,JST) * PDIRCOSZW(JJ))
-        ELSE IF ( HSNOWHOLD == 'B02' ) THEN 
+        ELSE IF ( HSNOWHOLD == 'B02' ) THEN
           ZLWCMAX = SNOW3LHOLD(PSNOWRHO(JJ,JST), PSNOWDZ(JJ,JST) * PDIRCOSZW(JJ)) * &
               XRHOLW / (PSNOWDZ(JJ,JST) * PDIRCOSZW(JJ))
         ELSE IF ( HSNOWHOLD == 'SPK' ) THEN
@@ -980,10 +980,10 @@ DO JST=1,IMAX_USE
       PSNOWSSA(JJ,JST) = 6. / (XRHOLI*PSNOWDIAMOPT(JJ,JST))
       !
       !SnowImpurity Concentration
-      
+
       DO JIMP=1,NIMPUR !Modif the cond
-        PSNOWIMP_CONC(JJ,JST,JIMP)=PSNOWIMP(JJ,JST,JIMP)/(1000*PSNOWSWE(JJ,JST)) 
-      END DO 
+        PSNOWIMP_CONC(JJ,JST,JIMP)=PSNOWIMP(JJ,JST,JIMP)/(1000*PSNOWSWE(JJ,JST))
+      END DO
 !
     ENDIF
   END DO

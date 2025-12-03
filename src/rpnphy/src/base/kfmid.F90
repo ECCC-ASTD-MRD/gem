@@ -20,6 +20,13 @@ contains
       use debug_mod, only: init2nan
       use tpdd, only: tpdd1
       use ens_perturb, only: ens_spp_get
+      use phy_status, only: physeterror
+      use difuvd12_mod, only: difuvd1, difuvd2
+      use condload_mod, only: condload
+      use tpmix_mod, only: tpmix
+      use envirtht_mod, only: envirtht
+      use prof5_mod, only: prof5
+      use dtfrznew_mod, only: dtfrznew2
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -106,12 +113,6 @@ contains
 !!$      character(len=8) :: cdmf
 !!$      character(len=2) :: cderl,cderr,cddrl,cddrr
 !!$      character(len=512) :: clfs
-
-      ! External subprograms
-      external tpmix
-      external condload
-      external envirtht
-      external prof5
 
       ! Basic parameters
       include "phyinput.inc"

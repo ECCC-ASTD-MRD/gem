@@ -11,17 +11,21 @@ contains
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, RAUW
-      use phy_status, only: phy_error_L, PHY_OK
+      use phy_status, only: phy_error_L, PHY_OK, physeterror
       use phybusidx
       use phymem, only: phyvar
       use phy_options
       use cnv_options
+      use kfcp_mod, only: kfcp8
       use kfrpn, only: kfrpn4
       use phybudget, only: pb_compute, pb_conserve, pb_residual
       use shallconv, only: shallconv5
       use kfmid, only: kfmid1
       use tendency, only: apply_tendencies
       use conv_mp_tendencies, only: conv_mp_tendencies1
+      use bkf_shallow_mod, only: bkf_shallow6
+      use bkf_deep_mod, only: bkf_deep4
+      use secajus_mod, only: secajus
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>

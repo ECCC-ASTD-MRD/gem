@@ -1,3 +1,8 @@
+module serdbu_mod
+   implicit none
+   public
+   
+contains
 
 !/@*
 subroutine serdbu()
@@ -16,3 +21,5 @@ subroutine serdbu()
    !---------------------------------------------------------------
    return
 end subroutine serdbu
+
+end module serdbu_mod

@@ -11,13 +11,14 @@ contains
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use phybudget, only: pb_compute, pb_conserve, pb_residual
-      use phy_status, only: PHY_OK
+      use phy_status, only: PHY_OK, physeterror
       use phy_options
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
       use ens_perturb, only: ens_spp_get
       use microphy_statcond, only: sc_adjust
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@Object Apply radiative tendencies

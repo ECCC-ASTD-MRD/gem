@@ -1,19 +1,11 @@
-
-!/@*
-function cnv_nml2(F_namelist) result(F_istat)
+module cnv_nml_mod
    use clib_itf_mod, only: clib_isreadok, clib_toupper
    use tdpack_const
    use str_mod, only: str_concat,str_toreal
    use cnv_options
    implicit none
-!!!#include <arch_specific.hf>
-   !@Object Set defaults values and read convection namelist
-   !@Arguments
-   ! F_namelist    File name containing the namelists to read
-   ! F_istat       1 if no error occurs, -1 otherwise
-   character(len=*), intent(in) :: F_namelist
-   integer :: F_istat
-   !*@/
+   private
+   public :: cnv_nml2
 
 #include <rmn/msg.h>
 #include <rmnlib_basics.hf>
@@ -21,26 +13,38 @@ function cnv_nml2(F_namelist) result(F_istat)
    integer, parameter :: CNV_NML_ERR = RMN_ERR
    integer, parameter :: CNV_NML_OK  = RMN_OK + 1
 
-   integer :: err
-   !-------------------------------------------------------------------
-   F_istat = CNV_NML_ERR
-
-   err = cnv_options_init()
-   if (.not.RMN_IS_OK(err)) return
-   err = cnv_nml_read(F_namelist)
-   if (.not.RMN_IS_OK(err)) return
-   err = cnv_nml_check()
-   if (.not.RMN_IS_OK(err)) return
-   call cnv_nml_print()
-   err = cnv_nml_post_init()
-   if (.not.RMN_IS_OK(err)) return
-
-   F_istat = CNV_NML_OK
-  !-------------------------------------------------------------------
-  return
-
-
 contains
+   
+   
+   !/@*
+   function cnv_nml2(F_namelist) result(F_istat)
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Object Set defaults values and read convection namelist
+      !@Arguments
+      ! F_namelist    File name containing the namelists to read
+      ! F_istat       1 if no error occurs, -1 otherwise
+      character(len=*), intent(in) :: F_namelist
+      integer :: F_istat
+      !*@/
+      integer :: err
+      !-------------------------------------------------------------------
+      F_istat = CNV_NML_ERR
+
+      err = cnv_options_init()
+      if (.not.RMN_IS_OK(err)) return
+      err = cnv_nml_read(F_namelist)
+      if (.not.RMN_IS_OK(err)) return
+      err = cnv_nml_check()
+      if (.not.RMN_IS_OK(err)) return
+      call cnv_nml_print()
+      err = cnv_nml_post_init()
+      if (.not.RMN_IS_OK(err)) return
+
+      F_istat = CNV_NML_OK
+      !-------------------------------------------------------------------
+      return
+   end function cnv_nml2
 
 
    function cnv_nml_read(m_namelist) result(m_istat)
@@ -319,4 +323,4 @@ contains
       return
    end function cnv_nml_post_init
 
-end function cnv_nml2
+end module cnv_nml_mod

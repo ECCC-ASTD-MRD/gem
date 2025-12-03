@@ -12,6 +12,13 @@ target_link_libraries(prphynml
    rpnphy
    rmn::rmn
 )
-add_dependencies(prphynml rpnphy ${modelutils_SRC})
+ add_dependencies(prphynml rpnphy ${modelutils_SRC})
 
-install(TARGETS feseri prphynml RUNTIME DESTINATION bin)
+add_executable(test_phyutils maintest_phyutils.F90)
+target_link_libraries(test_phyutils
+   rpnphy
+   rmn::rmn
+)
+add_dependencies(test_phyutils rpnphy ${modelutils_SRC})
+
+install(TARGETS feseri prphynml test_phyutils RUNTIME DESTINATION bin)

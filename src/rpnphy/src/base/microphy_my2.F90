@@ -16,7 +16,7 @@
 
 module microphy_my2
  use, intrinsic :: iso_fortran_env, only: REAL64
- use phy_status, only: phy_error_L
+ use phy_status, only: phy_error_L, physeterror
  use phymem, only: phyvar
 
 #include <rmnlib_basics.hf>

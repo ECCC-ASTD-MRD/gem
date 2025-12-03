@@ -3,6 +3,7 @@
 module phyinputdiag
    use phy_options
    use phymem, only: phymeta, phymem_find, phymem_getmeta, PHY_MAXVARS, PHY_DBUSIDX
+   use gmmx_name_mod
    private
    public :: phyinputdiag1, phyinputdiag_id, phyinputdiag_obj
 

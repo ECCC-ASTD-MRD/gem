@@ -160,10 +160,10 @@ contains
       integer :: i, k, kp1
       do k=1,nk
          kp1 = min(nk,k+1)
-         do i=1,ni
+!!$         do i=1,ni
             fldout1(:,k) = fldin1(:,k) + vcoef(:,k,2) * (fldin1(:,kp1) - fldin1(:,k))
             fldout2(:,k) = fldin2(:,k) + vcoef(:,k,2) * (fldin2(:,kp1) - fldin2(:,k))
-         enddo
+!!$         enddo
       enddo
       return
    end subroutine vint_mom2thermo2
@@ -190,11 +190,11 @@ contains
       integer :: i, k, kp1
       do k=1,nk
          kp1 = min(nk,k+1)
-         do i=1,ni
+!!$         do i=1,ni
             fldout1(:,k) = fldin1(:,k) + vcoef(:,k,2) * (fldin1(:,kp1) - fldin1(:,k))
             fldout2(:,k) = fldin2(:,k) + vcoef(:,k,2) * (fldin2(:,kp1) - fldin2(:,k))
             fldout3(:,k) = fldin3(:,k) + vcoef(:,k,2) * (fldin3(:,kp1) - fldin3(:,k))
-         enddo
+!!$         enddo
       enddo
       return
    end subroutine vint_mom2thermo3

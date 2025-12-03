@@ -26,7 +26,14 @@ contains
     use phy_options, only: dyninread_list_S, cmt_comp_diag, etrmin2
     use debug_mod, only: init2nan
     use tpdd, only: tpdd1
+    use condload_mod, only: condload_safe
+    use tpmix_mod, only: tpmix
+    use envirtht_mod, only: envirtht
+    use prof5_mod, only: prof5
+    use dtfrznew_mod, only: dtfrznew2
+    use azcmtcomp_mod, only: azcmtcomp
     use ens_perturb, only: ens_spp_get
+    use phy_status, only: physeterror
     implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -335,11 +342,6 @@ contains
          sigkfc, ql0,  qi0,  thv0, tke0,    &
          kt0,  wklcl0, idudt1, idvdt1, idudt2, idvdt2, idudt3, idvdt3
     character(len=64), dimension(ix) :: deeptrig
-
-    external tpmix
-    external condload_safe
-    external envirtht
-    external prof5
 
     ! Basic parameters
     include "phyinput.inc"

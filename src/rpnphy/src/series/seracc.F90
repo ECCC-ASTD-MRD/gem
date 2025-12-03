@@ -1,3 +1,8 @@
+module seracc_mod
+   implicit none
+   public
+   
+contains
 
 subroutine SERACC(VS,HH,NSURF,NT,SURFACE,TSMOYHR,SRWRI)
    use, intrinsic :: iso_fortran_env, only: REAL64
@@ -99,3 +104,5 @@ subroutine SERACC(VS,HH,NSURF,NT,SURFACE,TSMOYHR,SRWRI)
 
    return
 end subroutine SERACC
+
+end module seracc_mod

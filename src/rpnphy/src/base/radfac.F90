@@ -1,3 +1,8 @@
+module radfac_mod
+   implicit none
+   public
+
+contains
 
 !*@/
 subroutine radfac4(qoz,ozotoit,sig,nlev,nk,lref, &
@@ -5,6 +10,8 @@ subroutine radfac4(qoz,ozotoit,sig,nlev,nk,lref, &
      o3f,x1,x2,x3,x4,i1,i2, &
      nlat,fozo,clat,pref)
    use phy_status, only: phy_error_L
+   use qozon_mod, only: qozon3
+   use ozoref_mod, only: ozoref3
    implicit none
 !!!#include <arch_specific.hf>
    integer nlev,lref,np,npmax,nlat,nk
@@ -66,3 +73,5 @@ subroutine radfac4(qoz,ozotoit,sig,nlev,nk,lref, &
 
    return
 end subroutine radfac4
+
+end module radfac_mod

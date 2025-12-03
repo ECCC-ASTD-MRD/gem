@@ -1,4 +1,5 @@
 module pbl_ri_diffuse
+  use phy_status, only: phy_error_L, PHY_OK, physeterror
   implicit none
   private
 
@@ -19,7 +20,6 @@ contains
     use tdpack_const, only: CAPPA, CHLC, CHLF, CPD, DELTA, GRAV, RGASD
     use vintphy, only: vint_thermo2mom
     use phy_options, except=>pbl_dissheat
-    use phy_status, only: phy_error_L, PHY_OK
     use phybusidx, except1=>lwc, except2=>iwc, except3=>ti
     use phymem, only: phyvar
     use ens_perturb, only: ens_nc2d, ens_spp_get
@@ -437,7 +437,6 @@ contains
        F_pvars, F_tau, F_ni, F_nkm1)
     use phymem, only: phyvar, phymem_find
     use microphy_utils, only: mp_todiffuse, mp_lwc, mp_iwc
-    use phy_status, only: PHY_OK
     use tendency, only: apply_tendencies
     use tdpack, only: foqst
     use ens_perturb, only: ens_nc2d

@@ -4,7 +4,7 @@ module phybudget
   use energy_budget, only: eb_init, eb_en, eb_pw, eb_conserve_en, &
        eb_conserve_pw, eb_en, eb_pw, eb_residual_en, eb_residual_pw, &
        INT_TYPE_PCHIP,INT_TYPE_STEP,INT_TYPE_LINEAR
-  use phy_status, only: PHY_OK, PHY_ERROR
+  use phy_status, only: PHY_OK, PHY_ERROR, physeterror
   use phymem, only: phyvar
   implicit none
   private

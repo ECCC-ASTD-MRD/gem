@@ -16,8 +16,10 @@ contains
     use debug_mod, only: init2nan
     use tdpack_const, only: GRAV, RGASD, TCDK
     use phy_options
+    use phy_status, only: physeterror
     use phybusidx
     use phymem, only: phyvar
+    use cldwin_mod, only: cldwin1
     use ens_perturb, only: ens_nc2d, ens_spp_get
     implicit none
 
@@ -118,6 +120,7 @@ contains
     real, pointer, dimension(:,:), contiguous :: zqti1m, zqti2m, zqti3m, zqti4m
     real, pointer, dimension(:,:), contiguous :: zeffradc, zeffradi1 , zeffradi2 , zeffradi3 , zeffradi4
     real, pointer, dimension(:), contiguous :: ztopthw,ztopthi
+    real, pointer, dimension(:,:), contiguous :: ztose,ztosi,ztole,ztoli
     real, pointer, dimension(:), contiguous :: zmg,zml,zdlat
     real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp
     real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
@@ -135,6 +138,10 @@ contains
     MKPTR1D(ztlwpin, tlwpin, pvars)
     MKPTR1D(ztopthi, topthi, pvars)
     MKPTR1D(ztopthw, topthw, pvars)
+    MKPTR2Dm1(ztose, tose, pvars)
+    MKPTR2Dm1(ztosi, tosi, pvars)
+    MKPTR2Dm1(ztole, tole, pvars)
+    MKPTR2Dm1(ztoli, toli, pvars)
     MKPTR2Dm1(zcldrad, cldrad, pvars)
     MKPTR2Dm1(zeffradc, effradc, pvars)
     MKPTR2Dm1(zeffradi1, effradi1, pvars)
@@ -744,6 +751,10 @@ contains
                    do l=1,mpcat
                       ztopthi(i) = ztopthi(i) + tausimp(l)
                    enddo
+                   if (associated(ztole)) ztole(i,k) = tauswmp
+                   if (associated(ztose)) ztose(i,k) = tausimp(1)
+                   if (associated(ztoli)) ztoli(i,k) = tausw
+                   if (associated(ztosi)) ztosi(i,k) = tausi
                 endif
 
              endif IF_NOCLOUD

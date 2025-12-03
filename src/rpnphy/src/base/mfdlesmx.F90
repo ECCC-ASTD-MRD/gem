@@ -1,5 +1,10 @@
+module mfdlesmx
+   implicit none
+   public
 
-subroutine MFDLESMX(RES,TT,FF,DF,NI,NK)
+contains
+
+subroutine MFDLESMX1(RES,TT,FF,DF,NI,NK)
    use, intrinsic :: iso_fortran_env, only: REAL64
    use tdpack, only: FOEWAF, FESIF, AERK1W, AERK1I, FESMXX, FDLESMXX
    implicit none
@@ -36,4 +41,6 @@ subroutine MFDLESMX(RES,TT,FF,DF,NI,NK)
    enddo
 
    return
-end subroutine MFDLESMX
+end subroutine MFDLESMX1
+
+end module mfdlesmx

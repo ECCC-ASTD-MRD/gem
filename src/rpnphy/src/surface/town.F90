@@ -77,6 +77,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    use sfc_options, only: atm_tplus, atm_external, jdateo, zu, zt, impflx &
         ,urb_diagwind, urb_diagtemp, sl_Lmin_town, vamin
    use sfcbus_mod
+   use phy_status, only: physeterror
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -430,7 +431,8 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    i = sl_sfclayer(pthetaa,pqa,zvmod,zvdir,puref,pzref,ztsurf,zqsurf,  &
         zz0,zz0t,zdlat,zfcor,optz0=0,L_min=sl_Lmin_town,hghtm_diag=zu, &
         hghtt_diag=zt,ilmo=zilmo,h=zhst,ue=zfrv,flux_t=zftemp,flux_q=zfvap,  &
-        coefm=zbm,coeft=zbt,u_diag=zudiag,v_diag=zvdiag)
+        coefm=zbm,coeft=zbt,u_diag=zudiag,v_diag=zvdiag,z0m_optz0=zz0, &
+        z0t_optz0=zz0t)
 
    if (i /= SL_OK) then
       call physeterror('town', 'error returned by sl_sfclayer(number 1)')
@@ -439,7 +441,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 
       do i=1,n
          zalfat(i) = -zfc(i)/(xcpd*prhoa(i))
-         zalfaq(i) = -psftq(i)
+         zalfaq(i) = -psftq(i)/prhoa(i)
         if (.not.impflx) zbt(i) = 0.
         if (impflx) then
          zalfat(i) = zalfat(i) - zbt(i) * pthetaa(i)

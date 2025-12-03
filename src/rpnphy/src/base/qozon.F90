@@ -1,3 +1,9 @@
+module qozon_mod
+   implicit none
+   private
+   public :: qozon3
+
+contains
 
 subroutine qozon3 (oz, ozotoit,ozzx, press, s,lev,nk,np,nmax, &
      lref,pref, x, xm, y, ym, is,ism)
@@ -131,4 +137,5 @@ subroutine qozon3 (oz, ozotoit,ozzx, press, s,lev,nk,np,nmax, &
  185   continue
 !
       return
-      end
+      end subroutine qozon3
+end module qozon_mod

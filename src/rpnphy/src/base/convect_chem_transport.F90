@@ -1,3 +1,8 @@
+module convect_chem_transport_mod
+   implicit none
+   public
+
+contains
 
 subroutine CONVECT_CHEM_TRANSPORT1(KLON, KLEV, KCH, PCH1, PCH1C,     &
      & KDPL, KPBL, KLCL, KCTL, KLFS, KDBL, &
@@ -245,3 +250,4 @@ subroutine CONVECT_CHEM_TRANSPORT1(KLON, KLEV, KCH, PCH1, PCH1C,     &
 
 end subroutine CONVECT_CHEM_TRANSPORT1
 
+end module convect_chem_transport_mod

@@ -1,3 +1,8 @@
+module azcmtcomp_mod
+   implicit none
+   public
+
+contains
 
 !/@*
 subroutine azcmtcomp(nstep, dt2, mf, u0, uu, ud, w, adiag, aodiag, &
@@ -112,3 +117,4 @@ subroutine azcmtcomp(nstep, dt2, mf, u0, uu, ud, w, adiag, aodiag, &
    return
 end subroutine azcmtcomp
 
+end module azcmtcomp_mod

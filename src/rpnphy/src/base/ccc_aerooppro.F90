@@ -1,4 +1,8 @@
+module ccc_aerooppro_mod
+   implicit none
+   public
 
+contains
 
 subroutine ccc_aerooppro2(tauae,exta,exoma,exomga,fa,absa, &
      tt,shtj,sig,ps,lat,mg,ml,pbl,mrk2, &
@@ -198,3 +202,5 @@ subroutine ccc_aerooppro2(tauae,exta,exoma,exomga,fa,absa, &
 
    return
 end subroutine ccc_aerooppro2
+
+end module ccc_aerooppro_mod

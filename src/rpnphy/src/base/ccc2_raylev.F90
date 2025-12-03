@@ -1,3 +1,8 @@
+module ccc2_raylev_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc2_raylev2(taur, ig, dp, rmu3, il1, il2, ilg, lay)
    implicit none
@@ -59,3 +64,5 @@ subroutine ccc2_raylev2(taur, ig, dp, rmu3, il1, il2, ilg, lay)
 
    return
 end subroutine ccc2_raylev2
+
+end module ccc2_raylev_mod

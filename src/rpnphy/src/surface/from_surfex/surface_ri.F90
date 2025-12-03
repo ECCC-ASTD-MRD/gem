@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
     SUBROUTINE SURFACE_RI(PTG, PQS, PEXNS, PEXNA, PTA, PQA,   &
-                               PZREF, PUREF, PDIRCOSZW, PVMOD, PRI )  
+                          PZREF, PUREF, PDIRCOSZW, PVMOD, PRI )
 !   ######################################################################
 !
 !!****  *SURFACE_RI*  

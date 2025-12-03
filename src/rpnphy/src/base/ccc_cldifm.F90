@@ -1,4 +1,10 @@
-!**S/P CLDIFM - GASEOUS CALCULATION
+module ccc_cldifm_mod
+   implicit none
+   public
+
+contains
+
+   !**S/P CLDIFM - GASEOUS CALCULATION
 !
       subroutine ccc_cldifm1 (cldmin, cldmax, anu, a1, ncd, &
                          ncu, nblk, nct, ncum, ncdm, &
@@ -260,4 +266,6 @@
   105 continue
 !
       return
-      end
+      end subroutine ccc_cldifm1
+
+end module ccc_cldifm_mod

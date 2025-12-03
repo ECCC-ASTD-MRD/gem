@@ -13,6 +13,8 @@ contains
       use clib_itf_mod, only: clib_toupper
       use tracers_attributes_mod, only: tracers_attributes
       use phy_options
+      use str_split_mod
+      use gmmx_name_mod
       implicit none
 !!!#include <arch_specific.hf>
       character(len=*), intent(in)  :: F_string_S
@@ -76,8 +78,6 @@ contains
 
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
-
-      integer, external :: str_split2keyval
 
       integer,parameter :: IDX_VN = 1
       integer,parameter :: IDX_VS = 2

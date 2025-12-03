@@ -1,6 +1,6 @@
 
 module bus_builder
-  use phy_status, only: PHY_OK, PHY_ERROR
+  use phy_status, only: PHY_OK, PHY_ERROR, physeterror
   implicit none
   private
 

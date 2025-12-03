@@ -1,9 +1,16 @@
+module serecri_mod
+   implicit none
+   public
+   
+contains
+
 
 subroutine serecri4(VS,VV,IUN,NSURF, &
      NPROF,NT,SURFACE,PROFILS,NUM,DLAT,DLON, &
      STORE, DATE, ETIKET, H0, NK, &
      COMPRESS)
    use tdpack
+   use indseri_mod, only: indseri
    implicit none
 !!!#include <arch_specific.hf>
    integer NSURF,NPROF
@@ -66,7 +73,7 @@ subroutine serecri4(VS,VV,IUN,NSURF, &
    ! F_DIAG   .TRUE. to compute diagnostics
    !          .FALSE. to not compute diagnostics
 
-   integer, external :: FSTECR, INDSERI
+   integer, external :: FSTECR
 
    integer, parameter :: STDERR=0
    character(len=1) VT
@@ -136,3 +143,5 @@ subroutine serecri4(VS,VV,IUN,NSURF, &
 
    return
 end subroutine serecri4
+
+end module serecri_mod

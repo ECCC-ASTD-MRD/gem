@@ -1,3 +1,8 @@
+module cldwin_mod
+   implicit none
+   public
+
+contains
 
 subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
    use, intrinsic :: iso_fortran_env, only: INT64
@@ -193,3 +198,5 @@ subroutine CLDWIN1(BM,FM,T,HU,PS,SIGMA,NI,NK,SATUCO)
    !--------------------------------------------------------
    return
 end subroutine CLDWIN1
+
+end module cldwin_mod

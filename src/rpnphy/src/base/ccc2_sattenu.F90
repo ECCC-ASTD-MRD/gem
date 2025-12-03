@@ -1,9 +1,15 @@
+module ccc2_sattenu_mod
+   implicit none
+   public
+
+contains
+
 !**S/P  SATTENU - CALCULATION OF SOLAR ATTENUATION
 !
       subroutine ccc2_sattenu4 (atten, ib, ig, rmu, o3, co2, &
                           ch4, o2, dp, dip, dt, dt0, &
                           inpt, gh, il1, il2, ilg)
-!
+      use ccc2_attenue_mod, only: ccc2_attenue4
       implicit none
 !!!#include <arch_specific.hf>
 !
@@ -150,4 +156,6 @@
       endif
 !
       return
-      end
+      end subroutine ccc2_sattenu4
+
+end module ccc2_sattenu_mod

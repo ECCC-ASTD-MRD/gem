@@ -1,3 +1,14 @@
+module convect_shallow_mod
+   use convect_updraft_shal_mod, only: convect_updraft_shal3
+   use convect_trigger_shal_mod, only: convect_trigger_shal4
+   use convect_uv_transport_shal_mod, only: convect_uv_transport_shal1
+   use convect_closure_shal_mod, only: convect_closure_shal5
+   use convect_chem_transport_mod, only: convect_chem_transport1
+   implicit none
+   private
+   public :: convect_shallow6
+
+contains
 
 subroutine convect_shallow6(KLON, KLEV, ITEST, PDTCONV, &
      &                      PPABST, PZZ, &
@@ -1006,3 +1017,5 @@ subroutine convect_shallow_c(KLON, KLEV, ITEST, ICONV, PDTCONV, &
  
    return
 end subroutine convect_shallow_c
+
+end module convect_shallow_mod

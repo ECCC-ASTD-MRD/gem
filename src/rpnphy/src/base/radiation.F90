@@ -18,6 +18,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use radslop, only: radslop3
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>

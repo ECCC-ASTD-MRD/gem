@@ -1,3 +1,9 @@
+module convect_precip_adjust_mod
+   implicit none
+   public
+
+contains
+
 !     ######################################################################
       SUBROUTINE CONVECT_PRECIP_ADJUST( KLON, KLEV,                        &
                                       & PPRES, PUMF, PUER, PUDR,           &
@@ -278,3 +284,4 @@ END WHERE
 
 END SUBROUTINE CONVECT_PRECIP_ADJUST
 
+end module convect_precip_adjust_mod

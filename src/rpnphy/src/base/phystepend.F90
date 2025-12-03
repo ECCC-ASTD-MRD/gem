@@ -10,7 +10,7 @@ contains
   subroutine phystepend1(F_pvars, F_ni, F_nk)
     use debug_mod, only: init2nan
     use microphy_utils, only: mp_lwc, mp_iwc
-    use phy_status, only: phy_error_L, PHY_OK
+    use phy_status, only: phy_error_L, PHY_OK, physeterror
     use phybusidx, except1=>lwc, except2=>iwc
     use phymem, only: phyvar
     use prep_cw, only: prep_cw3

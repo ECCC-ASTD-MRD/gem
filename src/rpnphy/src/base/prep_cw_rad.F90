@@ -17,6 +17,7 @@ contains
       use phy_options
       use phybusidx
       use phymem, only: phyvar
+      use cldwin_mod, only: cldwin1
       implicit none
 
       !@Object  Prepare liquid/ice water contents and cloudiness for the radiation

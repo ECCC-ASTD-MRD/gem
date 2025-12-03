@@ -17,9 +17,17 @@
 !# Needs: sergdim.F90 serie.F90 series.cdk serdim.F90 seralc2.F90 indseri.F90
 !         serpat2.F90 serfin.F90 seracc.F90 serecri2.F90 pllwfgfw.F90 acclist.cdk
 
+module feseri_mod
+   implicit none
+   public
+   
+contains
 
 subroutine FESERI
    use, intrinsic :: iso_fortran_env, only: REAL64
+   use serie_mod, only: serie3
+   use sergdim_mod, only: sergdim3
+   use serdbu_mod, only: serdbu
    implicit none
 !!!!!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -58,8 +66,6 @@ subroutine FESERI
    !     TAPE64  input file containing POINTS,SURFACE,PROFILS
    !     TAPE35  reformatted standard random output for graphics
    !             on time series (PASTEMP)
-
-   integer, external :: SERGDIM3
 
    integer status,inbr, tmpunit
    character(len=128) :: defo(9),listl(9),lfn(9)
@@ -132,3 +138,5 @@ subroutine FESERI
    !     ---------------------------------------------------------------
    return
 end subroutine FESERI
+
+end module feseri_mod

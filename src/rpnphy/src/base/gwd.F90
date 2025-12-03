@@ -21,6 +21,7 @@ contains
       use ens_perturb, only: ens_spp_get
       use vintphy, only: vint_mom2thermo, vint_thermo2mom
       use gwspectrum, only: gwspectrum6
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@author J.Mailhot RPN(May1990)
