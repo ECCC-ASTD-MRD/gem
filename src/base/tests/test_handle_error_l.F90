@@ -9,6 +9,7 @@
 
 !/@*
 subroutine test_handle_error_l()
+   use mod_handle_error, only: handle_error1_l
    implicit none
 #include <utils4tests.hf>
    !@author  Stephane Chamberland, 2009-11
@@ -19,10 +20,10 @@ subroutine test_handle_error_l()
    mype = utils4test_toy_mpi_init('test_handle_error_L')
 
    iErr = 0
-   call handle_error_L(iErr==0,'test_handle_error_L',TEST_FAILED_MSG)
+   call handle_error1_L(iErr==0,'test_handle_error_L',TEST_FAILED_MSG)
 
    if (mype==1) iErr = -1
-   call handle_error_L(iErr==0,'test_handle_error_L',TEST_PASSED_MSG)
+   call handle_error1_L(iErr==0,'test_handle_error_L',TEST_PASSED_MSG)
 
    call utils4test_fail('Should not get to the end of the sub')
 

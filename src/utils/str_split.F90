@@ -14,6 +14,12 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
+module str_split_mod
+   implicit none
+   public
+
+contains
+   
 !/@*
 subroutine str_split(F_part1,F_part2,F_str,F_sep)
    implicit none
@@ -190,3 +196,5 @@ function str_split2keyval0(F_kv_S,F_string_S,F_nmax) result(F_nkeys)
    !------------------------------------------------------------------
    return
 end function str_split2keyval0
+
+end module str_split_mod

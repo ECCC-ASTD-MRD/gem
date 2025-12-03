@@ -27,6 +27,7 @@ module gmmx_mod
    use vgrid_wb
    use vGrid_Descriptors
    use rmn_gmm
+   use str_split_mod
    implicit none
    private
    !@objective GMM/Buses data/metadata managment tool
@@ -88,7 +89,6 @@ contains
       integer :: F_istat !- exit status or bus index
       !@author  S. Chamberland, 2012-01
       !*@/
-      integer,external :: str_split2keyval
       character(len=WB_MAXSTRINGLENGTH) :: meta_S,kv_S(2,NIDX_MAX)
       integer :: n,flags,nkeys
       !---------------------------------------------------------------------

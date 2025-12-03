@@ -13,8 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END --------------------------------
 
+module fill_halo
+   implicit none
+   public
+
+contains
+   
 !/@*
-subroutine fill_halo (f,minx,maxx,miny,maxy,ni,nj,nk)
+subroutine fill_halo1 (f,minx,maxx,miny,maxy,ni,nj,nk)
    implicit none
 !!!#include <arch_specific.hf>
    !@Object 
@@ -46,4 +52,6 @@ subroutine fill_halo (f,minx,maxx,miny,maxy,ni,nj,nk)
    end do
    !----------------------------------------------------------------------
    return
-end subroutine fill_halo
+end subroutine fill_halo1
+
+end module fill_halo

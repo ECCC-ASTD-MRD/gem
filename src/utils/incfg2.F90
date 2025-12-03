@@ -21,6 +21,7 @@ module incfg2_mod
    use clib_itf_mod, only: clib_tolower, clib_isfile, clib_isreadok
    use str_mod, only: str_tab2space, str_toreal
    use mu_jdate_mod
+   use str_split_mod
    implicit none
    private
    !@objective
@@ -309,7 +310,6 @@ contains
       character(len=*), intent(in) :: F_string_S
       integer :: F_istat
       !*@/
-      integer, external :: str_split2keyval
       integer, parameter :: NMAX = 32
       integer :: nkeys
       character(len=1024) :: string_S, kv_S(2, NMAX)

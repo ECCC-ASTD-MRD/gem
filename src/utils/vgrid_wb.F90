@@ -24,6 +24,7 @@ module vgrid_wb
    use vgrid_ov, only: vgrid_nullify
    use wb_itf_mod
    use rmn_gmm
+   use mod_handle_error, only: collect_error
    implicit none
    private
    !@objective Whiteboard (data store) for vgrid + ip1 <=> index association

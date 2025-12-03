@@ -19,6 +19,7 @@ module vardict_mod
    use clib_itf_mod, only: clib_isfile, clib_isreadok
    use wb_itf_mod
    use str_mod
+   use str_split_mod
    implicit none
    !@author Stephane Chamberland, 2012-05
    !@Objective Var/Fields dictionary: Name, Context/Pkg, Units, Description
@@ -72,7 +73,6 @@ contains
       !@return
       integer :: F_istat
       !*@/
-      integer,external :: str_split2keyval
       integer :: nkeys,n,nextra
       logical :: print_L
       character(len=WB_MAXSTRINGLENGTH) :: kv_S(2,NIDX_MAX),extra_S(NIDX_EXTRA)

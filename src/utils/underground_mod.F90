@@ -16,6 +16,7 @@
 !/@*
 module underground_mod
    use, intrinsic :: iso_fortran_env, only: REAL64
+   use fill_halo, only: fill_halo1
    implicit none
    private
    public :: vt_on_lieb_levels, mslp, gz_vt_on_pres
@@ -62,7 +63,7 @@ contains
       call vt_trial(ttx, mask, vt, gz, fis0, wlao,&
            lieb_levels, Minx,Maxx,Miny,Maxy,ni,nj, nkund, nk )
 
-      call fill_halo (ttx,Minx,Maxx,Miny,Maxy,ni,nj,nkund)
+      call fill_halo1(ttx,Minx,Maxx,Miny,Maxy,ni,nj,nkund)
 
       call liebman_comm (ttx,mask,lieb_conv,lieb_maxite,&
            Minx,Maxx,Miny,Maxy,ni,nj,nkund, &

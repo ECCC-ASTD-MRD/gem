@@ -27,6 +27,7 @@ subroutine test_output_mpi()
    use fstmpi_mod
    use ezgrid_mod
    use rmn_gmm
+   use mod_handle_error, only: handle_error1
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-09
@@ -72,7 +73,7 @@ subroutine test_output_mpi()
    call testutils_assert_eq(RMN_IS_OK(minval(my_id(:))),.true.,'new, parse file')
 
    gridid = priv_defhgrid(hgrid_S,ptopo_grid_npex*NI,ptopo_grid_npey*NJ,NI,NJ,HALO)
-   call handle_error(gridid,'test_output_mpi','Problem defining grid')
+   call handle_error1(gridid,'test_output_mpi','Problem defining grid')
    call priv_defvgrid(vgrid_S,nk)
    ip1surf(1) = 0
    p_ip1 => ip1surf
@@ -88,7 +89,7 @@ subroutine test_output_mpi()
    istat = max(istat,istat2)
    allocate(p0(1-HALO:NI+HALO,1-HALO:NJ+HALO),stat=istat2)
    istat = -1 * max(istat,istat2)
-   call handle_error(istat,'test_output_mpi','allocating mem')
+   call handle_error1(istat,'test_output_mpi','allocating mem')
 
    p0 = 1000.*PRES_MB2PA
 

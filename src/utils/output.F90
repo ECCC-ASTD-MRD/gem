@@ -26,6 +26,8 @@ module output_mod
    use vGrid_Descriptors
    use ptr_store
    use rmn_gmm
+   use mod_handle_error, only: collect_error
+   use vinterp_mod, only: vte_intvertx_isodst
    implicit none
    private
    !@objective 

@@ -787,6 +787,7 @@ end module testutils
 !/@
 subroutine testutils_assert_ok0(F_ok_L,F_name_S,F_msg_S)
    use testutils_stats
+   use mod_handle_error, only: collect_error
    implicit none
    logical, intent(in) :: F_ok_L
    character(len=*), intent(in) :: F_name_S,F_msg_S
