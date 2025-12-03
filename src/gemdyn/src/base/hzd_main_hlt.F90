@@ -28,17 +28,28 @@
       use mem_tstp
       use mem_tracers
       use omp_timing
+      use ver
+      use lam_options
+      use hzd_mod
+      use ptopo 
       use, intrinsic :: iso_fortran_env
       implicit none
 
       logical switch_on_UVW,switch_on_UVW_alh,  switch_on_TR, switch_on_vrtspng_UVT    , &
               switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA, switch_on_THETA_alh
       logical xch_UV,xch_TT,xch_TR,xch_WZD
-      integer i, iter, n
       real, dimension(:,:,:), pointer :: wk
-!
+      integer i,ik,j,dim,k,k0,km,n
+      real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_nk) ::  u_tmp, v_tmp, w_tmp, zdt_tmp
+
 !-------------------------------------------------------------------
 !
+      if (hzd_conserv_th) then 
+!$omp single
+         call get_air_dens_hlt (1)
+!$omp end single
+      endif
+
       if (Lun_debug_L) write (Lun_out,1000)
 
       call gtmg_start (60, 'HZD_main', 1 )
@@ -77,7 +88,9 @@
       if ( switch_on_THETA_alh ) then
          call gtmg_start (62, 'HZD_theta_alh', 60)
          xch_TT = .true.
+!$omp single
          call hzd_theta_z ()
+!$omp end single
          call gtmg_stop (62)
       end if
 
@@ -112,13 +125,14 @@
          xch_UV = .true.
          xch_TT = .true.
          xch_WZD= .true.
-         call hzd_exp_deln ( ut1, Hzd_pwr, Hzd_lnR, wk,&
+
+          call hzd_exp_deln ( ut1, Hzd_pwr, Hzd_lnR, wk,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call hzd_exp_deln ( vt1, Hzd_pwr, Hzd_lnR, wk,&
+          call hzd_exp_deln ( vt1, Hzd_pwr, Hzd_lnR, wk,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call hzd_exp_deln (zdt1, Hzd_pwr, Hzd_lnR, wk,&
+          call hzd_exp_deln (zdt1, Hzd_pwr, Hzd_lnR, wk,&
                             l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call hzd_exp_deln ( wt1, Hzd_pwr, Hzd_lnR, wk,&
+          call hzd_exp_deln ( wt1, Hzd_pwr, Hzd_lnR, wk,&
                              l_minx,l_maxx,l_miny,l_maxy,G_nk)
       endif
       if ( switch_on_UVW_alh ) then
@@ -126,16 +140,62 @@
          xch_UV = .true.
          xch_TT = .true.
          xch_WZD= .true.
-         call hzd_u_alh (ut1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-         call hzd_v_alh (vt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-         call hzd_theta_alh (wt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-         call hzd_theta_alh (zdt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+         
+         if(hzd_hyb_nk > 0) then 
+u_tmp=0. ; v_tmp =0. ; w_tmp =0. ; zdt_tmp =0.
+!$omp do collapse(2)
+            do ik=1,hzd_hyb_nk
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox
+                     u_tmp   (i,j,ik) = ut1 (i,j,l_nk+1-ik) 
+                     v_tmp   (i,j,ik) = vt1 (i,j,l_nk+1-ik) 
+                     w_tmp   (i,j,ik) = wt1 (i,j,l_nk+1-ik) 
+                     zdt_tmp (i,j,ik) = zdt1(i,j,l_nk+1-ik) 
+                  end do
+               end do
+            end do
+!$omp end do 
+!$omp single
+            call hzd_u_alh (ut1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_v_alh (vt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_theta_alh (wt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_theta_alh (zdt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+!$omp end single
+
+            call hzd_exp_deln ( u_tmp, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+            call hzd_exp_deln ( v_tmp, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+            call hzd_exp_deln ( w_tmp, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+            call hzd_exp_deln ( zdt_tmp, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+!$omp do 
+            do ik=1,hzd_hyb_nk
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox
+                     ut1(i,j,l_nk+1-ik)  = u_tmp (i,j,ik)
+                     vt1(i,j,l_nk+1-ik)  = v_tmp (i,j,ik)
+                     wt1(i,j,l_nk+1-ik)  = w_tmp (i,j,ik)
+                     zdt1(i,j,l_nk+1-ik) = zdt_tmp (i,j,ik)
+                  end do
+               end do
+            end do
+!$omp end do 
+         else
+!$omp single
+            call hzd_u_alh (ut1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_v_alh (vt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_theta_alh (wt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_theta_alh (zdt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+!$omp end single
+         endif
+!  Vertical sponge  *
 
          call gtmg_stop (65)
       end if
 
 !********************
-!  Vertical sponge  *
 !********************
 
       if ( switch_on_vrtspng_UVT ) then

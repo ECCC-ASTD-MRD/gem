@@ -34,5 +34,8 @@ module hzd_mod
 
    integer      Hzd_niter,Hzd_niter_tr,Hzd_niter_theta
    real(kind=REAL64) , dimension(:), allocatable :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
+!
+   real, dimension(:,:,:), allocatable :: air_density,air_density_U,air_density_V,air_density_m
+   !real, dimension(:,:,:), allocatable :: hzd_th_tend 
 
 end module hzd_mod
