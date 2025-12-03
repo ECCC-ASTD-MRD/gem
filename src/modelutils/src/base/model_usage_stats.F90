@@ -13,7 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/@*
+module model_usage_mod
+   implicit none
+   public
+
+contains
+
+!!/@*
 subroutine model_usage_stats(F_msg_S,F_print_accum_L)
    implicit none
 !!!#include <arch_specific.hf>
@@ -100,3 +106,5 @@ subroutine model_usage_stats(F_msg_S,F_print_accum_L)
    !----------------------------------------------------------------
    return
 end subroutine model_usage_stats
+
+end module model_usage_mod

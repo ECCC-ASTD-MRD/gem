@@ -24,6 +24,7 @@ module vgrid_from_file_mod
    use sort_mod
    use mu_jdate_mod
    use ptopo_utils
+   use mod_handle_error, only: collect_error
    implicit none
    private
    !@objective 

@@ -9,6 +9,7 @@
 
 !/@*
 subroutine test_handle_error2()
+   use mod_handle_error, only: handle_error_set_callBackFn, handle_error1, handle_error1_l
    implicit none
 #include <utils4tests.hf>
    !@author  Stephane Chamberland, 2009-11
@@ -23,17 +24,17 @@ subroutine test_handle_error2()
    !- should not cause it to quit
    call handle_error_set_callBackFn(test_handle_error_cb_err)
    iErr = 0
-   call handle_error(iErr,'test_handle_error',TEST_FAILED_MSG)
+   call handle_error1(iErr,'test_handle_error',TEST_FAILED_MSG)
 
    !- should revert previously triggered error
    call handle_error_set_callBackFn(test_handle_error_cb_ok)
    iErr = -1
-   call handle_error(iErr,'test_handle_error',TEST_FAILED_MSG)
+   call handle_error1(iErr,'test_handle_error',TEST_FAILED_MSG)
 
    !- should NOT revert previously triggered error
    call handle_error_set_callBackFn(test_handle_error_cb_err)
    iErr = -1
-   call handle_error(iErr,'test_handle_error',TEST_PASSED_MSG)
+   call handle_error1(iErr,'test_handle_error',TEST_PASSED_MSG)
 
    call utils4test_fail('Should not get to the end of the sub')
 

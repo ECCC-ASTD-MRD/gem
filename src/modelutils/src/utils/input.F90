@@ -27,6 +27,7 @@ module input_mod
    use vinterp_mod
    use time_interp_mod
    use mu_jdate_mod, only: jdate_year, jdate_month, jdate_midmonth, MU_JDATE_ANY
+   use mod_handle_error, only: collect_error
    implicit none
    private
    !@objective 
