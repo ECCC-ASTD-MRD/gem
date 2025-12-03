@@ -30,12 +30,15 @@
       use gmm_vt0
       use gmm_vt1
       use gmm_iau
+      use gmm_hzd
       use adz_mem
       use mem_tstp
       use mem_tracers
       use cstv
       use ver
       use metric
+      use hvdif_options
+      use step_options 
       use, intrinsic :: iso_fortran_env
       implicit none
       
@@ -53,11 +56,16 @@
                t_interp, w2, w3, w4, invT_8, invT_nh_8,invT_m_8,i_apply_iau
       real(kind=REAL64), parameter :: one=1.d0, half=0.5d0
       logical apply_iau
+
+      real(kind=REAL64) :: i_th_tend
 !
 !     ---------------------------------------------------------------
 !
       i_apply_iau=0.d0
       if (apply_iau) i_apply_iau=one
+
+      i_th_tend=0.d0
+      if(hzd_apply_th_tend) i_th_tend=one
       
 !$omp do
       do n= 1, ubound(dynt0,1)
@@ -88,6 +96,7 @@
       HLT_nk = l_nk
       HLT_nj = HLT_jn - HLT_j0 + 1
       call HLT_split (1, HLT_nj*HLT_nk, HLT_np, HLT_start, HLT_end)
+
 
 !**********************************************
 ! Compute Ru, Rv : RHS of U, V equations      *
@@ -144,6 +153,8 @@
                              - Cstv_Beta_8 * mu_8 * wt1(i,j,k) &
                + rhs_phytv*((1d0-phy_cplt(i,j))/Cstv_bA_8) * 1./tt1(i,j,k) * phy_tv_tend(i,j,k)
 
+            orhst_ext (i,j,k) = orhst_ext (i,j,k) + i_th_tend*(1d0/Cstv_bA_8) * hzd_th_tend(i,j,k ) 
+
             orhsf_ext(i,j,k) = invT_nh_8 * (GVM%ztht_8(i,j,k)-Ver_z_8%t(k)) * Cstv_bar1_8 &
                          - Cstv_Beta_nh_8 * ( Ver_wpstar_8(k)*zdt1(i,j,k)+Ver_wmstar_8(k)*zdt1(i,j,km) - wt1(i,j,k) )
             div = (ut1 (i,j,k)-ut1 (i-1,j,k))*geomh_invDXM_8(j)     &
@@ -163,6 +174,10 @@
             orhsc_ext (i,j,k) = orhsc_ext (i,j,k) + i_apply_iau*(1d0/Cstv_bA_8) * &
                           (              Ver_wp_8%m(k)*iau_tv_tend(i,j,k )/tt1(i,j,k ) + &
                           Ver_onezero(k)*Ver_wm_8%m(k)*iau_tv_tend(i,j,km)/tt1(i,j,km) ) 
+
+            orhsc_ext (i,j,k) = orhsc_ext (i,j,k) + i_th_tend*(1d0/Cstv_bA_8) * &
+                          (              Ver_wp_8%m(k)*hzd_th_tend(i,j,k ) + &
+                          Ver_onezero(k)*Ver_wm_8%m(k)*hzd_th_tend(i,j,km) ) 
         end do
       end do
       

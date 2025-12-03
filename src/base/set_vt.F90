@@ -26,12 +26,12 @@
       use gmm_smag
       use gmm_phy
       use gmm_iau
+      use gmm_hzd
       use gem_options
       use glb_ld
       use lun
       use tr3d
       use var_gmm
-      use ilmc_lam_array
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -42,10 +42,8 @@
 
       integer, parameter :: maxlenght= 32
       character(len=maxlenght) :: nvar
-      integer :: i,k,j,istat,dim,dimH
+      integer :: i,istat,dim,dimH
       integer :: flag_n, flag_r_n
-      integer :: n,w1,w2,size,il,ir,jl,jr
-
 !
 !     ---------------------------------------------------------------
 !
@@ -153,24 +151,6 @@
       allocate (sumq_8(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
       allocate (air_mass(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
       allocate (w_tr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk))
-
-      !ILMC Allocation
-      il = 1-G_halox ; ir = l_ni+G_halox ; jl = 1-G_haloy ; jr = l_nj+G_haloy
-      allocate (sweep_rd0(Adz_ILMC_sweep_max,il:ir,jl:jr,l_nk))
-      do k=1,l_nk
-        do j=jl,jr
-         do i=il,ir
-          do n=1,Adz_ILMC_sweep_max
-           w1   = 2*n + 1
-           w2   = w1-2
-           size = 2*(w1**2 + w1*w2 + w2*w2)
-           allocate (sweep_rd0(n,i,j,k)%i_rd(size))
-           allocate (sweep_rd0(n,i,j,k)%j_rd(size))
-           allocate (sweep_rd0(n,i,j,k)%k_rd(size))
-          end do
-         end do
-        end do
-      end do
       
       dim = (l_maxx-l_minx+1) * (l_maxy-l_miny+1) * l_nk
       do i=1,Tr3d_ntr
@@ -277,6 +257,9 @@
       istat = min(gmm_create(gmmk_phy_vv_tend_s, phy_vv_tend, meta3d_nk, flag_r_n),istat)
       istat = min(gmm_create(gmmk_phy_tv_tend_s, phy_tv_tend, meta3d_nk, flag_r_n),istat)
       istat = min(gmm_create(gmmk_iau_tv_tend_s, iau_tv_tend, meta3d_nk, flag_r_n),istat)
+      istat = min(gmm_create(gmmk_hzd_th_tend_s, hzd_th_tend, meta3d_nk, flag_r_n),istat)
+      istat = min(gmm_create(gmmk_air_dens_s   , air_dens   , meta3d_nk, flag_r_n),istat)
+      istat = min(gmm_create(gmmk_air_dens_m_s , air_dens_m , meta3d_nk, flag_r_n),istat)
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PHY)')
       end if

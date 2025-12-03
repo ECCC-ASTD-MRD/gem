@@ -23,6 +23,8 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
+#include <arch_specific.hf>
+
       !arguments
       !---------
       integer, intent(in) :: F_minx,F_maxx,F_miny,F_maxy
@@ -35,7 +37,7 @@
       !     Various setups to prepare Bermejo-Conde LAM with ZLF
       !=========================================================
 
-      integer :: i,j,k,i0_e,j0_e,in_e,jn_e,i0_c,j0_c,in_c,jn_c,i0_b,j0_b,in_b,jn_b,k0,k0d2,ext,BCS_BASE
+      integer :: i0_e,j0_e,in_e,jn_e,i0_c,j0_c,in_c,jn_c,i0_b,j0_b,in_b,jn_b,k0,k0d2,ext,BCS_BASE
 !
 !---------------------------------------------------------------------
 !
@@ -54,63 +56,12 @@
          j0_e =    1 + pil_s - ext*south
          jn_e = l_nj - pil_n + ext*north
 
-         if (l_west) then
-!$omp do collapse(2)
-           do i=1,i0_e-1
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)=0.
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
+         if (l_west)  F1(1     :i0_e-1,1     :F_nj,  1:F_nk) = 0.
+         if (l_east)  F1(in_e+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
+         if (l_south) F1(1     :F_ni,  1     :j0_e-1,1:F_nk) = 0.
+         if (l_north) F1(1     :F_ni,  jn_e+1:F_nj,  1:F_nk) = 0.
 
-         if (l_east) then
-!$omp do collapse(2)
-           do i=in_e+1,F_ni
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)=0.
-                 enddo
-              enddo
-           enddo 
-!$omp enddo 
-         endif
-
-         if (l_south) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=1,j0_e-1
-                 do k=1,F_nk 
-                    F1(i,j,k)=0.
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
-
-         if (l_north) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=jn_e+1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)=0.
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
-
-!$omp do collapse(2)
-         do i=i0_e,in_e
-            do j=j0_e,jn_e
-               do k=1,k0d2-1
-                  F1(i,j,k)=0.
-               enddo
-            enddo
-         enddo
-!$omp enddo 
+         F1(i0_e:in_e,j0_e:jn_e,1:k0d2-1) = 0.
 
       !In F2: Keep piloting conditions outside [i0_c:in_c]x[j0_c:jn_c]x[k0:nk] of F1
       !-----------------------------------------------------------------------------
@@ -121,63 +72,12 @@
          j0_c = 1    + pil_s
          jn_c = l_nj - pil_n
 
-         if (l_west) then
-!$omp do collapse(2)
-           do i=1,i0_c-1
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F2(i,j,k)= F1(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
+         if (l_west)  F2(1     :i0_c-1,1     :F_nj,  1:F_nk) = F1(1     :i0_c-1,1     :F_nj,  1:F_nk)
+         if (l_east)  F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
+         if (l_south) F2(1     :F_ni,  1     :j0_c-1,1:F_nk) = F1(1     :F_ni,  1     :j0_c-1,1:F_nk)
+         if (l_north) F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
 
-         if (l_east) then
-!$omp do collapse(2)
-           do i=in_c+1,F_ni
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F2(i,j,k)= F1(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo
-         endif
-
-         if (l_south) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=1,j0_c-1
-                 do k=1,F_nk 
-                    F2(i,j,k)= F1(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo
-         endif
-
-         if (l_north) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=jn_c+1,F_nj
-                 do k=1,F_nk 
-                    F2(i,j,k)= F1(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
-
-!$omp do collapse(2)
-         do i=i0_c,in_c
-            do j=j0_c,jn_c
-               do k=1,k0-1
-                  F2(i,j,k)= F1(i,j,k)
-               enddo
-            enddo
-         enddo
-!$omp enddo 
+         F2(i0_c:in_c,j0_c:jn_c,1:k0-1) = F1(i0_c:in_c,j0_c:jn_c,1:k0-1)
 
       !In F1: Set ZERO piloting conditions outside EXTENSION (BCS_BASE)
       !----------------------------------------------------------------
@@ -190,53 +90,10 @@
          j0_b =    1 + BCS_BASE*south
          jn_b = l_nj - BCS_BASE*north
 
-         if (l_west) then
-!$omp do collapse(2)
-           do i=1,i0_b-1
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)= 0.
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
-
-         if (l_east) then
-!$omp do collapse(2)
-           do i=in_b+1,F_ni
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)= 0.
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
-
-         if (l_south) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=1,j0_b-1
-                 do k=1,F_nk 
-                    F1(i,j,k)= 0.
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
-
-         if (l_north) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=jn_b+1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)= 0.
-                 enddo
-              enddo
-           enddo
-!$omp enddo 
-         endif
+         if (l_west)  F1(1     :i0_b-1,1     :F_nj,  1:F_nk) = 0.
+         if (l_east)  F1(in_b+1:F_ni,  1     :F_nj,  1:F_nk) = 0.
+         if (l_south) F1(1     :F_ni,  1     :j0_b-1,1:F_nk) = 0.
+         if (l_north) F1(1     :F_ni,  jn_b+1:F_nj,  1:F_nk) = 0.
 
       !In F1: Reset piloting conditions outside [i0_c:in_c]x[j0_c:jn_c]x[k0:nk] stored in F2
       !-------------------------------------------------------------------------------------
@@ -247,63 +104,12 @@
          j0_c = 1    + pil_s
          jn_c = l_nj - pil_n
 
-         if (l_west) then
-!$omp do collapse(2)
-           do i=1,i0_c-1
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)= F2(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo
-         endif
+         if (l_west)  F1(1     :i0_c-1,1     :F_nj,  1:F_nk) = F2(1     :i0_c-1,1     :F_nj,  1:F_nk)
+         if (l_east)  F1(in_c+1:F_ni,  1     :F_nj,  1:F_nk) = F2(in_c+1:F_ni,  1     :F_nj,  1:F_nk)
+         if (l_south) F1(1     :F_ni,  1     :j0_c-1,1:F_nk) = F2(1     :F_ni,  1     :j0_c-1,1:F_nk)
+         if (l_north) F1(1     :F_ni,  jn_c+1:F_nj,  1:F_nk) = F2(1     :F_ni,  jn_c+1:F_nj,  1:F_nk)
 
-         if (l_east) then
-!$omp do collapse(2)
-           do i=in_c+1,F_ni
-              do j=1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)= F2(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo
-         endif
-
-         if (l_south) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=1,j0_c-1
-                 do k=1,F_nk 
-                    F1(i,j,k)= F2(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo
-         endif
-
-         if (l_north) then
-!$omp do collapse(2)
-           do i=1,F_ni
-              do j=jn_c+1,F_nj
-                 do k=1,F_nk 
-                    F1(i,j,k)= F2(i,j,k)
-                 enddo
-              enddo
-           enddo
-!$omp enddo
-         endif
-
-!$omp do collapse(2)
-         do i=i0_c,in_c
-            do j=j0_c,jn_c
-               do k=1,k0-1
-                  F1(i,j,k)= F2(i,j,k)
-               enddo
-            enddo
-         enddo
-!$omp enddo 
+         F1(i0_c:in_c,j0_c:jn_c,1:k0-1) = F2(i0_c:in_c,j0_c:jn_c,1:k0-1)
 
       else
 

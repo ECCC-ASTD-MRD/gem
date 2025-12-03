@@ -26,6 +26,7 @@
       use tr3d
       use clib_itf_mod
       use tracers_attributes_mod, only: tracers_attributes
+      use gmmx_name_mod
       implicit none
 #include <arch_specific.hf>
 

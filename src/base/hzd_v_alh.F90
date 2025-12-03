@@ -21,6 +21,7 @@
       use ver
       use metric
       use hzd_mod
+      use hvdif_options
       use dcst
 !
       use tdpack
@@ -111,7 +112,6 @@
       cdd_v82=0.0d0
       fdg2_4 =0.0 
 !
-!$omp do
       do k = 1, nk
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w-1, l_ni-pil_e+1
@@ -119,7 +119,6 @@
             enddo
          enddo
       enddo
-!$omp enddo
       call rpn_comm_xch_halo(fdg2_4,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 ! aplly gradient
@@ -430,7 +429,6 @@
            enddo
          enddo
         enddo
-!$omp do
           do k=1,NK
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
@@ -458,7 +456,6 @@
              enddo
              enddo
           enddo
-!$omp end do
 !
 ! termes implicit restant        
 ! stencilV
@@ -562,7 +559,7 @@
            enddo
 !
          deallocate (stencil_V)
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooo
+
       do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
               do k = 2 , Nk
@@ -581,6 +578,18 @@
 ! enddo iter
 
    enddo
+
+      ! Hybrid diffusion if hzd_hyb_nk >0
+      if(hzd_hyb_nk > 0) then
+         do k = nk-hzd_hyb_nk+1, nk
+            do j=1+pil_s-1, l_nj-pil_n+1
+               do i=1+pil_w-1, l_ni-pil_e+1
+                  F_sol1(i,j,k) = fdg2_4(i,j,k )
+               enddo
+            enddo
+         enddo
+      endif
+
 
       return
       end
