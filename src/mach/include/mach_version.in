@@ -1,0 +1,7 @@
+       character(len=50),parameter :: MACH_NAME_S = "GEMMACH"
+       character(len=50),parameter :: MACH_VERSION_S = "@mach_VERSION@"
+       character(len=50),parameter :: MACH_DSTP_S = "@BUILD_DATE@"
+       character(len=50),parameter :: MACH_EC_ARCH_S = "@EC_ARCH@"
+       character(len=50),parameter :: MACH_ORDENV_ARCH_S = "@EC_ORDENV_ARCH@"
+       character(len=50),parameter :: MACH_ORDENV_PLAT_S = "@EC_PLAT@"
+       character(len=50),parameter :: MACH_COMP_ARCH_S = "@EC_COMPILER@"

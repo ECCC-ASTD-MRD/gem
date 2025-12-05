@@ -1,0 +1,188 @@
+ program liebman_main
+       implicit none
+
+!**************************************************************************************
+!   
+!   On fabrique des masques pour les champs de surface: 
+!   ensuite on applique liebman
+!   
+!  
+!   Date : Nov 2013, Manon Faucher
+!   adapte a GM : Nov 2014 S Gravel
+!
+!***************************************************************************************
+
+!****************************
+! Declaration
+!****************************
+
+! Declaration des variables simples
+
+      integer i,ii,j,jj,k,l,key,ier,istat
+
+! Entiers des caracteristiques d'un article  pointe par key apres FSTLIR
+
+      integer ip1,ip2,ip3
+      character*12 etiket
+      character*4 nomvar
+      character*2 typvar,mask
+      character*1 grtyp
+      real dumwrk
+
+! Entiers pour les affectations des sorties d'un article de pointeur key apres FSTPRM 
+! Et utilisable dans FSTECR
+
+      integer dateo, datev, deet, npas, ni, nj, nk, nbits, ni_mg, nj_mg
+      integer datyp, ig1, ig2, ig3, ig4 
+      integer swa, lng, dltf
+      integer ubc, extra1, extra2, extra3
+      logical rewrit
+
+! UNIT
+
+      integer iun62,iun63,iun64
+
+! Nom des subroutines prelevees de la lib (bibliotheque..)
+
+! FNOM permet de nommer un numero d'unit utilise ensuite
+! FSTOUV le fichier lie a l'unit correspondant
+! FSTLIR lit l'article choisit suivant des criteres
+! FSTECR ecrit un article dans un fichier d'un autre unit ouvert prealablement
+
+      integer, external :: fnom,exdb,exfin,fstouv,fstfrm
+      integer, external :: fstprm,fstinl,fstluk,fstecr,fstinf
+      integer, external :: newdate,incdat,compact_input
+
+      character*128 mask_operation
+
+! Declaration des variables pour la converstion en format IML
+
+      integer lislon,nlis,err,mg_key,i0_key,gl_key
+      parameter (nlis = 1024)
+      integer liste (nlis)
+      real, parameter :: near_one= .99999
+      real frmax
+      real, dimension(:,:),allocatable :: champ1,champ2,champ3,champ4
+      real, dimension(:,:),allocatable :: frout
+      real, dimension(:,:),allocatable :: mg
+
+  !  CCARD preparation
+      integer, parameter :: NARGS=5
+
+      character(len=1024) :: arglist(NARGS), default(NARGS), valeurs(NARGS)
+
+      data arglist /'i.','o.','var.','mask.','conv.'/
+      data default /'UNDEFINED','UNDEFINED','UNDEFINED','UNDEFINED','UNDEFINED'/
+      data valeurs /'UNDEFINED','UNDEFINED','UNDEFINED','UNDEFINED','UNDEFINED'/
+
+!********************
+! Initialisation
+!********************
+
+      call ccard(arglist,default,valeurs,NARGS,-1)
+      err=0
+      do i=1,NARGS
+         if (trim(valeurs(i)) == 'UNDEFINED') then
+            print*, "-",trim(arglist(i))," is undefined -- ABORT"
+            err=-1
+         else
+            print*,trim(arglist(i)),' = ',trim(valeurs(i))
+         endif
+      end do
+      if (err.lt.0) call qqexit(1)
+
+      mask           = valeurs(4)(1:2)
+      mask_operation = valeurs(4)(4:)
+      read(valeurs(5),*) frmax
+ 
+      iun62 = 0
+      iun64 = 0
+
+      if (fnom(iun62,valeurs(1),'RND+OLD',0).lt.0) then
+         print*, 'erreur affectation UNIT62:', valeurs(1)
+         call qqexit(1)
+      else
+         if (fstouv(iun62,'RND').lt.0) then
+            print*, 'erreur ouverture UNIT62:', valeurs(1)
+            call qqexit(1)
+         endif
+      endif
+
+      if (fnom(iun64,valeurs(2),'RND',0).lt.0) then
+         print*, 'erreur affectation UNIT62:', valeurs(2)
+         call qqexit(1)
+      else
+         if (fstouv(iun64,'RND').lt.0) then
+            print*, 'erreur ouverture UNIT62:', valeurs(2)
+            call qqexit(1)
+         endif
+      endif
+
+! on fabrique les masques non_sol, non_gl_c et sol_a_100
+
+      mg_key=fstinf (iun62,ni_mg,nj_mg,nk,-1,' ',-1,  -1,  -1,' ',mask)
+      if (mg_key < 0 ) then
+         print*
+         print*,'MASK field not found in the input file. ABORT!!'
+         print*,'mask varname = ',mask
+         call qqexit(1)
+      end if
+
+      allocate (mg(ni_mg,nj_mg))
+
+      key = fstluk (mg,mg_key,ni_mg,nj_mg,nk)
+
+      if (mask_operation=='NEG') call negmask(mg,ni_mg,nj_mg)
+      if (mask_operation=='SOL100') then
+         do j=1,nj_mg
+         do i=1,ni_mg
+              if (mg(i,j) .ge. near_one) then 
+                 mg(i,j)= 1.
+              else
+                 mg(i,j)= 0. 
+              endif
+          end do
+          end do
+      endif
+
+      nomvar = valeurs(3)
+
+      err = fstinl (IUN62,ni,nj,nk,-1,' ',-1,-1,-1,' ',nomvar,&
+                                           liste,lislon,nlis)
+      if (err < 0 ) then
+        print*
+        print*,'Field not found in the input file. ABORT!!  ', nomvar
+        call qqexit(1)
+      end if
+
+      if (ni /= ni_mg .or. nj /= nj_mg) then
+        print*,'MASK and FIELD are not on the same grid. ABORT!!'
+        print*,'MASK  ni,nj =',ni_mg,nj_mg
+        print*,'FIELD ni,nj =',ni,nj
+        call qqexit(1)
+      end if
+
+      allocate (champ2(ni,nj),frout(ni,nj))
+
+      do ii=1,lislon
+
+         key = fstluk (champ2,liste(ii),ni,nj,nk)
+
+         call lieb_limite (frout,champ2,mg,frmax,ni,nj)
+      
+         ISTAT=FSTPRM(liste(ii), dateo, deet, npas, ni, nj, nk, nbits,&
+              datyp, ip1, ip2, ip3, typvar, nomvar, etiket,&
+              grtyp, ig1, ig2, ig3, ig4, swa, lng, dltf,&
+              ubc, extra1, extra2, extra3)
+
+         err = fstecr (frout,dumwrk,-32,iun64,dateo, deet,&
+              npas,ni,nj,nk,ip1,ip2,ip3,typvar,nomvar,etiket,&
+              'Z', ig1, ig2, ig3, ig4, datyp, .false.)
+
+      end do
+
+      istat = fstfrm(iun62)
+      istat = fstfrm(iun64)
+
+end program
+

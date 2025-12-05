@@ -1,0 +1,20 @@
+NAME       : mach
+VERSION    : 3.3.0-a17.0
+BUILD      : 
+DESCRIPTION: MACH chemistry library
+SUMMARY    : Atmospheric gas and aerosol chemistry module within RPN physics. This requires select changes in rpnphy library routines with "#ifdef HAVE_MACH" directive.  The MACH library now compiles without the use of `rpnphy_chm_stubs` and compiles directly under rpnphy library.
+MAINTAINER : ECCC/S&T/ASTD/AQRI
+URL        : https://gitlab.science.gc.ca/ARQI-GEMMACH
+DOC        : https://wiki.cmc.ec.gc.ca/wiki/GEM-MACH
+
+# Dependencies 
+#    =,<,<=,>,>= : Version rules
+#    ~           : Optional
+
+rmn  >= 20.1.0-a8
+tdpack >= 1.6.3.6
+vgrid >= 6.9.6
+rpncomm >= 4.6.4
+modelutils = 1.8.0-a10
+rpnphy = 6.3.0-a17
+gemdyn = 5.3.0-a17
