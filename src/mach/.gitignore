@@ -1,8 +1,0 @@
-*_headers
-build-*
-work-*
-bin 
-include/mach_version.inc
-lib 
-gm-test*
-*listing*
