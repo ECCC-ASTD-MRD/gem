@@ -1,0 +1,86 @@
+stages:
+  - check_doc
+  - initialize_ci
+  - compile_gm
+  - run_gm
+  - assemble_out
+  - validate_res
+before_script:
+  - ECCI_USER_test_maestro=/fs/site5/eccc/aq/r1/${USER}/maestro/gm-test_${CI_PROJECT_TITLE}_${CI_COMMIT_SHORT_SHA}
+  - ECCI_USER_test_listings=${ECCI_USER_test_maestro}/listings
+  - echo "Information about the test is in ${ECCI_USER_test_maestro}/gm-test-${TRUE_HOST}-info.txt_${CI_COMMIT_SHORT_SHA}"
+  - echo "Additional listings for each stage are in ${ECCI_USER_test_listings}"
+
+check_doc:
+  stage: check_doc
+  variables:
+    ORD_SOUMET_D: "ppp5" # Machine name
+    ORD_SOUMET_C: "1"    # Number of CPUs to use
+    ORD_SOUMET_T: "300"  # Wallclock time (seconds)
+    ORD_SOUMET_CM: "2G"  # Memory
+  script:
+    - tools/check_nml_doc
+
+initialize_ci:
+  stage: initialize_ci
+  variables:
+    ORD_SOUMET_D: "ppp5" # Machine name
+    ORD_SOUMET_C: "1"    # Number of CPUs to use
+    ORD_SOUMET_T: "300"  # Wallclock time (seconds)
+    ORD_SOUMET_CM: "2G"  # Memory
+  script:
+    - echo "Initialize continuous regression test:"
+    - echo " 1. Prepare directory structure for running the test"
+    - echo " 2. Build GEM-MACH source code for compilation"
+    - echo " 3. Prepare input files for running GEM-MACH"
+    - echo " 4. Prepare control output files for validation"
+    - tools/regression-test/initialize-regression-test.sh -i | tee -a ${ECCI_USER_test_maestro}.txt 
+    - mv ${ECCI_USER_test_maestro}.txt ${ECCI_USER_test_listings}/initialize_test.txt
+
+compile_gm:
+  stage: compile_gm
+  variables:
+    ORD_SOUMET_D: "ppp5" # Machine name
+    ORD_SOUMET_C: "80"   # Number of CPUs to use
+    ORD_SOUMET_T: "300"  # Wallclock time (seconds)
+    ORD_SOUMET_CM: "2G"  # Memory
+  script:
+    - echo "Remove the temporary branch that the initialize_ci stage created in the ${CI_PROJECT_DIR}"
+    - git br -D test_${CI_COMMIT_SHORT_SHA}
+    - echo "Compile GEM-MACH"
+    - tools/regression-test/compile-gm.sh ${ECCI_USER_test_maestro} | tee -a ${ECCI_USER_test_listings}/compile_gm.txt
+
+run_gm:
+  stage: run_gm
+  variables:
+    ORD_SOUMET_D: "ppp5" # Machine name
+    ORD_SOUMET_C: "80"   # Number of CPUs to use
+    ORD_SOUMET_T: "1200" # Wallclock time (seconds)
+    ORD_SOUMET_CM: "2G"  # Memory
+  script:
+    - echo "Run GEM-MACH"
+    - tools/regression-test/run-gm.sh ${ECCI_USER_test_maestro} | tee -a ${ECCI_USER_test_listings}/run_gm.txt
+
+assemble_out:
+  stage: assemble_out
+  variables:
+    ORD_SOUMET_D: "ppp5" # Machine name
+    ORD_SOUMET_C: "80"   # Number of CPUs to use
+    ORD_SOUMET_T: "300"  # Wallclock time (seconds)
+    ORD_SOUMET_CM: "2G"  # Memory
+  script:
+    - echo "Assemble GEM-MACH output"
+    - tools/regression-test/assemble-output.sh ${ECCI_USER_test_maestro} | tee -a ${ECCI_USER_test_listings}/assemble_out.txt
+
+validate_res:
+  stage: validate_res
+  variables:
+    ORD_SOUMET_D: "ppp5" # Machine name
+    ORD_SOUMET_C: "1"    # Number of CPUs to use
+    ORD_SOUMET_T: "300"  # Wallclock time (seconds)
+    ORD_SOUMET_CM: "2G"  # Memory
+  script:
+    - if [[ -n $(grep -i "(bit \(\(pattern \)\?changed\?\|pattern\))" <<< ${CI_COMMIT_MESSAGE}) ]] ; then echo "Skip the validation of results" ; exit 0 ; fi
+    - echo "Validate results of GEM-MACH regression test"
+    - tools/regression-test/validate-results.sh ${ECCI_USER_test_maestro} | tee -a ${ECCI_USER_test_listings}/validate_res.txt
+

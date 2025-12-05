@@ -1,0 +1,138 @@
+
+ subroutine lieb_limite (frout,frin,frmask,frmax,fni,fnj)
+!
+      implicit none
+!
+      integer fni,  fnj
+      real    frmax
+      real    frout (fni,fnj)
+      real    frin  (fni,fnj)
+      real    frmask(fni,fnj)
+!
+!author
+!     Andre Plante based - after alain patoine - after liebmn obtained from B. Brassnet
+!
+!revision
+!
+!language
+!     fortran 
+!
+!object
+!     see id section
+!
+!arguments
+! _____________________________________________________________________
+!         |                                             |           |  |
+!  NAME   |             DESCRIPTION                     |DIMENSIONS |IN|
+!         |                                             |           |OU|
+! --------|---------------------------------------------|-----------|--|
+! frout   | output field                                | fni, fnj  | o|
+! --------|---------------------------------------------|-----------|--|
+! frin    |  input field                                | fni, fnj  | i|
+! --------|---------------------------------------------|-----------|--|
+! frmask  | mask: 0 -> don't modify                     | fni, fnj  | i|
+!         |       1 ->       modify                     |           |  |
+! --------|---------------------------------------------|-----------|--|
+! frmax   | convergence criteria                        | scalar    | i|
+! --------|---------------------------------------------|-----------|--|
+! fni     | number of points in x-direction             | scalar    | i|
+! fnj     | number of points in y-direction             | scalar    | i|
+! ----------------------------------------------------------------------
+!
+!implicits
+!
+!modules
+!     none
+!
+!external
+!*
+      integer :: i,j,ii,jj,il,ih,id,jl,jh,jd,pour_mod
+      integer :: n, pnitmax
+      integer :: pnl, pnr, pnb, pnt
+      real :: prfact
+      real :: prmod, prmax
+!     
+      do j=1,fnj
+         do i=1,fni
+            frout(i,j) = frin(i,j)
+         enddo
+      enddo
+!
+!     prfact = overrelaxation coefficient / 4.                           
+!              overrelaxation coefficient must between 1. and 2.        
+!                                                                  
+!     pnitmax = maximum number of iterations                          
+!                                                                
+      prfact = 1.75 * 0.25
+!
+      pnitmax = 200
+!
+!     Begin iterations                                                            *
+!
+      do n=1,pnitmax
+!
+         prmax = 0.0
+!
+!        The following index swaping between iteration allows for a more
+!        symetric expension.
+!         
+         pour_mod=4
+         if(mod(n,pour_mod).eq.0)then
+            il=1
+            ih=fni
+            id=1
+            jl=1
+            jh=fnj
+            jd=1
+         elseif(mod(n,pour_mod).eq.1)then
+            il=fni
+            ih=1
+            id=-1
+            jl=fnj
+            jh=1
+            jd=-1
+         elseif(mod(n,pour_mod).eq.2)then
+            il=1
+            ih=fni
+            id=1
+            jl=fnj
+            jh=1
+            jd=-1
+         elseif(mod(n,pour_mod).eq.3)then
+            il=fni
+            ih=1
+            id=-1
+            jl=1
+            jh=fnj
+            jd=1
+         endif
+
+         do j=jl,jh,jd
+            do i=il,ih,id
+!
+               pnl = max(1  ,i-1)
+               pnr = min(fni,i+1)
+               pnb = max(1  ,j-1)
+               pnt = min(fnj,j+1)
+!     
+               if(frmask(i,j).gt.0.5)then
+                  prmod=prfact*(frout(pnl,j  )+frout(pnr,j  )+&
+                               frout(i  ,pnb)+frout(i  ,pnt)&
+                               -4.*frout(i,j))
+                  prmax=amax1(prmax,abs(prmod))
+                  frout(i,j)=frout(i,j)+prmod
+               endif
+!               print*, frout(i,j),frin(i,j),frmask(i,j),frmax,i,j
+               
+            enddo
+         enddo
+!     
+         if ( prmax .lt. frmax ) exit
+!     
+      enddo
+!
+      print *,'Nombre d''iterations = ',n
+!     
+      return
+ end subroutine lieb_limite 
+
