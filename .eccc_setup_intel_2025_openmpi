@@ -9,6 +9,7 @@
 
 export COMPILER_VERSION=2025.1.0
 
+unset SSMUSE_LD_PREPEND
 . r.load.dot /fs/ssm/main/opt/cmake/cmake-3.30.0
 . ssmuse-sh -x /home/one234/ompi
 . r.load.dot /fs/ssm/main/opt/intelcomp/master/inteloneapi-compiler_2025.1.0_amd64-64
