@@ -3,8 +3,7 @@
 # For internal use at ECCC
 
 # Source this file to:
-# - Load profile, Intel compiler and code-tools for Intel, depending on compiler version
-# - Load RPN-SI libraries and utilities, and RPNPY
+# - Load profile, Intel compiler and code-tools for Intel 2025 with OpenMPI
 # - Load a script for common setup to all compilers
 
 export COMPILER_VERSION=2025.1.0
@@ -38,5 +37,6 @@ fi
 export COMPILER_SUITE=intel
 . ./.common_setup ${COMPILER_SUITE}
 
-# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
-export WITH_SYSTEM_RPN=TRUE
+# Set WITH_SYSTEM_RPN variable to FALSE, as RPN libraries are not available for OpenMPI
+export WITH_SYSTEM_RPN=FALSE
+export GEM_SETUP_SCRIPT_NAME=.eccc_setup_intel_2025.1.0_openmpi

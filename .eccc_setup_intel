@@ -7,12 +7,10 @@
 # - Load RPN-SI libraries and utilities, and RPNPY
 # - Load a script for common setup to all compilers
 
-DOMAIN=`hostname -d`
-
 # Check name of the script called, to export corresponding Intel compiler version
-INTEL_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
-case ${INTEL_SCRIPT_NAME} in
+case ${SETUP_SCRIPT_NAME} in
     .eccc_setup_intel)
         export COMPILER_VERSION=2025.1.0
         ;;
@@ -70,3 +68,4 @@ export COMPILER_SUITE=intel
 
 # Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
 export WITH_SYSTEM_RPN=TRUE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}
