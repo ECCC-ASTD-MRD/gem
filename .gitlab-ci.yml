@@ -154,7 +154,7 @@ build:rhel-8-amd64_gnu-14.2.0:
   when: always
   script:
     - set +e
-    - . ./.eccc_setup_gnu_14
+    - . ./.eccc_setup_gnu_14.2.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.2.0
     - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-14.2.0
@@ -1757,7 +1757,7 @@ THEO_schar_gnu:
   allow_failure: true
   script:
     - set +e
-    - . ./.eccc_setup_gnu_14
+    - . ./.eccc_setup_gnu_14.2.0
     - set -e
     - cd $GEM_WORK
     - CFG=5.2GEM_cfgs_GY_FISL_H
