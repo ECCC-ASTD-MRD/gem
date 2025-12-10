@@ -4,9 +4,11 @@
 
 # Source this file to:
 # - Load profile and code-tools for gnu, depending on compiler version
-# - Load profile and code-tools for gnu
 # - Load RPN-SI libraries and utilities, and RPNPY
 # - Load a script for common setup to all compilers
+
+# Check name of the script called, to load the proper code-tools
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 DOMAIN=`hostname -d`
 
@@ -49,3 +51,4 @@ export COMPILER_VERSION
 
 # Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
 export WITH_SYSTEM_RPN=TRUE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}
