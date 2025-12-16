@@ -16,21 +16,21 @@ DOMAIN=`hostname -d`
 case ${SETUP_SCRIPT_NAME} in
     .eccc_setup_gnu)
         if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-            . r.load.dot rpn/code-tools/20250925/env/gnu-9.3.0
+            . r.load.dot rpn/code-tools/20251202/env/gnu-9.3.0
         else
-            . r.load.dot rpn/code-tools/20250925/env/gnu
+            . r.load.dot rpn/code-tools/20251202/env/gnu
         fi
         ;;
     .eccc_setup_gnu_14.2.0)
         # to avoid linking with libgfortran.so in /lib64
         unset SSMUSE_LD_PREPEND
-        . r.load.dot rpn/code-tools/20250925/env/exp/rhel-8-amd64-64@gnu-14.2.0
+        . r.load.dot rpn/code-tools/20251202/env/exp/rhel-8-amd64-64@gnu-14.2.0
         ;;
 esac
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20251021
-. r.load.dot rpn/utils/20251021
+. r.load.dot rpn/libs/20251210
+. r.load.dot rpn/utils/20251210
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
