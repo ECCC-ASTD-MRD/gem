@@ -16,8 +16,14 @@ target_compile_definitions(${gem_exe} PUBLIC
   phy_VERSION="${phy_VERSION}"
 )
 
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM") AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2025))
+  # link with libgcc_s to get a traceback
+  set(GCC_S gcc_s)
+endif()
+
 target_link_libraries(${gem_exe}
    gemdyn
+   ${GCC_S}
    ${phy_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
