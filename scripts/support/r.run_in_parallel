@@ -845,7 +845,7 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY/OpenMPI/MPICH]" \
     -smt "1" "2" "[SMT or hyperthreading]" \
     -spliteo "no" "yes" "[split stderr from stdout]" \
     -splittmp "" "splittmp" "[unique TMPDIR for each PE]"\
-    -stack "4000000" "" "[Stack size]"\
+    -stack "unlimited" "" "[Stack size]"\
     -sync "" "yes" "[force fileystem sync (Lustre coherency patch)]" \
     -tag "child" "full" "[full/child/member/stderr/none/seq]" \
     -timeout "60" "60" "[timeout for multiple instances]" \
