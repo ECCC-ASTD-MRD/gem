@@ -44,7 +44,6 @@ if ((("$ENV{ECCI_PROCESS}" STREQUAL "staging") OR (STATIC_INTEL)) AND ("${CMAKE_
   message(STATUS "(EC) Building with static Intel libraries")
   # Use static MPI libraries: must be set before calling find_package(MPI)
   set(MPI_COMPILER_FLAGS "${MPI_COMPILER_FLAGS} -static_mpi -nostrip")
-  set(STATIC_LINK_INTEL_FLAGS "-static-libgcc -static-libstdc++ -qopenmp-link=static")
 endif()
 
 find_package(MPI)
