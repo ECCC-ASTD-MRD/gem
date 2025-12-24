@@ -4229,6 +4229,7 @@ SUBROUTINE SNOWCROEVAPN(PLES3L,PTSTEP,PSNOWTEMP,PDRYDENSITY,&
 !!                         are taken into account in SNOWCROREFRZ
 !
 USE MODD_CSTS,     ONLY : XLSTT, XLMTT, XCI, XTT, XRHOLW
+USE MODD_SNOW_PAR, ONLY : XRHOSMIN_ES
 !
 IMPLICIT NONE
 !
@@ -4237,11 +4238,11 @@ IMPLICIT NONE
 REAL, INTENT(IN)                    :: PTSTEP
 !
 REAL, DIMENSION(:), INTENT(IN)      :: PSNOWTEMP
-REAL, DIMENSION(:,:), INTENT(INOUT)   :: PSNOWLIQ
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PSNOWLIQ
 !
 REAL, DIMENSION(:), INTENT(IN)      :: PLES3L   ! (W/m2)
 !
-REAL, DIMENSION(:), INTENT(IN)      :: PDRYDENSITY ! Dry density of the first layer
+REAL, DIMENSION(:), INTENT(INOUT)   :: PDRYDENSITY ! Dry density of the first layer
 REAL, DIMENSION(:), INTENT(INOUT)   :: PSNOWDZ, PSNOWHMASS, PEVAPCOR
 !
 !*      0.2    declarations of local variables
@@ -4266,30 +4267,48 @@ ZEVAPCOR  (:) = 0.0
 ZSNOWEVAPS(:) = 0.0
 ZSNOWDZ   (:) = 0.0
 !
-WHERE ( PSNOWDZ>0.0 )
-  !
-  ! 1. Sublimation/condensation of snow ice
-  ! ----------------------------------------
-  ! Reduce layer thickness and total snow depth
-  ! if sublimation: add to correction term if potential
-  ! sublimation exceeds available snow cover.
-  !
-  ! Mass change occurs at constant dry density
-  ! Corresponding depth change below
-  ZSNOWEVAPS(:) = PLES3L(:) * PTSTEP / ( XLSTT*PDRYDENSITY(:) )
+DO JJ = 1,SIZE(PSNOWTEMP)
 
-  ZSNOWDZ(:)    = PSNOWDZ(:) - ZSNOWEVAPS(:)
-  PSNOWDZ(:)    = MAX( 0.0, ZSNOWDZ(:) )
-  ZEVAPCOR(:)   = ZEVAPCOR(:) + MAX(0.0,-ZSNOWDZ(:)) * PDRYDENSITY(:) / PTSTEP
-  !
-  !
-  ! Total heat content change due to snowfall and sublimation (added here):
-  ! (for budget calculations):
-  !
-  PSNOWHMASS(:) = PSNOWHMASS(:) &
-                  - PLES3L(:) * (PTSTEP/XLSTT) * ( XCI * (PSNOWTEMP(:)-XTT) - XLMTT )
-  !
-END WHERE
+  IF(PSNOWDZ(JJ)>0.0) THEN
+   !
+   ! 1. Sublimation/condensation of snow ice
+   ! ----------------------------------------
+   ! Reduce layer thickness and total snow depth
+   ! if sublimation: add to correction term if potential
+   ! sublimation exceeds available snow cover.
+   !
+   ! Mass change occurs at constant dry density
+   ! Corresponding depth change below
+     IF(PLES3L(JJ)>0) THEN ! Sublimation occurs
+        ZSNOWEVAPS(JJ) = PLES3L(JJ) * PTSTEP / ( XLSTT*PDRYDENSITY(JJ) )
+     ELSE ! Solid condensation occurs
+        ! New mass is added at a minimum dry density of 50 kg/m3. 
+        ZSNOWEVAPS(JJ) = PLES3L(JJ) * PTSTEP / ( XLSTT*MAX(XRHOSMIN_ES,PDRYDENSITY(JJ)) )
+     ENDIF
+
+     ZSNOWDZ(JJ)    = PSNOWDZ(JJ) - ZSNOWEVAPS(JJ)
+
+     IF(PLES3L(JJ)>0) THEN ! Sublimation occurs 
+        ! Ensure thickness of upper snow layer remains positive or zero      
+        PSNOWDZ(JJ)    = MAX( 0.0, ZSNOWDZ(JJ) )
+        ZEVAPCOR(JJ)   = ZEVAPCOR(JJ) + MAX(0.0,-ZSNOWDZ(JJ)) * PDRYDENSITY(JJ) / PTSTEP
+     ELSE  ! Solid condensation occurs
+        ! Update dry density       
+        PDRYDENSITY(JJ) = (PDRYDENSITY(JJ)*PSNOWDZ(JJ) + MAX(XRHOSMIN_ES,PDRYDENSITY(JJ))* ABS(ZSNOWEVAPS(JJ))) / &
+                             ZSNOWDZ(JJ) 
+        PSNOWDZ(JJ)    = MAX( 0.0, ZSNOWDZ(JJ) )  
+     ENDIF
+        
+     !
+     !
+     ! Total heat content change due to snowfall and sublimation (added here)JJ
+     ! (for budget calculations)JJ
+     !
+     PSNOWHMASS(JJ) = PSNOWHMASS(JJ) &
+                  - PLES3L(JJ) * (PTSTEP/XLSTT) * ( XCI * (PSNOWTEMP(JJ)-XTT) - XLMTT )
+
+  ENDIF
+ENDDO
 !
 ! exceeding liquid water transferred to the next layer in case of total sublimation
 WHERE (PSNOWDZ == 0.)

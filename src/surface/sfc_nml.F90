@@ -125,6 +125,7 @@ contains
    function sfc_nml_check() result(m_istat)
       use sfc_options, only : nl_svs_default, dp_svs_default
       use svs_configs, only : nl_svs,dl_svs,ntypel,ntypeh,vl_type,vh_type
+      use mode_crodebug
       implicit none
       integer :: m_istat
 
@@ -137,6 +138,8 @@ contains
       istat = clib_toupper(ice_emiss)
       istat = clib_toupper(schmsol)
       istat = clib_toupper(schmurb)
+      istat = clib_toupper(sl_diag_type)
+      istat = clib_toupper(sl_lmin_type)
       istat = clib_toupper(sl_func_stab)
       istat = clib_toupper(sl_func_unstab)
       istat = clib_toupper(snow_emiss)
@@ -217,6 +220,18 @@ contains
          return
       endif
 
+      if (.not.any(sl_diag_type == SL_DIAG_TYPE_OPT)) then
+         call str_concat(msg_S, SL_DIAG_TYPE_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_diag_type = '//trim(sl_diag_type)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+
+      if (.not.any(sl_lmin_type == SL_LMIN_TYPE_OPT)) then
+         call str_concat(msg_S, SL_LMIN_TYPE_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) sl_lmin_type = '//trim(sl_lmin_type)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+      
       if (.not.any(sl_func_stab == SL_FUNC_STAB_OPT)) then
          call str_concat(msg_S, SL_FUNC_STAB_OPT,', ')
          call msg(MSG_ERROR,'(sfc_nml_check) sl_func_stab = '//trim(sl_func_stab)//' : Should be one of: '//trim(msg_S))
@@ -686,7 +701,21 @@ contains
             endif
          endif
 
-       endif IF_SVS
+      endif IF_SVS
+
+      ! check that use crodebug only with SV2
+      ! read in environement variables here if ok to avoid looping on TRNCH
+      if( svs2_crodebug ) then
+         if ( schmsol == 'SVS2' ) then
+            ! Activate debug option for Crocus (SVS2)
+            call INIT_CRODEBUG(HSNOWSCHEME)
+         else
+            write(msg_S,'(a, l1, a)') '(sfc_nml_check) svs2_crodebug = ', svs2_crodebug, ' can only be used with schmsol = SVS2'
+            call msg(MSG_ERROR,msg_S)
+            return
+         endif
+      endif
+      
 
       m_istat = RMN_OK
       !----------------------------------------------------------------
@@ -743,6 +772,8 @@ contains
       if (istat == SL_OK) istat = sl_put('sl_stabfunc_stab',sl_func_stab)
       if (istat == SL_OK) istat = sl_put('sl_stabfunc_unstab',sl_func_unstab)
       if (istat == SL_OK) istat = sl_put('z0ref',sl_z0ref)
+      if (istat == SL_OK) istat = sl_put('diag_type',sl_diag_type)
+      if (istat == SL_OK) istat = sl_put('lmin_type',sl_lmin_type)
       if (istat /= SL_OK) then
          call msg(MSG_ERROR,'(sfc_nml) Problem initializing the surface layer module')
          return

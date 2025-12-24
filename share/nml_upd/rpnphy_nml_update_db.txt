@@ -745,3 +745,9 @@ rm:  surface_cfgs/lwater_ponding_svs1
 #New:  surface_cfgs/svs_vf2ctemdat
 #New:  surface_cfgs/tdlrate
 #New:  surface_cfgs/z0snow_svs2
+#------
+fileVersion: 6.3.0-a15 > 6.3.0-a16
+rm:  surface_cfgs/lcano_svs2
+#New:  surface_cfgs/sl_diag_type
+#New:  surface_cfgs/sl_lmin_type
+#New:  surface_cfgs/svs2_crodebug

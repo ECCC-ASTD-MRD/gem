@@ -70,7 +70,7 @@
       REAL   TEMP_B, TEMP_C, TEMP_R, TEMP_Q1, TEMP_Q2,  TEMP_JP
       REAL   BETA1,  BETA2,   GAMMA_W, GAMMA_M, CO2IMAX
 !
-      REAL VPD0(KK), OMEGA(KK),VMAX(KK)
+      REAL VPD0(KK), OMEGA_PHT(KK),VMAX(KK)
       REAL TUP(KK), TLOW(KK), KN(KK)
       REAL INICO2I(KK), ALPHA(KK), RMLCOEFF(KK), BB(KK), MM(KK)
       REAL CO2CC, DELTA_CO2, N_EFFECT
@@ -224,10 +224,10 @@
 !!
 !     LEAF SCATERRING COEFFICIENTS, VALUES OF 0.15 & 0.17 ARE USED
 !     FOR C3 AND C4 PLANTS, RESPECTIVELY
-      DATA  OMEGA/0.15, 0.15, 0.00,   &
-                  0.15, 0.15, 0.15,   &
-                  0.15, 0.17, 0.00,   &
-                  0.15, 0.17, 0.00/
+      DATA  OMEGA_PHT/0.15, 0.15, 0.00,   &
+                      0.15, 0.15, 0.15,   &
+                      0.15, 0.17, 0.00,   &
+                      0.15, 0.17, 0.00/
 !                  
 !     PARAMETER M USED IN BWB PHOTOSYNTHESIS-STOMATAL CONDUCTANCE
 !     COUPLING. 
@@ -841,7 +841,7 @@
             DO  I = 1, N
                IF((FCANC(I,J).GT.ZERO).AND.(COSZS(I).GT.0.0)) THEN
                   
-                  JE1(I,J)= FPAR(I,J)*ALPHA(KK_TO_ICC(J))*(1.0-OMEGA(KK_TO_ICC(J)))
+                  JE1(I,J)= FPAR(I,J)*ALPHA(KK_TO_ICC(J))*(1.0-OMEGA_PHT(KK_TO_ICC(J)))
                   JE2(I,J)=( CO2I(I,J)-TGAMMA(I) ) /              &
                        ( CO2I(I,J)+ (2.0*TGAMMA(I)) )
 !

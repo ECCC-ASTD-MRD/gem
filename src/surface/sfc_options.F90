@@ -377,10 +377,6 @@ module sfc_options
         '0FLUX'  &
         /)
 
-   !# (SVS2) If .true., SVS2 utilizes the canopy module to modify T, U, VMOD, SW, and LW to account for canopy
-   logical           :: lcano_svs2 = .true.
-   namelist /surface_cfgs/ lcano_svs2
-
    !# Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac)
    real              :: leadfrac    = 0.03
    namelist /surface_cfgs/ leadfrac
@@ -502,6 +498,16 @@ module sfc_options
         'RIVERS' &
         /)
 
+   !# Type of diagnostic-level calculations to use
+   !# * 'FLUX      ' : Use turbulent surface fluxes to estimate diagnostic-level fields
+   !# * 'INTERP    ' : Use interpolation to estimate diagnostic-level fields
+   character(len=16) :: sl_diag_type = 'FLUX'
+   namelist /surface_cfgs/ sl_diag_type
+   character(len=*), parameter :: SL_DIAG_TYPE_OPT(2) = (/ &
+        'FLUX  ', &
+        'INTERP' &
+        /)
+   
    !# Minimum Obukhov length (L) for glaciers
    real           :: sl_Lmin_glacier = -1.
    namelist /surface_cfgs/ sl_Lmin_glacier
@@ -521,6 +527,16 @@ module sfc_options
    !# Minimum Obukhov length (L) for town
    real           :: sl_Lmin_town = -1.
    namelist /surface_cfgs/ sl_Lmin_town
+
+   !# Type of Lmin calculation to use
+   !# * 'SHEAR     ' : Impose a minimum lowest-level wind speed to guarantee L>L_min
+   !# * 'SFO       ' : Impose a minimum L_min directly in stability function calculations
+   character(len=16) :: sl_Lmin_type = 'SHEAR'
+   namelist /surface_cfgs/ sl_Lmin_type
+   character(len=*), parameter :: SL_LMIN_TYPE_OPT(2) = (/ &
+        'SHEAR', &
+        'SFO  ' &
+        /)
    
    !# Define bulk Ri values for near-neutral regime in the surface layer
    real           :: sl_rineutral = 0.
@@ -571,7 +587,7 @@ module sfc_options
    !#  Soil texture database/calculations for SVS land surface scheme
    !# * 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)
    !# * 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)
-   !# * 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC ? World Soil Information
+   !# * 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC World Soil Information
    character(len=16) :: soiltext    = 'GSDE'
    namelist /surface_cfgs/ soiltext
    character(len=*), parameter :: SOILTEXT_OPT(3) = (/ &
@@ -744,7 +760,7 @@ module sfc_options
    real    :: svs_z0mdat(NCLASS) = -999.
    namelist /surface_cfgs/ svs_z0mdat
 
-   !# Option to change the lookup table VF2CTEMDAT in pĥtsyn_svs.F90
+   !# Option to change the lookup table VF2CTEMDAT in phtsyn_svs.F90
    logical :: svs_read_vf2ctemdat = .false.
    namelist /surface_cfgs/ svs_read_vf2ctemdat
 
@@ -841,6 +857,10 @@ module sfc_options
    !# Values (1:13) used for the lookup table VEGDAT(17) if svs_read_vegdat17=.T.
    real    :: svs_vegdat17(13) = -999.
    namelist /surface_cfgs/ svs_vegdat17
+
+   !# Logical - Activate Crocus debugging options  if .true. (see README_crodebug.md)
+   logical           :: svs2_crodebug   = .false.
+   namelist /surface_cfgs/ svs2_crodebug
    
    !# Limit temperature inversions to dlrate in surface layer if .true.
    logical           :: tdiaglim    = .false.

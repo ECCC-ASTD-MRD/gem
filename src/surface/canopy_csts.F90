@@ -83,7 +83,6 @@ LOGICAL :: lres_snca = .false. ! Use or not the resistance from the intercepted 
 !                               Used in ebudget
 !       ------------------------------------------------------
 REAL, PARAMETER ::  EMSNV = 1. ! Emissivity of snow below high vegetation                    
-REAL, PARAMETER ::  ABARK  = 0.15  !   Albedo of Bark (S. Wang, Ecological Modelling, 2005)
 REAL, PARAMETER ::  ALSNV = 0.3 ! Snow-covered canopy albedo (Goottevin et al. 2015)
 
 !       ------------------------------------------------------

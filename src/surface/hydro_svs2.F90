@@ -29,12 +29,7 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
 
   !     
   INTEGER N,K 
-  ! CONSTANTS for horizontal decay of GRKSAT
-  ! 
-  REAL, PARAMETER :: GRKSAT_C1=10.0
-  REAL, PARAMETER :: GRKSAT_C2=5.0
-
-
+ 
   REAL DT
 
   INTEGER KFICE ! Option for the correction factor for hydraulic conductivity

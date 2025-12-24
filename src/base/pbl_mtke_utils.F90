@@ -28,7 +28,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine baktotq(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,st,ps,gztherm,tif,fice,&
        tve,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg,mrk2, &
-       vcoef,pblsigs,pblq1,tau,n,nk)
+       vcoef,pblsigs,pblq1,dxdy,tau,n,nk)
     use tdpack_const, only: CPD, CAPPA, CHLC, CHLF
     use ens_perturb, only: ens_nc2d
     implicit none
@@ -58,6 +58,7 @@ contains
     real, dimension(n),    intent(in) :: mg              !land-sea mask
     real, dimension(n,ens_nc2d), intent(in) :: mrk2      !Markov chains for stochastic parameters
     real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation   
+    real, dimension(n), intent(in) :: dxdy               !grid cell area (m^2)
     real, dimension(n,nk), intent(inout) :: fnn          !flux enhancement * cloud fraction
     real, dimension(n,nk), intent(inout) :: fnnonloc     !nonlocal cloud fraction
     real, dimension(n,nk), intent(out) :: fn             !cloud fraction
@@ -118,7 +119,7 @@ contains
 
     ! Retrive updated cloud water content (qcp) from conserved variables
     call clsgs(thl_star,tve,qw_star,qcp,fn,fnn,fngauss,fnnonloc,c1,zn,ze,hpbl,hflux,s,ps,gztherm,&
-         mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
+         mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,dxdy,n,nk)
 
     ! Convert back to state variables and tendencies
     qv = qw - max(0.,qc)
@@ -512,7 +513,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine clsgs(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
-       hpbl,hflux,s,ps,gztherm,mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,n,nk)
+       hpbl,hflux,s,ps,gztherm,mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,dxdy,n,nk)
     use tdpack_const
     use phy_options
     use ens_perturb, only: ens_nc2d, ens_spp_get
@@ -540,6 +541,7 @@ contains
     real, dimension(n,nk), intent(in) :: bcoef           !thermodynamic coefficient B
     real, dimension(n,nk), intent(in) :: ccoef           !thermodynamic coefficient C
     real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation
+    real, dimension(n), intent(in) :: dxdy               !grid cell area (m^2)
     real, dimension(n,nk), intent(inout) :: fnnonloc     !nonlocal cloud fraction
     real, dimension(n,nk), intent(out) :: qc             !PBL cloud water content (kg/kg)
     real, dimension(n,nk), intent(out) :: frac           !cloud fraction
@@ -600,6 +602,7 @@ contains
 
     ! Local parameters
     real, parameter :: EPS=1e-10,QCMIN=1e-6,QCMAX=1e-3,WHMIN=0.5,WHMAX=1.2
+    real, parameter :: PBL_SDMIN=1e-10                    !Minimum value for unscaled SGS stddev 
 
     ! Local variables
     integer :: j,k
@@ -627,12 +630,22 @@ contains
 
     ! Compute subgrid standard deviation of supersaturation (s) on e-levels following Eq. 10 of BCMT95
     sigmas = 0.
-    do k=1,nk-1
-       do j=1,n          
-          c1coef = sqrt(c1(j,k)*max(zn(j,k),50.)*max(ze(j,k),50.))
-          sigmas(j,k) = c1coef * abs(acoef(j,k)*dqwdz(j,k) - bcoef(j,k)*dthldz(j,k))
+    if (pbl_dxref > 0.) then
+       do k=1,nk-1
+          do j=1,n
+             c1coef = sqrt(c1(j,k) * zn(j,k) * ze(j,k))
+             sigmas(j,k) = sqrt(sqrt(dxdy(j))/pbl_dxref) * max(c1coef * abs(acoef(j,k)*dqwdz(j,k) &
+                  - bcoef(j,k)*dthldz(j,k)), PBL_SDMIN)
+          end do
        end do
-    end do
+    else
+       do k=1,nk-1
+          do j=1,n
+             c1coef = sqrt(c1(j,k)*max(zn(j,k),50.)*max(ze(j,k),50.))
+             sigmas(j,k) = c1coef * abs(acoef(j,k)*dqwdz(j,k) - bcoef(j,k)*dthldz(j,k))
+          end do
+       end do
+    endif
 
     ! Compute the normalized saturation defecit (Q1)
     q1(:,1:nk-1) = ccoef(:,1:nk-1) / ( sigmas(:,1:nk-1) + EPS )
