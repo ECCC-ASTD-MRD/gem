@@ -36,7 +36,7 @@
                    RNET, HFLUX, LE, LEG, LEV, LES,LESV, & 
                    LER, LETR, EG, ER, ETR, GFLUX, EFLUX, & 
                    BM, FQ, BT, RESAEF, & 
-                   LEFF, DWATERDT, & 
+                   LEFF, DWATERDT_SURF,DWATERDT_DEEP, & 
                    FTEMP, FVAP, ZQS, FRV, & 
                    ALFAT, ALFAQ, ILMO, HST, TRAD, N)
       use tdpack
@@ -65,7 +65,7 @@
       REAL LEG(N), LEV(N), LER(N), LETR(N), GFLUX(N)
       REAL EFLUX(N), BM(N), FQ(N), BT(N), LES(N)
       REAL FTEMP(N), FVAP(N), ER(N), ETR(N)
-      REAL LEFF(N), DWATERDT(N), ZQS(N), FRV(N)
+      REAL LEFF(N), DWATERDT_SURF(N),DWATERDT_DEEP(N), ZQS(N), FRV(N)
       REAL EG(N), HRSURF(N)
       REAL RESAGR(N), RESAVG(N), RESASA(N), RESASV(N), RESAEF(N)
       REAL RNETSN(N), HFLUXSN(N), LESNOFRAC(N), ESNOFRAC(N)
@@ -168,6 +168,11 @@
 ! WR       Water retained by vegetation
 ! SVM      snow water equivalent (SWE) for snow under high veg [kg/m2]
 !
+! DWATERDT_SURF  net tendency of melting-freezing of soil water for the
+!                surface layer (from the soil freezing scheme) [kg/m2/s]
+! DWATERDT_DEEP  net tendency of melting-freezing of soil water for the
+!                deep layer of the FR scheme (from the soil freezing scheme) [kg/m2/s]
+!
 !           - Output -
 ! ALBT      total surface albedo (snow + vegetation + bare ground)
 ! EMIT      total surface emissivity (snow + vegetation + bare ground)
@@ -186,7 +191,6 @@
 !
 ! GFLUX     ground flux
 ! EFLUX     water vapor flux
-! DWATERDT  net tendency of melting-freezing of soil water
 ! TS        surface  temperature (new) as seen from ground
 ! TD        mean soil temperature
 ! TSA       surface  temperature (new) as seen from space
@@ -244,6 +248,7 @@
       RAIN1  = 2.8e-8
       RAIN2  = 2.8e-7
 ! 
+!
 !
 !!       1.     GRID-AVERAGED ALBEDO, EMISSIVITY, AND ROUGHNESS LENGTH
 !       ------------------------------------------------------
@@ -419,8 +424,11 @@
 
 
 !     SET DWATERDT to zero, just to initialize array
-      DWATERDT=0.0
-
+!      DWATERDT=0.0
+      DO I=1,N
+          TGRST(I) = TGRST(I) + DT*CG(I)*CHLF*DWATERDT_SURF(I)
+      END DO
+!
 !
 !
 !!       5.A     TGRD AT TIME 'T+DT'
@@ -437,6 +445,7 @@
 !chekc if this is ok
 ! ** DO NOT INCLUDE THE EFFECT OF DWATERDT BECAUSE SET TO ZERO ABOVE !
 !
+        TGRDT(I) =  TGRDT(I) + DT*CG(I)*CHLF*DWATERDT_DEEP(I)*DT/86400. 
 
         TGRDT(I) = TGRDT(I) 
 

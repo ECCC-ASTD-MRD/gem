@@ -25,7 +25,7 @@ contains
       use series_mod, only: series_xst, series_isstep
       use phy_options
       use phy_status, only: phy_error_L
-      use phybusidx
+      use phybusidx, except=>znt
       use phymem, only: phyvar
       use ens_perturb, only: ens_spp_get
       use suncos, only: suncos3
@@ -122,7 +122,7 @@ contains
       real(REAL64) :: hz_8
       real :: hz, hzp, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss
-      logical :: lcsw, lclw, aerosolback
+      logical :: lcsw, lclw, aerosolback, dontneedall
       integer :: il1,il2
       character(len=1) :: niuv
 
@@ -215,12 +215,13 @@ contains
       ! cloud variables
       ! such as cloud cover, effective and true; cloud top temp and pressure
       ! called every timestep
+      dontneedall=.false.
       if (stcond(1:3)=='MP_') then
          call cldoppro_MP3(pvars, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, ni, nkm1, nk, kount)
+              temp, sig, ps, dontneedall, ni, nkm1, nk, kount)
          if (phy_error_L) return
 
       else
@@ -232,7 +233,7 @@ contains
          call cldoppro_noMP1(pvars, taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, trnch, ni, &
+              temp, sig, ps, dontneedall, trnch, ni, &
               ni, nkm1, nk)
 
       endif
@@ -391,7 +392,7 @@ contains
 
          ! actual call to the Li & Barker (2005) radiation
 
-         call ccc1_raddriv3 (zfsg,zfsd0,zfsf0,zfsv0,zfsi0, &
+         call ccc1_raddriv3 (zfdss0,zfsd0,zfsf0,zfsv0,zfsi0, &
               zfatb0,zfadb0,zfafb0,zfctb0,zfcdb0,zfcfb0, &
               albpla,fdl,ful,zt20, zti, &
               zcstt,zcsb,zclt,zclb,zparr0, &
@@ -416,7 +417,7 @@ contains
             zfdsi(i)  = fdl(i)
             zfusi(i)  = zfluxul(i, nk)
             zei(i)    = ful(i)
-            zfdss0(i) = zfsg(i)
+
             zev0(i)   = CONSOL * r0r * zcosas(i) * albpla(i)
 
             ! moduler les flux et les taux par le cosinus de l'angle solaire.
@@ -564,11 +565,11 @@ contains
          call series_xst(ziv    , 'iv', trnch)
          call series_xst(p1     , 'nr', trnch)
          if (associated(ztcc)) call series_xst(ztcc   , 'tcc',  trnch)
-         if (associated(znt)) call series_xst(znt    , 'nt', trnch)
+         if (associated(znt)) call series_xst(znt     , 'nt', trnch)
          if (associated(zecc)) call series_xst(zecc   , 'ecc',  trnch)
-         if (associated(zeccl)) call series_xst(zeccl  , 'eccl', trnch)
-         if (associated(zeccm)) call series_xst(zeccm  , 'eccm', trnch)
-         if (associated(zecch)) call series_xst(zecch  , 'ecch', trnch)
+         if (associated(zeccl)) call series_xst(zeccl , 'eccl', trnch)
+         if (associated(zeccm)) call series_xst(zeccm , 'eccm', trnch)
+         if (associated(zecch)) call series_xst(zecch , 'ecch', trnch)
          call series_xst(zev    , 'ev', trnch)
          call series_xst(zei    , 'ei', trnch)
          call series_xst(zap    , 'ap', trnch)

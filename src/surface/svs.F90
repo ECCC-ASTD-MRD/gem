@@ -24,7 +24,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use sfcbus_mod
    use sfc_options, only: atm_external, atm_tplus, radslope, jdateo, &
         use_photo, nclass, zu, zt, sl_Lmin_soil, VAMIN, svs_local_z0m, &
-        vf_type,lsoil_freezing_svs1,lwater_ponding_svs1,critwater
+        vf_type,lsoil_freezing_svs1,lwater_ponding_svs,critwater
    use svs_configs
    implicit none
 !!!#include <arch_specific.hf>
@@ -131,7 +131,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
    integer i,m, masklat50(n)
 
-   real,dimension(n) :: alva, cg, cvpa, del, dhusurf_dqsat, dwaterdt
+   real,dimension(n) :: alva, cg, cvpa, del, dhusurf_dqsat, dwaterdt_surf,dwaterdt_deep
    real,dimension(n) :: esnofrac, esvnofrac, eva, gamva, hrsurf
    real,dimension(n) :: leff, lesnofrac, lesvnofrac, rainrate_mm
    real,dimension(n) :: rgla, rhoa, snowrate_mm, stom_rs, stomra
@@ -281,7 +281,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 !
 !
 ! EG CODE RELATED TO PONDING OPTION
-      IF (lwater_ponding_svs1) then
+      IF (lwater_ponding_svs) then
           DO I=1,N
              
              wsaturc1(I)= max((wsatur1(I)-isoil1(I)-0.00001), CRITWATER)
@@ -321,7 +321,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            BUS(x(CLAY   ,1,1)), BUS(x(SAND   ,1,1)), &  
            BUS(x(DECIDUOUS,1,1)),BUS(x(EVERGREEN,1,1)), &  
            BUS(x(LAIDECI,1,1)),   &
-           BUS(x(CONDDRY   ,1,1)), BUS(x(CONDSLD  ,1,1)), &
+           BUS(x(CONDDRY   ,1,1)), BUS(x(CONDMINFAC ,1,1)), BUS(x(CONDSLD  ,1,1)), &
            BUS(x(SVS_WTA,1,1)), CG, &
            BUS(x(PSNGRVL,1,1)),  &  
            BUS(x(Z0T  ,1,indx_soil)),  & 
@@ -348,7 +348,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            BUS(x(VEGH   ,1,1)), BUS(x(VEGL   ,1,1)), &
            bus(x(RST     ,1,1)),     &
            bus(x(SKYVIEW ,1,1)), bus(x(VEGTRANS,1,1)),   &   
-           bus(x(frootd   ,1,1)), bus(x(acroot ,1,1)), WRMAX, N)
+           bus(x(frootd   ,1,1)), bus(x(frootdyn,1,1)), &
+           bus(x(acroot ,1,1)), WRMAX, N)
 
       If ( (.not.atm_external) .AND. (kount.EQ.0) ) then
           ! GEM first timestep
@@ -372,7 +373,32 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
             END DO
          ENDIF
       endif
+!
+      IF(LSOIL_FREEZING_SVS1) THEN
 
+              ! Optional activation of soil freezing
+
+              CALL SOIL_FREEZING(DT, &
+                bus(x(tpsoil   ,1,1)),bus(x(vegl    ,1,1)),&
+                bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
+                bus(x(psnvha  ,1,1)), bus(x(soilcondz,1,1)), &
+                bus( x(soilhcapz,1,1)), &
+                bus(x(tground, 1,1)), bus(x(tvege,1,1)), &
+                bus(x(wsoil   ,1,1)) , bus(x(isoil   ,1,1)), &
+                bus(x(snoro   ,1,1)) , bus(x(snodpl   ,1,1)), &
+                bus(x(tsnow   ,1,2)) , bus(x(tsnow   ,1,1)) ,  &
+                bus(x(snvro   ,1,1)) , bus(x(snvdp   ,1,1)), &
+                bus(x(tsnowveg   ,1,2)) , bus(x(tsnowveg   ,1,1)), bus(x(tperm, 1,1)),   &
+                bus(x(wunfrz, 1,1)), &
+                dwaterdt_surf,dwaterdt_deep, N )
+      ELSE
+              ! Set to zero the release of latent heat from soil freezing and
+              ! thawinf for the surface and deep layer of the FR scheme. 
+               DO I=1,N
+                  dwaterdt_surf(I) = 0.0
+                  dwaterdt_deep(I) = 0.0
+               ENDDO
+      ENDIF
 !
       CALL DRAG_SVS ( bus(x(TGROUND,1,1)), &
            bus(x(TVEGE,1,1)),  &   
@@ -485,7 +511,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                   bus(x(FL         ,1,1)),  bus(x(EFLUX      ,1,1)) ,    &  
                   bus(x(BM         ,1,1)) , bus(x(FQ   ,1,1)),    &  
                   bus(x(bt, 1,indx_soil)) , bus(x(RESAEF,1,1)),   &  
-                  LEFF                    , DWATERDT,     & 
+                  LEFF                    , DWATERDT_SURF,    &
+                  DWATERDT_DEEP,     & 
                   bus(x(FTEMP,1,indx_soil)), BUS(x(FVAP,1,indx_soil)),   &   
                   bus(x(qsurf,1,indx_soil)), bus(x(frv ,1,indx_soil)),   &   
                   bus(x(ALFAT      ,1,1)) , bus(x(ALFAQ      ,1,1)) ,    &  
@@ -493,47 +520,29 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                   TRAD, N )
       if (phy_error_L) return
 !
-!
-      IF(LSOIL_FREEZING_SVS1) THEN
-
-              ! Optional activation of soil freezing
-
-              CALL SOIL_FREEZING(DT, &
-                bus(x(tpsoil   ,1,1)),bus(x(vegl    ,1,1)),&
-                bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
-                bus(x(psnvha  ,1,1)), bus(x(soilcondz,1,1)), &
-                bus( x(soilhcapz,1,1)), &
-                bus(x(tground, 1,1)), bus(x(tvege,1,1)), &
-                bus(x(wsoil   ,1,1)) , bus(x(isoil   ,1,1)), &
-                bus(x(snoro   ,1,1)) , bus(x(snodpl   ,1,1)), &
-                bus(x(tsnow   ,1,2)) ,  &
-                bus(x(snvro   ,1,1)) , bus(x(snvdp   ,1,1)), &
-                bus(x(tsnowveg   ,1,2)) ,bus(x(tperm, 1,1)),   &
-                bus(x(wunfrz, 1,1)), &
-                N )
-      ENDIF
-
-      CALL HYDRO_SVS ( DT,      & 
-           bus(x(eg      ,1,1)), bus(x(er      ,1,1)),&
-           bus(x(etr     ,1,1)), rainrate_mm         ,&
-           bus(x(rsnowsa ,1,1)), bus(x(rsnowsv ,1,1)),&
-           bus(x(impervu ,1,1)), bus(x(vegl    ,1,1)),&
-           bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
-           bus(x(psnvha  ,1,1)), bus(x(acroot  ,1,1)),&
-           wrmax,                bus(x(wsat    ,1,1)),&
-           bus(x(ksat    ,1,1)), bus(x(psisat  ,1,1)),&
-           bus(x(bcoef   ,1,1)), bus(x(fbcof   ,1,1)),&
-           bus(x(wfcint  ,1,1)), bus(x(grkef   ,1,1)),&
-           bus(x(snoma   ,1,1)), bus(x(snvma   ,1,1)),&
-           bus(x(wveg    ,1,1)), wvegt               ,&
-           bus(x(wsoil   ,1,1)), wsoilt              ,&
-           bus(x(isoil   ,1,1)), isoilt              ,&
-           bus(x(ksatc   ,1,1)), bus(x(maxpond ,1,1)), &
-           bus(x(khc     ,1,1)),                      &
-           bus(x(psi     ,1,1)), bus(x(grksat  ,1,1)),&
-           bus(x(wfcdp   ,1,1)), bus(x(watflow ,1,1)),&
-           bus(x(latflw  ,1,1)), &
-           bus(x(runofftot ,1,indx_soil)), bus(x(watpond ,1,1)), N)
+	  CALL HYDRO_SVS ( DT,      & 
+		   bus(x(eg      ,1,1)), bus(x(er      ,1,1)),&
+		   bus(x(etr     ,1,1)), rainrate_mm         ,&
+		   bus(x(rsnowsa ,1,1)), bus(x(rsnowsv ,1,1)),&
+		   bus(x(impervu ,1,1)), bus(x(vegl    ,1,1)),&
+		   bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
+		   bus(x(psnvha  ,1,1)), bus(x(acroot  ,1,1)),&
+		   wrmax, bus(x(wmpfac,1,1)), bus(x(wsat    ,1,1)),&
+		   bus(x(ksat    ,1,1)), bus(x(ksatnat ,1,1)),&
+		   bus(x(psisat  ,1,1)),&
+		   bus(x(bcoef   ,1,1)), bus(x(fbcof   ,1,1)),&
+		   bus(x(wfcint  ,1,1)), bus(x(grkef   ,1,1)),&
+		   bus(x(snoma   ,1,1)), bus(x(snvma   ,1,1)),&
+		   bus(x(wveg    ,1,1)), wvegt               ,&
+		   bus(x(wsoil   ,1,1)), wsoilt              ,&
+		   bus(x(isoil   ,1,1)), isoilt              ,&
+		   bus(x(ksatc   ,1,1)), bus(x(ksatnatc,1,1)),&
+		   bus(x(maxpond ,1,1)), bus(x(khc     ,1,1)),&
+		   bus(x(psi     ,1,1)), bus(x(grksat  ,1,1)),&
+		   bus(x(wfcdp   ,1,1)), bus(x(watflow ,1,1)),&
+		   bus(x(latflw  ,1,1)), &
+		   bus(x(runofftot ,1,indx_soil)), bus(x(watpond ,1,1)),&
+		   bus(x(grkmod_a,1,1)), BUS(x(agrifrac,1,1)), N)
 
 
       IF( USE_PHOTO ) THEN

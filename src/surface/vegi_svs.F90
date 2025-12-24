@@ -16,7 +16,7 @@
       SUBROUTINE VEGI_SVS ( RG, T, TVEG, HU, PS, &
            WD , RGL, LAI, LAIH, RSMIN, GAMMA, WWILT, WFC, &   
            SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, RS, SKYVIEW, VTR, &    
-           FCD, ACROOT, WRMAX, N  )
+           FCD, FCD_DYN, ACROOT, WRMAX, N  )
 !
         use tdpack
         use svs_configs
@@ -25,7 +25,7 @@
 !!!#include <arch_specific.hf>
 !
       INTEGER N 
-      REAL WD(N,NL_SVS), FCD(N, NL_SVS)
+      REAL WD(N,NL_SVS), FCD(N, NL_SVS), FCD_DYN(N,NL_SVS)
       REAL RG(N), T(N), HU(N), PS(N), TVEG(N)
       REAL SUNCOS(N), LAIH(N), PSNGRVL(N), VEGH(N), VEGL(N)
       REAL RGL(N), LAI(N), RSMIN(N), GAMMA(N), WWILT(N,NL_SVS)
@@ -155,20 +155,46 @@
                 ENDDO
              end if
 
-             ! root fraction weighted mean
+             ! dynamic root fraction that takes into account soil moisture stress
+
+             fcd_dyn(i,1) = fcd(i,1) * (1. + (f2_k(1) - 1.) * svs_etr_fcd_dyn)
+             DO K=2,NL_SVS
+                fcd_dyn(i,k) = (fcd(i,k) - fcd(i,k-1)) * (1. + (f2_k(k) - 1.) * svs_etr_fcd_dyn) + fcd_dyn(i,k-1)
+             ENDDO
+             ! normalize dynamic root fraction
+             IF ((svs_etr_fcd_dyn .gt. 0.) .and. (fcd_dyn(i,NL_SVS) .GE. 1.E-5)) THEN
+                DO K=1,NL_SVS
+                   fcd_dyn(i,k) = fcd_dyn(i,k) / fcd_dyn(i,NL_SVS)
+                ENDDO
+             ELSE
+                DO K=1,NL_SVS
+                   fcd_dyn(i,k) = fcd(i,k)
+                ENDDO
+             END IF
+
+             ! root fraction weighted mean based on dynamic root distribution for use in Jarvis model
              ! k=1
              f2(i) = f2_k(1) * FCD(I,1)
              DO K=2,NL_SVS
-                f2(i) = f2(i) +   f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) 
+                f2(i) = f2(i) +   f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) )
              ENDDO
 
-             ! active fraction of roots
-             ! k=2
+             ! Active fraction of roots based on initial root distribution - DO NOT USE dynamic root distribution.
+             ! This becomes obvious when you consider limiting case where svs_etr_fcd_dyn=1,
+             ! in which case root distribution is already optimized so can readily be used to distribute
+             ! the transpiration term among the layers.
              acroot(i,1)=f2_k(1)*FCD(I,1)/f2(i)
              DO K=2,NL_SVS
                 acroot(i,k)= f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) /f2(i)
              ENDDO
-    
+
+             ! root fraction weighted mean based on dynamic root distribution for use in Jarvis model
+             ! k=1
+             f2(i) = f2_k(1) * FCD_DYN(I,1)
+             DO K=2,NL_SVS
+                f2(i) = f2(i) +   f2_k(k) *  ( FCD_DYN(I,K) - FCD_DYN(I,K-1) )
+             ENDDO
+
 !
 !
 !

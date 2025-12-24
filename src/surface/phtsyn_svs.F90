@@ -23,7 +23,9 @@
         use svs_configs
         use sfc_options, only: svs_gexp
         use sfc_options, only: svs_etr_avg_beta
+        use sfc_options, only: svs_etr_fcd_dyn
         use sfc_options, only: svs_etr_max_roots_ignored
+        use sfc_options, only: vf_type, svs_read_vf2ctemdat, svs_vf2ctemdat 
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -43,7 +45,7 @@
       REAL FC_SUM(N), SIGMA(N),  TGAMMA(N), KC(N), KO(N), IPAR(N), GB(N)
       REAL RH(N), VPD(N), O2_CONC(N), CO2A(N), USEBB(ICC)
 !
-      REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS)
+      REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS), FCD_DYN(N,NL_SVS)
       REAL AVG_GWSOL(N), AVG_BETA(N), FRAC_WILTED_ROOTS(N), VMAXC(N,ICC)
       REAL VMUNS1(N,ICC), VMUNS2(N,ICC), VMUNS3(N,ICC), VMUNS(N,ICC), VM(N,ICC)
       REAL CO2I(N,ICC), PREV_CO2I(N,ICC), FPAR(N,ICC), JC(N,ICC),  JC1(N,ICC)
@@ -52,7 +54,7 @@
       REAL VPD_TERM(N,ICC), CO2LS(N,ICC), GC(N,ICC)
 !!!!!!----------------------------------------------------------------------
 
-      INTEGER NOL2PFTS(IC)
+      INTEGER NOL2PFTS(IC), VF2CTEMDAT(NCLASS)
       INTEGER I, J, ICOUNT, K1, K2, M, REQITER, K
       INTEGER PS_COUP, IT_COUNT
 !
@@ -151,7 +153,10 @@
 !
 !                           the geophysical fields determined from
 !                           vegetation are done so using the following
-!                           classification:
+!                           original default classification. 
+!                           This current association is now determined in 
+!                           VF2CTEMDAT look-up table for the VF classes 
+!                           of vegetation not splitted across various CTEM.
 !
 !    SVS_PFTs     Vegetation type                        CTEM_PFTs
 !     =====       ===============
@@ -182,6 +187,39 @@
 !       25        mixed wood forests                      2    C3
 !       26        mixed shrubs                            2    C3
 !
+!
+!-----------------------------------------------------------------
+!    Association between VF types and CTEM PFT types
+!      -1 is used for non vegetation VF classes
+!      -2 is used for VF classes dispached in several CTEM PFT
+!
+     if (vf_type .eq. 'CCILC_WE') then
+!        VF to CTEM PFT mapping if vf_type = CCILC_WE:
+!        - VF(13) becomes North American grassland west (8 C3),
+!        - VF(15) becomes North American crops west (6 C3),
+!        - VF(16) becomes North American crops east (6 C3), and 
+!        - VF(17) becomes North American grassland east (8 C3).
+!        This have being tweaked to work with geophy file produced
+!        using CCILC_WE and tested just for North America (HRDPS)
+!
+         VF2CTEMDAT = (/ & 
+                     -1, -1, -1,  1,  3, & 
+                      2,  4,  3,  5,  5, & 
+                      4,  5,  8,  8,  6, &
+                      6,  8,  7,  6,  6, &
+                     -2,  6,  6, -1, -2, & 
+                     -2    /)
+     else
+         VF2CTEMDAT = (/ & 
+                     -1, -1, -1,  1,  3, & 
+                      2,  4,  3,  5,  5, & 
+                      4,  5,  8,  8,  6, &
+                      6,  7,  7,  6,  6, &
+                     -2,  6,  6, -1, -2, & 
+                     -2    /)
+     end if
+     
+     if (svs_read_vf2ctemdat) VF2CTEMDAT = svs_vf2ctemdat
 !
 !!!! NOL2PFTS (4)
      DATA  NOL2PFTS/2, 3, 2, 2/
@@ -379,6 +417,8 @@
       RC_VEG         = 5000.0
       USEBB          = 0.0
       !SM_FUNC        = 0.0   
+      FCANC          = 0.0
+      AILCG          = 0.0
 
 !     EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
 !     DECREASES LINEARLY WITH SOIL MOISTURE, AND OF COURSE NON-LINEARLY
@@ -446,99 +486,55 @@
          ! 26 split between class 4 broadleaf (80%) and needleleaf evergreen (20%) below 50 lat
          ! 26 split between needleleaf evergreen (50%) grass (20%) broadleaf cold (30%)
 
-         FCANC(I,1) =                 VEGFRAC(I, 4) + &
+!        AGGREGATE THE VARIOUS VF USING VF2CTEMDAT
+         DO M = 1, ICC
+            ! loop on veg/natural soil classes that have vegetation and can be remapped
+            ! hence, we exclude classes 1, 2, 3, 21, 24, 25, 26
+            DO J = 4, 23                        
+               IF ((VF2CTEMDAT(J) .eq. M) .and. (J .ne. 21)) THEN
+                  FCANC(I,M) = FCANC(I,M) +    VEGFRAC(I,J)
+                  AILCG(I,M) = AILCG(I,M) + LAI_NCLASS(I,J)
+               END IF
+            END DO
+         END DO
+
+!        PROCESS THE VF CLASSES WHICH ARE SPLITTED ACROSS CTEM PFT CLASSES
+         FCANC(I,1) =                   FCANC(I, 1) + &
                                 0.2 * VEGFRAC(I,21) + &
                                 0.4 * VEGFRAC(I,25) + &
              REAL(MASKLAT(I)) * 0.2 * VEGFRAC(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.5 * VEGFRAC(I,26) 
 
-         FCANC(I,2) =                 VEGFRAC(I, 6)
-        
-
-         FCANC(I,3) =                 VEGFRAC(I, 5) + &
-                                      VEGFRAC(I, 8)
-
-
-         FCANC(I,4) =                 VEGFRAC(I, 7) + &
-                                      VEGFRAC(I,11) + &
+         FCANC(I,4) =                   FCANC(I, 4) + &
                                 0.2 * VEGFRAC(I,21) + &
                                 0.6 * VEGFRAC(I,25) + &
              REAL(MASKLAT(I)) * 0.8 * VEGFRAC(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.3 * VEGFRAC(I,26) 
 
-
-         FCANC(I,5) =                 VEGFRAC(I, 9) + &
-                                      VEGFRAC(I,10) + &
-                                      VEGFRAC(I,12)
-
-
-         FCANC(I,6) =                 VEGFRAC(I,15) + &
-                                      VEGFRAC(I,16) + &
-                                      VEGFRAC(I,19) + &
-                                      VEGFRAC(I,20) + &
-                                      VEGFRAC(I,22) + &
-                                      VEGFRAC(I,23)
-
-         FCANC(I,7) =                 VEGFRAC(I,17) + &
-                                      VEGFRAC(I,18)
-
-         FCANC(I,8) =                 VEGFRAC(I,13) + &
-                                      VEGFRAC(I,14) + &
+         FCANC(I,8) =                    FCANC(I,8) + &
                                 0.6 * VEGFRAC(I,21) + &
-        REAL( 1 - MASKLAT(I)) * 0.2 * VEGFRAC(I,26) 
-
-         FCANC(I,9) = 0.0
-
+        REAL( 1 - MASKLAT(I)) * 0.2 * VEGFRAC(I,26)                                       
+        
 !    FOR LAI, LAI_NCLASS has already seen vegfrac...
 ! NEED TO DIVIDE BY VEGETATION FRACTION
 
-
-
-         AILCG(I,1) =                 LAI_NCLASS(I, 4) + &
+         AILCG(I,1) =                       AILCG(I,1) + &
                                 0.2 * LAI_NCLASS(I,21) + &
                                 0.4 * LAI_NCLASS(I,25) + &
              REAL(MASKLAT(I)) * 0.2 * LAI_NCLASS(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.5 * LAI_NCLASS(I,26) 
 
-         AILCG(I,2) =                 LAI_NCLASS(I, 6)
-        
-
-         AILCG(I,3) =                 LAI_NCLASS(I, 5) + &
-                                      LAI_NCLASS(I, 8)
-
-
-         AILCG(I,4) =                 LAI_NCLASS(I, 7) + &
-                                      LAI_NCLASS(I,11) + &
+         AILCG(I,4) =                       AILCG(I,4) + &
                                 0.2 * LAI_NCLASS(I,21) + &
                                 0.6 * LAI_NCLASS(I,25) + &
              REAL(MASKLAT(I)) * 0.8 * LAI_NCLASS(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.3 * LAI_NCLASS(I,26) 
 
-
-         AILCG(I,5) =                 LAI_NCLASS(I, 9) + &
-                                      LAI_NCLASS(I,10) + &
-                                      LAI_NCLASS(I,12)
-
-
-         AILCG(I,6) =                 LAI_NCLASS(I,15) + &
-                                      LAI_NCLASS(I,16) + &
-                                      LAI_NCLASS(I,19) + &
-                                      LAI_NCLASS(I,20) + &
-                                      LAI_NCLASS(I,22) + &
-                                      LAI_NCLASS(I,23)
-
-         AILCG(I,7) =                 LAI_NCLASS(I,17) + &
-                                      LAI_NCLASS(I,18)
-
-         AILCG(I,8) =                 LAI_NCLASS(I,13) + &
-                                      LAI_NCLASS(I,14) + &
+         AILCG(I,8) =                       AILCG(I,8) + &
                                 0.6 * LAI_NCLASS(I,21) + &
         REAL( 1 - MASKLAT(I)) * 0.2 * LAI_NCLASS(I,26) 
-
-         AILCG(I,9) = 0.0
-
-
-         DO M=1,9
+! 
+         DO M=1,ICC
 
             if (FCANC(i,m).gt.0) then
                !print * , 'for i=',i,'m=',m
@@ -710,26 +706,40 @@
 !     ROOT PROFILE
 
       DO I=1,N
-
          DO K=1,NL_SVS
             BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
             ! soil moisture stress term per layer, with beta bounded between 0 and 1
             G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP
          ENDDO
+         ! dynamic root fraction that takes into account soil moisture stress
+         fcd_dyn(i,1) = fcd(i,1) * (1. + (G_WSOL(i,1) - 1.) * svs_etr_fcd_dyn)
+         DO K=2,NL_SVS
+            fcd_dyn(i,k) = (fcd(i,k) - fcd(i,k-1)) * (1. + (G_WSOL(i,k) - 1.) * svs_etr_fcd_dyn) + fcd_dyn(i,k-1)
+         ENDDO
+         ! normalize dynamic root fraction
+         IF ((svs_etr_fcd_dyn .gt. 0.) .and. (fcd_dyn(i,NL_SVS) .GE. ZERO)) THEN
+            DO K=1,NL_SVS
+               fcd_dyn(i,k) = fcd_dyn(i,k) / fcd_dyn(i,NL_SVS)
+            ENDDO
+         ELSE
+            DO K=1,NL_SVS
+               fcd_dyn(i,k) = fcd(i,k)
+            ENDDO
+         END IF
          ! average soil moisture term ... weighted by root fractions 
          ! Total roots = 1.0 if vegetation present ... set the term=0.0 if no vegetation
          frac_wilted_roots(i) = 0.0
          if (FCD(I,NL_SVS).gt.0.999) then
-             avg_gwsol(i) = g_wsol(i,1) * fcd(i,1)
-             avg_beta(i) = beta_wsol(i,1) * fcd(i,1)
-             if (wd(i,k) .lt. wwilt(i,k)) then
-               frac_wilted_roots(i) = fcd(i,1)
+             avg_gwsol(i) = g_wsol(i,1) * fcd_dyn(i,1)
+             avg_beta(i) = beta_wsol(i,1) * fcd_dyn(i,1)
+             if (wd(i,1) .lt. wwilt(i,1)) then
+               frac_wilted_roots(i) = fcd_dyn(i,1)
              endif
              do k=2,NL_SVS
-                avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd(i,k) - fcd(i,k-1) ) 
-                avg_beta(i) = avg_beta(i)  + beta_wsol(i,k) * ( fcd(i,k) - fcd(i,k-1) )
+                avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
+                avg_beta(i) = avg_beta(i)  + beta_wsol(i,k) * ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
                 if (wd(i,k) .lt. wwilt(i,k)) then
-                  frac_wilted_roots(i) = frac_wilted_roots(i) + ( fcd(i,k) - fcd(i,k-1) )
+                  frac_wilted_roots(i) = frac_wilted_roots(i) + ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
                 endif
              enddo
              if (svs_etr_avg_beta) then

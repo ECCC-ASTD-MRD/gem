@@ -1,5 +1,6 @@
 
 module sigmalev
+   use vintphy, only: energy_as_thermo
    implicit none
    private
    public :: sigmalev3
@@ -32,9 +33,11 @@ contains
       if (fluvert == 'RPNINT') then
          se(1:n,1:nk-1)  = s(1:n,1:nk-1)
          se(1:n,nk) = 1.
+         energy_as_thermo = .false.
       else
          se(1:n,1:nk-2)  = st(1:n,1:nk-2)
          se(1:n,nk-1:nk) = 1.
+         energy_as_thermo = .true.
       endif
 
       call mweights(vcoef(:,:,1), s, st, n, nk, nk-1)

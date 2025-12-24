@@ -24,6 +24,7 @@ module sfclayer
   ! Private variables
   real, save    :: beta = 1.                                !Prandtl number for a neutral profile
   real, save    :: rineutral = 0.                           !Width of neutral Ri regime
+  real, save    :: tdlrate = 0.2                            !diaglim rate (K/m)
   logical, save :: tdiaglim_default = .false.               !Default value for inversion limiter
   logical, save :: z0ref = .true.                           !Use a reference roughness (max of z0m and z0t)
 
@@ -103,6 +104,8 @@ contains
         beta = val
      case ('rineutral','RINEUTRAL')
         rineutral = val
+     case ('tdlrate','TDLRATE')
+        tdlrate = val
      case DEFAULT
         call msg_toall(MSG_WARNING,'(sl_put_r4) cannot set '//trim(key))
         return
@@ -210,6 +213,8 @@ contains
      select case (key)
      case ('beta','BETA')
         val = beta
+     case ('tdlrate','TDLRATE')
+        val = tdlrate   
      case ('bh91_a','BH91_A')
         val = BH91_A
      case ('bh91_b','BH91_B')
@@ -271,7 +276,7 @@ contains
   function sl_sfclayer(t_air,q_air,spd_air,dir_air,hghtm_air,hghtt_air,t_sfc,q_sfc,z0m,z0t,lat,fcor, &
        coefm,coeft,rib,flux_t,flux_q,ilmo,ue,h,lzz0m,lzz0t,stabm,stabt,spdlim, &
        t_diag,q_diag,u_diag,v_diag,hghtm_diag,hghtm_diag_row,hghtt_diag, &
-       hghtt_diag_row,tdiaglim,L_min,L_minv,optz0,z0mloc,z0t_optz0) result(status)
+       hghtt_diag_row,tdiaglim,L_min,L_minv,optz0,z0mloc,z0t_optz0,sl_mask) result(status)
     ! Surface layer parameterization
 
     ! Input arguments
@@ -296,6 +301,7 @@ contains
     real, intent(in), optional :: hghtt_diag                    !Diagnostic level height for thermdynamics (m) [1.5]
     real, dimension(:), intent(in), optional :: hghtt_diag_row  !Diagnostic heights for thermdynamics (m; supercedes hghtt_diag)
     real, dimension(:), intent(in), optional :: z0mloc          !Local Momentum roughness length (no orography) (m)
+    real, dimension(:), intent(in), optional :: sl_mask         !Mask for surface-layer calculations [1.]
 
 
     ! Output arguments
@@ -326,7 +332,7 @@ contains
     real, dimension(size(t_air)) :: my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q, &
          my_ilmo,my_ue,my_h,my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_t_diag,my_q_diag, &
          my_u_diag,my_v_diag,my_hghtm_diag,my_hghtt_diag,my_spdlim, my_z0mloc, &
-         my_z0t_optz0,my_L_minv
+         my_z0t_optz0,my_L_minv,my_sl_mask
     logical :: my_tdiaglim
 
     ! Initialize return value
@@ -349,7 +355,9 @@ contains
     if (present(L_minv)) my_L_minv(:) = L_minv(:)
     my_z0mloc(:) = z0m(:)
     if (present(z0mloc)) my_z0mloc(:) = z0mloc(:)
-
+    my_sl_mask(:) = 1.
+    if (present(sl_mask)) my_sl_mask(:) = sl_mask(:)
+    
     ! Initialize stability functions if required
     if (stabfunc_init() /= SL_OK) then
        call msg_toall(MSG_ERROR,'(sl_sfclayer) could not initialize default stability functions')
@@ -360,14 +368,14 @@ contains
     call flxsurf(my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q,my_ilmo,my_ue, &
          fcor,t_air,q_air,hghtm_air,hghtt_air,spd_air,t_sfc,q_sfc,my_h,z0m,z0t,my_L_min, &
          my_L_minv,my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_spdlim,size(t_air),my_optz0, &
-         my_z0mloc,my_z0t_optz0)
+         my_z0mloc,my_sl_mask,my_z0t_optz0)
 
     ! Diagnostic level calculations
     if (any((/present(hghtm_diag),present(hghtt_diag),present(hghtm_diag_row),present(hghtt_diag_row)/))) then
        ! Compute diagnostic level quantities
        call diasurf(my_u_diag,my_v_diag,my_t_diag,my_q_diag,size(t_air), &
             dir_air,t_sfc,q_sfc,z0m,z0t,my_ilmo,hghtm_air,my_h,my_ue,my_flux_t, &
-            my_flux_q,my_hghtm_diag,my_hghtt_diag,lat)
+            my_flux_q,my_hghtm_diag,my_hghtt_diag,lat,my_sl_mask)
        ! Apply diagnostic adjustments if requested
        if (sl_adjust(t_air,hghtt_air,my_t_diag,hghtt_diag_row=my_hghtt_diag,tdiaglim=my_tdiaglim, &
             adj_t_diag=my_t_diag) /= SL_OK) then
@@ -399,7 +407,7 @@ contains
     if (present(q_diag)) q_diag = my_q_diag
     if (present(u_diag)) u_diag = my_u_diag
     if (present(v_diag)) v_diag = my_v_diag
-    if (present(z0t_optz0)) then
+     if (present(z0t_optz0)) then
        if (my_optz0 > 0) then
           z0t_optz0 = my_z0t_optz0
        else
@@ -545,8 +553,8 @@ contains
     if (present(hghtt_diag_row)) my_hghtt_diag(:) = hghtt_diag_row(:)
     my_adj_t_diag(:) = t_diag(:)
 
-    ! Modify diagnostic level temperature on request (~ 8K/40m maximum)
-    if (my_tdiaglim) my_adj_t_diag(:) = max(t_diag(:),t_air(:)-0.2*(hghtt_air(:)-my_hghtt_diag(:)))
+    ! Modify diagnostic level temperature on request (maximum lapse rate set by parameter tdlrate)
+    if (my_tdiaglim) my_adj_t_diag(:) = max(t_diag(:),t_air(:)-tdlrate*(hghtt_air(:)-my_hghtt_diag(:)))
     if (present(adj_t_diag)) adj_t_diag(:) = my_adj_t_diag(:)
 
     ! Succesful completion of subprogram
@@ -580,7 +588,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine flxsurf(cmu, ctu, rib, ftemp, fvap, ilmo, &
        ue, fcor, ta , qa , zu, zt, vmod, tg , qg , h , z0 , z0t,  &
-       lmin, lminv, lzz0, lzz0t, fm, fh, va, n, optz0, z0loc, optz0_z0t)
+       lmin, lminv, lzz0, lzz0t, fm, fh, va, n, optz0, z0loc, sl_mask, optz0_z0t)
     use sfclayer_funcs, only: D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
     ! Represent surface layer similarity state, turbulent tranfer coefficients and fluxes
@@ -601,7 +609,8 @@ contains
     real, dimension(:), intent(in) :: lminv                     !Vector of minimum stable Obukhov lengths [none]
     integer, intent(in) :: optz0                                !Alternative roughness length adjustment [0]
     real, dimension(:), intent(in) :: z0loc                     !Local momentum roughness length (m) for compz0() calc.
-
+    real, dimension(:), intent(in) :: sl_mask                   !Mask for surface-layer calculations
+    
     ! Output arguments
     real, dimension(:), intent(out) :: ilmo                     !Inverse of the Obukov length (/m)
     real, dimension(:), intent(out) :: h                        !Boundary layer height (m)
@@ -662,13 +671,15 @@ contains
 
     ! Compute neutral stability functions
     do j=1,n
+       if (sl_mask(j) <= 0.) cycle
        lzz0(j) = log((z0rm(j) + zu(j)) / z0(j))
        lzz0t(j) = log((z0rt(j) + zt(j)) / z0t(j))
     enddo
 
     ! Update estimate of the Obukhov length and stability functions
     ROW: do j=1,n
-
+       if (sl_mask(j) <= 0.) cycle
+       
        ! Copy inputs to scalars as an optimization
        z0j = z0(j)
        z0locj = z0loc(j)
@@ -803,7 +814,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine diasurf(uz, vz, tz, qz, ni, angi, tg, qg, z0, z0t, ilmo, za, &
-       h, ue, ftemp, fvap, zu, zt, lat)
+       h, ue, ftemp, fvap, zu, zt, lat, sl_mask)
     use sfclayer_funcs, only: D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
     ! Compute state variables at the diagnostic level
@@ -824,7 +835,8 @@ contains
     real, dimension(:), intent(in) :: zu                        !Diagnostic heights for momentum (m)
     real, dimension(:), intent(in) :: zt                        !Diagnostic heights for thermdynamics (m)
     real, dimension(:), intent(in) :: lat                       !Latitude (rad)
-
+    real, dimension(:), intent(in) :: sl_mask                   !Mask for surface-layer calculations
+    
     ! Output arguments
     real, dimension(:), intent(out) :: tz                       !Diagnostic level temperature (K)
     real, dimension(:), intent(out) :: qz                       !Diagnostic level moisture (kg/kg)
@@ -843,13 +855,21 @@ contains
 
     ! Initialize neutral stability functions
     do j=1,ni
+       if (sl_mask(j) <= 0.) cycle
        lzz0(j) = log(1 + zu(j) / z0(j))
        lzz0t(j) = log(1 + zt(j) / z0t(j))
     enddo
 
     ! Compute state variables at the diagnostic levels
     ROW: do j=1,ni
-
+       if (sl_mask(j) <= 0.) then
+          tz(j) = 0.
+          qz(j) = 0.
+          uz(j) = 0.
+          vz(j) = 0.
+          cycle
+       endif
+       
        ! Combine boundary layer height estimates under stable conditions
        if (ilmo(j) > 0.) then
           h1 = (za(j) + 10.*z0(j)) * factn

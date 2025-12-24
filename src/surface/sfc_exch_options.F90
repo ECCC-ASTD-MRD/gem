@@ -94,6 +94,11 @@ contains
       ier = min(wb_put('sfc/l07_am',l07_am,options),ier)
       ier = min(wb_put('sfc/leadfrac',leadfrac,options),ier)
       ier = min(wb_put('sfc/n0rib',n0rib,options),ier)
+      ier = min(wb_put('sfc/sl_Lmin_soil',sl_Lmin_soil,options),ier)
+      ier = min(wb_put('sfc/sl_Lmin_glacier',sl_Lmin_glacier,options),ier)
+      ier = min(wb_put('sfc/sl_Lmin_water',sl_Lmin_water,options),ier)
+      ier = min(wb_put('sfc/sl_Lmin_seaice',sl_Lmin_seaice,options),ier)
+      ier = min(wb_put('sfc/sl_Lmin_town',sl_Lmin_town,options),ier)
       ier = min(wb_put('sfc/sl_func_stab',sl_func_stab,options),ier)
       ier = min(wb_put('sfc/sl_func_unstab',sl_func_unstab,options),ier)
       ier = min(wb_put('sfc/tdiaglim',tdiaglim,options),ier)
@@ -128,7 +133,7 @@ contains
             i = i+1
          enddo
       endif
-      thermal_stress = (thermal_stress .or. debug_alldiag_L)
+      thermal_stress = (thermal_stress .or. debug_alldiag_L .or. nphyoutlist < 0)
 
       F_istat = RMN_OK
       !----------------------------------------------------------------------

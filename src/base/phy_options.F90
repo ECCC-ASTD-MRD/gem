@@ -6,6 +6,7 @@ module phy_options
    save
 
    integer, parameter :: RAD_NUVBRANDS     = 6 !#TODO: move to a radiation specific module/cdk
+   integer, parameter :: RAD_TCCL     = 9 !#TODO: move to a radiation specific module/cdk
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate
    logical           :: chemistry    = .false.
    logical           :: climat       = .false.
@@ -20,7 +21,7 @@ module phy_options
    logical           :: ebdiag       = .false.
    logical           :: ecdiag       = .false.
    logical           :: etccdiag     = .false.
-   logical           :: etccdiagout  = .false.
+   logical           :: fsdiag       = .false.
    logical           :: impflx       = .false.
    logical           :: inincr       = .false.
    integer           :: kntrad       = 1
@@ -121,6 +122,11 @@ module phy_options
         'UNIFORM   ', &
         'TRIANGULAR' &
         /)
+
+   !# Update cloud fraction at the end of the microphysics
+   logical           :: cond_updatefn = .false.
+   namelist /physics_cfgs/ cond_updatefn
+   namelist /physics_cfgs_p/ cond_updatefn
    
    !# Activate computing of all diags, requested for output or not.
    logical           :: debug_alldiag_L     = .false.
@@ -318,6 +324,26 @@ module phy_options
    namelist /physics_cfgs/ p3_resfact
    namelist /physics_cfgs_p/ p3_resfact
 
+   !# Semi-Lagrangian Sedimentation for microphysics Thompson
+   logical :: thompson_sedi_semilag_L = .true.
+   namelist /physics_cfgs/ thompson_sedi_semilag_L
+   namelist /physics_cfgs_p/ thompson_sedi_semilag_L
+   
+   !# Deformation CFL (decfl) for microphysics Thompson
+   integer :: thompson_decfl = 1
+   namelist /physics_cfgs/ thompson_decfl
+   namelist /physics_cfgs_p/ thompson_decfl   
+
+   !# Inner time step for microphysics Thompson, default -1 fo model time step
+   real :: thompson_dt_inner = -1.0
+   namelist /physics_cfgs/ thompson_dt_inner
+   namelist /physics_cfgs_p/ thompson_dt_inner
+   
+   !# Cloud fraction composition for microphysics Thompson
+   character(len=20) :: thompson_cldfrac = "liq_ice_snow"
+   namelist /physics_cfgs/ thompson_cldfrac
+   namelist /physics_cfgs_p/ thompson_cldfrac
+   
    !# Switch for aerosol activation scheme (1 = default, 2 = ARG + Aerosol climatology)
    integer           :: mp_aeroact = 1
    namelist /physics_cfgs/ mp_aeroact
@@ -431,6 +457,11 @@ module phy_options
         'NIL       '  &
         /)
 
+   !# Reference length (m) for variance power law scaling
+   real              :: pbl_dxref = 1000.
+   namelist /physics_cfgs/ pbl_dxref
+   namelist /physics_cfgs_p/ pbl_dxref
+      
    !# Conservation corrections for PBL scheme
    !# * 'NIL ' : No conservation correction applied
    !# * 'TEND' : Temperature and moisture tendencies corrected
@@ -519,6 +550,11 @@ module phy_options
    namelist /physics_cfgs/ pbl_ricrit
    namelist /physics_cfgs_p/ pbl_ricrit
 
+   !# Relaxation time scale for buoyancy frequency calculation
+   real              :: pbl_ritau    = -1.
+   namelist /physics_cfgs/ pbl_ritau
+   namelist /physics_cfgs_p/ pbl_ritau
+
    !# PBL representation of boundary layer clouds
    !# * 'NIL     ': No Shallow convection
    !# * 'CONRES  ': Bulk Richardson number-based turbulent enhancement
@@ -560,6 +596,11 @@ module phy_options
    logical           :: pbl_ysu_rpnsolve = .false.
    namelist /physics_cfgs/ pbl_ysu_rpnsolve
    namelist /physics_cfgs_p/ pbl_ysu_rpnsolve
+
+   !# Filtering condition for mixing length consistency check (e.g. pbl_znfilt=1.1)
+   real              :: pbl_znfilt   = -1.
+   namelist /physics_cfgs/ pbl_znfilt
+   namelist /physics_cfgs_p/ pbl_znfilt
 
    !# Relaxation timescale (s) for mixing length smoothing
    real              :: pbl_zntau    = 7200.
@@ -900,17 +941,19 @@ module phy_options
    !# * 'MP_P3     ' : P3 microphysics scheme (v5)
    !# * 'MP_P3V3   ' : P3 microphysics scheme (v3)
    !# * 'KESSLER   ' : Kessler warm rain scheme
+   !# * 'THOMPSON  ' : Thompson microphysics scheme
    character(len=16) :: stcond       = 'NIL'
    namelist /physics_cfgs/ stcond
    namelist /physics_cfgs_p/ stcond
-   character(len=*), parameter :: STCOND_OPT(7) = (/ &
+   character(len=*), parameter :: STCOND_OPT(8) = (/ &
         'NIL       ', &
         'CONSUN    ', &
         'MP_MY2    ', &
         'MP_P3     ', &
         'MP_P3V3   ', &
         'KESSLER   ', &
-        'S2        ' &
+        'S2        ', &
+        'THOMPSON  ' &
         /)
 
    !# Special treatment of stratosphere;

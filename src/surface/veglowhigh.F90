@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
-     lat, ni, nclass)
+     lat, agfrac, ni, nclass)
   use svs_configs, only : ntypel, vl_type, ntypeh, vh_type, furb_vl, imp_urb, epsilon_svs
    implicit none
 !!!#include <arch_specific.hf>
@@ -31,6 +31,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
    !            - Output -
    ! LOW        Fraction of (soil) grid covered by low vegetation classes 
    ! HIGH       Fraction of (soil) grid covered by high vegetation classes
+   ! AGFRAC     Fraction of (soil) grid covered by aggricultural areas
    ! DECI       Fraction of HIGH vegetation that is deciduous
    ! EVER       Fraction of HIGH vegetation that is evergreen 
    ! IMPERVU    Fraction of LAND SURFACE that is IMPERVIOUS 
@@ -38,7 +39,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
 
    integer ni, nclass
    real deci(ni), ever(ni), fcover(ni,nclass), impervu(ni)
-   real high(ni), low(ni), tablen(nclass)
+   real high(ni), low(ni), tablen(nclass), agfrac(ni)
    real tables(nclass), lat(ni)
 !
 !Author
@@ -60,6 +61,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
         high(i)= 0.0
         deci(i)= 0.0
         ever(i)= 0.0
+        agfrac(i) = fcover(i,15)
       END DO
 !
 !
@@ -121,6 +123,8 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
           ! TAKE TO BE FRACTION OF URBAN CLASS (vf=21) TIMES A CONSTANT...
           impervu(i) =  imp_urb * fcover(i,21) / totfract
 !
+          ! FRACTION OF LAND SURFACE COVERED WITH AGRICULTURAL AREAS
+          agfrac(i) = agfrac(i) / totfract
 
        ELSE
           low(i)     = 0.0

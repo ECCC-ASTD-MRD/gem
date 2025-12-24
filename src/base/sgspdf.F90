@@ -89,7 +89,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine sgspdf_bkg(F_sigmas, F_tt, F_qw, F_sigt, F_gzt, F_ps, F_hpbl, F_mrk, F_ni, F_nkm1) 
-    use phy_options, only: cond_hu0min, cond_hu0max
+    use phy_options, only: cond_hu0min, cond_hu0max, cond_sgspdf
     use ens_perturb, only: ens_nc2d, ens_spp_get
     use tdpack, only: foqst
 
@@ -129,10 +129,14 @@ contains
           rhc = min(rhc + tadj, hu0max(i))
           ! Limit rhcrit in very dry conditions
           rhc = max(rhc, 1. - F_qw(i,k)/qsat)
-          ! Convert to sigma_s for a triangular PDF
-          F_sigmas(i,k) = qsat * (1.-rhc) / sqrt(6.) 
+          ! Convert rhc to sigma_s for user-defined PDF
+          if (cond_sgspdf == 'triangular') then
+             F_sigmas(i,k) = qsat * (1.-rhc) / sqrt(6.)
+          else
+             F_sigmas(i,k) = qsat * (1.-rhc) / sqrt(3.)
+          endif
        enddo
-    enddo
+    enddo       
 
     ! End of subprogram
     return

@@ -5,6 +5,7 @@ module pbl_ri_utils
 
   ! API functions
   public :: baktot                                              !Convert conserved variable tendencies to temperature
+  public :: baktotq                                             !Convert conserved variable tendencies to temperature and moisture
   public :: buoyflux                                            !Buoyancy flux calculation
   public :: covareq                                             !Equilibrium solution for SGS variance
   public :: covarstep                                           !Algebraic solution of the SGS variance equation
@@ -59,9 +60,45 @@ contains
   end subroutine baktot
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine buoyflux(F_dthv, F_dudz2, F_ri, F_uu, F_vv, F_tt, F_hu, &
+  subroutine baktotq(F_dt, F_dq, F_dthl, F_dqw, F_dliq, F_dice, F_sigt, F_ni, F_nkm1)
+    use tdpack_const, only: CPD, CAPPA, CHLC, CHLF
+    implicit none
+
+    !@Arguments
+    integer, intent(in) :: F_ni                                 !horizontal dimension
+    integer, intent(in) :: F_nkm1                               !vertical dimension
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_dthl          !tendency of theta_l (K/s)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_dqw           !tendency of total water (kg/kg/s)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_dliq          !liquid condensate tendency (kg/kg/s)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_dice          !ice condensate tendency (kg/kg/s)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_sigt          !sigma for thermo levels
+    real, dimension(F_ni,F_nkm1), intent(out) :: F_dt           !tendency of dry air temperature (K/s)
+    real, dimension(F_ni,F_nkm1), intent(out) :: F_dq           !tendency of specific humidity (kg/kg/s)
+
+    !@Object
+    !          Compute temperature tendency from conserved variables
+
+    ! Local variables
+    integer :: i, k
+ 
+    ! Convert back to state variables and tendencies
+    do k=1,F_nkm1
+       do i=1,F_ni
+          F_dq(i,k) = F_dqw(i,k) - (F_dliq(i,k) + F_dice(i,k))
+          F_dt(i,k) = F_dthl(i,k) * F_sigt(i,k)**CAPPA + &
+               (CHLC * F_dliq(i,k) + (CHLC+CHLF) * F_dice(i,k)) / CPD
+       enddo
+    enddo
+
+    ! End of subprogram
+    return
+  end subroutine baktotq
+  
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine buoyflux(F_n2, F_dudz2, F_ri, F_uu, F_vv, F_tt, F_hu, &
        F_lwc, F_iwc, F_fbl, F_tsurf, F_qsurf, F_z0m, F_z0t, &
-       F_lat, F_fcor, F_sigt, F_gzm, F_gzt, F_ps, F_vcoef, F_ni, F_nkm1)
+       F_lat, F_fcor, F_sigt, F_gzm, F_gzt, F_ps, F_vcoef, &
+       F_tau, F_ni, F_nkm1)
     use tdpack_const, only: DELTA, GRAV, CPD, CAPPA
     use phy_options
     use cons_thlqw, only: thlqw_compute, thlqw_thermco
@@ -72,6 +109,7 @@ contains
     ! Arguments
     integer, intent(in) :: F_ni                                 !horizontal dimension
     integer, intent(in) :: F_nkm1                               !vertical dimension
+    real, intent(in) :: F_tau                                   !time step (s)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_uu            !u-component wind (m/s)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_vv            !v-component wind (m/s)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_tt            !dry air temperature (K)
@@ -90,9 +128,9 @@ contains
     real, dimension(F_ni,F_nkm1), intent(in) :: F_gzt           !heights of thermo levels (m)
     real, dimension(F_ni), intent(in) :: F_ps                   !surface pressure (Pa)
     real, pointer, dimension(:,:,:), contiguous :: F_vcoef      !coefficients for vertical interpolation
-    real, dimension(F_ni,F_nkm1), intent(out) :: F_dudz2        !square of vertical wind shear (s^-2)
+    real, dimension(F_ni,F_nkm1), intent(inout) :: F_dudz2      !square of vertical wind shear (s^-2)
+    real, dimension(F_ni,F_nkm1), intent(inout) :: F_n2         !square of buoyancy frequency (s^-2)
     real, dimension(F_ni,F_nkm1), intent(out) :: F_ri           !gradient Richardson number
-    real, dimension(F_ni,F_nkm1), intent(out) :: F_dthv         !square of buoyancy frequency (s^-2)
 
     !Object
     !          Compute buoyancy and shear (squared) gradients for TKE sources
@@ -102,16 +140,23 @@ contains
     
     ! Local variable declarations
     integer :: i, k
-    real :: idz, dqwdz, dthldz, exner, alpha, bet, mu, dudz, dvdz, twc
+    real :: idz, dqwdz, dthldz, exner, alpha, bet, mu, dudz, dvdz, twc, n2, dudz2
     real, dimension(F_ni) :: wspd, wdir, theta
     real, dimension(F_ni,F_nkm1) :: thl, qw, acoef, bcoef, coefthl, coefqw, &
-         thv, ut, vt, leff, thvm
+         thv, ut, vt, leff, thvm, sqcov
 
     ! Compute thermodynamic coefficients on thermo levels following Bechtold and Siebsma (JAS 1998)
     call thlqw_compute(thl, qw, F_tt, F_hu, F_lwc, F_iwc, F_sigt, F_ni, F_nkm1)
     call thlqw_thermco(thl, qw, F_tt, F_lwc, F_iwc, F_sigt, F_ps, &
          F_ni, F_nkm1, F_acoef=acoef, F_bcoef=bcoef, F_leff=leff)
 
+    ! Compute higher-order (sq') covariance for Eq. 15 of Bechtold et al. (JAS 1995)
+    if (cond_sgspdf == 'triangular') then
+       sqcov = F_fbl  !strictly true only for Gaussian
+    else
+       sqcov = F_fbl**2 * (3. - 2.*F_fbl)
+    endif
+    
     ! Compute terms of buoyancy flux equation (Eq. 4 of Bechtold and Siebsma (JAS 1998))
     do k=1,F_nkm1
        do i=1,F_ni
@@ -122,8 +167,8 @@ contains
           mu = DELTA*qw(i,k) - (1. + DELTA)*twc
           bet = leff(i,k)/CPD / exner * (1. + mu) - (1. + DELTA)*theta(i)
           thv(i,k) = thl(i,k) + alpha*qw(i,k) + bet*twc
-          coefthl(i,k) = 1.0 + mu - bet*bcoef(i,k)*F_fbl(i,k)          
-          coefqw(i,k) = alpha + bet*acoef(i,k)*F_fbl(i,k)
+          coefthl(i,k) = 1.0 + mu - bet*bcoef(i,k)*sqcov(i,k)
+          coefqw(i,k) = alpha + bet*acoef(i,k)*sqcov(i,k)
        enddo
     enddo
 
@@ -152,16 +197,24 @@ contains
           dqwdz = (qw(i,k) - qw(i,k-1)) * idz
           dudz = (ut(i,k) - ut(i,k-1)) * idz
           dvdz = (vt(i,k) - vt(i,k-1)) * idz
-          ! Buoyancy frequency squared
-          F_dthv(i,k) = (coefthl(i,k)*dthldz + coefqw(i,k)*dqwdz) * (GRAV/thvm(i,k))
-          ! Shear-squared
-          F_dudz2(i,k) = dudz**2 + dvdz**2
+          ! Buoyancy frequency squared and shear squared
+          n2 = (coefthl(i,k)*dthldz + coefqw(i,k)*dqwdz) * (GRAV/thvm(i,k))
+          dudz2 = dudz**2 + dvdz**2
+          if (pbl_ritau > 0.) then
+             F_n2(i,k) = (F_n2(i,k) + F_tau / pbl_ritau * n2) / &
+                  (1. + F_tau / pbl_ritau)
+             F_dudz2(i,k) = (F_dudz2(i,k) + F_tau / pbl_ritau * dudz2) / &
+                  (1. + F_tau / pbl_ritau)
+          else
+             F_n2(i,k) = n2
+             F_dudz2(i,k) = dudz2
+          endif
           ! Richardson number
-          F_ri(i,k) = F_dthv(i,k) / max(F_dudz2(i,k), 1e-6)
+          F_ri(i,k) = F_n2(i,k) / max(F_dudz2(i,k), 1e-6)
        enddo
     enddo
     do i=1,F_ni
-       F_dthv(i,1) = 0.
+       F_n2(i,1) = 0.
        F_dudz2(i,1) = 0.
        F_ri(i,1) = 0.
     enddo
@@ -367,6 +420,7 @@ contains
     use tdpack_const
     use pbl_utils, only: dvrtdf
     use cons_thlqw, only: thlqw_thermco
+    use phy_options, only: pbl_dxref
     implicit none
 
     !@Arguments
@@ -388,9 +442,6 @@ contains
     real, dimension(F_ni,F_nkm1), intent(out) :: F_sigmas       !subgrid moisture variance (kg/kg)
 
     !@Object Calculate the boundary layer subgrid-scale properties
-
-    ! Local parameters
-    real, parameter :: REF_DX=1000.                             !grid mesh for variance scaling
 
     ! Local variables
     integer :: i,k
@@ -416,12 +467,13 @@ contains
     do k=2,F_nkm1
        do i=1,F_ni
           c1coef = sqrt(2. * PBL_RI_CK * F_pri(i,k) / PBL_RI_CAB * F_zn(i,k) * F_ze(i,k))
-          F_sigmas(i,k) = sqrt(sqrt(F_dxdy(i))/REF_DX) * max(c1coef * abs(acoef(i,k)*dqwdz(i,k) &
+          F_sigmas(i,k) = sqrt(sqrt(F_dxdy(i))/max(pbl_dxref, 1.)) &
+               * max(c1coef * abs(acoef(i,k)*dqwdz(i,k) &
                - bcoef(i,k)*dthldz(i,k)), PBL_SDMIN)
        end do
     end do
     do i=1,F_ni
-       F_sigmas(i,1) = sqrt(sqrt(F_dxdy(i))/REF_DX) * PBL_SDMIN
+       F_sigmas(i,1) = sqrt(sqrt(F_dxdy(i))/max(pbl_dxref, 1.)) * PBL_SDMIN
     enddo
     call vint_mom2thermo(F_sigmas, F_sigmas, F_vcoef, F_ni, F_nkm1)
     
@@ -460,8 +512,12 @@ contains
           sgn = sign(1., 1. - xi0%RE)
           if (abs(xi0%RE) == 1.) then
              F_estar(i,k) = F_en(i,k)
-          else             
+          else
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
              gamma = atanh(xi0**sgn)
+#else
+             gamma = 0.5 * log((1.0 + xi0**sgn) / (1.0 - xi0**sgn))
+#endif
              tmax = -min(gamma%IM, -tiny(gamma%IM)*F_tau) / max(itbc%IM, tiny(itbc%IM))
              yz = ye * tanh(gamma + itbc * min(F_tau, tmax))**sgn
              F_estar(i,k) = max(yz%RE**2, etrmin2)

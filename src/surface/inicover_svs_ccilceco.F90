@@ -661,7 +661,7 @@ subroutine inicover_svs_ccilceco(pvars, kount, ni)
 !
       call veglowhigh_ccilceco(PTR1D(vegf), PTR1D(vegf_evol), PTR1D(vegl), &
            PTR1D(vegh), PTR1D(deciduous), PTR1D(evergreen), PTR1D(impervu), &
-           ni, nclass )
+           PTR1D(agrifrac), ni, nclass )
 
 !      call veglowhigh(PTR1D(vegf), vegdatdn , vegdatds, bogus1, &
 !           bogus2, PTR1D(deciduous), PTR1D(evergreen), PTR1D(impervu), &
