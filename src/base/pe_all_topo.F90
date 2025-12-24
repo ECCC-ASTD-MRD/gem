@@ -35,7 +35,7 @@
 
       character(len=3)   :: mycol_S, myrow_S
       character(len=1024):: fn!, scratch_dir
-      integer :: nc, err, unf
+      integer :: nc, err
       integer, dimension(0:Ptopo_ncolors-1,-1:Ptopo_npex,-1:Ptopo_npey) :: colrow
 !
 !-------------------------------------------------------------------
@@ -92,15 +92,12 @@
 !
 ! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
 !
-      unf=0
       Ctrl_theoc_L = .false.
       fn=trim(Path_work_S)//'/theoc'
       if (wkoffit(fn) > -3) then
          if (Ptopo_myproc == 0) write (Lun_out,*) &
                                 'Assume Theoretical case'
          Ctrl_theoc_L = .true.
-      else
-         call fclos (unf)
       end if
 !
 !-------------------------------------------------------------------

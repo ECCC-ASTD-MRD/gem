@@ -176,6 +176,7 @@
          !Initialise spectral coeffs and stochastic params
          if(Ens_recycle_mc) then
             !Read saved stochastic numbers and spectral coeffs ar,br.ai,bi
+            ier=0
             if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
                   unf0=0
                   fn= trim(Path_input_S)//'/MODEL_INPUT'//'/MRKV_SKEB.bin'
@@ -281,6 +282,7 @@
 
 ! Save random numbers and coefficient ar,ai,br,bi
       if (write_markov_l) then
+         ier=0
          if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
             unf0=0
             fn=trim(Out_dirname_S)//'/'// 'MRKV_SKEB.bin'
