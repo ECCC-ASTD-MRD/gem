@@ -7,10 +7,12 @@ cado_commands=(
     cmake-all
     cmake-debug
     cmake-debug-extra
+    cmake-nvhpc
     cmake-mach
     cmake-mach-static
     cmake-all-mach
     cmake-mach-debug
+    cmake-mach-debug-extra
     build
     work
     install
