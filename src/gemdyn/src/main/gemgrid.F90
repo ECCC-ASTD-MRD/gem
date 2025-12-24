@@ -53,8 +53,6 @@
 !
 !----------------------------------------------------------------------
 !
-      call init_component()
-
       etk = 'PARPOS'
       fn  = trim(Path_input_S)//'/model_settings.nml'
       Step_dt = 1.
@@ -419,7 +417,6 @@
       deallocate (x_8, y_8, xpos, ypos)
       deallocate (xposU, yposV )
 
-      call rpn_comm_FINALIZE(err)
 !
 !-------------------------------------------------------------------
 !

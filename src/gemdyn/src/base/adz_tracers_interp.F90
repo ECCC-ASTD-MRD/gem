@@ -26,7 +26,7 @@
 !
       call gtmg_start (33, 'ADV_tracers', 10)
 
-      if (Adz_verbose>0) call stat_mass_tracers_hlt (1,"BEFORE ADVECTION")
+      if (Adz_verbose>0) call stat_mass_tracers (1,"BEFORE ADVECTION")
 
       if (Tr3d_ntrTRICUB_NT>0) then
          call gtmg_start (34, 'TRICUB_NT', 33)
@@ -79,11 +79,11 @@
                pnt_stack(n)%pil => tracers_B(deb+n-1)%pntr
             end do
 !$omp end single
-            call adz_BC_LAM_zlf_0_hlt (pnt_stack,Tr3d_ntrTRICUB_WP,0)
+            call adz_BC_LAM_zlf_0 (pnt_stack,Tr3d_ntrTRICUB_WP,0)
             call adz_tricub_hlt ( pnt_stack, Tr3d_ntrTRICUB_WP ,&
                   Adz_pb,Adz_cpntr_t,Adz_num_b,Adz_i0b,Adz_inb,&
                   Adz_j0b,Adz_jnb,1,F_ext_L=.false.,F_post=Tr_3CWP)
-            call adz_BC_LAM_zlf_0_hlt (pnt_stack,Tr3d_ntrTRICUB_WP,1)
+            call adz_BC_LAM_zlf_0 (pnt_stack,Tr3d_ntrTRICUB_WP,1)
          end if
          call gtmg_stop (37)
       end if
@@ -110,12 +110,12 @@
                pnt_stack(n)%pil => tracers_B(deb+n-1)%pntr
             end do
 !$omp end single
-            call adz_BC_LAM_zlf_0_hlt (pnt_stack,Tr3d_ntrBICHQV_WP,0)
+            call adz_BC_LAM_zlf_0 (pnt_stack,Tr3d_ntrBICHQV_WP,0)
             call adz_tricub_hlt ( pnt_stack, Tr3d_ntrBICHQV_WP,&
                   Adz_pb,Adz_cpntr_t,Adz_num_b,Adz_i0b,Adz_inb,&
                   Adz_j0b,Adz_jnb,1, F_ext_L=.false.          ,&
                   F_QV_L=.true.,F_post=Tr_BQWP  )
-            call adz_BC_LAM_zlf_0_hlt (pnt_stack,Tr3d_ntrBICHQV_WP,1)
+            call adz_BC_LAM_zlf_0 (pnt_stack,Tr3d_ntrBICHQV_WP,1)
          end if
          call gtmg_stop (39)
       end if

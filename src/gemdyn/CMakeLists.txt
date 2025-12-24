@@ -60,8 +60,6 @@ endif()
 if(DEFINED ENV{ORDENV_ARCH})
   set(EC_ORDENV_ARCH "$ENV{ORDENV_ARCH}")
 endif()
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/main/maincheckdmpart.in ${CMAKE_CURRENT_SOURCE_DIR}/src/main/maincheckdmpart.F90)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/main/maingemgrid.in ${CMAKE_CURRENT_SOURCE_DIR}/src/main/maingemgrid.F90)
 
 add_subdirectory(src/no_mpi gemdyn-no_mpi)
 add_subdirectory(src gemdyn)

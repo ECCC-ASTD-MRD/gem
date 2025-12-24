@@ -25,6 +25,7 @@
       use gmm_pw
       use gmm_smag
       use gmm_phy
+      use gmm_iau
       use gem_options
       use glb_ld
       use lun
@@ -223,7 +224,7 @@
 
       nullify(pw_uu_plus ,pw_vv_plus ,pw_wz_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
       nullify(pw_uu_moins,pw_vv_moins,            pw_tt_moins,pw_pm_moins,pw_gz_moins)
-      nullify(pw_uu_copy ,pw_vv_copy, pw_log_pm, pw_log_pt)
+      nullify(pw_uu_copy ,pw_vv_copy, pw_log_pm, pw_log_pt, pw_log_ptd)
       nullify(pw_pm_plus_8,pw_p0_plus_8,pw_pm_moins_8,pw_p0_moins_8)
       istat = GMM_OK
 
@@ -242,6 +243,7 @@
       istat = min(gmm_create(gmmk_pw_p0_plus_8_s ,pw_p0_plus_8,meta2d     ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_log_pm_s    ,pw_log_pm   ,meta3d_nk1 ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_log_pt_s    ,pw_log_pt   ,meta3d_nk1 ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_log_ptd_s   ,pw_log_ptd  ,meta3d_nk1 ,flag_r_n),istat)
 
       istat = min(gmm_create(gmmk_pw_uu_moins_s  ,pw_uu_moins ,meta3d_nk  ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_vv_moins_s  ,pw_vv_moins ,meta3d_nk  ,flag_r_n),istat)
@@ -274,6 +276,7 @@
       istat = min(gmm_create(gmmk_phy_uu_tend_s, phy_uu_tend, meta3d_nk, flag_r_n),istat)
       istat = min(gmm_create(gmmk_phy_vv_tend_s, phy_vv_tend, meta3d_nk, flag_r_n),istat)
       istat = min(gmm_create(gmmk_phy_tv_tend_s, phy_tv_tend, meta3d_nk, flag_r_n),istat)
+      istat = min(gmm_create(gmmk_iau_tv_tend_s, iau_tv_tend, meta3d_nk, flag_r_n),istat)
       if (GMM_IS_ERROR(istat)) then
          call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PHY)')
       end if

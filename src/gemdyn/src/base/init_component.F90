@@ -17,6 +17,7 @@
 
       subroutine init_component()
       use iso_c_binding
+      use App
       use clib_itf_mod
       use app!, only: Lib_LogLevelNo,APP_LIBVGRID,APP_ERROR
       use dcst
@@ -120,6 +121,8 @@
       COMM_gridpeers = RPN_COMM_comm ('GRIDPEERS')
       COMM_ew        = RPN_COMM_comm ('EW')
       COMM_ns        = RPN_COMM_comm ('NS')
+
+      call app_setmpicomm(COMM_grid)
 
       lun_out     = -1
       Lun_debug_L = .false.

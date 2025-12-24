@@ -40,6 +40,7 @@
       implicit none
 #include <arch_specific.hf>
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer,external :: srequet

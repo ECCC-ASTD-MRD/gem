@@ -28,7 +28,7 @@
       
       !Resetting done at each timestep before calling adz_post_tr
       !----------------------------------------------------------
-      if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0) call set_post_tr_hlt ()
+      if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0) call set_post_tr ()
 
       call gtmg_start (57, 'C_TR_POST', 55)
       if (Tr3d_ntrTRICUB_WP>0) then
@@ -41,7 +41,7 @@
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
 !$omp end single
-         call adz_post_tr_mono_hlt (1)
+         call adz_post_tr_mono (1)
       end if
 
       if (Tr3d_ntrBICHQV_WP>0) then
@@ -54,12 +54,12 @@
             Adz_stack(n)%dst => tracers_M(deb+n-1)%pntr
          end do
 !$omp end single
-         call adz_post_tr_mono_hlt (2)
+         call adz_post_tr_mono (2)
       end if
 
       !Apply Bermejo-Conde mass-fixer for all tracers in Adz_bc
       !--------------------------------------------------------
-      if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0) call adz_post_tr_bc_hlt (0)
+      if (max(Tr3d_ntrTRICUB_WP,Tr3d_ntrBICHQV_WP)>0) call adz_post_tr_bc (0)
       call gtmg_stop (57)
 
       call gtmg_start (58, 'C_TR_ZLF0', 55)
@@ -71,7 +71,7 @@
             Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
          end do
 !$omp end single
-         call adz_BC_LAM_zlf_0_hlt (Adz_stack,Tr3d_ntrTRICUB_WP,2)
+         call adz_BC_LAM_zlf_0 (Adz_stack,Tr3d_ntrTRICUB_WP,2)
       end if
 
       if (Tr3d_ntrBICHQV_WP>0 .and. Adz_BC_LAM_zlf_L) then
@@ -82,11 +82,11 @@
             Adz_stack(n)%pil => tracers_B(deb+n-1)%pntr
          end do
 !$omp end single
-         call adz_BC_LAM_zlf_0_hlt (Adz_stack,Tr3d_ntrBICHQV_WP,2)
+         call adz_BC_LAM_zlf_0 (Adz_stack,Tr3d_ntrBICHQV_WP,2)
       end if
       call gtmg_stop (58)
 
-      if (Adz_verbose>0) call stat_mass_tracers_hlt (0,"AFTER ADVECTION")
+      if (Adz_verbose>0) call stat_mass_tracers (0,"AFTER ADVECTION")
 
       call gtmg_stop (55)
 !
