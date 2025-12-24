@@ -18,6 +18,10 @@ add_dependencies(modelutils ${PROJECT_NAME}_build_info)
 target_include_directories(modelutils PUBLIC $<BUILD_INTERFACE:${PROJECT_INCLUDE_DIRECTORY}>)
 target_include_directories(modelutils PUBLIC $<BUILD_INTERFACE:${CMAKE_Fortran_MODULE_DIRECTORY}>)
 
+target_include_directories(modelutils PRIVATE
+  base
+  )
+
 target_link_libraries(modelutils PUBLIC
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C

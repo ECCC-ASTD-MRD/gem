@@ -596,6 +596,7 @@ contains
       character(len=MU_JDATE_PDF_LEN) datev_S
       character(len=512) :: msg_S, sfcfld2_S
       !----------------------------------------------------------------------
+      call msg(MSG_DEBUG, '(time_interp) set [BEGIN] '//trim(F_varname_S))
       F_istat = RMN_ERR
       if (trim(F_varname_S)==' ' .or. .not.associated(F_data)) return
       rstst_flag = 0
@@ -652,6 +653,7 @@ contains
       else
          call msg(MSG_INFOPLUS,'(time_interp) Set ERROR: '//trim(msg_S))
       endif
+      call msg(MSG_DEBUG, '(time_interp) set [END] '//trim(F_varname_S))
       !----------------------------------------------------------------------
       return
    end function time_interp_set1_8
@@ -709,6 +711,7 @@ contains
       type(gmm_metadata) :: mymeta
       real,pointer :: dummy3d(:,:,:)
       !----------------------------------------------------------------------
+      call msg(MSG_DEBUG, '(time_interp) retrieve [BEGIN] '//trim(F_varname_S))
       F_istat = TIME_INTERP_NOT_FOUND
       F_datev = 0
       if (present(F_meta)) F_meta = GMM_NULL_METADATA
@@ -761,6 +764,7 @@ contains
          endif
       endif
       if (present(F_flag)) F_flag = priv_meta2flag(mymeta)
+      call msg(MSG_DEBUG, '(time_interp) retrieve [END] '//trim(F_varname_S))
       !----------------------------------------------------------------------
       return
    end function time_interp_retrieve_8
@@ -814,7 +818,7 @@ contains
       character(len=16) datev_S,varname_S
       character(len=512) :: itype_S,msg_S
       !----------------------------------------------------------------------
-      call msg(MSG_DEBUG, '(time_interp) get ptr [BEGIN]')
+      call msg(MSG_DEBUG, '(time_interp) get ptr [BEGIN] ')
       F_istat = RMN_ERR
       itype = TIME_INTERP_LINE
       incr_len = 1.
