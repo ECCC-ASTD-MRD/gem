@@ -77,6 +77,12 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Schm_psadj
    namelist /dyn_fisl_p/ Schm_psadj
 
+   !# True-> the diagnostic value of pressure on thermodynamic levels
+   !# obtained using the hypsometric relationship is used inside physics 
+   logical :: Schm_pressure_thm_L = .false.
+   namelist /dyn_fisl  / Schm_pressure_thm_L
+   namelist /dyn_fisl_p/ Schm_pressure_thm_L
+
    !# True-> print dry/wet air masses
    logical :: Schm_psadj_print_L = .false.
    namelist /dyn_fisl  / Schm_psadj_print_L

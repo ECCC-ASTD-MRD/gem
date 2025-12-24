@@ -38,6 +38,7 @@ contains
 
       integer F_npex, F_npey
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer, dimension(:,:) , allocatable :: block

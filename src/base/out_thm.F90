@@ -136,7 +136,13 @@
       nullify (gmm_hut1,wlnph_m,wlnph_ta)
       istat= gmm_get('TR/'//'HU'//':P', gmm_hut1  )
       istat= gmm_get(gmmk_pw_log_pm_s , wlnph_m   )
-      istat= gmm_get(gmmk_pw_log_pt_s , wlnph_ta  )
+
+      if(trim(Dynamics_Kernel_S)=='DYNAMICS_FISL_H'.and..not.Schm_pressure_thm_L) then
+         istat= gmm_get(gmmk_pw_log_ptd_s , wlnph_ta  )
+      else
+         istat= gmm_get(gmmk_pw_log_pt_s , wlnph_ta  )
+      end if
+      
       call out_padbuf (wlnph_m ,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
       call out_padbuf (wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 

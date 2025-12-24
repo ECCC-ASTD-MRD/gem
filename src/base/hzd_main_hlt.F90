@@ -19,6 +19,7 @@
       use hzd_exp_hlt
       use glb_ld
       use gmm_vt1
+      use gmm_pw
       use HORgrid_options
       use hvdif_options
       use ens_options
@@ -30,10 +31,10 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
-      logical switch_on_UVW, switch_on_TR, switch_on_vrtspng_UVT    , &
-              switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA
+      logical switch_on_UVW,switch_on_UVW_alh,  switch_on_TR, switch_on_vrtspng_UVT    , &
+              switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA, switch_on_THETA_alh
       logical xch_UV,xch_TT,xch_TR,xch_WZD
-      integer i,n
+      integer i, iter, n
       real, dimension(:,:,:), pointer :: wk
 !
 !-------------------------------------------------------------------
@@ -50,9 +51,11 @@
           xch_UV = .true.
           xch_TT = .true.
       end if
-      switch_on_UVW         = Hzd_lnr       > 0.
-      switch_on_TR          =(Hzd_lnr_tr    > 0.) .and. any(Tr3d_hzd)
-      switch_on_THETA       = Hzd_lnr_theta > 0.
+      switch_on_UVW         = Hzd_lnr         > 0. .and. hzd_hyb_nk < 1
+      switch_on_UVW_alh     = Hzd_lnr_z       > 0.
+      switch_on_TR          =(Hzd_lnr_tr      > 0.) .and. any(Tr3d_hzd)
+      switch_on_THETA       = Hzd_lnr_theta   > 0. .and. hzd_hyb_nk < 1
+      switch_on_THETA_alh   = Hzd_lnr_theta_z > 0.
       switch_on_vrtspng_UVT =(Vspng_nk      >=1 ) .and. (Vspng_niter>0)
       switch_on_vrtspng_W   = switch_on_vrtspng_UVT
       switch_on_eqspng      = Eq_nlev       > 1
@@ -71,23 +74,33 @@
          call hzd_theta_hlt ()
          call gtmg_stop (61)
       end if
+      if ( switch_on_THETA_alh ) then
+         call gtmg_start (62, 'HZD_theta_alh', 60)
+         xch_TT = .true.
+         call hzd_theta_z ()
+         call gtmg_stop (62)
+      end if
 
       wk(l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(1:)
 
 !**********************************
-!  Horizontal diffusion on tracers*hzd_theta.F90
+!  Horizontal diffusion on tracers*
 !**********************************
 
       if ( switch_on_TR ) then
-         call gtmg_start (62, 'HZD_tracers', 60)
+         call gtmg_start (63, 'HZD_tracers', 60)
          xch_TR = .true.
          do i=1, Tr3d_ntr
             if (Tr3d_hzd(i)) then
-               call hzd_exp_deln (tracers_P(i)%pntr, Hzd_pwr_tr,&
-                     Hzd_lnR_tr, wk, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+              if (Hzd_tr_ALH_L) then
+                  call hzd_theta_alh (tracers_P(i)%pntr,Hzd_lnR_tr,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_tr_ALH_it)
+              else
+                  call hzd_exp_deln (tracers_P(i)%pntr, Hzd_pwr_tr,&
+                       Hzd_lnR_tr, wk, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+              endif
             end if
          end do
-         call gtmg_stop (62)
+         call gtmg_stop (63)
       end if
 
 !************************
@@ -100,14 +113,25 @@
          xch_TT = .true.
          xch_WZD= .true.
          call hzd_exp_deln ( ut1, Hzd_pwr, Hzd_lnR, wk,&
-                             l_minx,l_maxx,l_miny,l_maxy,G_nk)
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_exp_deln ( vt1, Hzd_pwr, Hzd_lnR, wk,&
-                             l_minx,l_maxx,l_miny,l_maxy,G_nk)
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_exp_deln (zdt1, Hzd_pwr, Hzd_lnR, wk,&
-                             l_minx,l_maxx,l_miny,l_maxy,G_nk)
+                            l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_exp_deln ( wt1, Hzd_pwr, Hzd_lnR, wk,&
                              l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call gtmg_stop (64)
+      endif
+      if ( switch_on_UVW_alh ) then
+         call gtmg_start (65, 'HZD_alh', 60)
+         xch_UV = .true.
+         xch_TT = .true.
+         xch_WZD= .true.
+         call hzd_u_alh (ut1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+         call hzd_v_alh (vt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+         call hzd_theta_alh (wt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+         call hzd_theta_alh (zdt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+
+         call gtmg_stop (65)
       end if
 
 !********************
@@ -115,24 +139,24 @@
 !********************
 
       if ( switch_on_vrtspng_UVT ) then
-         call gtmg_start (65, 'V_SPNG', 60)
+         call gtmg_start (66, 'V_SPNG', 60)
          xch_UV = .true.
          xch_TT = .true.
          call hzd_exp_del2 ( ut1,  'U', l_minx,l_maxx,l_miny,l_maxy,&
                              Vspng_nk, Hzd_geom_u, F_VV=vt1)
          call hzd_exp_del2 ( tt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
                              Vspng_nk, Hzd_geom_q)
-         call gtmg_stop (65)
+         call gtmg_stop (66)
       end if
 
       if ( switch_on_vrtspng_W ) then
-         call gtmg_start (65, 'V_SPNG', 60)
+         call gtmg_start (66, 'V_SPNG', 60)
          xch_WZD= .true.
          call hzd_exp_del2 ( zdt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
                                 Vspng_nk, Hzd_geom_q)
          call hzd_exp_del2 ( wt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
                                 Vspng_nk, Hzd_geom_q)
-         call gtmg_stop (65)
+         call gtmg_stop (66)
       end if
 
 !**********************

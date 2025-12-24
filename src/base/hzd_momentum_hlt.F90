@@ -26,14 +26,24 @@
       use mem_tstp
       use glb_ld
       implicit none
+
+      logical switch_on_UVW, switch_on_UVW_alh
 !
 !-------------------------------------------------------------------
 !
+      switch_on_UVW         = Hzd_lnr   > 0. .and. hzd_hyb_nk < 1
+      switch_on_UVW_alh     = Hzd_lnr_z > 0.
       if (Schm_hzdadw_L) then
-
-         call hzd_exp_deln ( ut0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call hzd_exp_deln ( vt0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         call hzd_exp_deln (zdt0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         if (switch_on_UVW) then
+            call hzd_exp_deln ( ut0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+            call hzd_exp_deln ( vt0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+            call hzd_exp_deln (zdt0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         endif
+         if (switch_on_UVW_alh) then
+            call hzd_u_alh (ut0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_v_alh (vt0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_theta_alh (zdt0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+         endif
 
          if (Grd_yinyang_L) then
 !$omp single
@@ -46,7 +56,9 @@
       end if
 
 !$omp single
-      call hzd_smago_momentum()
+      if( .not. switch_on_UVW_alh) then
+         call hzd_smago_momentum()
+      endif
 !$omp end single
 !
 !-------------------------------------------------------------------

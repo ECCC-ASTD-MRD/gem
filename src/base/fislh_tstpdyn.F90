@@ -15,7 +15,7 @@
 
 !**s/r tstpdyn -  Performs a dynamical timestep of the model
 
-      subroutine fislh_tstpdyn (F_icn)
+      subroutine fislh_tstpdyn (F_icn,apply_iau)
       use adz_mem
       use cstv
       use glb_ld
@@ -34,7 +34,7 @@
 
       integer, intent(IN) :: F_icn
 
-      logical :: print_conv
+      logical :: print_conv, apply_iau
       integer i0, in, j0, jn, k0, k0t, ni, nj, iln, icln
       real(kind=REAL64) :: dt_8
 !     
@@ -59,7 +59,7 @@
 !        Compute the right-hand sides of the governing equations
 
          call gtmg_start (21, 'RHS', 20)
-         call fislh_rhs ( dt_8 )
+         call fislh_rhs ( dt_8, apply_iau )
          call gtmg_stop (21)
 !$omp single
          call rpn_comm_xch_halo (orhsu_ext, Adz_lminx,Adz_lmaxx,Adz_lminy,Adz_lmaxy,&
