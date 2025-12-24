@@ -8,15 +8,15 @@ if (MPI_FOUND)
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MPI_COMPILER_FLAGS}")
 endif()
 
-add_executable(maingemdm maingemdm.F90)
+add_executable(${gem_exe} maingemdm.F90)
 
-target_compile_definitions(maingemdm PUBLIC
+target_compile_definitions(${gem_exe} PUBLIC
   dyn_VERSION="${dyn_VERSION}"
   modelutils_VERSION="${modelutils_VERSION}"
   phy_VERSION="${phy_VERSION}"
 )
 
-target_link_libraries(maingemdm
+target_link_libraries(${gem_exe}
    gemdyn
    ${phy_LIBRARIES}
    modelutils
@@ -34,4 +34,4 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
 )
 
-install(TARGETS maingemdm RUNTIME DESTINATION bin)
+install(TARGETS ${gem_exe} RUNTIME DESTINATION bin)

@@ -65,6 +65,10 @@ if (WITH_NEMO)
   else()
     message(ERROR "(EC) You set WITH_NEMO=TRUE, but no cplocn directory was found!")
   endif()
+  # set executable name
+  set(gem_nemo_exe ${gem_exe}-cpl)
+  set(gem_exe ${gem_nemo_exe})
+  set(gem_exe ${gem_nemo_exe} PARENT_SCOPE)
 endif()
 
 if (EXISTS ${CMAKE_SOURCE_DIR}/src/rpnphy/CMakeLists.txt)
@@ -87,16 +91,17 @@ if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   add_subdirectory(rpn-si/filetype filetype)
 endif()
 
-# To be installed only with package
-install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
-install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
+# To be installed only with GEM package
+if (NOT (WITH_MACH OR WITH_NEMO))
+  install(DIRECTORY ../scripts/ DESTINATION scripts USE_SOURCE_PERMISSIONS PATTERN "rpy" EXCLUDE PATTERN "support" EXCLUDE)
+  install(DIRECTORY ../share/configurations/ DESTINATION share/configurations USE_SOURCE_PERMISSIONS)
 
-if (EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
-  install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS PATTERN "version.in" EXCLUDE)
-endif()
-
+  if (EXISTS ${CMAKE_SOURCE_DIR}/share/gem-maestro)
+    install(DIRECTORY ../share/gem-maestro/ DESTINATION share/gem-maestro USE_SOURCE_PERMISSIONS PATTERN "version.in" EXCLUDE)
+  endif()
+  
 # Generate version specific nml
-install(CODE "
+  install(CODE "
    message(STATUS \"Generating nml\")
    execute_process(
      COMMAND ${CMAKE_SOURCE_DIR}/scripts/gem_nml_mkref ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref
@@ -112,8 +117,10 @@ install(CODE "
      OUTPUT_FILE ${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref.k
      COMMAND_ERROR_IS_FATAL ANY)
      ")
+# install nml reference files, physics_input_table file, and scripts
+  install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
+  install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)
+  install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/rpnphy/bin/rpnphy_nml_mkref" DESTINATION scripts)
+  install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/gemdyn/bin/gemdyn_nml_mkref" DESTINATION scripts)
+endif()
 
-install(FILES "${CMAKE_SOURCE_DIR}/share/nml_ref/gem_settings.${GEM_VERSION}.ref" DESTINATION share/nml_ref)
-install(FILES "${CMAKE_SOURCE_DIR}/src/rpnphy/include/physics_input_table_GENERIC" DESTINATION share/rpnphy RENAME physics_input_table)
-install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/rpnphy/bin/rpnphy_nml_mkref" DESTINATION scripts)
-install(PROGRAMS "${CMAKE_SOURCE_DIR}/src/gemdyn/bin/gemdyn_nml_mkref" DESTINATION scripts)

@@ -7,10 +7,33 @@ include(ec_init)           # Include EC specific cmake utils
 ec_git_version()           # Get the version from the git repository
 ec_parse_manifest()        # Parse MANIFEST file
 
+set(WITH_MACH OFF CACHE BOOL "Control whether to build GEM-MACH")
+# Change NAME when building gemmach
+if (WITH_MACH)
+   set(NAME ${NAME}mach)
+   set(DESCRIPTION "ECCC-ARQI Global Environmental Multiscale - Modelling Air quality and Chemistry - GEM-MACH")
+   set(SUMMARY "Global Environmental Multiscale - Modelling Air quality and Chemistry (GEM-MACH) is an atmospheric chemistry prediction numerical model that is embedded within GEM")
+   set(MAINTAINER "ECCC/S&T/ASTD/ARQI")
+endif()
+
 project(${NAME} DESCRIPTION "${DESCRIPTION}" LANGUAGES C Fortran)
 set(PROJECT_VERSION ${VERSION}${STATE})
 set(GEM_VERSION ${PROJECT_VERSION} CACHE INTERNAL "GEM version" FORCE)
-message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
+# Change PROJECT_VERSION when building gemmach (concatenate both versions, from MANIFEST)
+if (WITH_MACH)
+   set(PROJECT_VERSION ${GEM_VERSION}-${MACH_VERSION})
+   message(STATUS "(EC) GEMMACH VERSION = ${PROJECT_VERSION}")
+else()
+  message(STATUS "(EC) GEM VERSION = ${GEM_VERSION}")
+endif()
+
+# Set SUPER_PROJECT_NAME as we won't add include files and libraries from
+# the components if not packaging GEM
+set(super_name ${NAME})
+if (WITH_NEMO)
+  set(super_name ${NAME}-nemo)
+endif()
+set(SUPER_PROJECT_NAME ${super_name} CACHE INTERNAL "Super project name used for package creation" FORCE)
 
 ec_build_info()            # Generate build include file
 include(ec_compiler_presets)
@@ -64,7 +87,13 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_Fortran_COMPILE
   # flags in addition to extra checks defined in cmake_rpn compiler presets
   # https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/alphabetical-option-list.html
   if (EXTRA_CHECKS)
-    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -qopt-report=5 -C -init=snan,arrays -warn nointerfaces -check noarg_temp_created")
+    if(CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2025)
+      # maximum is 3 with Intel 2025
+      set(OPT-REPORT "3")
+    else()
+      set(OPT-REPORT "5")
+    endif()
+    set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -qopt-report=${OPT-REPORT} -C -init=snan,arrays -warn nointerfaces -check noarg_temp_created")
   endif()
 elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Warray-temporaries -fdump-core")
@@ -159,10 +188,12 @@ else()
 endif()
 message(STATUS "(EC) Setting working directory prefix to ${WORK_PREFIX}")
 
+# set gem_exe before adding 'src' subdirectory, so it can be changed when building WITH_NEMO
+set(gem_exe maingemdm)
 add_subdirectory(${CMAKE_SOURCE_DIR}/src src)
 
 # list of binaries depends on built sources
-list(APPEND BINARIES maingemdm)
+list(APPEND BINARIES ${gem_exe})
 if((NOT DEFINED ENV{EC_ARCH}) OR (NOT WITH_SYSTEM_RPN))
   list(APPEND BINARIES cclargs_lite r.fstinfo r.filetype editfst fstcomp fststat pgsm voir )
   list(APPEND LINKS ${CMAKE_BINARY_DIR}/src/fst-tools/src/editfst/editfst)
@@ -189,16 +220,11 @@ add_custom_target(work
   )
 
 #----- Packaging
-# Define package prefix
-if(WITH_NEMO)
-    set(GEM_NEMO_NAME ${NAME}-nemo)
-    set(NAME ${GEM_NEMO_NAME})
-    ec_package_name(${GEM_NEMO_NAME})
-else()
-    ec_package_name()
-endif()
+ec_package_name()      # Define package prefix
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
+
+set(CPL_BUILD_DIR "" CACHE PATH "Directory where GEM-NEMO is built, to package it along with GEM")
 
 set(CPACK_GENERATOR "TGZ")
 set(CPACK_PACKAGE_VENDOR "ECCC")
@@ -209,4 +235,14 @@ set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/package")
 set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set(CPACK_PACKAGE_FILE_NAME "${PACKAGE_NAME}")
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "${NAME}_${GEM_VERSION}")
+if (WITH_MACH)
+   # Replace ssm variables in post-install file
+   configure_file(.ssm.d/post-install-mach.in ${CMAKE_BINARY_DIR}/.ssm.d/post-install @ONLY)
+endif()
+if(CPL_BUILD_DIR)
+  set(CPACK_INSTALL_CMAKE_PROJECTS
+      "${CPL_BUILD_DIR}/;${NAME}-nemo;ALL;/"
+      "${CMAKE_CURRENT_BINARY_DIR};${NAME};ALL;/"
+  )
+endif()
 include(CPack)
