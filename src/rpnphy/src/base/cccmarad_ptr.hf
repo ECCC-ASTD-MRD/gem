@@ -39,7 +39,7 @@
       MKPTR1D(zflusolis, flusolis, pvars)
       MKPTR1D(zfsd0, fsd0, pvars)
       MKPTR1D(zfsf0, fsf0, pvars)
-      MKPTR1D(zfsg, fsg, pvars)
+
       MKPTR1D(zfsi0, fsi0, pvars)
       MKPTR1D(zfsv0, fsv0, pvars)
       MKPTR1D(zfusi, fusi, pvars)
@@ -64,6 +64,7 @@
       MKPTR2D(zt2, t2, pvars)
       MKPTR2D(zt20, t20, pvars)
       MKPTR1D(ztcc, tcc, pvars)
+      MKPTR2D(ztccf,tccf, pvars)
       MKPTR2D(zti, ti, pvars)
       MKPTR1D(ztopthi, topthi, pvars)
       MKPTR1D(ztopthw, topthw, pvars)
@@ -72,6 +73,12 @@
       MKPTR1DK(zz0_ag, z0, indx_agrege, pvars)
       MKPTR1DK(zz0t_ag, z0t, indx_agrege, pvars)
       MKPTR1D(ztsrad, tsrad, pvars)
+      MKPTR1D(zlft, lft, pvars)
+      MKPTR1D(zsft, sft, pvars)
+      MKPTR1D(znft, nft, pvars)
+      MKPTR1D(zlfb, lfb, pvars)
+      MKPTR1D(zsfb, sfb, pvars)
+      MKPTR1D(znfb, nfb, pvars)
  
 ! Pointers to busvol
       MKPTR1D(zap, ap, pvars)
@@ -97,6 +104,7 @@
       MKPTR2D(zfluxds, fluxds, pvars)
       MKPTR2D(zfluxus, fluxus, pvars)
       MKPTR1D(znetrad, netrad, pvars)
+      MKPTR2Dm1(ztotot,totot, pvars)
       MKPTR2D(ztrad, trad, pvars)
       MKPTR1D(zfcor, fcor, pvars)
       MKPTR1D(zzusl, zusl, pvars)

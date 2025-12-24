@@ -1,7 +1,7 @@
 
 subroutine condload_safe(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
      QNEWIC,QLQOUT,QICOUT,GRAV)
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
   use ifport
 #endif
   implicit none
@@ -71,7 +71,7 @@ subroutine condload_safe(QLIQ,QICE,WTW,DZ,BOTERM,ENTERM,RATE,QNEWLQ, &
  
   ! Conversion
 
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
   call getcontrolfpqq(control)
   control_nodivzero = ior(control, FPCW$ZERODIVIDE)
   call setcontrolfpqq(control_nodivzero)

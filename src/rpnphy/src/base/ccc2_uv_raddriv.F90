@@ -6,7 +6,7 @@ module ccc2_uv_raddriv
 contains
    
 subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
-     fslo, fsamoon, ps, shtj, sig, &
+     ps, shtj, sig, &
      tt, o3, o3top, &
      qq, co2, ch4, &
      o2, rmu, r0r, salb, taucs, &
@@ -33,7 +33,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
         co2(ni,lay),ch4(ni,lay), o2(ni,lay)
 
    real taucs(ni,lay,nbs), omcs(ni,lay,nbs), gcs(ni,lay,nbs), &
-        cldfrac(ni,lay), fslo(ni), fsamoon(ni)
+        cldfrac(ni,lay)
 
    real, dimension(ni, ens_nc2d) :: mrk2
 
@@ -55,7 +55,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    !
    !@Object
    !        Main subroutine that executes ccc radiative transfer
-   !        for infrared and solar radiation
+   !        Light version of ccc2_raddriv: only calculations in SW band 1 are needed (no minor intervals)
    !
    !@Arguments
    !              - Output -
@@ -84,8 +84,6 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    ! exomga       exoma times asymmetry factor for solar
    ! fa           square of asymmetry factor for solar
    ! absa         absorption coefficient for longwave
-   ! fslo         solar incoming flux at infrared range (0-2500cm-1)
-   ! fsamoon      the energy absorbed between toa and model top level
    ! lcsw         logical key to control call to sw radiative transfer
    ! lclw         logical key to control call to lw radiative transfer
    ! mrk2         Markov chains for stochastic parameter perturbations
@@ -278,8 +276,6 @@ include "nocld.cdk"
    !----------------------------------------------------------------------
 
    do i = 1, ni
-      fsamoon(i)              =  0.0
-      fslo(i)                 =  11.9096 * rmu(i) * fracs
       !       shtj(i,lev) = 1. ci-dessous
       pfull(i,lev)            =  0.01 * ps(i) * shtj(i,lev)
       mtop(i)                 =  0

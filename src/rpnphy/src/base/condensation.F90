@@ -19,7 +19,8 @@ contains
       use microphy_consun, only: consun
       use microphy_s2, only: s2
       use microphy_my2, only: mp_my2_main
-      use microphy_statcond, only: sc_adjust 
+      use microphy_statcond, only: sc_adjust
+      use microphy_thompson, only: thompson_wrapper_gem, THOMPSON_OK
       use phy_options
       use phy_status, only: phy_error_L, PHY_OK
       use phybusidx
@@ -185,8 +186,8 @@ contains
               qitot_3m=qti3m,qitot_3=qti3p,qirim_3=qmi3p,nitot_3=nti3p,birim_3=bmi3p,diag_effi_3=a_effradi3,zitot_3=zti3p,qiliq_3=qli3p,  &
               qitot_4m=qti4m,qitot_4=qti4p,qirim_4=qmi4p,nitot_4=nti4p,birim_4=bmi4p,diag_effi_4=a_effradi4,zitot_4=zti4p,qiliq_4=qli4p)
          if (istat1 /= P3_OK) then
-            call physeterror('condensation', 'Error returned by P3 gem wrapper')
-            return
+            call physeterror('condensation', 'Error returned by P3 gem wrapper') 
+           return
          endif
 
          ! Adjust tendencies to impose conservation
@@ -197,6 +198,31 @@ contains
             return
          endif
 
+      case('THOMPSON')
+         
+         istat1 = thompson_wrapper_gem(pvars,&
+              thompson_dt_inner,thompson_sedi_semilag_L,thompson_decfl,&
+              thompson_cldfrac,ni,nkm1,qqp,qcp,qrp,qip,qnp,qgp,nip,nrp,&
+              ttp,sigma,psp,zgzmom,ww,dt,kount,&
+              a_tls,a_tss,zste,zsqe,zsqce,zsqre,qitend,a_fxp)
+
+         if (istat1 /= THOMPSON_OK) then
+            call physeterror('condensation', 'Error returned by thompson_wrapper_gem') 
+           return
+        endif
+
+        ! Adjust tendencies to impose conservation
+        if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
+              F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
+            call physeterror('condensation', &
+                 'Cannot correct conservation for '//trim(stcond))
+            return
+         endif
+        
+      CASE DEFAULT
+           call physeterror('condensation','Error stcond='//stcond//' not valid')
+           return
+           
       end select GRIDSCALE_SCHEME
 
       ! Split diagnostic tables into the bus
@@ -283,8 +309,7 @@ contains
       !----------------------------------------------------------------
       return
    end subroutine condensation4
-
-   
+    
 !!$   subroutine priv_check_negative(F_fld, F_minval, F_name)
 !!$      implicit none
 !!$      real, pointer, contiguous :: F_fld(:,:)

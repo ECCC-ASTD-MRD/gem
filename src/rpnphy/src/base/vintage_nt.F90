@@ -8,7 +8,7 @@ contains
    !/@*
    subroutine vintage_nt1(  &
         tm, ps, sigma, zlwc,  &
-        cloud, znt,    &
+        cloudin, znt,    &
         trnch, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
@@ -36,7 +36,7 @@ contains
 
       integer, intent(in) :: trnch, ni, nk, nkm1
       real, intent(in) :: tm(ni,nk), ps(ni), sigma(ni,nk), zlwc(ni,nkm1)
-      real, intent(inout) :: cloud(ni,nkm1)
+      real, intent(in) :: cloudin(ni,nkm1)
       real, intent(inout) :: znt(ni)
       !*@/
 !!!#include <arch_specific.hf>
@@ -44,7 +44,7 @@ contains
 
       include "phyinput.inc"
 
-      real, dimension(ni,nkm1) :: lwcth, vliqwcin
+      real, dimension(ni,nkm1) :: lwcth, vliqwcin, cloud
       real, dimension(ni,nk) :: liqwpin(ni,nk), icewpin(ni,nk)
       real, dimension(ni,nk) :: liqwcin(ni,nk), icewcin(ni,nk)
 
@@ -69,6 +69,7 @@ contains
       hascond_L = (stcond /= 'NIL')
 
       icewcin = 0.0
+      cloud=cloudin
 
       ! bug below: should be dp(i,nkm1) = 1. - 0.5*(sigma(i,nkm1) + sigma(i,nkm1-1))
       do i = 1,ni

@@ -83,7 +83,7 @@ contains
     real, pointer, dimension(:), contiguous   :: zalfat, zalfat0, zalfaq, &
          zalfaq0, zbm, zbm0, zfdsi, zfdss, zfq, zmg, ztsrad, &
          zustress, zvstress, zue, zh
-    real, pointer, dimension(:), contiguous :: zflw, zfsh
+    real, pointer, dimension(:), contiguous :: zflw, zfsh, zfca
     real, pointer, dimension(:,:), contiguous :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
          t, q, sg, zsigw, zsigt, zsigm, tm, &
          sigef, sigex, conserv_t,conserv_q,tconserv_t,tconserv_q, zgztherm, &
@@ -126,6 +126,7 @@ contains
     MKPTR1D(zflw, flw, pvars)
     MKPTR1D(zfq, fq, pvars)
     MKPTR1D(zfsh, fsh, pvars)
+    MKPTR1D(zfca, fca, pvars)
     MKPTR1D(zh, h, pvars)
     MKPTR1D(zmg, mg, pvars)
     MKPTR1D(ztsrad, tsrad, pvars)
@@ -414,6 +415,12 @@ contains
        tqc = 0.
     endif
 
+   ! Diagnose (implicit) surface fluxes based on updated state but excluding diss heating
+    call sfcflux(zustress, zvstress, zfq, zue, zfsh, zfca, zflw, &
+         uu, vv, t, q, tu, tv, tt, tq, zsigt,bmsg, btsg, zalfaq, zalfat,&
+         sfc_density, ps, tau, ni, nkm1)
+    if (phy_error_L) return
+
     ! Dissipative heating
     call dissheat(dket, uu, vv, tu, tv, kmsg, zsigm, zsigt, zvcoef, tau, ni, nkm1)
     tt(:,1:nkm1) = tt(:,1:nkm1) - (1./CPD) * dket(:,1:nkm1)
@@ -423,12 +430,6 @@ contains
        call atmflux4(zturbtf, tt, zsigt, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
-
-    ! Diagnose (implicit) surface fluxes based on updated state
-    call sfcflux(zustress, zvstress, zfq, zue, zfsh, zflw, &
-         uu, vv, t, q, tu, tv, tt, tq, bmsg, btsg, zalfaq, &
-         sfc_density, ps, tau, ni, nkm1)
-    if (phy_error_L) return
 
     ! Time series diagnostics
     call series_xst(tu, 'tu', trnch)

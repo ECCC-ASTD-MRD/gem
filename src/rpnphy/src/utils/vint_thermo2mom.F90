@@ -1,11 +1,14 @@
 
 module vintphy
+   use phygridmap, only: phydim_nk
    implicit none
    private
    public :: vint_thermo2mom, vint_mom2thermo
    public :: vint_thermo2mom1, vint_mom2thermo1
    public :: vint_thermo2mom2, vint_mom2thermo2
    public :: vint_thermo2mom3, vint_mom2thermo3
+   public :: vint_thermo2energy, vint_energy2thermo
+   public :: vint_mom2energy, vint_energy2mom
 
    interface vint_thermo2mom
       module procedure vint_thermo2mom1
@@ -19,10 +22,12 @@ module vintphy
       module procedure vint_mom2thermo3
    end interface vint_mom2thermo
 
+   logical, public, save :: energy_as_thermo = .true.
+   
 contains
 
    !/@*
-   subroutine vint_thermo2mom1(fldout,fldin,vcoef,ni,nk)
+   subroutine vint_thermo2mom1(fldout,fldin,vcoef,ni,nk,k1,kn)
       use phygridmap, only: phydim_nk
       implicit none
 !!!#include <arch_specific.hf>
@@ -31,19 +36,24 @@ contains
       real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef
       real,    intent(in)  :: fldin(ni,nk)   !# var on thermo levels
       real,    intent(out) :: fldout(ni,nk)  !# var on momentum levels
+      integer, intent(in),optional :: k1,kn  !# operator vertical scope
       !@Author L. Spacek (Dec 2007)
       !@Object
       ! Vertical interpolation of T/Q to momentum or thermo levels
       !*@/
-      integer :: k, km1
-      do k=nk,1,-1
+      integer :: k, km1, k1a, kna
+      k1a = 1
+      kna = nk
+      if (present(k1)) k1a = k1
+      if (present(kn)) kna = kn
+      do k=kna,k1a,-1
          km1 = max(1,k-1)
          fldout(:,k) = fldin(:,k) - vcoef(:,k,1) * (fldin(:,k) - fldin(:,km1))
       enddo
       return
    end subroutine vint_thermo2mom1
 
-   
+
    !/@*
    subroutine vint_thermo2mom2(fldout1,fldout2,fldin1,fldin2,vcoef,ni,nk)
       use phygridmap, only: phydim_nk
@@ -104,7 +114,7 @@ contains
 
 
    !/@*
-   subroutine vint_mom2thermo1(fldout,fldin,vcoef,ni,nk)
+   subroutine vint_mom2thermo1(fldout,fldin,vcoef,ni,nk,k1,kn)
       use phygridmap, only: phydim_nk
       implicit none
 !!!#include <arch_specific.hf>
@@ -113,12 +123,17 @@ contains
       real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef
       real,    intent(in)  :: fldin(ni,nk)   !# var on momentum levels
       real,    intent(out) :: fldout(ni,nk)  !# var on thermo levels
+      integer, intent(in),optional :: k1,kn  !# operator vertical scope
       !@Author L. Spacek (Dec 2007)
       !@Object
       ! Vertical interpolation of T/Q to momentum or thermo levels
       !*@/
-      integer :: k, kp1
-      do k=1,nk
+      integer :: k, kp1, k1a, kna
+      k1a = 1
+      kna = nk
+      if (present(k1)) k1a = k1
+      if (present(kn)) kna = kn
+      do k=k1a,kna
          kp1 = min(nk,k+1)
          fldout(:,k) = fldin(:,k) + vcoef(:,k,2) * (fldin(:,kp1) - fldin(:,k))
       enddo
@@ -183,5 +198,137 @@ contains
       enddo
       return
    end subroutine vint_mom2thermo3
+
+
+   !/@*
+   subroutine vint_thermo2energy(fldout,fldin,vcoef,ni,nk,k1,kn)
+      use phygridmap, only: phydim_nk
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Arguments
+      integer, intent(in)  :: ni, nk         !# dimensions
+      real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef
+      real,    intent(in)  :: fldin(ni,nk)   !# var on thermo levels
+      real,    intent(out) :: fldout(ni,nk)  !# var on momentum levels
+      integer, intent(in),optional :: k1,kn  !# operator vertical scope
+      !@Author L. Spacek (Dec 2007)
+      !@Object
+      ! Vertical interpolation of T/Q to momentum or thermo levels
+      !*@/
+      integer :: k1a, kna
+      k1a = 1
+      kna = nk
+      if (present(k1)) k1a = k1
+      if (present(kn)) kna = kn
+      if (energy_as_thermo) then
+         fldout(:,k1a:kna) = fldin(:,k1a:kna)
+      else
+         call vint_thermo2mom1(fldout,fldin,vcoef,ni,nk,k1,kn)
+      endif
+      if (kn >= phydim_nk-1) then
+         !#TODO: fix the lowest level
+         continue
+      endif
+      return
+   end subroutine vint_thermo2energy
+
+
+   !/@*
+   subroutine vint_energy2thermo(fldout,fldin,vcoef,ni,nk,k1,kn)
+      use phygridmap, only: phydim_nk
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Arguments
+      integer, intent(in)  :: ni, nk         !# dimensions
+      real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef
+      real,    intent(in)  :: fldin(ni,nk)   !# var on thermo levels
+      real,    intent(out) :: fldout(ni,nk)  !# var on momentum levels
+      integer, intent(in),optional :: k1,kn  !# operator vertical scope
+      !@Author L. Spacek (Dec 2007)
+      !@Object
+      ! Vertical interpolation of T/Q to momentum or thermo levels
+      !*@/
+      integer :: k1a, kna
+      k1a = 1
+      kna = nk
+      if (present(k1)) k1a = k1
+      if (present(kn)) kna = kn
+      if (energy_as_thermo) then
+         fldout(:,k1a:kna) = fldin(:,k1a:kna)
+      else
+         call vint_mom2thermo1(fldout,fldin,vcoef,ni,nk,k1,kn)
+      endif
+      if (kn >= phydim_nk-1) then
+         !#TODO: fix the lowest level
+         continue
+      endif
+      return
+   end subroutine vint_energy2thermo
+
+
+   !/@*
+   subroutine vint_mom2energy(fldout,fldin,vcoef,ni,nk,k1,kn)
+      use phygridmap, only: phydim_nk
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Arguments
+      integer, intent(in)  :: ni, nk         !# dimensions
+      real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef
+      real,    intent(in)  :: fldin(ni,nk)   !# var on thermo levels
+      real,    intent(out) :: fldout(ni,nk)  !# var on momentum levels
+      integer, intent(in),optional :: k1,kn  !# operator vertical scope
+      !@Author L. Spacek (Dec 2007)
+      !@Object
+      ! Vertical interpolation of T/Q to momentum or thermo levels
+      !*@/
+      integer :: k1a, kna
+      k1a = 1
+      kna = nk
+      if (present(k1)) k1a = k1
+      if (present(kn)) kna = kn
+      if (energy_as_thermo) then
+         call vint_mom2thermo1(fldout,fldin,vcoef,ni,nk,k1,kn)
+      else
+         fldout(:,k1a:kna) = fldin(:,k1a:kna)
+      endif
+      if (kn >= phydim_nk-1) then
+         !#TODO: fix the lowest level
+         continue
+      endif
+      return
+   end subroutine vint_mom2energy
+
+
+   !/@*
+   subroutine vint_energy2mom(fldout,fldin,vcoef,ni,nk,k1,kn)
+      use phygridmap, only: phydim_nk
+      implicit none
+!!!#include <arch_specific.hf>
+      !@Arguments
+      integer, intent(in)  :: ni, nk         !# dimensions
+      real,    intent(in)  :: vcoef(ni,phydim_nk,2) !# interp coef
+      real,    intent(in)  :: fldin(ni,nk)   !# var on thermo levels
+      real,    intent(out) :: fldout(ni,nk)  !# var on momentum levels
+      integer, intent(in),optional :: k1,kn  !# operator vertical scope
+      !@Author L. Spacek (Dec 2007)
+      !@Object
+      ! Vertical interpolation of T/Q to momentum or thermo levels
+      !*@/
+      integer :: k1a, kna
+      k1a = 1
+      kna = nk
+      if (present(k1)) k1a = k1
+      if (present(kn)) kna = kn
+      if (energy_as_thermo) then
+         call vint_thermo2mom1(fldout,fldin,vcoef,ni,nk,k1,kn)
+      else
+         fldout(:,k1a:kna) = fldin(:,k1a:kna)
+      endif
+      if (kn >= phydim_nk-1) then
+         !#TODO: fix the lowest level
+         continue
+      endif
+      return
+   end subroutine vint_energy2mom
 
 end module vintphy

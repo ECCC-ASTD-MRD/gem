@@ -23,7 +23,7 @@ contains
       use prep_cw_rad, only: prep_cw_rad3
       use phy_options
       use phy_status, only: phy_error_L
-      use phybusidx
+      use phybusidx, except=>znt
       use phymem, only: phyvar
       use linoz_param, only: mwt_air, mwt_o3, p_linoz_meso
       use series_mod, only: series_xst, series_isstep
@@ -125,7 +125,7 @@ contains
       real(REAL64) :: hz_8
       real :: hz, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
-      logical :: thisstepisrad,nextstepisrad,thisstepisraduv
+      logical :: thisstepisrad,nextstepisrad,thisstepisraduv,dontneedall
       character(len=1) :: niuv
 
       real, dimension(ni,nk) :: dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
@@ -232,6 +232,8 @@ contains
       zt2   = 0.0
       zfdss = 0.0
       zev   = 0.0
+      if (associated(zsft)) zsft = 0.0
+      if (associated(zsfb)) zsfb  = 0.0
       zflusolis = 0.0
       zfsd  = 0.0
       zfsf  = 0.0
@@ -245,14 +247,24 @@ contains
       zfcdb = 0.0
       zfcfb = 0.0
 
-      ! calculate cloud optical properties and dependent diagnostic
+      ! is this or next step a radiation timestep?
+      thisstepisraduv = ((kntraduv_S /= '') .and. &
+           (kount == 0 .or. mod(kount, kntraduv) == 0)) 
+      thisstepisrad=(kount == 0 .or. mod(kount-1, kntrad) == 0)
+      nextstepisrad=(mod(kount, kntrad) == 0)
 
+      ! for diagnostic outputs, only taucs(band=1) and taucl(band=6) are needed
+      ! so, calculate all optical properties ONLY if it is a RAD timestep
+      ! RADUV also only needs SW(band=1)
+      dontneedall=.not.(thisstepisrad)
+
+      ! calculate cloud optical properties and dependent diagnostics
       if (stcond(1:3)=='MP_') then
          call cldoppro_MP3(pvars, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, ni, nkm1, nk, kount)
+              temp, sig, ps, dontneedall, ni, nkm1, nk, kount)
          if (phy_error_L) return
       else
          call prep_cw_rad3(pvars, &
@@ -262,23 +274,18 @@ contains
          call cldoppro_noMP1(pvars, taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, trnch, ni, &
+              temp, sig, ps, dontneedall, trnch, ni, &
               ni, nkm1, nk)
       endif
 
       ! calculate diagnostic cloud variables
       ! such as cloud cover, effective and true; cloud top temp and pressure
-
-      call diagno_clouds2(pvars, taucs, taucl,  &
+      if (associated(ztotot)) ztotot = taucs(:,:,1) 
+      call diagno_clouds2(pvars, taucs(:,:,1), taucl(:,:,6),  &
              zgztherm, cldfrac, &
              temp, sig, ps, trnch, &
              ni, nkm1, nk)
 
-      ! is this or next step a radiation timestep?
-      thisstepisraduv = ((kntraduv_S /= '') .and. &
-           (kount == 0 .or. mod(kount, kntraduv) == 0))
-      thisstepisrad=(kount == 0 .or. mod(kount-1, kntrad) == 0)
-      nextstepisrad=(mod(kount, kntrad) == 0)
 
       csec_in_day  = 8640000
       timestep     =  nint(tau*100.)
@@ -476,7 +483,7 @@ contains
             ! appel diagnostique pour calculer fatb,fctb...
             ! utiliser rmu0 (temps courant)
             call ccc2_uv_raddriv1(zfatb, zfadb, zfafb, zfctb, zfcdb, zfcfb, &
-                 fslo, zfsamoon, ps, shtj, sig, &
+                 ps, shtj, sig, &
                  temp, o3uv, zoztoit, &
                  qq, co2, zch4,  &
                  o2, rmu0, r0r, salb, taucs, &
@@ -498,7 +505,7 @@ contains
          ! call for prognostic outputs
          ! actual call to the Li & Barker (2005) radiation
 
-         call ccc2_raddriv3(zfsg, zfsd0, zfsf0, zfsv0, zfsi0, &
+         call ccc2_raddriv3(zfdss0, zfsd0, zfsf0, zfsv0, zfsi0, &
               zfatb0, zfadb0, zfafb0, zfctb0, zfcdb0, zfcfb0, &
               albpla, fdl, ful, zt20, zti, &
               zcstt, zcsb, zclt, zclb, zparr0, &
@@ -519,11 +526,13 @@ contains
 
          thold=(zcosas > seuil .and. rmu0 > seuil)
 
+! UP TO LINE 672, mostly diagnostic calculations that could be conditional to output 
+! TI,T2 and some fluxes are necessary
          do  i = 1, ni
             zfdsi(i)  = fdl(i)
             zei(i)    = ful(i)
             zfusi(i)  = zfluxul(i, nk)
-            zfdss0(i) = zfsg(i)
+
             zev0(i)   = CONSOL2 * r0r * zcosas(i) * albpla(i)
 
             ! moduler les flux et les taux par le cosinus de l'angle solaire.
@@ -643,6 +652,8 @@ contains
 
          if (thold(i)) then
             ziv(i) = CONSOL2 * r0r * rmu0(i)
+            if (associated(zsft)) zsft(i) = (ziv(i) - zev(i)) - zcstt(i) 
+            if (associated(zsfb)) zsfb(i) = zfdss(i) - zcsb(i)
          else
             ziv(i) = 0.0
             zsalb6z(i)=0.0
@@ -653,6 +664,11 @@ contains
          else
             zap(i) = 0.
          endif
+
+         if (associated(zlft)) zlft(i) = -zei(i)  - zclt(i)
+         if (associated(zlfb)) zlfb(i) = zfnsi(i) - zclb(i)
+         if (associated(znft)) znft(i) = zlft(i)  + zsft(i)
+         if (associated(znfb)) znfb(i) = zlfb(i)  + zsfb(i)
 
          p1(i) = ziv(i) - zev(i) - zei(i)
       enddo
@@ -669,11 +685,11 @@ contains
          call series_xst(ziv    , 'iv',   trnch)
          call series_xst(p1     , 'nr',   trnch)
          if (associated(ztcc)) call series_xst(ztcc   , 'tcc',  trnch)
-         if (associated(znt)) call series_xst(znt    , 'nt', trnch)
+         if (associated(znt)) call series_xst(znt     , 'nt', trnch)
          if (associated(zecc)) call series_xst(zecc   , 'ecc',  trnch)
-         if (associated(zeccl)) call series_xst(zeccl  , 'eccl', trnch)
-         if (associated(zeccm)) call series_xst(zeccm  , 'eccm', trnch)
-         if (associated(zecch)) call series_xst(zecch  , 'ecch', trnch)
+         if (associated(zeccl)) call series_xst(zeccl , 'eccl', trnch)
+         if (associated(zeccm)) call series_xst(zeccm , 'eccm', trnch)
+         if (associated(zecch)) call series_xst(zecch , 'ecch', trnch)
          call series_xst(zev    , 'ev',   trnch)
          call series_xst(zei    , 'ei',   trnch)
          call series_xst(zap    , 'ap',   trnch)

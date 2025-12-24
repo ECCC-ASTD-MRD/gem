@@ -5,7 +5,7 @@ if (MPI_FOUND)
    set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
 endif()
 
-file(GLOB F_FILES main/*.F90 api/*.F90 base/*.F90 series/*.F90 surface/*.F90 surface/from_surfex/*.F90 utils/*.F90 ${MACH_FILES})
+file(GLOB F_FILES main/*.F90 api/*.F90 base/*.F90 base/thompson/*.F90 series/*.F90 surface/*.F90 surface/from_surfex/*.F90 utils/*.F90 ${MACH_FILES})
 list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*")
 if(WITH_NEMO)
   file(GLOB CPLOCN_SOURCES ${CPLOCN_GLOB})
@@ -34,6 +34,9 @@ target_include_directories(rpnphy PUBLIC $<BUILD_INTERFACE:${CMAKE_Fortran_MODUL
 target_include_directories(rpnphy PRIVATE
   utils
   base
+  series
+  surface
+  base/thompson
   )
 
 target_link_libraries(rpnphy PUBLIC

@@ -508,15 +508,23 @@ contains
       if (rfld_S /= '') then
          nullify(pw_rfld, pw_rfldls, phy_rfld, phy_rfldls)
          istat = gmm_get(rfld_S, pw_rfld)
+         if (.not.RMN_IS_OK(istat) .or. .not.associated(pw_rfld)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLD: '//rfld_S)
          istat = gmm_get(PHY_RFLD_S, phy_rfld)
+         if (.not.RMN_IS_OK(istat) .or. .not.associated(phy_rfld)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLD: '//PHY_RFLD_S)
          if (associated(phy_rfld) .and. associated(pw_rfld)) then
             phy_rfld(:,:) = pw_rfld(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+!!$         else
+!!$            return
          endif
          if (rfldls_S /= '') then
             istat = gmm_get(rfldls_S, pw_rfldls)
+            if (.not.RMN_IS_OK(istat) .or. .not.associated(pw_rfldls)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLS: '//rfldls_S)
             istat = gmm_get(PHY_RFLD_LS_S, phy_rfldls)
+            if (.not.RMN_IS_OK(istat) .or. .not.associated(phy_rfldls)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLS: '//PHY_RFLD_LS_S)
             if (associated(phy_rfldls) .and. associated(pw_rfldls)) then
                phy_rfldls(:,:) = pw_rfldls(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+!!$         else
+!!$            return
             endif
          endif
       endif

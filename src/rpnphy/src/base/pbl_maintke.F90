@@ -69,7 +69,8 @@ contains
          zsigm, zsigt, zumoins, zvmoins, zfbl, zfblgauss, zfblnonloc, zfnn, &
          zftot, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
          zrig, zshear2, zc1pbl, zbuoy, zmrk2, zdiffen, zdissen, &
-         zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar
+         zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar, zznu, zznd, zn2, &
+         zznt
 
     real, pointer, dimension(:,:,:), contiguous :: zvcoef
 
@@ -132,6 +133,7 @@ contains
     MKPTR2D(zkm, km, pvars)
     MKPTR2D(zkt, kt, pvars)
     MKPTR2D(zmrk2, mrk2, pvars)
+    MKPTR2D(zn2, n2, pvars)
     MKPTR2D(zpri, pri, pvars)
     MKPTR2D(zqcmoins, qcmoins, pvars)
     MKPTR2D(zqtbl, qtbl, pvars)
@@ -153,6 +155,8 @@ contains
     MKPTR2D(zwtng, wtng, pvars)
     MKPTR2D(zzd, zd, pvars)
     MKPTR2D(zze, ze, pvars)
+    MKPTR2D(zznd, znd, pvars)
+    MKPTR2D(zznu, znu, pvars)
 
     MKPTR3D(zvcoef, vcoef, pvars)
 
@@ -167,6 +171,11 @@ contains
        MKPTR2D(zzn, znplus, pvars)
     else
        MKPTR2D(zzn, zn, pvars)
+    endif
+    if (zntplus > 0) then
+       MKPTR2D(zznt, zntplus, pvars)
+    else
+       MKPTR2D(zznt, znt, pvars)
     endif
     if (qwvarplus > 0) then
        MKPTR2D(zqwvar, qwvarplus, pvars)
@@ -253,12 +262,12 @@ contains
        endif     
 
        ! Call RPN Integrated PBL scheme
-       call rpnint(tke, zkm, zkt, zpri, zrif, zrig, zbuoy, zshear2, &
-            zbuoyen, zshren, zdiffen, zdissen, zqwvar, zzn, zzd, enold, &
+       call rpnint(tke, zkm, zkt, zpri, zrif, zrig, zbuoy, zn2, zshear2, &
+            zbuoyen, zshren, zdiffen, zdissen, zqwvar, zzn, zznt, zznu, zznd, zzd, enold, &
             zumoins, zvmoins, ztmoins, zhumoins, lwc, iwc, zfxp, zturbreg, &
             zh, zlh, zpmoins, zz0_ag, zz0t_ag, zfrv_ag, zwstar, zqstar, &
             zhpar, ztsurf, zqsurf, zdlat, zfcor, &
-            zsigm, zsigt, zgzmom, zgztherm, zdxdy, zmrk2, zvcoef, &
+            zsigm, zsigt, zgzmom, zgztherm, zdxdy, std_p_prof, zmrk2, zvcoef, &
             eturbtau, kount, ni, nkm1)
        if (phy_error_L) return
        
@@ -270,7 +279,7 @@ contains
        zuwng = 0.
        zvwng = 0.
        
-       call moistke(tke,enold,zzn,zzd,zrif,zrig,zbuoy,zshear2,zpri,zqtbl,zc1pbl,zfnn, &
+       call moistke(tke,enold,zzn,zznt,zzd,zrif,zrig,zbuoy,zshear2,zpri,zqtbl,zc1pbl,zfnn, &
             zfblgauss,zfblnonloc,zgte,zgq,zgql,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
             zumoins,zvmoins,ztmoins,ztve,zhumoins,zhumoins,zpmoins,zsigt,zsigm,zsige, &
             zze,zz0_ag,zgzmom,zfrv_ag,zwstar,fbsurf,zturbreg, &
