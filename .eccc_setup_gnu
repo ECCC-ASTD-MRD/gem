@@ -11,14 +11,14 @@ DOMAIN=`hostname -d`
 
 # Load code-tools 
 if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/20250521/env/gnu-9.3.0
+    . r.load.dot rpn/code-tools/20250925/env/gnu-9.3.0
 else
-    . r.load.dot rpn/code-tools/20250521/env/gnu
+    . r.load.dot rpn/code-tools/20250925/env/gnu
 fi
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot mrd/rpn/libs/20241105-alpha
-. r.load.dot mrd/rpn/utils/20241105-alpha
+. r.load.dot mrd/rpn/libs/20251009-beta
+. r.load.dot mrd/rpn/utils/20251009-beta
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 

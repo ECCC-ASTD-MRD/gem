@@ -30,12 +30,14 @@
 this_project=`cat MANIFEST | sed -n '/NAME/s/.*: //p'`
                    
                  cmake_command='cmake -S . -B ${build_dir} "$@"'
+          cmake_strict_command='cmake -S . -B ${build_dir} -DSTRICT=TRUE "$@"'
           cmake_static_command='cmake -S . -B ${build_dir} -DSTATIC_INTEL=ON "$@"'
              cmake_all_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir} "$@"'
            cmake_debug_command='cmake -S . -B ${build_dir} -DCMAKE_BUILD_TYPE=Debug "$@"'
      cmake_debug_extra_command='cmake -S . -B ${build_dir} -DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON "$@"'
            cmake_nvhpc_command='cmake -S . -B ${build_dir} -DCOMPILER_SUITE=nvhpc "$@"'
             cmake_mach_command='cmake -S . -B ${build_dir} -DWITH_MACH=TRUE "$@"'
+     cmake_mach_strict_command='cmake -S . -B ${build_dir} -DWITH_MACH=TRUE -DSTRICT=TRUE "$@"'
      cmake_mach_static_command='cmake -S . -B ${build_dir} -DWITH_MACH=TRUE -DSTATIC_INTEL=ON "$@"'
         cmake_all_mach_command='WITH_SYSTEM_RPN=FALSE cmake -S . -B ${build_dir}  -DWITH_MACH=TRUE "$@"'
       cmake_mach_debug_command='cmake -S . -B ${build_dir} -DWITH_MACH=TRUE -DCMAKE_BUILD_TYPE=Debug "$@"'
@@ -109,10 +111,12 @@ COMMANDS:
   configuration: (additional arguments forwarded to CMake)
     cmake: configure using installed RPN libraries at CMC (and sources outside CMC)
     cmake-static: configure using installed RPN libraries and static Intel libraries (-DSTATIC_INTEL=ON)
+    cmake-strict: configure using installed RPN libraries with -Werror=uninitialized C flag (-DSTRICT=TRUE)
     cmake-all: configure using sources of RPN libraries (WITH_SYSTEM_RPN is set to FALSE)
     cmake-debug: configure with debug flags (-DCMAKE_BUILD_TYPE=Debug)
     cmake-debug-extra:  configure with debug flags and extra compile-time checks (-DCMAKE_BUILD_TYPE=Debug -DEXTRA_CHECKS=ON)
     cmake-mach: configure using installed RPN libraries (-DWITH_MACH=TRUE)
+    cmake-mach-strict: configure using installed RPN libraries  with -Werror=uninitialized C flag (-DWITH_MACH=TRUE -DSTRICT=TRUE))
     cmake-mach-static: configure using installed RPN libraries and static Intel libraries (-DSTATIC_INTEL=ON -DWITH_MACH=TRUE)
     cmake-all-mach: configure using sources of RPN libraries (WITH_SYSTEM_RPN is set to FALSE -DWITH_MACH=TRUE)
     cmake-mach-debug: configure with debug flags (-DCMAKE_BUILD_TYPE=Debug -DWITH_MACH=TRUE)
@@ -155,6 +159,7 @@ cmd=""
 
 case "${name}" in
                  cmake) cmd=${cmake_command} ;;
+          cmake-strict) cmd=${cmake_strict_command} ;;
           cmake-static) cmd=${cmake_static_command} ;;
              cmake-all) cmd=${cmake_all_command} ;;
            cmake-debug) cmd=${cmake_debug_command} ;;
