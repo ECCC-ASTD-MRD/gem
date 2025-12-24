@@ -189,7 +189,14 @@ add_custom_target(work
   )
 
 #----- Packaging
-ec_package_name()      # Define package prefix
+# Define package prefix
+if(WITH_NEMO)
+    set(GEM_NEMO_NAME ${NAME}-nemo)
+    set(NAME ${GEM_NEMO_NAME})
+    ec_package_name(${GEM_NEMO_NAME})
+else()
+    ec_package_name()
+endif()
 ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
