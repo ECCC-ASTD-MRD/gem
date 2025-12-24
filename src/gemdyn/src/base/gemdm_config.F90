@@ -153,6 +153,11 @@
          return
       endif
 
+      if (Dynamics_hauteur_L.and.Iau_interval > 0.) then
+         if(lun_out>0) write (Lun_out, '(/"   ====> IAU Not allowed with GEM-H")' )
+         return
+      endif
+
       select case ( trim(Dynamics_Kernel_S) )
          case ('DYNAMICS_FISL_P')
             call set_zeta ( hyb, G_nk )
