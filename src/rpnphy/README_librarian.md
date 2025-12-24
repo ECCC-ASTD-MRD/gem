@@ -161,6 +161,10 @@ done
 
 # Tag & push
 ```
+rpnphy_version=$(grep ^VERSION MANIFEST | cut -d: -f2)
+rpnphy_version=${rpnphy_version# *}
+phybranch=${rpnphy_version%.*}
+phybranch=rpnphy_${phybranch:-6.3}-branch
 git tag rpnphy_${rpnphy_version}
 git push origin ${phybranch} rpnphy_${rpnphy_version}
 ```

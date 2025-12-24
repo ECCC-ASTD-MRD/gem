@@ -82,7 +82,7 @@ contains
     real, pointer, dimension(:), contiguous   :: ps
     real, pointer, dimension(:), contiguous   :: zalfat, zalfat0, zalfaq, &
          zalfaq0, zbm, zbm0, zfdsi, zfdss, zfq, zmg, ztsrad, &
-         zustress, zvstress, zue, zh
+         zustress, zvstress, zue, zh, zdxdy
     real, pointer, dimension(:), contiguous :: zflw, zfsh, zfca
     real, pointer, dimension(:,:), contiguous :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
          t, q, sg, zsigw, zsigt, zsigm, tm, &
@@ -121,6 +121,7 @@ contains
     MKPTR1D(zbm, bm, pvars)
 
     MKPTR1D(zbm0, bm0, pvars)
+    MKPTR1D(zdxdy, dxdy, pvars)
     MKPTR1D(zfdsi, fdsi, pvars)
     MKPTR1D(zfdss, fdss, pvars)
     MKPTR1D(zflw, flw, pvars)
@@ -401,7 +402,7 @@ contains
     if (fluvert == 'MOISTKE') then
        call baktotq(tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
             ps,zgztherm,tm,ficelocal,ztve,zh,zfc_ag,zqtbl,zfnn,zfbl,zfblgauss, &
-            zfblnonloc,zc1pbl,zzn,zzd,zmg,zmrk2,zvcoef,zsigmas,zpblq1,tau,ni,nkm1)
+            zfblnonloc,zc1pbl,zzn,zzd,zmg,zmrk2,zvcoef,zsigmas,zpblq1,zdxdy,tau,ni,nkm1)
     endif
 
     ! Compute tendency for condensate diffusion

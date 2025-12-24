@@ -24,7 +24,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use sfcbus_mod
    use sfc_options, only: atm_external, atm_tplus, radslope, jdateo, &
         use_photo, nclass, zu, zt, sl_Lmin_soil, VAMIN, svs_local_z0m, &
-        vf_type, nsl, lunique_profile_svs2, lsnow_interception_svs2, lcano_svs2, &
+        vf_type, nsl, lunique_profile_svs2, lsnow_interception_svs2,  &
         cano_ref_forcing, lwater_ponding_svs,critwater, z0snow_svs2
    use svs_configs
 
@@ -578,36 +578,14 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
             bus(x(LWCA,I,1))  = bus(x(FDSI,I,1))
          ENDDO
       ELSE ! ABV or O2F
-         IF(LCANO_SVS2) THEN
-            CALL  CANOPY_MET_SVS2(tt, hu, vmod, zfsolis, bus(x(FDSI,1,1)), &
+         CALL  CANOPY_MET_SVS2(tt, hu, vmod, zfsolis, bus(x(FDSI,1,1)), &
                          bus(x(TVEGEH,1,1)),bus(x(zusl,1,1)),  bus(x(ztsl,1,1)),  &
                          SUNCOSA, bus(x(VGH_HEIGHT,1,1)),bus(x(VGH_DENS,1,1)), &
                          BUS(x(Z0MVH  ,1,1)),PZ0LOC_SNOW, BUS(x(SVS_WTG,1,1)), &
                      	 BUS(x(LAIVH  ,1,1)),bus(x(SKYVIEW,1,1)),BUS(x(EMISVH ,1,1)) , bus(x(SWCA,1,1)), bus(x(LWCA,1,1)), &
                          bus(x(VCA,1,1)), bus(x(TCA,1,1)), bus(x(QCA,1,1)) , PWIND_TOP,  &
                          PUREF_VEG,PTREF_VEG,  bus(x(VCA_DRIFT,1,1)), N)
-         ELSE   ! SVS1 method
-             DO I=1,N
-                IF (CANO_REF_FORCING .EQ. 'ABV') THEN ! For SVS1 with above, there is ZSURF_FOREST = 0
-                    PUREF_VEG(I) = bus(x(zusl,I,1)) + bus(x(VGH_HEIGHT,I,1))
-                    PTREF_VEG(I) =  bus(x(ztsl,I,1)) + bus(x(VGH_HEIGHT,I,1))
-                ELSE
-                    PUREF_VEG(I) = bus(x(zusl,I,1))
-                    PTREF_VEG(I) =  bus(x(ztsl,I,1))
-                ENDIF
-                bus(x(TCA,I,1))  = TT(I)  ! Air temperature in the canopy
-                bus(x(QCA,I,1))  = HU(I)  ! Air specific humidity in the canopy
-                bus(x(VCA,I,1))  = VMOD(I) ! Wind speed in the canopy
-                PWIND_TOP(I) = VMOD(I)
-                bus(x(VCA_DRIFT,I,1)) = VMOD(I) ! Wind speed forcing used for the snow drift routine
-                ! Prepare radiation for snow under high veg --> Impact of vegetation on incoming SW and LW
-                bus(x(SWCA,I,1))    = zfsolis(I) * bus(x(VEGTRANS,I,1))              ! Incoming SW under VEG
-                bus(x(LWCA,I,1))  = bus(x(SKYVIEW,I,1)) * bus(x(FDSI,I,1)) +    &  ! Incoming LW under veg
-                     (1. - bus(x(SKYVIEW,I,1))) * EVA(I) * STEFAN * (bus(x(TVEGEH,I,1)))**4.  ! add EVA--nathalie
-             ENDDO
-
-          ENDIF
-     ENDIF
+      ENDIF
 
       IF(LSNOW_INTERCEPTION_SVS2) THEN
 
@@ -770,9 +748,8 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
       CALL EBUDGET_SVS2(bus(x(TSA ,1,1)),  &
                   bus(x(WSOIL     ,1,1)) , bus(x(ISOIL,1,1)),  &
-                  bus(x(TGROUND   ,1,1)) , bus(x(TGROUND,1,2)), bus(x(TGROUNDV,1,1)),  &
-                  bus(x(TVEGEL    ,1,1)) ,    &
-                  bus(x(TVEGEH    ,1,1)) , bus(x(TVEGEH,1,2)),   &
+                  bus(x(TGROUND   ,1,1)) , bus(x(TGROUNDV,1,1)),  &
+                  bus(x(TVEGEL    ,1,1)) , bus(x(TVEGEH  ,1,1)) ,    &
                   bus(x(TPSOIL    ,1,1)) ,    &
                   bus(x(TPERM     ,1,1)) , bus(x(GFLUXSA,1,1)), bus(x(GFLUXSV,1,1)), &
                   DT                     , VMOD, VDIR, bus(x(DLAT,1,1)),     &

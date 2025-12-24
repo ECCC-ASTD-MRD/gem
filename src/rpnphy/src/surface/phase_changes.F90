@@ -85,24 +85,11 @@
 !     declarations of local variables 
       INTEGER I, K
 !
-      REAL, PARAMETER   :: INSOLFRZ_VEG = 0.20  ! (-)      Vegetation insolation coefficient
-      REAL, PARAMETER   :: INSOLFRZ_LAI = 30.0  ! (m2 m-2) Vegetation insolation coefficient
-      REAL, PARAMETER   :: TAUICE = 3300.       ! (s)      Soil freezing characteristic timescale
 
       real WORK, WORKLOG, WLMAX, PSIMAX, PSI, ZK, WGM, WGIM, TGM
 !      real PHASEM, PHASEF, PHASE, DELTAT, APPHEATCAP, PSISATZ
       real PSISATZ
-
-      REAL RHOW, RHOI
-      DATA RHOW, RHOI  / 1000., 917. /          ! (kg m-3)     Water and ice density
-      REAL CPICE
-      DATA CPICE / 2.106E+3 /                   ! (J K-1 kg-1) Specific heat capacity for ice
 !
-
-!     AUTOMATIC ARRAYS
-!
-!!$      AUTOMATIC ( KVEG     , REAL , (N,NL_SVS) )
-!!$      AUTOMATIC ( KVEGBARE , REAL , (N,NL_SVS) )
       REAL, DIMENSION(N,NL_SVS) :: EXCES
 !
 !
@@ -167,7 +154,7 @@
 !                      i) potentially significantly increasing the "apparent" heat capacity and
 !                      ii) this part is also treated implicitly herein.
 !
-            WORK = (CPICE*RHOI/(CHLF*RHOW))*ZK*MAX(0.0,-DELTAT(I,K))
+            WORK = (CICE*RHOI/(CHLF*RHOW))*ZK*MAX(0.0,-DELTAT(I,K))
 
 !        
             APPHEATCAP(I,K)=0.0
@@ -180,10 +167,10 @@
 
 !
 !                     * MELT *   ice if energy and ice available:  WGIM = WF
-            PHASEM(I,K)  = (DT/TAUICE)*MIN(ZK*CPICE*RHOI*MAX(0.0,DELTAT(I,K)), WGIM*CHLF*RHOW)
+            PHASEM(I,K)  = (DT/TAUICE)*MIN(ZK*CICE*RHOI*MAX(0.0,DELTAT(I,K)), WGIM*CHLF*RHOW)
 !
 !                     * FREEZE * liquid water if energy and water available:
-            PHASEF(I,K)  = (DT/TAUICE)*MIN(ZK*CPICE*RHOI*MAX(0.0, -DELTAT(I,K)), MAX(0.0, WGM-WLMAX)*CHLF*RHOW)
+            PHASEF(I,K)  = (DT/TAUICE)*MIN(ZK*CICE*RHOI*MAX(0.0, -DELTAT(I,K)), MAX(0.0, WGM-WLMAX)*CHLF*RHOW)
 !
 !                     Update heat content if melting or freezing
             TG(I,K) = TGM + (PHASEF(I,K) - PHASEM(I,K))/(CAP(I,K)+APPHEATCAP(I,K))

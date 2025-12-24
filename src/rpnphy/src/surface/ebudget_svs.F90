@@ -216,9 +216,6 @@
       INTEGER I,zopt
 !
 !
-      REAL EMISSN, EMSOIL, KCOEF, RHOW
-      REAL BFREEZ, RAIN1, RAIN2
-      REAL ABARK
 !
 !     MULTIBUDGET VARIABLES 
 !     GR:ground, SN:snow, VG:vegetation, AG: aggregated 
@@ -230,25 +227,6 @@
             cmu, cm, ctu, vmod_lmin, dhusurf_dqsat
 
 !************************************************************************
-!
-!
-!
-!                                THE FOLLOWING SHOULD BE PUT IN 
-!                                A COMMON COMDECK
-!
-      EMISSN = 0.97
-      EMSOIL = 0.94
-      RHOW   = 1000.  
-      KCOEF  = 1.E-6
-      BFREEZ = 4.
-!                                Albedo of Bark (S. Wang, Ecological Modelling, 2005)
-      ABARK  = 0.15
-!
-!
-      RAIN1  = 2.8e-8
-      RAIN2  = 2.8e-7
-! 
-!
 !
 !!       1.     GRID-AVERAGED ALBEDO, EMISSIVITY, AND ROUGHNESS LENGTH
 !       ------------------------------------------------------

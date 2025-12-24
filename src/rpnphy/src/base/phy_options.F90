@@ -7,7 +7,7 @@ module phy_options
 
    integer, parameter :: RAD_NUVBRANDS     = 6 !#TODO: move to a radiation specific module/cdk
    integer, parameter :: RAD_TCCL     = 9 !#TODO: move to a radiation specific module/cdk
-   integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate
+   integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: move to mu_jdate   
    logical           :: chemistry    = .false.
    logical           :: climat       = .false.
    logical           :: cmt_comp_diag = .false.
@@ -406,7 +406,8 @@ module phy_options
 
    !# Number of timesteps for which surface fluxes "FC" and "FV" are
    !# gradually set from 0 to their full value in a "slow start fashion"
-   !# at the beginning of a time integration
+   !# at the beginning of a time integration (max 20)
+   integer, parameter :: NSLOFLUXMAX = 20
    integer           :: nsloflux     = 0
    namelist /physics_cfgs/ nsloflux
    namelist /physics_cfgs_p/ nsloflux
@@ -458,7 +459,7 @@ module phy_options
         /)
 
    !# Reference length (m) for variance power law scaling
-   real              :: pbl_dxref = 1000.
+   real              :: pbl_dxref = -1.
    namelist /physics_cfgs/ pbl_dxref
    namelist /physics_cfgs_p/ pbl_dxref
       

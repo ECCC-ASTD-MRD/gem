@@ -114,7 +114,7 @@
 | ninblocy | Physic input blocking along Y | 1 | integer |
 | non_oro | Hines non-orographic GWD scheme is active if .true. | .false. | logical |
 | non_oro_pbot | Pressure (in Pa) that defines the bottom emission level for gravity waves | 61000.0 | real |
-| nsloflux | Number of timesteps for which surface fluxes "FC" and "FV" are<br>gradually set from 0 to their full value in a "slow start fashion"<br>at the beginning of a time integration | 0 | integer |
+| nsloflux |  | 0 | integer |
 | p3_debug | switch for real-time debugging in microphysics (P3) | .false. | logical |
 | p3_depfact | calibration factor for ice deposition in microphysics (P3) | 1.0 | real |
 | p3_dtmax | Maximum time step (s) to be taken by the microphysics (P3) scheme, with time-splitting<br>used to reduce step to below this value if necessary | 60. | real |
@@ -133,7 +133,7 @@
 | pbl_diff_condens | Diffuse condensate fields | .false. | logical |
 | pbl_diss | Run with a modified closure for the dissipation length scale<br>- 'NIL  ' : No modified closure for the dissipation length scale<br>- 'LIM50' : A maximum value of 50m is imposed on dissipation length | 'NIL' | character(len=16) |
 | pbl_dissheat | Dissipative heating tendencies are computed for the PBL scheme such<br>that total energy (kinetic + internal) is conserved<br>- 'NIL       ' : No dissipative heating is computed<br>- 'LOCAL_K   ' : Local total energy conservation based on diffusion coefficients<br>- 'LOCAL_TEND' : Local total energy conservation based on wind tendencies | 'NIL' | character(len=16) |
-| pbl_dxref | Reference length (m) for variance power law scaling | 1000. | real |
+| pbl_dxref | Reference length (m) for variance power law scaling | -1. | real |
 | pbl_func_stab | Class of stability functions (stable case) to use in the PBL<br>- 'DELAGE97  ' : Use functions described by Delage (1997; BLM)<br>- 'BELJAARS91' : Use functions described by Beljaars and Holtslag (1991; JAM)<br>- 'LOCK07    ' : Use functions described by Lock (2007; Tech Report) employed at UKMO | 'DELAGE97' | character(len=16) |
 | pbl_func_unstab | Class of stability functions (unstable case) to use in the PBL<br>- 'DELAGE92' : Use functions described by Delage and Girard (1992; BLM)<br>- 'DYER74  ' : Use functions described by Dyer (1974; BLM) | 'DELAGE92' | character(len=16) |
 | pbl_mlblac_max | Choose form of asymptotic mixing length for Blacadar-type estimates<br>- 'BLAC62' : Asymptotic 200 m proposed by Blackadar (1962; JGR) with clipping<br>- 'LOCK07' : Diagnosed asymptotic scale of Lock (2007; Tech Report) used at UKMO | 'BLAC62' | character(len=16) |
@@ -275,7 +275,6 @@
 | ktdrains | Number of the soil layer containing the Tile Drains,<br>when activating the option "svs_tdrains_plough".<br>Tile Drains generally located between 90 and 200 cm deep.<br>(generally 90/100cm in Canada, sometimes deeper in the US). | -1 | integer |
 | lake_leadfrac | Lead fraction for ice-covered lakes | 0. | real |
 | lbcheat_svs2 | (SVS2) Lower boundary conditions for heat equation in SVS2<br>- 'TPERM'   :  prescribed temperature at bottom of the soil column<br>- '0FLUX'   :  assumes heat flux at the bottom of the soil column is negligible | 'TPERM' | character(len=5) |
-| lcano_svs2 | (SVS2) If .true., SVS2 utilizes the canopy module to modify T, U, VMOD, SW, and LW to account for canopy | .true. | logical |
 | leadfrac | Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac) | 0.03 | real |
 | limsnodp | Limit snow depth to 10 cm for calculation of heat conductivity of snow<br>over sea-ice and glacier if .true. | .false. | logical |
 | lmacropores_svs1 | If .true., macropores are activated and enhance infiltration in a frozen soil | .false. | logical |
@@ -298,12 +297,14 @@
 | schmriver | River surface processes<br>- 'NIL' : | 'NIL' | character(len=16) |
 | schmsol | Land surface processes<br>- 'NIL ' : No Land surface processes<br>- 'ISBA' : Interaction Soil Biosphere Atmosphere (ISBA) land sfc scheme<br>- 'SVS ' : Soil, Vegetation, and Snow (SVS) (Multibudget) land sfc scheme<br>- 'SVS2' : Advanced version of the SVS land sfc scheme | 'ISBA' | character(len=16) |
 | schmurb | Urban surface processes<br>- 'NIL' : No Urban surface processes<br>- 'TEB' : Town Energy Balance (TEB) urban scheme | 'NIL' | character(len=16) |
+| sl_diag_type | Type of diagnostic-level calculations to use<br>- 'FLUX      ' : Use turbulent surface fluxes to estimate diagnostic-level fields<br>- 'INTERP    ' : Use interpolation to estimate diagnostic-level fields | 'FLUX' | character(len=16) |
 | sl_func_stab | Class of stability functions (stable case) to use in the surface layer<br>- 'DELAGE97  ' : Use functions described by Delage (1997; BLM)<br>- 'BELJAARS91' : Use functions described by Beljaars and Holtslag (1991; JAM)<br>- 'LOCK07    ' : Use functions described by Lock (2007; Tech Report) employed at UKMO | 'DELAGE97' | character(len=16) |
 | sl_func_unstab | Class of stability functions (unstable case) to use in the surface layer<br>- 'DELAGE92' : Use functions described by Delage and Girard (1992; BLM)<br>- 'DYER74  ' : Use functions described by Dyer (1974; BLM) | 'DELAGE92' | character(len=16) |
 | sl_lmin_glacier | Minimum Obukhov length (L) for glaciers | -1. | real |
 | sl_lmin_seaice | Minimum Obukhov length (L) for sea ice | -1. | real |
 | sl_lmin_soil | Mimimum Obukhov length (L) for soil surfaces | -1. | real |
 | sl_lmin_town | Minimum Obukhov length (L) for town | -1. | real |
+| sl_lmin_type | Type of Lmin calculation to use<br>- 'SHEAR     ' : Impose a minimum lowest-level wind speed to guarantee L>L_min<br>- 'SFO       ' : Impose a minimum L_min directly in stability function calculations | 'SHEAR' | character(len=16) |
 | sl_lmin_water | Minimum Obukhov length (L) for water | -1. | real |
 | sl_rineutral | Define bulk Ri values for near-neutral regime in the surface layer | 0. | real |
 | sl_z0ref | Use a reference roughness for surface layer calculations | .false. | logical |
@@ -313,7 +314,8 @@
 | soil_ksat_ice |  | 'ZHANGGRAY97' | character(len=16) |
 | soildbtm_svs1 | Option to set the depth of the lower boundrary condition below the soil column (module soil_freezing.F90) | 'MID' | character(len=16) |
 | soilsnowhf_svs1 | Option to compute the heat flux between the soil and the snowpack in the module soil_freezing.F90 | 'DST_MAXD' | character(len=16) |
-| soiltext | Soil texture database/calculations for SVS land surface scheme<br>- 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)<br>- 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)<br>- 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC ? World Soil Information | 'GSDE' | character(len=16) |
+| soiltext | Soil texture database/calculations for SVS land surface scheme<br>- 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)<br>- 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)<br>- 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC World Soil Information | 'GSDE' | character(len=16) |
+| svs2_crodebug | Logical - Activate Crocus debugging options  if .true. (see README_crodebug.md) | .false. | logical |
 | svs_aldat | Values (1:NCLASS) used for the lookup table ALDAT if svs_read_aldat=.T. | -999. | real |
 | svs_d2dat | Values (1:NCLASS) used for the lookup table D2DAT if svs_read_d2dat=.T. | -999. | real |
 | svs_d50crops | Values (1:13) used for the lookup table D50CROPS if svs_read_d50crops=.T. | -999. | real |
@@ -350,7 +352,7 @@
 | svs_read_vegdat14 | Option to read a lookup table of monthly values for VEGDAT for class 14 | .false. | logical |
 | svs_read_vegdat16 | Option to read a lookup table of monthly values for VEGDAT for class 16 | .false. | logical |
 | svs_read_vegdat17 | Option to read a lookup table of monthly values for VEGDAT for class 17 | .false. | logical |
-| svs_read_vf2ctemdat | Option to change the lookup table VF2CTEMDAT in pĥtsyn_svs.F90 | .false. | logical |
+| svs_read_vf2ctemdat | Option to change the lookup table VF2CTEMDAT in phtsyn_svs.F90 | .false. | logical |
 | svs_read_z0mdat | Option to change the lookuptable Z0MDAT in inicover_svs.F90 | .false. | logical |
 | svs_snow_rain |  | 'BELAIR03' | character(len=16) |
 | svs_tdrains_plough | Option to activate the effect of ploughing and Tile Drains in SVS | .false. | logical |
