@@ -23,6 +23,7 @@ has_modelutils=@modelutils_VERSION@
 has_rpncomm=@rpncomm_VERSION@
 has_rpnphy=@rpnphy_VERSION@
 has_gemdyn=@gemdyn_VERSION@
+has_mach=@mach_VERSION@
 
 usage()
 {
@@ -47,6 +48,7 @@ Available values for OPTION include:
   --has-modelutils which version of modelutils is it compiled with [${has_modelutils}]
   --has-rpnphy   which version of rpnphy is it compiled with [${has_rpnphy}]
   --has-gemdyn   which version of gemdyn is it compiled with [${has_gemdyn}]
+  --has-mach     which version of mach is it compiled with [${has_mach}]
 
 EOF
 }
@@ -121,6 +123,10 @@ while test $# -gt 0; do
         --has-gemdyn)
        	    echo ${has_gemdyn:-no}
        	    ;;
+
+        --has-mach)
+             echo ${has_mach:-no}
+             ;;
 
         --version)
 	    echo ${version}
