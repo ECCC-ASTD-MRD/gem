@@ -576,7 +576,7 @@ findtopo:
   tags:
     - ppp7
   needs:
-  - build:rhel-9-graniterapids-64-intel-2025
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
