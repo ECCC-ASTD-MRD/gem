@@ -25,7 +25,6 @@ before_script:
 # U3 Intel 2025 with installed RPN-SI libs
 build:rhel-9-graniterapids-64-intel-2025.1.0:
   variables:
-     ORD_SOUMET_MACH: ppp7
      ORD_SOUMET_CPUS: "4"
      ORD_SOUMET_W: "30"
      ORD_SOUMET_M: "8G"
@@ -56,7 +55,6 @@ build:rhel-9-graniterapids-64-intel-2025.1.0:
 # U3 Intel 2025 with installed RPN-SI libs, WITH_CPL
 build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
   variables:
-     ORD_SOUMET_MACH: ppp7
      ORD_SOUMET_CPUS: "4"
      ORD_SOUMET_W: "30"
      ORD_SOUMET_M: "8G"
@@ -87,7 +85,6 @@ build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
 
 package:rhel-9-graniterapids-64-intel-2025.1.0:
    variables:
-      ORD_SOUMET_MACH: ppp7
       ORD_SOUMET_CPUS: "2"
       ORD_SOUMET_W: "10"
       ORD_SOUMET_M: "8G"
