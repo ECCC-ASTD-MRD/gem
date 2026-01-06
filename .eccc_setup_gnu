@@ -30,7 +30,7 @@ esac
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot rpn/libs/20251210
-. r.load.dot rpn/utils/20251231
+. r.load.dot rpn/utils/20260106
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
