@@ -1,12 +1,19 @@
 !**S/P STRANDNGH - CALCULATION OF THE DOWNWARD SOLAR FLUX
 !
+module ccc1_strandngh_mod
+   implicit none
+   public
+
+contains
+
       subroutine ccc1_strandngh (tran, gwgh, atten, taua, tauoma, &
                             taucs, tauomc, cldfrac, rmu, dp, &
                             o3, qq, ib, ig, inpt, &
                             dip, dt, lev1, gh, cut, &
                             il1, il2, ilg, lay, lev, &
                             taug, s)
-!
+      use ccc1_tline1_mod, only: ccc1_tline1
+      use ccc1_tline2_mod, only: ccc1_tline2
       implicit none
 !!!#include <arch_specific.hf>
 !
@@ -255,4 +262,6 @@
       endif
 !
       return
-      end
+      end subroutine ccc1_strandngh
+
+end module ccc1_strandngh_mod

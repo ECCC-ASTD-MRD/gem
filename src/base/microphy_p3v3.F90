@@ -1023,7 +1023,8 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 ! computes various diagnostics fields (precipitation rates, reflectivity, etc.) -- and     !
 ! finally converts the updated potential temperature to temperature.                       !
 !------------------------------------------------------------------------------------------!
-
+ use phy_status, only: physeterror
+   
  implicit none
 
 !----- input/ouput arguments:  ------------------------------------------------------------!
@@ -6202,7 +6203,7 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
 
   ! Define bus requirements
   function p3_phybusinit() result(F_istat)
-    use phy_status, only: PHY_OK, PHY_ERROR
+    use phy_status, only: PHY_OK, PHY_ERROR, physeterror
     use bus_builder, only: bb_request
     implicit none
     integer :: F_istat                          !Function return status

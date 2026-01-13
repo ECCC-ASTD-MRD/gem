@@ -68,7 +68,7 @@ contains
     use phybusidx, except1=>lwc, except2=>iwc
     use cons_thlqw, only: thlqw_compute
     use microphy_utils, only: mp_lwc, mp_iwc
-    use phy_status, only: PHY_OK
+    use phy_status, only: PHY_OK, physeterror
     implicit none
     
     !@Arguments
@@ -126,6 +126,7 @@ contains
     use phybusidx, except1=>lwc, except2=>iwc
     use microphy_utils, only: mp_lwc, mp_iwc
     use tdpack_const, only: CHLC, CHLF, CAPPA, CPD
+    use phy_status, only: physeterror
     implicit none
     
     !@Arguments
@@ -233,6 +234,7 @@ contains
     use pbl_ri_utils, only: PBL_SDMIN
     use tdpack_const, only: CAPPA, PI
     use tdpack, only: fqsmx
+    use phy_status, only: physeterror
     implicit none
 
     !@Arguments

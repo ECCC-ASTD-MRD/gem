@@ -24,6 +24,7 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    use tdpack
    use sfclayer, only: sl_sfclayer,SL_OK
    use sfc_options
+   use phy_status, only: physeterror
    implicit none
 !!!#include <arch_specific.hf>
    !@Object

@@ -11,6 +11,7 @@ contains
       use, intrinsic :: iso_fortran_env, only: INT64, REAL64
       use debug_mod, only: init2nan, assert_not_naninf
       use tdpack_const, only: CAPPA, GRAV, OMEGA
+      use gmmx_name_mod
       use calcz0_mod, only: calcz0
       use phy_options
       use phymem, only: phyvar, phymeta, nphyvars, phymem_find, phymem_busreset, PHY_VBUSIDX, PHY_DBUSIDX
@@ -19,11 +20,12 @@ contains
       use sigmalev, only: sigmalev3
       use surf_precip, only: surf_precip1, surf_precip3
       use phybudget, only: pb_compute, pb_residual
-      use phy_status, only: PHY_OK
+      use phy_status, only: PHY_OK, physeterror
       use vintphy, only: vint_mom2thermo
       use microphy_utils, only: mp_lwc, mp_iwc
       use cons_thlqw, only: thlqw_compute
       use sgspdf, only: sgspdf_bkg
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@Author L. Spacek (Oct 2011)

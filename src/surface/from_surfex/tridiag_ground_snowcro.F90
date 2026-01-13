@@ -1,8 +1,8 @@
 !SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
-!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SFX_LIC for details. version 1.
-MODULE MODI_TRIDIAG_GROUND_SNOWCRO 
+MODULE MODI_TRIDIAG_GROUND_SNOWCRO
 !
 INTERFACE TRIDIAG_GROUND_SNOWCRO
 !
@@ -24,11 +24,11 @@ SUBROUTINE TRIDIAG_GROUND_SNOWCRO_1D(PA,PB,PC,PY,PX,KNLVLS_USE,KMAX_USE,KDIFLOOP
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PA  ! lower diag. elements of A matrix
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PB  ! main  diag. elements of A matrix
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PC  ! upper diag. elements of A matrix
-REAL,    DIMENSION(:,:), INTENT(IN)  :: PY  ! r.h.s. term   
+REAL,    DIMENSION(:,:), INTENT(IN)  :: PY  ! r.h.s. term
 !
-REAL,    DIMENSION(:,:), INTENT(OUT) :: PX  ! solution of A.X = Y 
+REAL,    DIMENSION(:,:), INTENT(OUT) :: PX  ! solution of A.X = Y
 !
-INTEGER,    DIMENSION(:), INTENT(IN) :: KNLVLS_USE ! number of effective layers 
+INTEGER,    DIMENSION(:), INTENT(IN) :: KNLVLS_USE ! number of effective layers
 !
 INTEGER, INTENT(IN) :: KMAX_USE
 INTEGER, INTENT(IN) :: KDIFLOOP       ! shift in control loops: 0 or 1
@@ -39,11 +39,11 @@ SUBROUTINE TRIDIAG_GROUND_SNOWCRO_2D(PA,PB,PC,PY,PX,KNLVLS_USE,KMAX_USE,KDIFLOOP
 REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PA  ! lower diag. elements of A matrix
 REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PB  ! main  diag. elements of A matrix
 REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PC  ! upper diag. elements of A matrix
-REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PY  ! r.h.s. term   
+REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PY  ! r.h.s. term
 !
-REAL,    DIMENSION(:,:,:), INTENT(OUT) :: PX  ! solution of A.X = Y 
+REAL,    DIMENSION(:,:,:), INTENT(OUT) :: PX  ! solution of A.X = Y
 !
-INTEGER,    DIMENSION(:,:), INTENT(IN) :: KNLVLS_USE ! number of effective layers 
+INTEGER,    DIMENSION(:,:), INTENT(IN) :: KNLVLS_USE ! number of effective layers
 !
 INTEGER, DIMENSION(:), INTENT(IN) :: KMAX_USE
 INTEGER, INTENT(IN) :: KDIFLOOP       ! shift in control loops: 0 or 1
@@ -228,21 +228,21 @@ END SUBROUTINE TRIDIAG_GROUND_SNOWCRO_0D
 !
 !!**   METHOD
 !!     ------
-!!                      
-!!        Then, the classical tridiagonal algorithm is used to invert the 
+!!
+!!        Then, the classical tridiagonal algorithm is used to invert the
 !!     implicit operator. Its matrix is given by:
 !!
 !!     (  b(1)      c(1)      0        0        0         0        0        0  )
-!!     (  a(2)      b(2)     c(2)      0  ...    0        0        0        0  ) 
-!!     (   0        a(3)     b(3)     c(3)       0        0        0        0  ) 
+!!     (  a(2)      b(2)     c(2)      0  ...    0        0        0        0  )
+!!     (   0        a(3)     b(3)     c(3)       0        0        0        0  )
 !!      .......................................................................
-!!     (   0   ...   0      a(k)      b(k)     c(k)       0   ...  0        0  ) 
+!!     (   0   ...   0      a(k)      b(k)     c(k)       0   ...  0        0  )
 !!      .......................................................................
 !!     (   0         0        0        0        0 ...  a(n-1)   b(n-1)   c(n-1))
 !!     (   0         0        0        0        0 ...     0      a(n)     b(n) )
 !!
 !!
-!!       All these computations are purely vertical and vectorizations are 
+!!       All these computations are purely vertical and vectorizations are
 !!     easely achieved by processing all the verticals in parallel.
 !!
 !!     EXTERNAL
@@ -259,12 +259,12 @@ END SUBROUTINE TRIDIAG_GROUND_SNOWCRO_0D
 !!     AUTHOR
 !!     ------
 !!       V. Masson
-!! 
+!!
 !!     MODIFICATIONS
 !!     -------------
 !!       Original        May 13, 1998
 !!       05/2011: Brun  Special treatment to tackle the variable number
-!!                      of snow layers 
+!!                      of snow layers
 !!                      In case of second call, a shift of 1 snow layer
 !!                      is applied in the control loops.
 !! ---------------------------------------------------------------------
@@ -281,11 +281,11 @@ IMPLICIT NONE
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PA  ! lower diag. elements of A matrix
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PB  ! main  diag. elements of A matrix
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PC  ! upper diag. elements of A matrix
-REAL,    DIMENSION(:,:), INTENT(IN)  :: PY  ! r.h.s. term   
+REAL,    DIMENSION(:,:), INTENT(IN)  :: PY  ! r.h.s. term
 !
-REAL,    DIMENSION(:,:), INTENT(OUT) :: PX  ! solution of A.X = Y 
+REAL,    DIMENSION(:,:), INTENT(OUT) :: PX  ! solution of A.X = Y
 !
-INTEGER,    DIMENSION(:), INTENT(IN) :: KNLVLS_USE ! number of effective layers 
+INTEGER,    DIMENSION(:), INTENT(IN) :: KNLVLS_USE ! number of effective layers
 !
 INTEGER, INTENT(IN) :: KMAX_USE
 INTEGER, INTENT(IN) :: KDIFLOOP       ! shift in control loops: 0 or 1
@@ -381,21 +381,21 @@ END SUBROUTINE TRIDIAG_GROUND_SNOWCRO_1D
 !
 !!**   METHOD
 !!     ------
-!!                      
-!!        Then, the classical tridiagonal algorithm is used to invert the 
+!!
+!!        Then, the classical tridiagonal algorithm is used to invert the
 !!     implicit operator. Its matrix is given by:
 !!
 !!     (  b(1)      c(1)      0        0        0         0        0        0  )
-!!     (  a(2)      b(2)     c(2)      0  ...    0        0        0        0  ) 
-!!     (   0        a(3)     b(3)     c(3)       0        0        0        0  ) 
+!!     (  a(2)      b(2)     c(2)      0  ...    0        0        0        0  )
+!!     (   0        a(3)     b(3)     c(3)       0        0        0        0  )
 !!      .......................................................................
-!!     (   0   ...   0      a(k)      b(k)     c(k)       0   ...  0        0  ) 
+!!     (   0   ...   0      a(k)      b(k)     c(k)       0   ...  0        0  )
 !!      .......................................................................
 !!     (   0         0        0        0        0 ...  a(n-1)   b(n-1)   c(n-1))
 !!     (   0         0        0        0        0 ...     0      a(n)     b(n) )
 !!
 !!
-!!       All these computations are purely vertical and vectorizations are 
+!!       All these computations are purely vertical and vectorizations are
 !!     easely achieved by processing all the verticals in parallel.
 !!
 !!     EXTERNAL
@@ -412,12 +412,12 @@ END SUBROUTINE TRIDIAG_GROUND_SNOWCRO_1D
 !!     AUTHOR
 !!     ------
 !!       V. Masson
-!! 
+!!
 !!     MODIFICATIONS
 !!     -------------
 !!       Original        May 13, 1998
 !!       05/2011: Brun  Special treatment to tackle the variable number
-!!                      of snow layers 
+!!                      of snow layers
 !!                      In case of second call, a shift of 1 snow layer
 !!                      is applied in the control loops.
 !! ---------------------------------------------------------------------
@@ -434,11 +434,11 @@ IMPLICIT NONE
 REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PA  ! lower diag. elements of A matrix
 REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PB  ! main  diag. elements of A matrix
 REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PC  ! upper diag. elements of A matrix
-REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PY  ! r.h.s. term   
+REAL,    DIMENSION(:,:,:), INTENT(IN)  :: PY  ! r.h.s. term
 !
-REAL,    DIMENSION(:,:,:), INTENT(OUT) :: PX  ! solution of A.X = Y 
+REAL,    DIMENSION(:,:,:), INTENT(OUT) :: PX  ! solution of A.X = Y
 !
-INTEGER,    DIMENSION(:,:), INTENT(IN) :: KNLVLS_USE ! number of effective layers 
+INTEGER,    DIMENSION(:,:), INTENT(IN) :: KNLVLS_USE ! number of effective layers
 !
 INTEGER, DIMENSION(:), INTENT(IN) :: KMAX_USE
 INTEGER, INTENT(IN) :: KDIFLOOP       ! shift in control loops: 0 or 1

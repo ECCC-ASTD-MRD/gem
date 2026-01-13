@@ -14,6 +14,7 @@ contains
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, RAUW
       use phy_options
+      use ktrsnt_mod, only: ktrsnt4
       implicit none
 !!!#include <arch_specific.hf>
 

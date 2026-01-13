@@ -116,7 +116,7 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
         zglacier, zglsea, zpmoins, zpplus, ztdiag, ztnolim, zurban, zztsl, &
         zqdiag, zudiag, zvdiag,zicedp,ztwater, zqdiagstn, ztdiagstn, &
         zudiagstn, zvdiagstn, zqdiagstnv, ztdiagstnv, zudiagstnv, zvdiagstnv, &
-        zlakefr, zriverfr, zgridarea, zlakd, zlakearea
+        zlakefr, zriverfr, zlakd, zlakearea
    real, pointer, dimension(:)    :: ztke, zhdpth, zlkiceh, zsniceh, zexpw, zdtemp, zdelu, zgred, zrhomix, ztsed, zroficeh
    real, pointer, dimension(:)    :: zsnol, zrhosnol, ztsnowl, zalbsnol, zwsnowl, zlst, zhlaksil, zficl
    real, pointer, dimension(:,:)    :: poids_out, zfvap, zilmo, zrunofftot, &
@@ -161,7 +161,6 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
    MKPTR1D(zurban, urban)
    MKPTR1D(zztsl, ztsl)
    MKPTR1D(zlakefr, lakefr)
-   MKPTR1D(zgridarea, gridarea)
    MKPTR1D(zlakearea, lakearea)
    MKPTR1D(zlakd, lakd)
    MKPTR1D(zriverfr, riverfr)

@@ -9,11 +9,12 @@ contains
   !/@*
   subroutine maintke(pvars, kount, ni, nk, nkm1, trnch)
     use, intrinsic :: iso_fortran_env, only: INT64
+    use neark, only: neark_dp => neark_dp_orig
     use debug_mod, only: init2nan
     use tdpack_const, only: CPD, DELTA, GRAV, KARMAN, CAPPA
     use series_mod, only: series_xst
     use phy_options
-    use phy_status, only: phy_error_L, PHY_OK
+    use phy_status, only: phy_error_L, PHY_OK, physeterror
     use phybusidx, except1=>lwc, except2=>iwc
     use phymem, only: phyvar
     use vintphy, only: vint_thermo2mom1
@@ -24,6 +25,7 @@ contains
     use pbl_mtke_utils, only: BLCONST_CU, BLCONST_CK
     use sfclayer, only: sl_stabfunc, SL_OK
     use microphy_utils, only: mp_lwc, mp_iwc
+    use twind_mod, only: twind
     implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -48,8 +50,6 @@ contains
     include "tables.cdk"
     include "phyinput.inc"
 
-    integer, external :: neark
-
     real, save :: tfilt = 0.1
 
     integer :: i, k, stat, ksl(ni)
@@ -70,7 +70,7 @@ contains
          zftot, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
          zrig, zshear2, zc1pbl, zbuoy, zmrk2, zdiffen, zdissen, &
          zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar, zznu, zznd, zn2, &
-         zznt
+         zznt, zlscorer2
 
     real, pointer, dimension(:,:,:), contiguous :: zvcoef
 
@@ -132,6 +132,7 @@ contains
     MKPTR2D(zhumoins, humoins, pvars)
     MKPTR2D(zkm, km, pvars)
     MKPTR2D(zkt, kt, pvars)
+    MKPTR2D(zlscorer2, lscorer2, pvars)
     MKPTR2D(zmrk2, mrk2, pvars)
     MKPTR2D(zn2, n2, pvars)
     MKPTR2D(zpri, pri, pvars)
@@ -194,7 +195,7 @@ contains
 
     if (kount == 0) then
        
-       if (.not.ISPHYINL((/'tr/qtbl:m','qtbl     '/)) .or. &
+       if (.not.ANYPHYINL((/'tr/qtbl:m','qtbl     '/)) .or. &
             fluvert == 'RPNINT') zqtbl = 0.
 
        INIT_TKE: if (ISPHYIN('en')) then
@@ -238,7 +239,7 @@ contains
     end do
 
     ! Compute surface layer scales
-    stat = neark(zsigt, zpmoins, 1000., ni, nkm1, ksl)
+    ksl = neark_dp(zsigt, zpmoins, 1000., ni, nkm1)
     do i=1,ni
        xb(i)=1.0+DELTA*zhumoins(i,ksl(i))
        xh(i)=(GRAV/(xb(i)*ztve(i,ksl(i)))) * ( xb(i)*zftemp_ag(i) &
@@ -283,7 +284,7 @@ contains
             zfblgauss,zfblnonloc,zgte,zgq,zgql,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
             zumoins,zvmoins,ztmoins,ztve,zhumoins,zhumoins,zpmoins,zsigt,zsigm,zsige, &
             zze,zz0_ag,zgzmom,zfrv_ag,zwstar,fbsurf,zturbreg, &
-            zmrk2,zvcoef,zdxdy,eturbtau,kount,trnch,ni,nkm1)
+            zmrk2,zvcoef,zdxdy,zlscorer2,eturbtau,kount,trnch,ni,nkm1)
        if (phy_error_L) return
        
        do k=1,nkm1-1

@@ -118,7 +118,7 @@
 
 !==================================================================================================!
 
- subroutine p3_init(lookup_file_dir,nCat,trplMomI,liqfrac,model,stat,abort_on_err,dowr)
+ subroutine p3_init(lookup_file_dir,nCat,trplMomI,liqfrac,p3_iparam,model,stat,abort_on_err,dowr)
 
 !------------------------------------------------------------------------------------------!
 ! This subroutine initializes all physical constants and parameters needed by the P3       !
@@ -138,6 +138,7 @@
  integer,          intent(in)             :: nCat               ! number of free ice categories
  logical,          intent(in)             :: trplMomI           ! .T.=3-moment / .F.=2-moment (ice)
  logical,          intent(in)             :: liqfrac            ! .T.=Fi,liq / .F.=no Fi,liq (ice)
+ integer,          intent(in)             :: p3_iparam          ! 1:Seifert & Beheng 2000, 2:Beheng 1994, 3: K&K 2000 (default), 4: Kogan 2013 
  integer,          intent(out), optional  :: stat               ! return status of subprogram
  logical,          intent(in),  optional  :: abort_on_err       ! abort when an error is encountered [.false.]
  character(len=*), intent(in),  optional  :: model              ! driving model
@@ -204,7 +205,7 @@
 ! = 2 Beheng 1994
 ! = 3 Khairoutdinov and Kogan 2000
 ! = 4 Kogan 2013
- iparam = 3
+ iparam = p3_iparam 
 
 ! droplet concentration (m-3)
  nccnst = 200.e+6
@@ -1098,7 +1099,7 @@ END subroutine p3_init
                               ni,nk,prt_liq,prt_sol,prt_drzl,prt_rain,prt_crys,prt_snow,          &
                               prt_grpl,prt_pell,prt_hail,prt_sndp,prt_wsnow,diag_Zet,diag_Zec,    &
                               diag_effc,qc_m,qc,nc,qr_m,qr,nr,n_diag_2d,diag_2d,n_diag_3d,diag_3d,  &
-                              clbfact_dep,clbfact_sub,debug_on,diag_hcb,diag_hsn,diag_vis,          &
+                              clbfact_dep,clbfact_sub,debug_on,supidth,diag_hcb,diag_hsn,diag_vis,          &
                               diag_vis1,diag_vis2,diag_vis3,diag_slw,                               &
                               scpf_on,scpf_pfrac,scpf_resfact,cldfrac,maxD_hail,                    &
                               qi_type_1,qi_type_2,qi_type_3,qi_type_4,qi_type_5,qi_type_6,          &
@@ -1116,6 +1117,7 @@ END subroutine p3_init
 ! computes various diagnostics fields (precipitation rates, reflectivity, etc.) -- and     !
 ! finally converts the updated potential temperature to temperature.                       !
 !------------------------------------------------------------------------------------------!
+ use phy_status, only: physeterror
 
  implicit none
 
@@ -1132,6 +1134,7 @@ END subroutine p3_init
  real, intent(in)                       :: dt_max                ! maximum timestep for microphysics   s
  real, intent(in)                       :: clbfact_dep           ! calibration factor for deposition
  real, intent(in)                       :: clbfact_sub           ! calibration factor for sublimation
+ real, intent(in)                       :: supidth               ! Ice supersaturation threshold for deposition ice nucleation
  real, intent(inout), dimension(ni,nk)  :: qc                    ! cloud specific ratio, mass            kg kg-1
  real, intent(inout), dimension(ni,nk)  :: nc                    ! cloud specific ratio, number          #  kg-1
  real, intent(inout), dimension(ni,nk)  :: qr                    ! rain  specific ratio, mass            kg kg-1
@@ -1471,7 +1474,7 @@ END subroutine p3_init
                    zitot,ssat,ww,pres,DZ,kount,prt_liq,prt_sol,i_strt,ni,k_strt,nk,n_iceCat,    &
                    diag_Zet,diag_effc,diag_effi,diag_vmi,diag_di,diag_rhoi,n_diag_2d,diag_2d,   &
                    n_diag_3d,diag_3d,log_predictNc,trim(model),clbfact_dep,clbfact_sub,         &
-                   debug_on,scpf_on,scpf_pfrac,scpf_resfact,cldfrac,log_trplMomI,log_liqFrac,   &
+                   debug_on,supidth,scpf_on,scpf_pfrac,scpf_resfact,cldfrac,log_trplMomI,log_liqFrac,   &
                    prt_drzl,prt_rain,prt_crys,prt_snow,prt_grpl,prt_pell,prt_hail,prt_sndp,     &
                    prt_wsnow,qi_type,                                                           &
                    diag_vis  = diag_vis,                                                        &
@@ -1902,7 +1905,7 @@ END subroutine p3_init
                     zitot,ssat,uzpl,pres,dzq,it,prt_liq,prt_sol,its,ite,kts,kte,nCat,     &
                     diag_ze,diag_effc,diag_effi,diag_vmi,diag_di,diag_rhoi,n_diag_2d,     &
                     diag_2d,n_diag_3d,diag_3d,log_predictNc,model,clbfact_dep,            &
-                    clbfact_sub,debug_on,scpf_on,scpf_pfrac,scpf_resfact,SCF_out,         &
+                    clbfact_sub,debug_on,supidth,scpf_on,scpf_pfrac,scpf_resfact,SCF_out,         &
                     log_3momentIce,log_LiquidFrac,prt_drzl,prt_rain,prt_crys,prt_snow,    &
                     prt_grpl,prt_pell,prt_hail,prt_sndp,prt_wsnow,qi_type,                &
                     diag_vis,diag_vis1,diag_vis2,diag_vis3,diag_dhmax)
@@ -1954,6 +1957,7 @@ END subroutine p3_init
  real, intent(in)                                     :: dt         ! model time step                  s
  real, intent(in)                                     :: clbfact_dep! calibration factor for deposition
  real, intent(in)                                     :: clbfact_sub! calibration factor for sublimation
+ real, intent(in)                                     :: supidth     ! ice supersat threshold for deposition ice nucleation
 
  real, intent(out),   dimension(its:ite)              :: prt_liq    ! precipitation rate, liquid       m s-1
  real, intent(out),   dimension(its:ite)              :: prt_sol    ! precipitation rate, solid        m s-1
@@ -2113,7 +2117,7 @@ END subroutine p3_init
             dum5,dum6,rdumii,rdumjj,dqsidT,abi,dumqvi,rhop,v_impact,ri,iTc,D_c,tmp1,     &
             tmp2,inv_dum3,odt,oxx,oabi,fluxdiv_qit,fluxdiv_nit,fluxdiv_qir,fluxdiv_bir,  &
             prt_accum,fluxdiv_qx,fluxdiv_nx,Co_max,dt_sub,fluxdiv_zit,D_new,Q_nuc,N_nuc, &
-            deltaD_init,dum1c,dum4c,dum5c,dumt,qcon_satadj,qdep_satadj,sources,sinks,    &
+            deltaD_init,dum1c,dum4c,dum5c,dumt,qcon_satadj,qevp_satadj,qdep_satadj,sources,sinks,    & 
             timeScaleFactor,dt_left,qv_tmp,t_tmp,dum1z,dum7c,dum7,fluxdiv_qil,epsiw_tot
 
  double precision :: tmpdbl1,tmpdbl2,tmpdbl3
@@ -2299,7 +2303,7 @@ END subroutine p3_init
  rimedensity    = 0.
  ze_ice    = 1.e-22
  ze_rain   = 1.e-22
- diag_effc = 10.e-6 ! default value
+ diag_effc =  0.    ! default value
 !diag_effr = 25.e-6 ! default value
  diag_effi = 25.e-6 ! default value
  diag_vmi  = 0.
@@ -2392,15 +2396,6 @@ END subroutine p3_init
           nc(i,k) = nccnst*inv_rho(i,k)
        endif
 
-! The test below is skipped if SCPF is not used since now, if SCF>0 somewhere, then nucleation is possible.
-! If there is the possibility of nucleation or droplet activation (i.e., if RH is relatively high)
-! then calculate microphysical processes even if there is no existing condensate
-! Note only theta is updated from clipping and not temp, though temp is used for subsequent calculations.
-! This change is tiny and therefore neglected.
-       if ((t(i,k).lt.273.15 .and. supi(i,k).ge.-0.05) .or.                              &
-           (t(i,k).ge.273.15 .and. sup(i,k).ge.-0.05 ) .and. (.not. SCPF_on))            &
-           log_nucleationPossible = .true.
-
     !--- apply mass clipping if dry and mass is sufficiently small
     !    (implying all mass is expected to evaporate/sublimate in one time step)
 
@@ -2488,11 +2483,11 @@ END subroutine p3_init
     endif
 
    !first call to compute_SCPF
-    call compute_SCPF(Qc(i,:)+sum(Qitot(i,:,:),dim=2),Qr(i,:),Qv(i,:),Qvi(i,:),          &
+    call compute_SCPF(Qc(i,:)+sum(Qitot(i,:,:),dim=2),Qr(i,:),Qv_old(i,:),Qvi(i,:),          &
                       Pres(i,:),ktop,kbot,kdir,SCF,iSCF,SPF,iSPF,SPF_clr,Qv_cld,Qv_clr,  &
                       SCPF_on,scpf_pfrac,scpf_resfact,quick=.false.)
 
-    if ((scpf_ON) .and. (sum(SCF) .ge. 0.01)) log_nucleationPossible = .true.
+    if ( sum(SCF) .ge. 0.01 ) log_nucleationPossible = .true. 
 
    !jump to end of i-loop if log_nucleationPossible=.false.  (i.e. skip everything)
     if (.not. (log_nucleationPossible .or. log_hydrometeorsPresent)) goto 333
@@ -2510,17 +2505,12 @@ END subroutine p3_init
 
      ! if relatively dry and no hydrometeors at this level, skip to end of k-loop (i.e. skip this level)
        log_exitlevel = .true.
-       if (qc(i,k).ge.qsmall .or. qr(i,k).ge.qsmall) log_exitlevel = .false.
+       if (qc(i,k)*iSCF(k).ge.qsmall .or. qr(i,k).ge.qsmall) log_exitlevel = .false.
        do iice = 1,nCat
           if (qitot(i,k,iice).ge.qsmall) log_exitlevel = .false.
        enddo
 
-       !The test below is skipped if SCPF is used since now, if SCF>0 somewhere, then nucleation is possible
-       if ( (     SCPF_on) .and. log_exitlevel .and.       &
-          (SCF(k).lt.0.01) )  goto 555 !i.e. skip all process rates !%%% FRED TEST NOT SURE
-       if ( (.not.SCPF_on) .and. log_exitlevel .and.       &
-          ((t(i,k).lt.273.15 .and. supi(i,k).lt.-0.05) .or.&
-           (t(i,k).ge.273.15 .and. sup(i,k) .lt.-0.05))) goto 555   !i.e. skip all process rates
+       if ( log_exitlevel .and. (SCF(k).lt.0.01) )  goto 555 !i.e. skip all process rates 
 
     ! initialize warm-phase process rates
        qcacc   = 0.;     qrevp   = 0.;     qccon   = 0.
@@ -2587,7 +2577,7 @@ END subroutine p3_init
 
 ! skip micro process calculations except nucleation/acvtivation if there no hydrometeors are present
        log_exitlevel = .true.
-       if (qc(i,k).ge.qsmall .or. qr(i,k).ge.qsmall) log_exitlevel = .false.
+       if (qc(i,k)*iSCF(k).ge.qsmall .or. qr(i,k).ge.qsmall) log_exitlevel = .false.
        do iice = 1,nCat
           if (qitot(i,k,iice).ge.qsmall) log_exitlevel=.false.
        enddo
@@ -2647,7 +2637,8 @@ END subroutine p3_init
             !Note: with scpf_on, no need to compute in-cloud values to access lookup tables since all
             !indices are ratios of mixing ratios, therefore *iSCF is both on num and denom.
             !Also true for the rime density, which is qirim*iSCF/birim*iSCF
-            !Also true for dumj and dum3, which calculated using qr/nr
+            !Also true for dumj and dum3, which calculated using qr/nr. 
+            !Only true for ice variables. Not true for droplets and rain.
 
              call calc_bulkRhoRime(qitot(i,k,iice),qirim(i,k,iice),qiliq(i,k,iice),birim(i,k,iice),rhop)
 
@@ -2714,7 +2705,7 @@ END subroutine p3_init
                 do imu=1,niter_mui
                    mu_i = compute_mu_3moment(nitot(i,k,iice),dum1z,zitot(i,k,iice),mu_i_max)
                    call find_lookupTable_indices_1c(dumzz,dum6,zsize,mu_i)
-                   call access_lookup_table_3mom_LF(dumzz,dumjj,dumii,dumll,dumi,12,dum1,dum4,dum5,dum6,dum7,f1pr16) ! find actual bulk density
+                   call access_lookup_table_3mom_LF(dumzz,dumjj,dumii,dumll,dumi,12,dum1,dum4,dum5,dum6,dum7,f1pr16) ! find actual bulk density f1pr16
                    dum1z =  6./(f1pr16*pi)*qitot(i,k,iice)  !estimate of moment3
                 enddo
 
@@ -2775,7 +2766,7 @@ END subroutine p3_init
           ! note that the Zmax and Zmin are normalized and thus need to be multiplied by existing Q
              if (log_3momentIce) then
                 dum1 =  6./(f1pr16*pi)*qitot(i,k,iice)  !estimate of moment3
-                tmp1 = G_of_mu(0.)
+                tmp1 = G_of_mu(0.) ! Note: G = M0*M6/M3^2
                 tmp2 = G_of_mu(20.)
                 zitot(i,k,iice) = min(zitot(i,k,iice),tmp1*dum1**2/nitot(i,k,iice))
                 zitot(i,k,iice) = max(zitot(i,k,iice),tmp2*dum1**2/nitot(i,k,iice))
@@ -2824,7 +2815,7 @@ END subroutine p3_init
 ! eci is a constant, rho(i,k) is grid-mean, nitot*iSCF is in-cloud
 ! (qc*iSCF*nitot*iSCF)*SCF = (qc*nitot)*iSCF to obtain grid-mean qccol
 
-          if (qitot(i,k,iice).ge.qsmall .and. qc(i,k).ge.qsmall .and. t(i,k).le.273.15) then
+          if (qitot(i,k,iice).ge.qsmall .and. qc(i,k)*iSCF(k).ge.qsmall .and. t(i,k).le.273.15) then
              qccol(iice) = rhofaci(i,k)*f1pr04*qc(i,k)*eci*rho(i,k)*nitot(i,k,iice)*iSCF(k)
              nccol(iice) = rhofaci(i,k)*f1pr04*nc(i,k)*eci*rho(i,k)*nitot(i,k,iice)*iSCF(k)
           endif
@@ -2845,7 +2836,7 @@ END subroutine p3_init
           ! for T > 273.15, assume cloud water is collected and shed as rain drops
           if (log_LiquidFrac) then
           ! assume cloud water is collected by qiliq
-             if (qitot(i,k,iice).ge.qsmall .and. qc(i,k).ge.qsmall .and. t(i,k).gt.273.15) then
+             if (qitot(i,k,iice).ge.qsmall .and. qc(i,k)*iSCF(k).ge.qsmall .and. t(i,k).gt.273.15) then
                 qccoll(iice) = rhofaci(i,k)*f1pr04*qc(i,k)*eci*rho(i,k)*nitot(i,k,iice)*iSCF(k)
                 nccoll(iice) = rhofaci(i,k)*f1pr04*nc(i,k)*eci*rho(i,k)*nitot(i,k,iice)*iSCF(k)
              endif
@@ -2857,7 +2848,7 @@ END subroutine p3_init
              endif
           else
           ! assume cloud water is collected and shed as rain drops (original code)
-             if (qitot(i,k,iice).ge.qsmall .and. qc(i,k).ge.qsmall .and. t(i,k).gt.273.15) then
+             if (qitot(i,k,iice).ge.qsmall .and. qc(i,k)*iSCF(k).ge.qsmall .and. t(i,k).gt.273.15) then
              ! sink for cloud water mass and number, note qcshed is source for rain mass
                 qcshd(iice) = rhofaci(i,k)*f1pr04*qc(i,k)*eci*rho(i,k)*nitot(i,k,iice)*iSCF(k)
                 nccol(iice) = rhofaci(i,k)*f1pr04*nc(i,k)*eci*rho(i,k)*nitot(i,k,iice)*iSCF(k)
@@ -3164,7 +3155,7 @@ END subroutine p3_init
              iTc   = 1./min(-0.001,t(i,k)-273.15)
 
           ! cloud:
-             if (qc(i,k).ge.qsmall) then
+             if (qc(i,k)*iSCF(k).ge.qsmall) then
               ! droplet fall speed
               ! (use Stokes' formulation (thus use analytic solution)
                 Vt_qc(i,k) = acn(i,k)*gamma(4.+bcn+mu_c(i,k))/(lamc(i,k)**bcn*gamma(mu_c(i,k)+4.))
@@ -3184,7 +3175,7 @@ END subroutine p3_init
                    rhorime_c(iice)  = 611.+72.25*(Ri-8.)
                 endif
 
-             endif    !if qc>qsmall
+             endif    !if qc*iSCF>qsmall
 
           ! rain:
             ! assume rime density for rain collecting ice is 900 kg/m3
@@ -3218,7 +3209,7 @@ END subroutine p3_init
 !                (6.*pi*rin*mu)
 !         nacnt=exp(-2.80+0.262*(273.15-t(i,k)))*1000.
 
-       if (qc(i,k).ge.qsmall .and. t(i,k).le.269.15) then
+       if (qc(i,k)*iSCF(k).ge.qsmall .and. t(i,k).le.269.15) then
 !         qchetc(iice) = pi*pi/3.*Dap*Nacnt*rhow*cdist1(i,k)*gamma(mu_c(i,k)+5.)/lamc(i,k)**4
 !         nchetc(iice) = 2.*pi*Dap*Nacnt*cdist1(i,k)*gamma(mu_c(i,k)+2.)/lamc(i,k)
 ! for future: calculate gamma(mu_c+4) in one place since its used multiple times
@@ -3357,10 +3348,8 @@ END subroutine p3_init
 ! condensation/evaporation and deposition/sublimation
 !   (use semi-analytic formulation)
 
-! Note (BUG): is *iSPF(k) necessary here (epsr is in-precip anyway)
-
        !calculate rain evaporation including ventilation
-       if (qr(i,k)*iSPF(k).ge.qsmall) then
+       if (qr(i,k)*iSPF(k).ge.qsmall) then 
           call find_lookupTable_indices_3(dumii,dumjj,dum1,rdumii,rdumjj,inv_dum3,mu_r(i,k),lamr(i,k))
          !interpolate value at mu_r
           dum1 = revap_table(dumii,dumjj)+(rdumii-real(dumii))*                          &
@@ -3377,7 +3366,7 @@ END subroutine p3_init
           epsr = 0.
        endif
 
-       if (qc(i,k).ge.qsmall) then
+       if (qc(i,k)*iSCF(k).ge.qsmall) then
           epsc = 2.*pi*rho(i,k)*dv*cdist(i,k)
        else
           epsc = 0.
@@ -3423,50 +3412,25 @@ END subroutine p3_init
      ! errors from this assumption are small
        dum = -cp/g*(t(i,k)-t_old(i,k))*odt
 
-!       dum = qvs(i,k)*rho(i,k)*g*uzpl(i,k)/max(1.e-3,(pres(i,k)-polysvp1(t(i,k),0)))
+     ! dum = qvs(i,k)*rho(i,k)*g*uzpl(i,k)/max(1.e-3,(pres(i,k)-polysvp1(t(i,k),0)))
 
-       !if (log_LiquidFrac) then
-         aaa = (qv(i,k)-qv_old(i,k))*odt - dqsdT*(-dum*g*inv_cp)-(qvs(i,k)-dumqvi)*(1.+xxls(i,k)*   &
-               inv_cp*dqsdT)*oabi*epsi_tot
-       !else
-       !  if (t(i,k).lt.273.15) then
-       !     aaa = (qv(i,k)-qv_old(i,k))*odt - dqsdT*(-dum*g*inv_cp)-(qvs(i,k)-dumqvi)*     &
-       !           (1.+xxls(i,k)*inv_cp*dqsdT)*oabi*epsi_tot
-       !  else
-       !     aaa = (qv(i,k)-qv_old(i,k))*odt - dqsdT*(-dum*g*inv_cp)
-       !  endif
-       !endif
+       aaa = (qv(i,k)-qv_old(i,k))*odt - dqsdT*(-dum*g*inv_cp)-(qvs(i,k)-dumqvi)*(1.+xxls(i,k)*   &
+             inv_cp*dqsdT)*oabi*epsi_tot 
 
        xx  = max(1.e-20,xx)   ! set lower bound on xx to prevent division by zero
        oxx = 1./xx
 
-       if (.not. scpf_ON)  then
-          ssat_cld = ssat(i,k)
-          ssat_r   = ssat(i,k)
-          sup_cld  = sup(i,k)
-          sup_r    = sup(i,k)
-          supi_cld = supi(i,k)
-       else
-          ssat_cld  = Qv_cld(k) - qvs(i,k) !in-cloud  sub/sur-saturation w.r.t. liq
-          ssat_clr  = Qv_clr(k) - qvs(i,k) !clear-sky sub/sur-saturation w.r.t. liq
-! Note (BUG): (ssat_cld*(SPF(k)-SPF_clr(k))+ssat_clr*SPF_clr(k))*iSPF(k) to get fractional
-! To be done, it is changing the solution
-          !mix of in-cloud/clearsky sub/sur-saturation w.r.t. liqfor rain:
-          ssat_r    = ssat_cld*(SPF(k)-SPF_clr(k))+ssat_clr*SPF_clr(k)
-          sup_r     = ssat_r   /qvs(i,k)
-          sup_cld   = ssat_cld /qvs(i,k)   !in-cloud  sub/sur-saturation w.r.t. liq in %
-          supi_cld  = Qv_cld(k)/qvi(i,k)-1.!in-cloud  sub/sur-saturation w.r.t. ice in %
-       endif
+       ssat_cld  = Qv_cld(k) - qvs(i,k) !in-cloud  sub/sur-saturation w.r.t. liq
+       ssat_clr  = Qv_clr(k) - qvs(i,k) !clear-sky sub/sur-saturation w.r.t. liq
+       !mix of in-cloud/clearsky sub/sur-saturation w.r.t. liqfor rain:
+       ssat_r    = ssat_cld*(SPF(k)-SPF_clr(k))+ssat_clr*SPF_clr(k)
+       sup_r     = ssat_r   /qvs(i,k)
+       sup_cld   = ssat_cld /qvs(i,k)   !in-cloud  sub/sur-saturation w.r.t. liq in %
+       supi_cld  = Qv_cld(k)/qvi(i,k)-1.!in-cloud  sub/sur-saturation w.r.t. ice in %
 
-!Note (BUG) the following three bug fixed change the solution with scpf_on=.false.
-
-       if (qc(i,k).ge.qsmall) &
-!Note (BUG): Cholette (Jul 2022), remove *SCF(k) for ssat_cld and multiplication *CF for grid-mean qccon
-!          qccon = ((aaa*epsc*oxx+(ssat_cld-aaa*oxx)*odt*epsc*oxx*(1.-sngl(dexp(-dble(xx*dt)))))/ab)*SCF(k)
+       if (qc(i,k)*iSCF(k).ge.qsmall) &
           qccon = (aaa*epsc*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsc*oxx*(1.-sngl(dexp(-dble(xx*dt)))))/ab
        if (qr(i,k).ge.qsmall) &
-!Note (BUG): Cholette (Jul 2022), remove *SPF(k) for ssat_r and multiplication *SPF for grid-mean qccon
-!          qrcon = ((aaa*epsr*oxx+(ssat_r-aaa*oxx)*odt*epsr*oxx*(1.-sngl(dexp(-dble(xx*dt)))))/ab)*SPF(k)
           qrcon = (aaa*epsr*oxx+(ssat_r*SPF(k)-aaa*oxx)*odt*epsr*oxx*(1.-sngl(dexp(-dble(xx*dt)))))/ab
 
       !evaporate instantly for very small water contents
@@ -3491,15 +3455,10 @@ END subroutine p3_init
 
        iice_loop_depsub:  do iice = 1,nCat
 
-       ! if (log_LiquidFrac) then
-
               if (qitot(i,k,iice).ge.qsmall) then
               if ((qiliq(i,k,iice)/qitot(i,k,iice)).lt.0.01) then
               ! Sublimation/deposition of ice
               !note: diffusional growth/decay rate: (stored as 'qidep' temporarily; may go to qisub below)
-!Note (BUG): Cholette (Jul 2022), remove *SCF(k) for ssat_cld and multiplication *CF for grid-mean qccon
-!                 qidep(iice) = ((aaa*epsi(iice)*oxx+(ssat_cld-aaa*oxx)*odt*epsi(iice)*oxx*               &
-!                               (1.-dexp(-dble(xx*dt))))*oabi+(qvs(i,k)-dumqvi)*epsi(iice)*oabi)*SCF(k)
                  qidep(iice) = (aaa*epsi(iice)*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsi(iice)*oxx*   &
                                (1.-dexp(-dble(xx*dt))))*oabi+(qvs(i,k)-dumqvi)*epsi(iice)*oabi
               endif
@@ -3531,9 +3490,6 @@ END subroutine p3_init
               if (qitot(i,k,iice).ge.qsmall) then
               if ((qiliq(i,k,iice)/qitot(i,k,iice)).ge.0.01) then
               ! Condensation/evaporation fo qiliq
-!Note (BUG) Cholette (Jul 2022), remove *SCF(k) for ssat_cld and multiplication *CF for grid-mean qccon
-!                 qlcon(iice) = ((aaa*epsiw(iice)*oxx+(ssat_cld-aaa*oxx)*odt*epsiw(iice)*oxx* &
-!                               (1.-dexp(-dble(xx*dt))))/ab)*SCF(k)
                  qlcon(iice) = (aaa*epsiw(iice)*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsiw(iice)*oxx* &
                                (1.-dexp(-dble(xx*dt))))/ab
               endif
@@ -3553,40 +3509,6 @@ END subroutine p3_init
                  qlcon(iice) = min(qlcon(iice), qv(i,k)*odt)
               endif
 
-       ! else
-
-       !   if (qitot(i,k,iice).ge.qsmall .and. t(i,k).lt.273.15) then
-            !note: diffusional growth/decay rate: (stored as 'qidep' temporarily; may go to qisub below)
-!Note (BUG) Cholette (Jul 2022), remove *SCF(k) for ssat_cld and multiplication *CF for grid-mean qccon
-!             qidep(iice) = ((aaa*epsi(iice)*oxx+(ssat_cld-aaa*oxx)*odt*epsi(iice)*oxx*                      &
-!                           (1.-sngl(dexp(-dble(xx*dt)))))*oabi+(qvs(i,k)-dumqvi)*epsi(iice)*oabi)*SCF(k)
-       !      qidep(iice) = (aaa*epsi(iice)*oxx+(ssat_cld*SCF(k)-aaa*oxx)*odt*epsi(iice)*oxx*   &
-       !                    (1.-sngl(dexp(-dble(xx*dt)))))*oabi+(qvs(i,k)-dumqvi)*epsi(iice)*oabi
-       !   endif
-
-         !for very small ice contents in dry air, sublimate all ice instantly
-       !   if (supi_cld.lt.-0.001 .and. qitot(i,k,iice).lt.1.e-12) &
-       !      qidep(iice) = -qitot(i,k,iice)*odt
-
-          !note: 'clbfact_dep' and 'clbfact_sub' calibration factors for ice deposition and sublimation
-          !   These are adjustable ad hoc factors used to increase or decrease deposition and/or
-          !   sublimation rates.  The representation of the ice capacitances are highly simplified
-          !   and the appropriate values in the diffusional growth equation are uncertain.
-
-       !   if (qidep(iice).lt.0.) then
-       !    !note: limit to saturation adjustment (for dep and subl) is applied later
-       !      qisub(iice) = -qidep(iice)
-       !      qisub(iice) = qisub(iice)*clbfact_sub
-       !      qisub(iice) = min(qisub(iice), qitot(i,k,iice)*odt)
-       !      nisub(iice) = qisub(iice)*(nitot(i,k,iice)/qitot(i,k,iice))
-       !      qidep(iice) = 0.
-       !   else
-       !      qidep(iice) = qidep(iice)*clbfact_dep
-       !      qidep(iice) = min(qidep(iice), qv(i,k)*odt)
-       !   endif
-
-       ! endif ! log_LiquidFrac
-
        enddo iice_loop_depsub
 
 444    continue
@@ -3596,18 +3518,12 @@ END subroutine p3_init
 ! deposition/condensation-freezing nucleation
 !   (allow ice nucleation if T < -15 C and > 5% ice supersaturation)
 
-       if (.not. scpf_ON)  then
-          sup_cld  = sup(i,k)
-          supi_cld = supi(i,k)
-       else
-          supi_cld= Qv_cld(k)/qvi(i,k)-1.!in-cloud  sub/sur-saturation w.r.t. ice in %
-          sup_cld = Qv_cld(k)/qvs(i,k)-1.!in-cloud  sub/sur-saturation w.r.t. liq in %
-       endif
+       supi_cld= Qv_cld(k)/qvi(i,k)-1.!in-cloud  sub/sur-saturation w.r.t. ice in %
+       sup_cld = Qv_cld(k)/qvs(i,k)-1.!in-cloud  sub/sur-saturation w.r.t. liq in %
 
-       if (t(i,k).lt.258.15 .and. supi_cld.ge.0.05) then
+       if (t(i,k).lt.258.15 .and. supi_cld.ge.supidth) then
 !         dum = exp(-0.639+0.1296*100.*supi(i,k))*1000.*inv_rho(i,k)        !Meyers et al. (1992)
           dum = 0.005*exp(0.304*(273.15-t(i,k)))*1000.*inv_rho(i,k)         !Cooper (1986)
-!         dum = 0.005*dexp(dble(0.304*(273.15-t(i,k))))*1000.*inv_rho(i,k)  !Cooper (1986)
           dum = min(dum,100.e3*inv_rho(i,k)*SCF(k))
           N_nuc = max(0.,(dum-sum(nitot(i,k,:)))*odt)
 
@@ -3638,7 +3554,7 @@ END subroutine p3_init
        if (.not.(log_predictNc).and.sup_cld.gt.1.e-6.and.it.gt.1) then
           dum   = nccnst*inv_rho(i,k)*cons7-qc(i,k)
           dum   = max(0.,dum*iSCF(k))         ! in-cloud value
-          dumqvs = qv_sat(t(i,k),pres(i,k),0)
+          dumqvs = qv_sat(t(i,k),pres(i,k),0) 
           dqsdT = xxlv(i,k)*dumqvs/(rv*t(i,k)*t(i,k))
           ab    = 1. + dqsdT*xxlv(i,k)*inv_cp
           dum   = max(0.,min(dum,(Qv_cld(k)-dumqvs)/ab))  ! limit overdepletion of supersaturation
@@ -3694,7 +3610,6 @@ END subroutine p3_init
 !................................................................
 ! autoconversion
 
-!Note (BUG), needs to be in-cloud condition
        qc_not_small_1: if (qc(i,k)*iSCF(k).ge.1.e-8) then
 
           if (iparam.eq.1) then
@@ -3706,44 +3621,45 @@ END subroutine p3_init
                       (rho(i,k)*qc(i,k)*iSCF(k)*1.e-3)**4/                               &
                       (rho(i,k)*nc(i,k)*iSCF(k)*1.e-6)**2*(1.+                           &
                       dum1/(1.-dum)**2)*1000.*inv_rho(i,k)*SCF(k)
-             ncautc = qcaut*7.6923076e+9
+                   ncautc = qcaut*7.6923076e+9 
 
           elseif (iparam.eq.2) then
 
             !Beheng (1994)
-!Note (BUG), needs to be in-cloud condition
-             if (nc(i,k)*iSCF(k)*rho(i,k)*1.e-6 .lt. 100.) then
-                qcaut = 6.e+28*inv_rho(i,k)*mu_c(i,k)**(-1.7)*(1.e-6*rho(i,k)*           &
-                        nc(i,k)*iSCF(k))**(-3.3)*(1.e-3*rho(i,k)*qc(i,k)*iSCF(k))**(4.7) &
-                        *SCF(k)
+             dum5 = nc(i,k)*iSCF(k)*rho(i,k)*1.e-6 
+             dum6 = qc(i,k)*iSCF(k)*rho(i,k)*1.e-3 
+             if (dum5 .gt. 1.) then ! must be gt ~1/cm3
+              if (dum5 .lt. 100.) then ! and lower than ~100/cm3
+                qcaut = 6.e+28*inv_rho(i,k)*mu_c(i,k)**(-1.7)*dum5**(-3.3)*dum6**(4.7)*SCF(k) 
              else
                !2D interpolation of tabled logarithmic values
-                dum   = 41.46 + (nc(i,k)*iSCF(k)*1.e-6*rho(i,k)-100.)*(37.53-41.46)*5.e-3
-                dum1  = 39.36 + (nc(i,k)*iSCF(k)*1.e-6*rho(i,k)-100.)*(30.72-39.36)*5.e-3
+                dum   = 41.46 + (dum5-100.)*(37.53-41.46)*5.e-3 
+                dum1  = 39.36 + (dum5-100.)*(30.72-39.36)*5.e-3 
                 qcaut = dum+(mu_c(i,k)-5.)*(dum1-dum)*0.1
               ! 1000/rho is for conversion from g cm-3/s to kg/kg
-                qcaut = exp(qcaut)*(1.e-3*rho(i,k)*qc(i,k)*iSCF(k))**4.7*1000.*inv_rho(i,k)*SCF(k)
-!               qcaut = dexp(dble(qcaut))*(1.e-3*rho(i,k)*qc(i,k)*iSCF(k))**4.7*1000.*   &
-!                       inv_rho(i,k)*SCF(k)
+                qcaut = exp(qcaut)*dum6**4.7*1000.*inv_rho(i,k)*SCF(k) 
              endif
-             ncautc = 7.7e+9*qcaut
+             else
+              qcaut = 0. 
+             endif 
+             ncautc = 7.7e+9*qcaut ! NOTE: equivalent to around 32.4 microns for the new drops
 
           elseif (iparam.eq.3) then
 
-           !Khroutdinov and Kogan (2000)
+           !Khairoutdinov and Kogan (2000)
              dum   = qc(i,k)*iSCF(k)
              qcaut = 1350.*dum**2.47*(nc(i,k)*iSCF(k)*1.e-6*rho(i,k))**(-1.79)*SCF(k)
             ! note: ncautr is change in Nr; ncautc is change in Nc
-             ncautr = qcaut*cons3
-             ncautc = qcaut*nc(i,k)/qc(i,k)
+             ncautr = qcaut*cons3           ! NOTE: assuming drizzle drop radius = 25 microns
+             ncautc = qcaut*nc(i,k)/qc(i,k) ! NOTE: x% of qc converted is x% of nc converted
 
           elseif (iparam.eq.4) then
 
            !Kogan (2013)
              dum = qc(i,k)*iSCF(k)
              qcaut = 7.98e10*dum**4.22*(nc(i,k)*iSCF(k)*1.e-6*rho(i,k))**(-3.01)*SCF(k)
-             ncautr = qcaut*cons8
-             ncautc = qcaut*nc(i,k)/qc(i,k)
+             ncautr = qcaut*cons8           ! NOTE: assuming drizzle drop radius = 40 microns
+             ncautc = qcaut*nc(i,k)/qc(i,k) ! NOTE: x% of qc converted is x% of nc converted
 
           endif
 
@@ -3755,7 +3671,7 @@ END subroutine p3_init
 !............................
 ! self-collection of droplets
 
-       if (qc(i,k).ge.qsmall) then
+       if (qc(i,k)*iSCF(k).ge.qsmall) then
 
           if (iparam.eq.1) then
            !Seifert and Beheng (2001)
@@ -3774,7 +3690,7 @@ END subroutine p3_init
 !............................
 ! accretion of cloud by rain
 
-       if (qr(i,k).ge.qsmall .and. qc(i,k).ge.qsmall) then
+       if (qr(i,k).ge.qsmall .and. qc(i,k)*iSCF(k).ge.qsmall) then
 
           if (iparam.eq.1) then
            !Seifert and Beheng (2001)
@@ -3782,17 +3698,17 @@ END subroutine p3_init
              dum   = 1.-qc(i,k)*iSCF(k)/(qc(i,k)*iSCF(k)+qr(i,k)*iSPF(k))
              dum1  = (dum/(dum+5.e-4))**4
              qcacc = kr*rho(i,k)*0.001*qc(i,k)*iSCF(k)*qr(i,k)*iSPF(k)*dum1*dum2
-             ncacc = qcacc*rho(i,k)*0.001*(nc(i,k)*rho(i,k)*1.e-6)/(qc(i,k)*rho(i,k)*    &  !note: (nc*iSCF)/(qc*iSCF) = nc/qc
+             ncacc = qcacc*rho(i,k)*0.001*(nc(i,k)*rho(i,k)*1.e-6)/(qc(i,k)*rho(i,k)*    & 
                      0.001)*1.e+6*inv_rho(i,k)
           elseif (iparam.eq.2) then
            !Beheng (994)
              dum2  = (SPF(k)-SPF_clr(k)) !in-cloud Precipitation fraction
              dum   = (qc(i,k)*iSCF(k)*qr(i,k)*iSPF(k))
              qcacc = 6.*rho(i,k)*dum*dum2
-             ncacc = qcacc*rho(i,k)*1.e-3*(nc(i,k)*rho(i,k)*1.e-6)/(qc(i,k)*rho(i,k)*    &   !note: (nc*iSCF)/(qc*iSCF) = nc/qc
+             ncacc = qcacc*rho(i,k)*1.e-3*(nc(i,k)*rho(i,k)*1.e-6)/(qc(i,k)*rho(i,k)*    & 
                      1.e-3)*1.e+6*inv_rho(i,k)
           elseif (iparam.eq.3) then
-            !Khroutdinov and Kogan (2000)
+            !Khairoutdinov and Kogan (2000)
              dum2  = (SPF(k)-SPF_clr(k)) !in-cloud Precipitation fraction
              qcacc = 67.*(qc(i,k)*iSCF(k)*qr(i,k)*iSPF(k))**1.15 *dum2
              ncacc = qcacc*nc(i,k)/qc(i,k)
@@ -3851,16 +3767,16 @@ END subroutine p3_init
     !Limit total condensation (incl. activation) and evaporation to saturation adjustment
        dumqvs = qv_sat(t(i,k),pres(i,k),0)
        qcon_satadj  = (Qv_cld(k)-dumqvs)/(1.+xxlv(i,k)**2*dumqvs/(cp*rv*t(i,k)**2))*odt*SCF(k)
+       qevp_satadj  =((Qv_cld(k)-dumqvs)*(SPF(k)-SPF_clr(k))+(Qv_clr(k)-dumqvs)*SPF_clr(k))/(1.+xxlv(i,k)**2*dumqvs/(cp*rv*t(i,k)**2))*odt 
 
        tmp1 = qccon+qrcon+qcnuc+sum(qlcon)
-       if (tmp1>0. .and. qcon_satadj<0.) then
+       if (tmp1>0. .and. qcon_satadj<0.) then 
           qccon = 0.
           qrcon = 0.
           qcnuc = 0.
           qlcon = 0.
           ncnuc = 0.
-       else
-          if (tmp1.gt.0. .and. tmp1.gt.qcon_satadj) then
+       elseif (tmp1.gt.0. .and. tmp1.gt.qcon_satadj) then 
              ratio = max(0.,qcon_satadj)/tmp1
              ratio = min(1.,ratio)
              qccon = qccon*ratio
@@ -3868,22 +3784,29 @@ END subroutine p3_init
              qcnuc = qcnuc*ratio
              ncnuc = ncnuc*ratio
              qlcon = qlcon*ratio
-          elseif (qcevp+qrevp+sum(qlevp).gt.0.) then
-             ratio = max(0.,-qcon_satadj)/(qcevp+qrevp+sum(qlevp))
+       endif 
+       tmp2 = qcevp+qrevp+sum(qlevp) 
+       if (tmp2>0. .and. qevp_satadj>0.) then 
+          qcevp = 0. 
+          qrevp = 0.
+          nrevp = 0.
+          qlevp = 0.
+          nlevp = 0.
+       elseif (tmp2.gt.0. .and. tmp2.gt.-qevp_satadj) then 
+             ratio = max(0.,-qevp_satadj)/(qcevp+qrevp+sum(qlevp))
              ratio = min(1.,ratio)
              qcevp = qcevp*ratio
              qrevp = qrevp*ratio
              nrevp = nrevp*ratio
              qlevp = qlevp*ratio
              nlevp = nlevp*ratio
-          endif
        endif
 
     !Limit total deposition (incl. nucleation) and sublimation to saturation adjustment
        qv_tmp = Qv_cld(k) + (-qcnuc-qccon-qrcon-sum(qlcon)+qcevp+qrevp+sum(qlevp))*dt                  !qv after cond/evap
        t_tmp  = t(i,k) + (qcnuc+qccon+qrcon+sum(qlcon)-qcevp-qrevp-sum(qlevp))*xxlv(i,k)*inv_cp*dt     !T after cond/evap
        dumqvi = qv_sat(t_tmp,pres(i,k),1)
-       qdep_satadj = (qv_tmp-dumqvi)/(1.+xxls(i,k)**2*dumqvi/(cp*rv*t_tmp**2))*odt*SCF(k)
+       qdep_satadj = (qv_tmp-dumqvi)/(1.+xxls(i,k)**2*dumqvi/(cp*rv*t_tmp**2))*odt*SCF(k) 
 
        tmp1 = sum(qidep)+sum(qinuc)
        if (tmp1>0. .and. qdep_satadj<0.) then
@@ -3901,7 +3824,7 @@ END subroutine p3_init
           do iice = 1,nCat
              dum = max(qisub(iice),1.e-20)
              qisub(iice)  = qisub(iice)*min(1.,max(0.,-qdep_satadj)/max(sum(qisub), 1.e-20))  !optimized (avoids IF(qisub.gt.0.) )
-             nisub(iice)  = nisub(iice)*min(1.,qisub(iice)/dum)
+             nisub(iice)  = nisub(iice)*min(1.,qisub(iice)/dum) ! Note: kind of heterogeneous mixing... good enough
           enddo
          !qchetc = qchetc*min(1.,qc(i,k)*odt/max(sum(qchetc),1.e-20))  !currently not used
          !qrhetc = qrhetc*min(1.,qr(i,k)*odt/max(sum(qrhetc),1.e-20))  !currently not used
@@ -3928,11 +3851,11 @@ END subroutine p3_init
          !       (4 multiplications, even if values are not used [if log_predictNc=.false.], are cheaper than one IF)
             ncautc = ncautc*ratio
             ncacc  = ncacc*ratio
-            nccol  = nccol*ratio
+            nccol  = nccol*ratio ! Note: quid de ncevp ?
             ncheti = ncheti*ratio
            !nchetc = nchetc*ratio
             nccoll = nccoll*ratio
-         !endif
+          !endif
        endif
 
 ! rain
@@ -4169,7 +4092,7 @@ END subroutine p3_init
                     qccoll(iice)-qwgrth1c(iice))*dt
 
           if (log_predictNc) then
-             nc(i,k) = nc(i,k) + (-nccol(iice)-nchetc(iice)-ncheti(iice)-nccoll(iice))*dt
+             nc(i,k) = nc(i,k) + (-nccol(iice)-nchetc(iice)-ncheti(iice)-nccoll(iice))*dt ! Note : quid de ncevp?
           endif
 
           qr(i,k) = qr(i,k) + (-qrcol(iice)+qrmlt(iice)-qrhetc(iice)-qrheti(iice)+            &
@@ -4285,7 +4208,7 @@ END subroutine p3_init
        qr(i,k) = qr(i,k) + (qcacc+qcaut+qrcon-qrevp)*dt
 
        if (log_predictNc) then
-          nc(i,k) = nc(i,k) + (-ncacc-ncautc+ncslf+ncnuc)*dt
+          nc(i,k) = nc(i,k) + (-ncacc-ncautc+ncslf+ncnuc)*dt ! Note: quid de ncevp ?
        else
           nc(i,k) = nccnst*inv_rho(i,k)
        endif
@@ -4600,7 +4523,7 @@ END subroutine p3_init
              qr_not_small_1: if (qr(i,k)*iSPF(k).ge.qsmall) then
 
                !Compute Vq, Vn:
-                nr(i,k)  = max(nr(i,k),nsmall)
+                nr(i,k)  = max(nr(i,k),nsmall) 
                 call get_rain_dsd2(qr(i,k),nr(i,k),mu_r(i,k),lamr(i,k),cdistr(i,k),      &
                                    logn0r(i,k),iSPF(k))
 
@@ -5230,7 +5153,7 @@ END subroutine p3_init
           endif
        enddo  !iice loop
 
-       qc_not_small_2: if (qc(i,k).ge.qsmall .and. t(i,k).lt.233.15) then
+       qc_not_small_2: if (qc(i,k)*iSCF(k).ge.qsmall .and. t(i,k).lt.233.15) then
 
           Q_nuc = qc(i,k)
           nc(i,k) = max(nc(i,k),nsmall)
@@ -11682,7 +11605,7 @@ SUBROUTINE access_lookup_table_coll_3mom_LF(dumzz,dumjj,dumii,dumll,dumj,dumi,in
 
   ! Define bus requirements
   function p3_phybusinit() result(F_istat)
-    use phy_status, only: PHY_OK, PHY_ERROR
+    use phy_status, only: PHY_OK, PHY_ERROR, physeterror
     use bus_builder, only: bb_request
     use phy_options, only: p3_liqfrac, p3_trplmomi
 

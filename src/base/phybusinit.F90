@@ -1,3 +1,8 @@
+module phybusinit_mod
+   implicit none
+   public
+
+contains
 
 !/@*
 subroutine phybusinit(ni,nk)
@@ -5,7 +10,7 @@ subroutine phybusinit(ni,nk)
    use wb_itf_mod
    use cnv_options
    use phy_options
-   use phy_status, only: phy_error_L, PHY_OK
+   use phy_status, only: phy_error_L, PHY_OK, physeterror
    use phybusidx
    use ens_perturb, only: ens_nc2d
    use microphy_utils, only: mp_phybusinit
@@ -364,3 +369,4 @@ subroutine phybusinit(ni,nk)
    return
 end subroutine phybusinit
 
+end module phybusinit_mod

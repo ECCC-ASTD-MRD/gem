@@ -1,3 +1,9 @@
+module convect_updraft_shal_mod
+   implicit none
+   public
+
+contains
+
 
 subroutine CONVECT_UPDRAFT_SHAL3(KLON, KLEV, &
      & KICE, PPRES, PDPRES, PZ, PTT, PTHL, PTHV, PTHES, PRV, PRW, &
@@ -79,6 +85,8 @@ subroutine CONVECT_UPDRAFT_SHAL3(KLON, KLEV, &
    use YOE_CONVPAR_SHAL
    use YOE_CONVPAREXT
    use cnv_options
+   use convect_mixing_funct_mod, only: convect_mixing_funct
+   use convect_condens_mod, only: convect_condens1
 
    implicit none
 !!!#include <arch_specific.hf>
@@ -563,3 +571,4 @@ subroutine CONVECT_UPDRAFT_SHAL3(KLON, KLEV, &
 
 end subroutine CONVECT_UPDRAFT_SHAL3
 
+end module convect_updraft_shal_mod

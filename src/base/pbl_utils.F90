@@ -399,6 +399,7 @@ contains
   subroutine turbreg(F_turbreg, F_hyst, F_ri, F_sigt, F_ps, F_mrk2, &
        F_ni, F_nkm1, F_init)
     use, intrinsic :: iso_fortran_env, only: INT64
+    use neark, only: neark_dp => neark_dp_orig
     use phy_options, only: pbl_turbsl_depth, pbl_ricrit
     use ens_perturb, only: ens_spp_get, ens_nc2d
     
@@ -414,7 +415,6 @@ contains
     logical, intent(in), optional :: F_init                     !initialize turbulence regime [.false.]
 
     ! External symbols
-    integer, external :: neark
 #include "phymkptr.hf"
 #include "tables.cdk"
     include "phyinput.inc"
@@ -438,7 +438,7 @@ contains
     
     ! Level setup
     if (pbl_turbsl_depth > 0.) then
-       stat = neark(F_sigt, F_ps, pbl_turbsl_depth, F_ni, F_nkm1, slk)
+       slk = neark_dp(F_sigt, F_ps, pbl_turbsl_depth, F_ni, F_nkm1)
     else
        slk(:) = F_nkm1
     endif

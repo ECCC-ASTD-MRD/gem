@@ -1,3 +1,8 @@
+module serpat_mod
+   implicit none
+   public
+   
+contains
 
 
 subroutine SERPAT2(ST , VT , T , NT , NK , &
@@ -51,3 +56,5 @@ subroutine SERPAT2(ST , VT , T , NT , NK , &
 
    return
 end subroutine SERPAT2
+
+end module serpat_mod

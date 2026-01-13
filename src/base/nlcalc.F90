@@ -1,4 +1,9 @@
-!
+module nlcalc_mod
+   implicit none
+   public
+
+contains
+
       SUBROUTINE NLCALC( FNN, FRAC, FNGAUSS, FNNONLOC, &
                          WB_NG, WTHL_NG, WQW_NG, WCLD_PROF, &
                          U, V, UW_NG, VW_NG, F_CS, &
@@ -747,4 +752,6 @@
       ENDDO
 
       RETURN
-      END
+   END SUBROUTINE NLCALC
+
+end module nlcalc_mod

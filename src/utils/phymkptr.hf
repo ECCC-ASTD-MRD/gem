@@ -14,23 +14,32 @@
 !# Example: if (ISREQSTEP('BUEN') then
 !# Example: if (ISREQSTEPL((/'BUEN','DSEN','SHEN'/)) then
 
-#define _ISINLIST(V,L,N)      (N>0 .and. any(L(1:N) == V))
-#define _ISINLISTL(VLIST,L,N) (N>0 .and. any([(any(VLIST == L(i)), i=1,N)]))
+#define _ISINLIST(V,L,N)       (N>0 .and. any(L(1:N) == V))
+#define _ANYINLISTL(VLIST,L,N) (N>0 .and. any([(any(VLIST == L(i)), i=1,N)]))
+#define _ALLINLISTL(VLIST,L,N) (N>0 .and. all([(any(VLIST == L(i)), i=1,N)]))
 
-#define _ISREQ(V,O,N)      (debug_alldiag_L .or. N<0 .or. _ISINLIST(V,O,N))
-#define _ISREQL(VLIST,O,N) (debug_alldiag_L .or. N<0 .or. _ISINLISTL(VLIST,O,N))
- 
-#define ISREQOUT(V)       _ISREQ(V,phyoutlist_S,nphyoutlist)
-#define ISREQOUTL(VLIST)  _ISREQL(VLIST,phyoutlist_S,nphyoutlist)
-#define ISREQSTEP(V)      _ISREQ(V,phystepoutlist_S,nphystepoutlist)
-#define ISREQSTEPL(VLIST) _ISREQL(VLIST,phystepoutlist_S,nphystepoutlist)
+#define _ISREQ(V,O,N)       (debug_alldiag_L .or. N<0 .or. _ISINLIST(V,O,N))
+#define _ANYREQL(VLIST,O,N) (debug_alldiag_L .or. N<0 .or. _ANYINLISTL(VLIST,O,N))
+#define _ALLREQL(VLIST,O,N) (debug_alldiag_L .or. N<0 .or. _ALLINLISTL(VLIST,O,N))
+
+#define ISREQOUT(V)        _ISREQ(V,phyoutlist_S,nphyoutlist)
+#define ANYREQOUTL(VLIST)  _ANYREQL(VLIST,phyoutlist_S,nphyoutlist)
+#define ISREQOUTL(VLIST)   ANYREQOUTL(VLIST)
+#define ALLREQOUTL(VLIST)  _ALLREQL(VLIST,phyoutlist_S,nphyoutlist)
+
+#define ISREQSTEP(V)       _ISREQ(V,phystepoutlist_S,nphystepoutlist)
+#define ANYREQSTEPL(VLIST) _ANYREQL(VLIST,phystepoutlist_S,nphystepoutlist)
+#define ISREQSTEPL(VLIST)  ANYREQSTEPL(VLIST)
+#define ALLREQSTEPL(VLIST) _ALLREQL(VLIST,phystepoutlist_S,nphystepoutlist)
 
 
-#define ISPHYIN(V)      _ISINLIST(V,phyinread_list_S,phyinread_n)
-#define ISPHYINL(VLIST) _ISINLISTL(VLIST,phyinread_list_S,phyinread_n)
-#define ISDYNIN(V)      any(dyninread_list_s == V)
-#define ISDYNINL(VLIST) _ISINLISTL(VLIST,dyninread_list_s,size(dyninread_list_s))
-   
+#define ISPHYIN(V)       _ISINLIST(V,phyinread_list_S,phyinread_n)
+#define ANYPHYINL(VLIST) _ANYINLISTL(VLIST,phyinread_list_S,phyinread_n)
+#define ALLPHYINL(VLIST) _ALLINLISTL(VLIST,phyinread_list_S,phyinread_n)
+#define ISDYNIN(V)       any(dyninread_list_s == V)
+#define ANYDYNINL(VLIST) _ANYINLISTL(VLIST,dyninread_list_s,size(dyninread_list_s))
+#define ALLDYNINL(VLIST) _ALLINLISTL(VLIST,dyninread_list_s,size(dyninread_list_s))
+
 #endif
 
 

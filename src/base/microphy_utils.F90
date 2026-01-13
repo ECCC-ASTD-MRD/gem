@@ -71,7 +71,8 @@ contains
     use microphy_my2
     use microphy_kessler
     use microphy_thompson
-    use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac
+    use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac, p3_iparam
+    use phy_status, only: physeterror
     implicit none
     character(len=*), intent(in) :: F_input_path  !Directory containing initializing data
     integer :: F_istat                            !Return status (PHY_OK on success)
@@ -97,7 +98,7 @@ contains
        mp_lwc => s2_lwc
        mp_iwc => s2_iwc
     case ('MP_P3')
-       call p3_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, stat=istat)
+       call p3_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, p3_iparam, stat=istat)
        if (istat == P3_STATUS_OK) istat = PHY_OK
        mp_phybusinit => p3_phybusinit
        mp_lwc => p3_lwc
@@ -163,7 +164,7 @@ contains
   function mp_post_init() result(F_istat)
     use phy_options, only: fluvert
     use phymem, only: phymeta, phymem_find, phymem_getmeta
-    use phy_status, only: PHY_OK
+    use phy_status, only: PHY_OK, physeterror
     implicit none
     integer :: F_istat                            !Return status (PHY_OK on success)
     

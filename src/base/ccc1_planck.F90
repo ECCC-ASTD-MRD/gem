@@ -1,3 +1,9 @@
+module ccc1_planck_mod
+   implicit none
+   public
+
+contains
+
 !**S/P PLANCK - PLANCK FUNCTION
 !
       subroutine ccc1_planck (bf, bs, urbf, bf0, urbf0, dbf, tfull, gt, ib, &
@@ -118,4 +124,6 @@
         enddo
       enddo
       return
-      end
+      end subroutine ccc1_planck
+
+end module ccc1_planck_mod

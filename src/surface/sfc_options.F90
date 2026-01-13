@@ -84,7 +84,11 @@ module sfc_options
         'O2F',  &
         'ABV'   &
         /)
-   
+
+   !# chi_min parameter: the minimal efficiency factor for phase change in the soil_freezing scheme (the same concept as in Surfex and described in Pitman et al., 1991, Slater et al., 1998.
+   real              :: chi_min    = 0.6
+   namelist /surface_cfgs/ chi_min
+        
    !# Diurnal SST scheme
    !# * 'NIL    ' : No Diurnal SST scheme
    !# * 'FAIRALL' : #TODO: define
@@ -221,15 +225,13 @@ module sfc_options
    !# (SVS2) Option for the metamorphism scheme for Crocus
    !#  * 'B21': Correction of C13 to correctly handle the conversion from 
    !            dendricity/sphericity/grain size to optical diameter/sphericity
-   !# * 'C13': Carmagnola et al 2014 
    !# * 'T07': Taillandier et al 2007
    !# * 'F06': Flanner et al 2006
    !# * 'S-F': Schlef et al 2014
    !# * 'S-B': Schlef et al 2014
    character(len=16) :: hsnowmetamo = 'B21'
    namelist /surface_cfgs/ hsnowmetamo
-   character(len=*), parameter :: HSNOWMETAMO_OPT(6) = (/ &
-        'C13',  &
+   character(len=*), parameter :: HSNOWMETAMO_OPT(5) = (/ &
         'T07',  &  
         'F06',  &  
         'B21',  &
@@ -388,11 +390,20 @@ module sfc_options
 
    !# If .true., macropores are activated and enhance infiltration in a frozen soil
    logical           :: lmacropores_svs1 = .false.
-   namelist /surface_cfgs/ lmacropores_svs1 
+   namelist /surface_cfgs/ lmacropores_svs1
+
+   !# If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
+   logical           :: lphase_change_eff_svs1 = .false.
+   namelist /surface_cfgs/ lphase_change_eff_svs1 
    
    !# (SVS2) If .true., SVS2 simulates interception of snow by canopy, sublimation and inloading of intercepted snow
    logical           :: lsnow_interception_svs2 = .false.
    namelist /surface_cfgs/ lsnow_interception_svs2
+
+   !# (SVS2) If .true., SVS2 uses the aerodynamic resistance from sfc_layer
+   logical           :: lsfclayer_crocus_svs2 = .false.
+   namelist /surface_cfgs/ lsfclayer_crocus_svs2
+
 
    !# (SVS2) Activate spatially variable snow aging coefficient in Crocus snow albedo parameterization
    logical           :: lsnowaging_var = .false. 
@@ -410,14 +421,10 @@ module sfc_options
    logical           :: lwater_ponding_svs = .false.
    namelist /surface_cfgs/ lwater_ponding_svs
 
-   !Alpha_mp and beta_mp are parameters related to the macropore activation function. 
+   ! mp_alpha is a parameter related to the macropore activation function in SVS 
    !# mp_alpha parameter in the macropore activation option (based on a sensitivity analysis)
-   real              :: mp_alpha    = 0.85
+   real              :: mp_alpha    = 0.6
    namelist /surface_cfgs/ mp_alpha
-
-   !# mp_beta is the weighted sand-to-clay ratio for the average tile over the GLSL domain
-   real              :: mp_beta    = 3.64
-   namelist /surface_cfgs/ mp_beta
 
    !# (SVS2) Number of snow layers in multi-layer snowpack scheme:
    !# In Crocus it refers to the maximal number of snow layers
@@ -498,6 +505,11 @@ module sfc_options
         'RIVERS' &
         /)
 
+
+   !# Coefficient for calculation of displacement height from roughness (recommended value=8)
+   real              :: sl_afd = -1.
+   namelist /surface_cfgs/ sl_afd
+   
    !# Type of diagnostic-level calculations to use
    !# * 'FLUX      ' : Use turbulent surface fluxes to estimate diagnostic-level fields
    !# * 'INTERP    ' : Use interpolation to estimate diagnostic-level fields
@@ -563,7 +575,15 @@ module sfc_options
         'DELAGE92', &
         'DYER74  '  &
         /)
- 
+
+   !# Coefficient for scalar interpolation to the diagnostic level for Rib-based adjustment
+   real              :: sl_re2 = -1.
+   namelist /surface_cfgs/ sl_re2
+
+   !# Set maximum scale height for surface layer stability functions
+   real              :: sl_ximax = -1.
+   namelist /surface_cfgs/ sl_ximax
+   
    !# Use a reference roughness for surface layer calculations
    logical :: sl_z0ref = .false.
    namelist /surface_cfgs/ sl_z0ref
@@ -608,6 +628,14 @@ module sfc_options
         'DST_FD  ', &   ! DST_FD: use the Deep Snow Temperature and the Full snow Depth
         'DST_MAXD', &   ! DST_MAXD (DEFAULT): use the Deep Snow Temp. and the MAX of half the snow Depth and the full snow depth minus the damping depth
         'ST_D_DD '  &   ! ST-D-DD: if snow depth is lower than damping depth, use the full snow depth and the skin Snow Temperature if snow Depth is greater than Damping Depth, use half snow depth and deep snow temp.
+        /)
+
+   !#  Option to compute HFLUX for bareground in the module soil_freezing.F90 (Use the soil thermal restiance (default) or the skin conductivity from Table 2.1 of the sup. mat. of Boussetta et al., 2021)
+   character(len=16) :: soilgrndhf_svs1     = 'RTH_GRND'
+   namelist /surface_cfgs/ soilgrndhf_svs1
+   character(len=*), parameter :: SOILGRNDHF_SVS1_OPT(2) = (/ &
+        'RTH_GRND   ', &   ! RTH_GRND: use a soil thermal resistance in the computation of surface heat flux of bare ground
+        'LAM_BOU2021' &   ! LAM_BOU2021: use the skin thermal conductivity from Table 2.1 of the sup. mat. of Boussetta et al., 2021 in the computation of surface heat flux of bare ground
         /)
 
    !#  Option to set the depth of the lower boundrary condition below the soil column (module soil_freezing.F90)
@@ -706,6 +734,38 @@ module sfc_options
         'BELAIR03_DTGEM   ',  &
         'NONE             ',  &
         'LEONARDINI21     ' &
+        /)
+
+   !# Computation of snow cover fraction over ground in SVS1
+   !# * 'NIL'   : Legacy approach implemented in SVS (Belair et al. 003)
+   !# * 'LA23' : Adjusted method from Lalande et al. (2023) accoungint for hysterisis of snow cover fraction and subgrid topo
+   !# * 'AR25' : Method from Abolafia-Rosenzweig et al. (2025) applied to resolution of 2.5 km
+   character(len=16)           :: svs_snowfrac_ground = 'NIL'
+   namelist /surface_cfgs/ svs_snowfrac_ground
+   character(len=*), parameter :: SVS_SNOWFRAC_GROUND_OPT(3) = (/ &
+        'NIL   ', &
+        'LA23  ', &
+        'AR25  '  &
+        /)
+
+   !# Computation of snow albedo in SVS1
+   !# * 'NIL'   : Legacy approach implemented in SVS (Leonardini et al., 2021)
+   !# * 'CLASS' : Method from the land surface scheme CLASS
+   character(len=16)           :: svs_snowalb = 'NIL'
+   namelist /surface_cfgs/ svs_snowalb
+   character(len=*), parameter :: SVS_SNOWALB_OPT(2) = (/ &
+        'NIL     ' , &
+        'CLASS   ' &
+        /)
+
+   !# specify functions to use to compute wsat, wfc and wwilt
+   !# SURFEX: equations used in SURFEX v8.1, obtained from Giordani (1993) and Noilhan & Lacarrère (1995)
+   !# USDA2006: equations proposed by USDA, see Saxton and Rawls (2006)
+   character(len=16) :: svs_soiltext2prop = 'SURFEXV8'
+   namelist /surface_cfgs/ svs_soiltext2prop
+   character(len=*), parameter :: SVS_SOILTEXT2PROP_OPT(2) = (/ &
+        'SURFEXV8     ', &
+        'USDA2006     ' &
         /)
 
    !# Option to activate the effect of ploughing and Tile Drains in SVS

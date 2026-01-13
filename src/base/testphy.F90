@@ -6,6 +6,9 @@ module testphy
   use wb_itf_mod
   use mu_jdate_mod
   use rmn_gmm
+  use mod_handle_error, only: handle_error1, handle_error1_l
+  use gmmx_name_mod
+  use gmm_build_meta_mod
   implicit none
   private
 
@@ -64,35 +67,35 @@ contains
 
     ! Set up basic environment
     istat = set_env()
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_env:'//trim(F_type))
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by set_env:'//trim(F_type))
 
     ! Set up grid and coordinate
     istat = set_grid()
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_grid')
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by set_grid')
 
     ! Initialize the physics
     istat = itf_phy_init()
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_init')
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_init')
 
     ! Set up GMM space
     istat = set_vt()
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_vt')
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by set_vt')
 
     ! Fill GMM state variables
     istat = set_state()
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by set_state')
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by set_state')
 
     ! Take a kount-0 (initialization) physics step
     istat = itf_phy_step(0)
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by kount=0 itf_phy_step')
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by kount=0 itf_phy_step')
 
     ! Take a full physics step
     istat = itf_phy_step(1)
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_step')
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_step')
 
     ! Generate output
     istat = itf_phy_output()
-    call handle_error_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_output')
+    call handle_error1_l(istat==RMN_OK,'pt_run','Error returned by itf_phy_output')
 
     ! Successful completion
     F_istat = RMN_OK
@@ -116,12 +119,12 @@ contains
 
     ! Retrieve required environment
     call get_environment_variable('TASK_INPUT',value=input_path,status=istat)
-    call handle_error_l(istat==0,'set_env','Environment variable PHY_DFILES must be defined')
+    call handle_error1_l(istat==0,'set_env','Environment variable PHY_DFILES must be defined')
 
     ! Establish writing master for stdout of physics
     istat = WB_OK
     istat = wb_put('model/outout/pe_master',0)
-    call handle_error_l(WB_IS_OK(istat),'set_env','Cannot specify model master for stdout')
+    call handle_error1_l(WB_IS_OK(istat),'set_env','Cannot specify model master for stdout')
 
     ! Successful completion
     F_istat = RMN_OK
@@ -170,12 +173,12 @@ contains
     istat = min(istat,gmm_create(gmmk_pw_pt_moins_s,ptr3d,meta3d_nk1),istat); nullify(ptr3d)
     istat = min(istat,gmm_create(gmmk_pw_uu_moins_s,ptr3d,meta3d_nk),istat); nullify(ptr3d)
     istat = min(istat,gmm_create(gmmk_pw_vv_moins_s,ptr3d,meta3d_nk),istat); nullify(ptr3d)
-    call handle_error_l(GMM_IS_OK(istat),'set_vt','Cannot create state GMM space')
+    call handle_error1_l(GMM_IS_OK(istat),'set_vt','Cannot create state GMM space')
 
     ! Create tracer GMM space and initialize to zero
     nullify(pmeta)
     istat = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
-    call handle_error_l(RMN_IS_OK(istat),'set_vt','Error retrieving dynamics bus list')
+    call handle_error1_l(RMN_IS_OK(istat),'set_vt','Error retrieving dynamics bus list')
     tr_list = ''
     ntr = 1
     tr_list(ntr) = 'HU'
@@ -193,7 +196,7 @@ contains
        istat = min(istat,gmm_create('TR/'//trim(tr_list(i))//':M',ptr3d,meta3d_nk,GMM_FLAG_IZER)); nullify(ptr3d)
        istat = min(istat,gmm_create('TR/'//trim(tr_list(i))//':P',ptr3d,meta3d_nk,GMM_FLAG_IZER)); nullify(ptr3d)
     enddo
-    call handle_error_l(GMM_IS_OK(istat),'set_vt','Cannot create tracer GMM space')
+    call handle_error1_l(GMM_IS_OK(istat),'set_vt','Cannot create tracer GMM space')
 
     ! Successful completion
     F_istat = RMN_OK
@@ -240,7 +243,7 @@ contains
 
     ! Store horizontal grid in whiteboard
     istat = hgrid_wb_put(GRID_NAME,gid,F_i0=1,F_j0=1,F_lni=NI,F_lnj=NJ)
-    call handle_error_l(RMN_IS_OK(istat),'set_grid','Error saving horizontal grid')
+    call handle_error1_l(RMN_IS_OK(istat),'set_grid','Error saving horizontal grid')
 
     ! Construct vertical grid
     hyb(1) = 0.0001; hyb(NK) = 0.995
@@ -249,18 +252,18 @@ contains
     enddo
     istat = vgd_new(vcoord,kind=5,version=4,hyb=hyb,rcoef1=1.,rcoef2=1., &
          ptop_8=7.5d0,pref_8=1d5,ptop_out_8=ptop)
-    call handle_error_l(istat==VGD_OK,'set_grid','Error constructing vertical coordinate')
+    call handle_error1_l(istat==VGD_OK,'set_grid','Error constructing vertical coordinate')
  
     ! Save vertical grid for physics input
     nullify(ip1m,ip1t)
     istat = vgd_get(vcoord,'VIPM - IP1 MOMENTUM',ip1m)
-    call handle_error_l(istat==VGD_OK,'set_grid','Retrieving IP1(M)')
+    call handle_error1_l(istat==VGD_OK,'set_grid','Retrieving IP1(M)')
     istat = vgrid_wb_put('ref-m',vcoord,ip1m)
-    call handle_error(istat,'set_grid','Creating vgrid_wb entry for IP1(M)')
+    call handle_error1(istat,'set_grid','Creating vgrid_wb entry for IP1(M)')
     istat = vgd_get(vcoord,'VIPT - IP1 THERMO',ip1t)
-    call handle_error_l(istat==VGD_OK,'set_grid','Retrieving IP1(T)')
+    call handle_error1_l(istat==VGD_OK,'set_grid','Retrieving IP1(T)')
     istat = vgrid_wb_put('ref-t',vcoord,ip1t)
-    call handle_error(istat,'set_grid','Creating vgrid_wb entry for IP1(T)')
+    call handle_error1(istat,'set_grid','Creating vgrid_wb entry for IP1(T)')
     deallocate(ip1m,ip1t); nullify(ip1m,ip1t)
 
     ! Successful completion
@@ -295,13 +298,13 @@ contains
     p0 = 1e5
     nullify(ip1m,ip1t,presm,prest)
     istat = vgd_get(vcoord,'VIPM - IP1 MOMENTUM',ip1m)
-    call handle_error_l(istat==VGD_OK,'set_state','Retrieving VIPM')
+    call handle_error1_l(istat==VGD_OK,'set_state','Retrieving VIPM')
     istat = vgd_levels(vcoord,ip1m,presm,sfc_field=p0)
-    call handle_error_l(istat==VGD_OK,'set_state','Computing momentum-level pressures')
+    call handle_error1_l(istat==VGD_OK,'set_state','Computing momentum-level pressures')
     istat = vgd_get(vcoord,'VIPT - IP1 THERMO',ip1t)
-    call handle_error_l(istat==VGD_OK,'prof_update_pres','Retrieving VIPT')
+    call handle_error1_l(istat==VGD_OK,'prof_update_pres','Retrieving VIPT')
     istat = vgd_levels(vcoord,ip1t,prest,sfc_field=p0)
-    call handle_error_l(istat==VGD_OK,'prof_update_pres','Computing thermo-level pressures')
+    call handle_error1_l(istat==VGD_OK,'prof_update_pres','Computing thermo-level pressures')
 
     ! Set up temperature profile (K)
     tt = STATE_TT
@@ -392,17 +395,17 @@ contains
     ! Start physics initialization with mandatory parameters
     istat = WB_OK
     istat= min(wb_put('itf_phy/TLIFT',0),istat)
-    call handle_error_l(WB_IS_OK(istat),'itf_phy_init','Cannot fill required whiteboard entries')
+    call handle_error1_l(WB_IS_OK(istat),'itf_phy_init','Cannot fill required whiteboard entries')
 
     ! Initialize physics configuration
     istat = phy_nml(trim(input_path)//'/configs/phy_settings.nml')
-    call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot process physics namelist')
+    call handle_error1_l(RMN_IS_OK(istat),'itf_phy_init','Cannot process physics namelist')
 
     ! Create standard pressure profile for the physics on momentum
     istat = vgd_get(vcoord,'VIPM - IP1 MOMENTUM',ip1m)
-    call handle_error_l(istat==VGD_OK,'itf_phy_init','Retrieving VIPM')
+    call handle_error1_l(istat==VGD_OK,'itf_phy_init','Retrieving VIPM')
     istat = vgd_levels(vcoord,ip1m,std_p_prof,sfc_field=1e5)
-    call handle_error_l(istat==VGD_OK,'itf_phy_init','Cannot create a standard pressure profile')
+    call handle_error1_l(istat==VGD_OK,'itf_phy_init','Cannot create a standard pressure profile')
 
     ! Obtain required values for final initialization
     dateo_S = '20090427.000000'
@@ -411,7 +414,7 @@ contains
 
     ! Complete physics initialization
     istat = phy_init(trim(input_path)//'/MODEL_INPUT/',dateo,STEP_DT,GRID_NAME,GRID_NAME,NK+1,std_p_prof)
-    call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics initialization')
+    call handle_error1_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics initialization')
 
     ! Successful completion
     F_istat = RMN_OK
@@ -438,18 +441,18 @@ contains
     ! Create grid-specific fields
     if (F_kount == 0) then
        istat = itf_phy_geom()
-       call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot create grid-specific entries')
+       call handle_error1_l(RMN_IS_OK(istat),'itf_phy_init','Cannot create grid-specific entries')
     endif
        
     ! Process physics inputs
     istat = phy_input1(prefold_opr,F_kount,trim(input_path)//'/configs/physics_input_table', &
          trim(input_path)//'/MODEL_INPUT/','geophy/Phy_geophy.fst')
-    call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics input')
+    call handle_error1_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics input')
     
     ! Take a physics step
     write(RMN_STDOUT,1002) F_kount
     istat = phy_step(F_kount,F_kount)
-    call handle_error_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics step')
+    call handle_error1_l(RMN_IS_OK(istat),'itf_phy_init','Cannot complete physics step')
 
     ! Info messages
 1002 format(/'PERFORM A PHYSICS STEP: stepno= ',i6,' (S/R itf_phy_step)'/58('='))
@@ -492,30 +495,30 @@ contains
     ! Retrieve grid information
     istat = hgrid_wb_get(GRID_NAME,gid)
     istat = min(gdll(gid,lat,lon),istat)
-    call handle_error_l(RMN_IS_OK(istat),'itf_phy_geom','Unable to retrieve grid info for '//trim(GRID_NAME))
+    call handle_error1_l(RMN_IS_OK(istat),'itf_phy_geom','Unable to retrieve grid info for '//trim(GRID_NAME))
 
     ! Create GMM entry for latitude
     nullify(ptr2d)
     istat = gmm_create('DLAT',ptr2d,meta2d)
-    call handle_error_l(associated(ptr2d),'itf_phy_geom','Cannot create latitude entry (DLAT)')
+    call handle_error1_l(associated(ptr2d),'itf_phy_geom','Cannot create latitude entry (DLAT)')
     ptr2d = deg2rad * lat
 
     ! Create GMM entry for longitude
     nullify(ptr2d)
     istat = gmm_create('DLON',ptr2d,meta2d)
-    call handle_error_l(associated(ptr2d),'itf_phy_geom','Cannot create longitude entry (DLON)')
+    call handle_error1_l(associated(ptr2d),'itf_phy_geom','Cannot create longitude entry (DLON)')
     ptr2d = deg2rad * lon
 
     ! Create GMM entry for grid area
     nullify(ptr2d)
     istat = gmm_create('DXDY',ptr2d,meta2d)
-    call handle_error_l(associated(ptr2d),'itf_phy_geom','Cannot create cell area entry (DXDY)')
+    call handle_error1_l(associated(ptr2d),'itf_phy_geom','Cannot create cell area entry (DXDY)')
     ptr2d = (GRID_DX*deg2rad*RAYT) * (GRID_DX*deg2rad*RAYT*cos(deg2rad*lat))
  
     ! Create GMM entry for tendency mask (0. to 1.)
     nullify(ptr2d)
     istat = gmm_create('TDMASK',ptr2d,meta2d)
-    call handle_error_l(associated(ptr2d),'itf_phy_geom','Cannot create tendency mask entry (TDMASK)')
+    call handle_error1_l(associated(ptr2d),'itf_phy_geom','Cannot create tendency mask entry (TDMASK)')
     ptr2d = STEP_DT
 
     ! Successful completion
@@ -567,7 +570,7 @@ contains
     F_istat = RMN_OK
 
     ! Retrieve information about simplified physics tests
-    call handle_error_l(RMN_IS_OK(wb_get('phy/test_phy',test_phy)),'itf_phy_output','Cannot retrieve test information')
+    call handle_error1_l(RMN_IS_OK(wb_get('phy/test_phy',test_phy)),'itf_phy_output','Cannot retrieve test information')
 
     ! Validate test physics output
     PHY_TEST_MODE: if (test_phy) then
@@ -575,7 +578,7 @@ contains
        ! Retrieve computed temperature and compare
        nullify(ptr3d)
        istat = phy_get(ptr3d,gmmk_pw_tt_plus_s)
-       call handle_error_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
+       call handle_error1_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
        if (any(abs(ptr3d(:,:,1:NK)-STATE_TT-1.) > epsilon(ptr3d))) then
           write(RMN_STDOUT,'(a,1x,f6.3)') '*FAIL: Test double returned an unexpected temperature difference of', &
                maxval(abs(ptr3d(:,:,1:NK)-STATE_TT-1.))
@@ -586,7 +589,7 @@ contains
        ! Retrieve prescribed PBL height and compare
        nullify(ptr3d)
        istat = phy_get(ptr3d,'H',F_npath='O',F_bpath='P',F_meta=pmeta)
-       call handle_error_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
+       call handle_error1_l(RMN_IS_OK(istat),'itf_phy_output','Cannot retrieve temperature')
        if (pmeta%nk /= 1) then
           write(RMN_STDOUT,'(a,1x,i3)') '*FAIL: Test double returned an unexpected PBL height dimension of',pmeta%nk
           F_istat = RMN_ERR

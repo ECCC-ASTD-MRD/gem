@@ -1,3 +1,8 @@
+module ccc2_strandn_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc2_strandn3(tran, attn, attntop, rmu, dp, dt, o3, o2, &
      rmu3, ib, ig, lev1, il1, il2, ilg, lay, lev)
@@ -117,3 +122,5 @@ subroutine ccc2_strandn3(tran, attn, attntop, rmu, dp, dt, o3, o2, &
 
    return
 end subroutine ccc2_strandn3
+
+end module ccc2_strandn_mod

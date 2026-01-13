@@ -43,6 +43,7 @@
       use sfclayer, only: sl_sfclayer,SL_OK
       use sfc_options
       use svs_configs
+      use phy_status, only: physeterror
       implicit none
 !!!#include <arch_specific.hf>
 

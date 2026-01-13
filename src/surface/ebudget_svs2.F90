@@ -23,7 +23,7 @@
                    RHOA, WTA, WTG, VGH_DENS, Z0, Z0LOC, Z0H, &
                    HRSURF,HRSURFGV, HV_VL, HV_VH, HVSN_VH, DEL_VL, DEL_VH, RS, &
                    CG,CVP, EMISVL, EMISVH, SKINCOND_VL, &
-                   RESAGR, RESA_VL, RESA_VH, RESASA, RESASV, RESAGRV, RES_SNCA, &
+                   RESAGR, RESA_VL, RESA_VH, RESASN, RESASV, RESAGRV, RES_SNCA, &
                    RNETSN, HFLUXSN,LESLNOFRAC, LESNOFRAC, ESNOFRAC, SUBLDRIFT, &
                    ALPHAS, RSNOW, &
                    TSNS, &
@@ -54,6 +54,8 @@
       use svs_configs
       use canopy_csts, only: EMSNV, ALSNV
       use svs2_tile_configs
+      use phy_status, only: physeterror
+      use difuvd12_mod, only: difuvd2
 
       implicit none
 !!!#include <arch_specific.hf>
@@ -82,7 +84,7 @@
       REAL FTEMP(N), FVAP(N), ER_VL(N), ETR_VL(N),ER_VH(N), ETR_VH(N)
       REAL LEFF(N), ZQS(N), FRV(N)
       REAL EG(N), EGV(N), HRSURF(N), HRSURFGV(N)
-      REAL RESAGR(N), RESA_VL(N), RESA_VH(N), RESASA(N), RESASV(N), RESAEF(N)
+      REAL RESAGR(N), RESA_VL(N), RESA_VH(N), RESASN(N), RESASV(N), RESAEF(N)
       REAL RESAGRV(N)
       REAL RNETSN(N), HFLUXSN(N),LESLNOFRAC(N),LESNOFRAC(N), ESNOFRAC(N), SUBLDRIFT(N)
       REAL RNETSV(N), HFLUXSV(N),LESLVNOFRAC(N),LESVNOFRAC(N), ESVNOFRAC(N), SUBLDRIFTV(N)
@@ -188,7 +190,7 @@
 ! RESAGRV   aerodynamical surface resistance for ground below high veg.
 ! RESA_VL   aerodynamical surface resistance for low vegetation
 ! RESA_VH   aerodynamical surface resistance for high vegetation
-! RESASA    aerodynamical surface resistance for snow on bare ground/low veg
+! RESASN    aerodynamical surface resistance for snow on bare ground/low veg
 ! RESASV    aerodynamical surface resistance for snow under high veg.
 ! RNETSN    net radiation over snow
 ! HFLUXSN   sensible heat flux over snow
@@ -1079,13 +1081,13 @@
         DO i=1,n
            RESAEF(I) = 1. / ( WTA(I,indx_svs2_bg)/RESAGR(I) +WTA(I,indx_svs2_vl)/RESA_VL(I) + &
                               WTA(I,indx_svs2_vh)/RESA_VH(I)+WTA(I,indx_svs2_gv)/RESAGRV(I) + &
-                              WTA(I,indx_svs2_sn)/RESASA(I) + WTA(I,indx_svs2_sv)/RESASV(I) )
+                              WTA(I,indx_svs2_sn)/RESASN(I) + WTA(I,indx_svs2_sv)/RESASV(I) )
 !
 !          Calculate effective land sfc specific humdity
 !
            ZQS(I) =  RESAEF(I) *                                                    &
                       (  WTA(I,indx_svs2_bg)*    HRSURF(I)  * ZQSATGRT(I)/RESAGR(I) &
-                      + WTA(I,indx_svs2_sn)                * ZQSATSNO(I)/RESASA(I) &
+                      + WTA(I,indx_svs2_sn)                * ZQSATSNO(I)/RESASN(I) &
                       + WTA(I,indx_svs2_sv)                * ZQSATSNV(I)/RESASV(I) &
                       + WTA(I,indx_svs2_gv)*   HRSURFGV(I) * ZQSATGRVT(I)/RESAGRV(I) &
                       +(WTA(I,indx_svs2_vl)*     HV_VL(I)  * ZQSATVGLT(I)          &
@@ -1100,7 +1102,7 @@
                       WTA(I,indx_svs2_vh),WTA(I,indx_svs2_sn),  &
                       WTA(I,indx_svs2_sv), WTA(I,indx_svs2_gv), &
                       TGRST(I)/RESAGR(I),TVGLST(I)/RESA_VL(I),TVGHST(I)/RESA_VH(I), &
-                      TSNS(I,1)/RESASA(I),TSVS(I,1)/RESASV(I),TGRVST(I)/RESAGRV(I) )
+                      TSNS(I,1)/RESASN(I),TSVS(I,1)/RESASV(I),TGRVST(I)/RESAGRV(I) )
 
         ENDDO
      endif

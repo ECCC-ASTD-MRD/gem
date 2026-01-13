@@ -1,9 +1,15 @@
-!**S/P LATTENU - ATTENUATION FOR THE DOWNWARD FLUX
+module ccc2_lattenu_mod
+   implicit none
+   public
+
+contains
+
+   !**S/P LATTENU - ATTENUATION FOR THE DOWNWARD FLUX
 !
       subroutine ccc2_lattenu4 (atten, ib, ig, o3, qq, co2, &
                           dp, dip, dt, dt0, inpt, &
                           il1, il2, ilg)
-
+      use ccc2_attenue_mod, only: ccc2_attenue4
       implicit none
 !!!#include <arch_specific.hf>
 !
@@ -110,4 +116,6 @@
       endif
 !
       return
-      end
+      end subroutine ccc2_lattenu4
+
+end module ccc2_lattenu_mod

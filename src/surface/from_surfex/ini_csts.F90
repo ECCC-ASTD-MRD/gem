@@ -108,10 +108,10 @@ XAVOGADRO   = 6.0221367E+23
 !*       2.     ASTRONOMICAL CONSTANTS
 !               ----------------------
 !
-XDAY   = 86400.
-XSIYEA = 365.25*XDAY*2.*XPI/ 6.283076
-XSIDAY = XDAY/(1.+XDAY/XSIYEA)
-XOMEGA = 2.*XPI/XSIDAY
+XDAY    = 86400.
+XSIYEA  = 365.25*XDAY*2.*XPI/ 6.283076
+XSIDAY  = XDAY/(1.+XDAY/XSIYEA)
+XOMEGA  = 2.*XPI/XSIDAY
 NDAYSEC = 86400 ! Number of seconds in a day
 !
 !-------------------------------------------------------------------------------!

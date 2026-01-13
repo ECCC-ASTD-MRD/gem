@@ -7,7 +7,7 @@ SUBROUTINE SNOW_SVS2(  PSNOWSWE,PSNOWTEMP, PSNOWLIQ,PSNOWRHO,PSNOWALB,  &
                       PSNOWAGE, PSNOWDIAMOPT, PSNOWSPHERI, PSNOWHIST,     & 
                       PTSTEP,PTG, PCT, PSOILHCAPZ, & 
                       PSOILCONDZ, PPS, PTA,PSW_RAD, PQA, PVMOD,  PWIND_DRIFT,    &
-                      PLW_RAD,PRR, PSR, PUNLOAD, PRESA_SV, PRHOA, PUREF,         &
+                      PLW_RAD,PRR, PSR, PUNLOAD, PRESA_SN, PRHOA, PUREF,         &
                       PZREF, PALB, PD_G, PDZG,         &
                       PTHRUFAL, PGRNDFLUX,PRNSNOW,PHSNOW, PGFLUXSNOW,        &
                       PSWNETSNOW, PLWNETSNOW,PSUBLDRIFT,                     &
@@ -159,8 +159,8 @@ REAL, DIMENSION(N), INTENT(IN)      :: PPS, PTA, PSW_RAD, PQA,                  
 !                                      PQA     = atmospheric specific humidity
 !                                                at level za
 !
-REAL, DIMENSION(N), INTENT(IN)      :: PRESA_SV    
-!                                      PRESA_SV  Aerodynamic  resistance for snow under canopy (cf. Gouttevin et al. 2015), = 0 if open
+REAL, DIMENSION(N), INTENT(INOUT)      :: PRESA_SN    
+!                                         PRESA_SN = Aerodynamic  resistance for snow under canopy (cf. Gouttevin et al. 2015), = 0 if open
 !
 REAL, DIMENSION(N), INTENT(IN)      :: PZREF, PUREF,PRHOA, PALB
 !                                      PZREF     = reference height of the first
@@ -838,7 +838,7 @@ REAL, DIMENSION(KSIZE1)        :: ZP_VMOD_DRIFT
 REAL, DIMENSION(KSIZE1)        :: ZP_LW_RAD
 REAL, DIMENSION(KSIZE1)        :: ZP_RHOA
 REAL, DIMENSION(KSIZE1)        :: ZP_UREF
-REAL, DIMENSION(KSIZE1)        :: ZP_PRESA_SV
+REAL, DIMENSION(KSIZE1)        :: ZP_PRESA_SN
 REAL, DIMENSION(KSIZE1)        :: ZP_EXNS
 REAL, DIMENSION(KSIZE1)        :: ZP_EXNA
 REAL, DIMENSION(KSIZE1)        :: ZP_DIRCOSZW
@@ -1082,7 +1082,7 @@ DO JJ=1,KSIZE1
    ZP_LW_RAD  (JJ) = PLW_RAD  (JI)
    ZP_RHOA    (JJ) = PRHOA    (JI)
    ZP_UREF    (JJ) = PUREF    (JI)
-   ZP_PRESA_SV   (JJ) = PRESA_SV   (JI)
+   ZP_PRESA_SN   (JJ) = PRESA_SN   (JI)
    ZP_EXNS    (JJ) = ZEXNS    (JI)
    ZP_EXNA    (JJ) = ZEXNA    (JI)
    ZP_DIRCOSZW(JJ) = ZDIRCOSZW(JI)
@@ -1217,7 +1217,7 @@ IF (HSNOWSCHEME=='CRO') THEN
                 ZP_PET_B_COEF, ZP_PEQ_B_COEF, ZP_SNOWSWE, ZP_SNOWRHO,         &
                 ZP_SNOWHEAT, ZP_SNOWALB, ZP_SNOWDIAMOPT, ZP_SNOWSPHERI,          &
                 ZP_SNOWHIST, ZP_SNOWAGE,ZP_SNOWIMPUR, PTSTEP, ZP_PS,          &
-                ZP_SRSNOW,ZP_UNLOAD,ZP_RRSNOW, ZP_PSN3L, ZP_PRESA_SV,         &
+                ZP_SRSNOW,ZP_UNLOAD,ZP_RRSNOW, ZP_PSN3L, ZP_PRESA_SN,         &
                 ZP_TAR, ZP_TG(:,1),ZP_SW_RAD,                                 &
                 ZP_QA,ZP_VMOD,ZP_VMOD_DRIFT, ZP_LW_RAD, ZP_RHOA, ZP_UREF,     &
                 ZP_EXNS, ZP_EXNA,                                             &
@@ -1272,7 +1272,7 @@ IF (HSNOWSCHEME=='CRO') THEN
              ZP_PET_A_COEF, ZP_PEQ_A_COEF,ZP_PET_B_COEF, ZP_PEQ_B_COEF,    &
              ZP_SNOWSWE, ZP_SNOWRHO, ZP_SNOWHEAT, ZP_SNOWALB,              &
              ZP_SNOWAGE, PTSTEP,ZP_PS, ZP_SRSNOW, ZP_UNLOAD,               &
-             ZP_RRSNOW, ZP_PSN3L, ZP_PRESA_SV, ZP_TAR, ZP_TAC, ZP_TG(:,1), &
+             ZP_RRSNOW, ZP_PSN3L, ZP_PRESA_SN, ZP_TAR, ZP_TAC, ZP_TG(:,1), &
              ZP_SW_RAD, ZP_QA, ZP_VMOD, ZP_VMOD_DRIFT, ZP_LW_RAD, ZP_RHOA, ZP_UREF,       &
              ZP_EXNS, ZP_EXNA, ZP_DIRCOSZW, ZP_ZREF, ZP_Z0NAT, ZP_Z0EFF,   &
              ZP_Z0HNAT, ZP_ALB, ZP_SOILCOND, ZP_D_G(:,1),                  &
@@ -1469,6 +1469,8 @@ DO JJ=1,KSIZE1
   ZSOILCOR      (JI) = ZP_SOILCOR     (JJ)
   ZMELTSTOT    (JI)   = ZP_MELTSTOT    (JJ)
   ZSNREFREEZ   (JI)   = ZP_SNREFREEZ   (JJ)  
+  PRESA_SN     (JI)   = ZP_PRESA_SN   (JJ) 
+
   !
   PSWNETSNOW   (JI) = ZP_SWNETSNOW   (JJ)
   ZSWNET_NS    (JI) = ZP_SWNETSNOWS  (JJ)

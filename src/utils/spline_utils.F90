@@ -50,6 +50,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function spline_coef(h,del,b,c,d,slope_min,slope_max) result(status)
       ! Compute coefficients for the interpolating polynomial
+      use difuvd12_mod, only: difuvd2
       implicit none
       real, dimension(:,:), intent(in) :: h                     !Thickness of layers in profile
       real, dimension(:,:), intent(in) :: del                   !Linear first derivatives of profile       

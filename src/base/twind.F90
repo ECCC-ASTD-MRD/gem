@@ -1,7 +1,13 @@
+module twind_mod
+   implicit none
+   public
 
+contains
+   
 subroutine TWIND( WGE, WGMAX, WGMIN, SDTSWS, SDTSWD, TVE, &
      EN, U, V, UD, VD, SE, ZE, H, USTAR, WSTAR, N, NK)
    use tdpack_const
+   use windgust_mod, only: windgust
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -101,4 +107,6 @@ subroutine TWIND( WGE, WGMAX, WGMIN, SDTSWS, SDTSWD, TVE, &
 !
 !
       return
-      end
+   end subroutine TWIND
+
+end module twind_mod

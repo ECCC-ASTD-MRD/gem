@@ -23,6 +23,7 @@ module inichamp
 contains
    
 subroutine inichamp4(pvars, kount, ni, nk)
+   use timing_omp
    use sfc_options
    use sfcbus_mod
    use inisurf, only: inisurf4

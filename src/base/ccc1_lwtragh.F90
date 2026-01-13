@@ -1,3 +1,8 @@
+module ccc1_lwtragh_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
      taual, taug, bf, urbf, cldfrac, &
@@ -265,3 +270,5 @@ subroutine ccc1_lwtragh(fu, fd, slwf, tauci, omci, &
 
    return
 end subroutine ccc1_lwtragh
+
+end module ccc1_lwtragh_mod

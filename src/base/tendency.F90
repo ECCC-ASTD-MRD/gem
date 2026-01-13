@@ -22,6 +22,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use ens_perturb, only: ptp_L
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@Author  L. Spacek (Oct 2011)

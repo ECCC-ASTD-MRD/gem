@@ -1,3 +1,8 @@
+module ccc1_preintr_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc1_preintr (inpr, dir, qq, rhc, il1, il2, ilg, lay)
    implicit none
@@ -65,3 +70,5 @@ subroutine ccc1_preintr (inpr, dir, qq, rhc, il1, il2, ilg, lay)
 
    return
 end subroutine ccc1_preintr
+
+end module ccc1_preintr_mod

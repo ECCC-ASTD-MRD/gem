@@ -27,6 +27,7 @@ contains
       use sfc_options
       use sfcbus_mod
       use phymem, only: phyvar
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
 

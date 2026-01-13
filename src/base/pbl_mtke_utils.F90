@@ -1,12 +1,12 @@
 module pbl_mtke_utils
   use vintphy, only: vint_thermo2mom2, vint_thermo2mom3
+  use mfdlesmx,   only: mfdlesmx1
   implicit none
   private
 
   ! API functions
   public :: baktotq                                     !Convert conserved variable tendencies to state tendencies
   public :: blcloud                                     !Buoyancy flux calculation
-  public :: thermco                                     !Compute thermodynamic coefficients
   public :: tkealg                                      !Algebraic solution of the TKE equation
 
   ! Internal functions
@@ -28,7 +28,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine baktotq(dt,dqv,dqc,thl,qw,dthl,dqw,qc,s,st,ps,gztherm,tif,fice,&
        tve,hpbl,hflux,qcbl,fnn,fn,fngauss,fnnonloc,c1,zn,ze,mg,mrk2, &
-       vcoef,pblsigs,pblq1,dxdy,tau,n,nk)
+       vcoef,pblsigs,pblq1,dxdy,sigsoro,lscorer2,tau,n,nk)
     use tdpack_const, only: CPD, CAPPA, CHLC, CHLF
     use ens_perturb, only: ens_nc2d
     implicit none
@@ -59,6 +59,8 @@ contains
     real, dimension(n,ens_nc2d), intent(in) :: mrk2      !Markov chains for stochastic parameters
     real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation   
     real, dimension(n), intent(in) :: dxdy               !grid cell area (m^2)
+    real, dimension(n), intent(in) :: sigsoro            !orography subgrid variance (m^2)
+    real, dimension(n,nk), intent(in) :: lscorer2        !Scorer parameter (m^-2)
     real, dimension(n,nk), intent(inout) :: fnn          !flux enhancement * cloud fraction
     real, dimension(n,nk), intent(inout) :: fnnonloc     !nonlocal cloud fraction
     real, dimension(n,nk), intent(out) :: fn             !cloud fraction
@@ -119,7 +121,7 @@ contains
 
     ! Retrive updated cloud water content (qcp) from conserved variables
     call clsgs(thl_star,tve,qw_star,qcp,fn,fnn,fngauss,fnnonloc,c1,zn,ze,hpbl,hflux,s,ps,gztherm,&
-         mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,dxdy,n,nk)
+         mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,dxdy,sigsoro,lscorer2,n,nk)
 
     ! Convert back to state variables and tendencies
     qv = qw - max(0.,qc)
@@ -137,11 +139,13 @@ contains
   subroutine blcloud(u,v,t,tve,qv,qc,fnn,frac,fngauss,fnnonloc,w_cld,&
        wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz,&
        hpar,frv,z0m,fb_surf,gzmom,ze,s,st,ps,dudz2,ri,&
-       dthv,tau,vcoef,n,nk,ncld)
+       dthv,lscorer2,tau,vcoef,n,nk,ncld)
     use tdpack_const, only: DELTA, GRAV, RGASD
     use phy_options
     use pbl_utils, only: ficemxp, dvrtdf
-
+    use vintphy, only: vint_mom2thermo1
+    use nlcalc_mod, only: nlcalc
+    
     implicit none
 !!!#include <arch_specific.hf>
     !
@@ -180,6 +184,7 @@ contains
     real, dimension(n,nk), intent(out) :: dudz2          !square of vertical wind shear (s^-2)
     real, dimension(n,nk), intent(out) :: ri             !gradient Richardson number
     real, dimension(n,nk), intent(out) :: dthv           !buoyancy flux (m2/s2)
+    real, dimension(n,nk), intent(out) :: lscorer2       !Scorer parameter (m^-2)
     real, dimension(n,nk), intent(out) :: fnnonloc       !nonlocal cloud fraction
     real, dimension(n,nk), intent(out) :: f_cs           !factor for l_s coeff c_s (nonlocal)
 
@@ -218,7 +223,7 @@ contains
     ! Local variable declarations
     integer :: j, k
     real, dimension(n,nk) :: thl,qw,alpha,beta,a,b,c,dz,dqwdz,dthldz,coefthl,coefqw,ficelocal, &
-         unused,thv,tmom,qvmom,qcmom
+         unused,thv,tmom,qvmom,qcmom,uth,vth
 
     ! Compute ice fraction from temperature profile
     call ficemxp(ficelocal,unused,unused,t,n,nk)
@@ -287,6 +292,12 @@ contains
     ri = dthv / (dudz2+1e-6)  !FIXME: contains large background shear
     ri(:,nk) = 0.
 
+    ! Compute Scorer parameter
+    call vint_mom2thermo1(uth, u, vcoef, n, nk)
+    call vint_mom2thermo1(vth, v, vcoef, n, nk)
+    lscorer2 = dthv / max( sqrt(uth**2 + vth**2), 1.e-1 )
+    lscorer2(:,nk) = 0.
+    
     return
   end subroutine blcloud
   
@@ -295,6 +306,7 @@ contains
        type,inmode,n,nk)
     use tdpack
     use pbl_utils, only: ficemxp
+    use phy_options, only: pbl_supid
     implicit none
 !!!#include <arch_specific.hf>
 
@@ -343,6 +355,7 @@ contains
 
     ! Local variable declarations
     integer :: j,k
+    real :: tadj
     real, dimension(n,nk) :: pres,exner,qsat,dqsat,th,tl,ffice,tfice,dfice,work
 
     ! Precompute pressure and Exner function
@@ -373,7 +386,7 @@ contains
              qsat(j,k) = fqsmx(tl(j,k),pres(j,k),tfice(j,k))
           enddo
        enddo
-       call mfdlesmx(work,tl,tfice,dfice,n,nk)
+       call mfdlesmx1(work,tl,tfice,dfice,n,nk)
        do k=1,nk
           do j=1,n
              dqsat(j,k) = fdqsmx(qsat(j,k),work(j,k) )
@@ -385,12 +398,14 @@ contains
           do j=1,n
              qsat(j,k) = foqsa(tl(j,k),pres(j,k))
              dqsat(j,k) = fodqa(qsat(j,k),tl(j,k))
+             tfice(j,k) = 0.
+             dfice(j,k) = 0.
           enddo
        enddo
 
     case (2) !Combined implicit and explicit clouds
        call ficemxp(work,tfice,dfice,tif,n,nk)
-       call mfdlesmx(work,tl,tfice,dfice,n,nk)
+       call mfdlesmx1(work,tl,tfice,dfice,n,nk)
        do k=1,nk
           do j=1,n
              if (fnn(j,k) < 1.0) then
@@ -404,6 +419,15 @@ contains
        enddo
 
     end select CLOUD_TYPE
+
+    ! Adjust saturation at cold temperatures
+    do k=1,nk
+       do j=1,n
+          tadj = 1. + pbl_supid * tfice(j,k)
+          dqsat(j,k) = tadj * dqsat(j,k) + pbl_supid * qsat(j,k) * dfice(j,k)
+          qsat(j,k) = tadj * qsat(j,k)
+       enddo
+    enddo
 
     ! Compute thermodynamic coefficients following Bechtold and Siebesma (JAS 1998) Appendix A
     acoef = 1.0/( 1.0 + ((CHLC+ffice*CHLF)/CPD)*dqsat)
@@ -513,7 +537,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine clsgs(thl,tve,qw,qc,frac,fnn,fngauss,fnnonloc,c1,zn,ze, &
-       hpbl,hflux,s,ps,gztherm,mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,dxdy,n,nk)
+       hpbl,hflux,s,ps,gztherm,mg,mrk2,acoef,bcoef,ccoef,vcoef,pblsigs,pblq1,dxdy, &
+       sigsoro,lscorer2,n,nk)
     use tdpack_const
     use phy_options
     use ens_perturb, only: ens_nc2d, ens_spp_get
@@ -542,6 +567,8 @@ contains
     real, dimension(n,nk), intent(in) :: ccoef           !thermodynamic coefficient C
     real, dimension(*), intent(in) :: vcoef              !coefficients for vertical interpolation
     real, dimension(n), intent(in) :: dxdy               !grid cell area (m^2)
+    real, dimension(n), intent(in) :: sigsoro            !subgrid orography variance (m^2)
+    real, dimension(n,nk), intent(in) :: lscorer2        !Scorer parameter (m^-2)
     real, dimension(n,nk), intent(inout) :: fnnonloc     !nonlocal cloud fraction
     real, dimension(n,nk), intent(out) :: qc             !PBL cloud water content (kg/kg)
     real, dimension(n,nk), intent(out) :: frac           !cloud fraction
@@ -602,11 +629,17 @@ contains
 
     ! Local parameters
     real, parameter :: EPS=1e-10,QCMIN=1e-6,QCMAX=1e-3,WHMIN=0.5,WHMAX=1.2
-    real, parameter :: PBL_SDMIN=1e-10                    !Minimum value for unscaled SGS stddev 
+    real, parameter :: PBL_SDMIN=1e-10                    !Minimum value for unscaled SGS stddev
+
+    real, parameter :: BETAORO=2.             ! orography spectral slope parameter
+    real, parameter :: SIGOMIN=10.            ! minimum orography variance (m)
+    real, parameter :: LSEP=5000.             ! separation scale (m)
+    real, parameter :: ZETAMAX=15.            ! maximum zeta for non-zero F_beta(zeta)
+    real, parameter :: HDISPF=1.              ! height displacement factor for F_beta(zeta)
 
     ! Local variables
     integer :: j,k
-    real :: fnn_weight,sigmas_cu,hfc,lnsig,c1coef
+    real :: fnn_weight,sigmas_cu,hfc,lnsig,c1coef,lscorer,zeta,fres,ax,fbeta,orocoef,kres,keff,epsl
     real(kind=8) :: gravinv
     real, dimension(n) :: wf,fnnreduc
     real, dimension(n,nk) :: dz,dqwdz,dthldz,sigmas,q1,weight,thlm,qwm,wh
@@ -647,7 +680,52 @@ contains
        end do
     endif
 
-    ! Compute the normalized saturation defecit (Q1)
+    ! Adjust subgrid-scale variance of sigma_s for unresolved orographic gravity waves
+    SGS_GW: if (sgs_gwfac > 0.) then
+       do k=1,nk-1
+          do j=1,n
+
+             ! Only compute in stable environments with significant SGS orographic variance
+             if ( sigsoro(j).gt.SIGOMIN .and. lscorer2(j,k).gt.0.) then
+                lscorer = sqrt(max(0.,lscorer2(j,k)))
+                kres = 2.*PI / min( LSEP, sqrt(max(1.e-6,dxdy(j))) )
+                keff = max(kres,lscorer)
+                fres = (kres/keff)**(BETAORO - 1.)
+                zeta = (gztherm(j,k)+HDISPF*sigsoro(j))*keff
+                epsl = max(0., min(1., 1. - (lscorer/(kres + 1.e-6))**2))            
+                if ( zeta .lt. 0.18) then
+                   ax = (zeta - 0.0985)/0.0585
+                   fbeta = 0.6235 * exp( - 0.1981*ax    + 0.0234*ax**2 - 0.0086*ax**3 - 0.0027*ax**4 &
+                        + 0.0034*ax**5 + 0.0019*ax**6 - 0.0013*ax**7 )
+                   if (epsl.gt.0.) then
+                      ax = (zeta - 0.1960)/0.1169
+                      fbeta = fbeta - epsl*0.5*zeta * &
+                           0.7488 * exp( - 0.1458*ax    + 0.0120*ax**2 - 0.0020*ax**3 + 0.0002*ax**4 &
+                           + 0.0001*ax**5 + 0.0001*ax**6 - 0.0001*ax**7 )
+                   endif
+                elseif ( zeta .ge. 0.18 .and. zeta .lt. ZETAMAX ) then
+                   ax = (log(zeta) - 2.9238)/0.9493
+                   fbeta = 7.0168e-4 * exp( - 1.9076*ax    - 0.0321*ax**2 - 0.0104*ax**3 - 0.0100*ax**4 &
+                        + 0.0008*ax**5 + 0.0006*ax**6 - 0.0001*ax**7 )
+                   if (epsl.gt.0.) then
+                      ax = (log(zeta) - 2.9417)/0.9197
+                      fbeta = fbeta - epsl*0.5*zeta * &
+                           0.0317 * exp( - 0.7526*ax    + 0.0666*ax**2 + 0.0191*ax**3 + 0.0019*ax**4 &
+                           + 0.0011*ax**5 + 0.0002*ax**6 + 0.000005*ax**7 )
+                   endif
+                else
+                   fbeta = 0.
+                endif
+                orocoef = sqrt( max(0., fres*fbeta) )
+                sigmas(j,k) = sigmas(j,k) + &
+                     sgs_gwfac * orocoef * sigsoro(j) * abs(acoef(j,k)*dqwdz(j,k) - bcoef(j,k)*dthldz(j,k))
+             endif
+
+          end do
+       end do
+    endif SGS_GW
+
+    ! Compute the normalized saturation deficit (Q1)
     q1(:,1:nk-1) = ccoef(:,1:nk-1) / ( sigmas(:,1:nk-1) + EPS )
     q1(:,1) = 0. ; q1(:,nk) = 0. ;
     q1=max(-6.,min(4.,q1))
@@ -664,16 +742,12 @@ contains
              ! Compute cloud fractions (LM06)
              if( q1(j,k) > 6.0 ) then
                 fngauss(j,k) = 1.0
-                fnn(j,k)  = 1.0
              elseif ( q1(j,k) .gt. -6.0 ) then
                 ! Represent Bechtold FN function as 0.5(1+tanh(0.8*Q1))
                 ! (gives much the same shape as atan but without need for max/min)
                 fngauss(j,k) = 0.5*( 1.0 + tanh(0.8*q1(j,k)) )
-                ! Use shifted approximate Gaussian for flux enhancement (Eq. 5)
-                fnn(j,k)  = 0.5*( 1.0 + tanh(0.8*(q1(j,k)+0.5)) )
              else
                 fngauss(j,k) = 0.0
-                fnn(j,k)  = 0.0
              endif
              ! Combine Gaussian and non-local cumulus cloud fractions
              frac(j,k) = max(fngauss(j,k),fnnonloc(j,k))
@@ -720,30 +794,38 @@ contains
           !JM end
 
           ! Compute cloud-induced flux enhancement factor * cloud fraction
-          if (pbl_nonloc == 'NIL') then
-             TRADE_WIND_CU: if (pbl_cucloud) then
-                ! Compute flux enhancement factor (BS98, approx. final Eq. of Appendix B, Fig. 4a)
-                fnn(j,k) = 1.0
-                if (q1(j,k) < 1.0 .and. q1(j,k) >= -1.68) then
-                   fnn(j,k) = exp(-0.3*(q1(j,k)-1.0))
-                elseif (q1(j,k) < -1.68 .and. q1(j,k) >= -2.5) then
-                   fnn(j,k) = exp(-2.9*(q1(j,k)+1.4))
-                elseif (q1(j,k) < -2.5) then
-                   fnn(j,k) = 23.9 + exp(-1.6*(q1(j,k)+2.5))
-                endif
-                ! Adjust for cloud fraction (BS98, Fig. 4b)
-                fnn(j,k) = fnn(j,k)*frac(j,k)
-                if( q1(j,k).le.-2.39 .and. q1(j,k).ge.-4.0 ) then
-                   fnn(j,k) = 0.60
-                elseif( q1(j,k).lt.-4.0 .and. q1(j,k).ge.-6.0 ) then
-                   fnn(j,k) = 0.30*( q1(j,k)+6.0 )
-                elseif( q1(j,k).lt.-6. ) then
-                   fnn(j,k) = 0.0
-                endif
+          if (pbl_fnn == 'BECHTOLD98') then
+             ! Compute flux enhancement factor (BS98, approx. final Eq. of Appendix B, Fig. 4a)
+             fnn(j,k) = 1.0
+             if (q1(j,k) < 1.0 .and. q1(j,k) >= -1.68) then
+                fnn(j,k) = exp(-0.3*(q1(j,k)-1.0))
+             elseif (q1(j,k) < -1.68 .and. q1(j,k) >= -2.5) then
+                fnn(j,k) = exp(-2.9*(q1(j,k)+1.4))
+             elseif (q1(j,k) < -2.5) then
+                fnn(j,k) = 23.9 + exp(-1.6*(q1(j,k)+2.5))
+             endif
+             ! Adjust for cloud fraction (BS98, Fig. 4b)
+             fnn(j,k) = fnn(j,k)*frac(j,k)
+             if( q1(j,k).le.-2.39 .and. q1(j,k).ge.-4.0 ) then
+                fnn(j,k) = 0.60
+             elseif( q1(j,k).lt.-4.0 .and. q1(j,k).ge.-6.0 ) then
+                fnn(j,k) = 0.30*( q1(j,k)+6.0 )
+             elseif( q1(j,k).lt.-6. ) then
+                fnn(j,k) = 0.0
+             endif
+          else if (pbl_fnn == 'LOCK06') then
+             ! Compute flux enhancement factor (LM06)
+             if( q1(j,k) > 6.0 ) then
+                fnn(j,k)  = 1.0
+             elseif ( q1(j,k) .gt. -6.0 ) then
+                ! Use shifted approximate Gaussian for flux enhancement (Eq. 5)
+                fnn(j,k)  = 0.5*( 1.0 + tanh(0.8*(q1(j,k)+0.5)) )
              else
-                ! Without a trade wind cumulus regime, FnN = N as in BS98 Appendix B
-                fnn(j,k) = frac(j,k)
-             endif TRADE_WIND_CU
+                fnn(j,k)  = 0.0
+             endif
+          else
+             ! Without a trade wind cumulus regime, FnN = N as in BS98 Appendix B
+             fnn(j,k) = frac(j,k)
           endif
 
           ! Permit PBL moist processes only under specified conditions

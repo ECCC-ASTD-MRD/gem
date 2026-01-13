@@ -17,7 +17,7 @@ contains
     use pbl_utils, only: dvrtdf
     use pbl_ri_utils, only: pblri_sgspdf
     use microphy_utils, only: mp_icefrac
-    use phy_status, only: PHY_OK
+    use phy_status, only: PHY_OK, physeterror
     implicit none
 
     !@Arguments

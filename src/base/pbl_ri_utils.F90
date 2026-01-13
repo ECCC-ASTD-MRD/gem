@@ -101,6 +101,7 @@ contains
        F_tau, F_ni, F_nkm1)
     use tdpack_const, only: DELTA, GRAV, CPD, CAPPA
     use phy_options
+    use phy_status, only: physeterror
     use cons_thlqw, only: thlqw_compute, thlqw_thermco
     use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
 

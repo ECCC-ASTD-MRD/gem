@@ -1,8 +1,17 @@
+module ccc1_gasoptlgh_mod
+   implicit none
+   public
+
+contains
 
 subroutine ccc1_gasoptlgh3(taug, gwgh, dp, ib, ig, &
      o3, qq, inpt, mcont, &
      dip, dt, lev1, gh, &
      il1, il2, ilg, lay, tg)
+   use ccc1_tline1_mod, only: ccc1_tline1
+   use ccc1_tline2_mod, only: ccc1_tline2
+   use ccc1_tline3_mod, only: ccc1_tline3
+   use ccc1_tcontl_mod, only: ccc1_tcontl2
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -213,3 +222,5 @@ subroutine ccc1_gasoptlgh3(taug, gwgh, dp, ib, ig, &
 
    return
 end subroutine ccc1_gasoptlgh3
+
+end module ccc1_gasoptlgh_mod

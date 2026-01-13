@@ -5,6 +5,8 @@ module prep_cw
    use phybusidx
    use phymem, only: phyvar
    use pbl_utils, only: ficemxp
+   use phy_status, only: physeterror
+   use timing_omp
    implicit none
    private
    public :: prep_cw3

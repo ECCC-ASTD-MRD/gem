@@ -1,3 +1,4 @@
+!#TODO: place into a module to provide explicit interface
 
 !/@*
 function phy_output(F_dateo,F_dt,F_step,F_gid_l,F_gid_g,F_reduc_core,F_outcfg_S,F_basedir_S) result(F_istat)

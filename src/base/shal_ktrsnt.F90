@@ -10,7 +10,7 @@ contains
   subroutine sc_ktrsnt(pvars, dt, ni, nkm1)
     use, intrinsic :: iso_fortran_env, only: REAL64
     use debug_mod, only: init2nan
-    use phy_status, only: phy_error_L, PHY_OK
+    use phy_status, only: phy_error_L, PHY_OK, physeterror
     use phybusidx
     use phymem, only: phyvar
     use tdpack_const, only: RAUW

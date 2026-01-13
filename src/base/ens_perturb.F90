@@ -1,6 +1,7 @@
 
 module ens_perturb
   use wb_itf_mod
+  use timing_omp
   implicit none
   private
 #include <rmnlib_basics.hf>

@@ -1,3 +1,9 @@
+module ccc_raylei_mod
+   implicit none
+   public
+
+contains
+
 
 subroutine ccc_raylei(taur, ib, dp, il1, il2, ilg, lay)
    implicit none
@@ -31,3 +37,5 @@ subroutine ccc_raylei(taur, ib, dp, il1, il2, ilg, lay)
    enddo
    return
 end subroutine ccc_raylei
+
+end module ccc_raylei_mod

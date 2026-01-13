@@ -1,7 +1,15 @@
+module sergdim_mod
+   implicit none
+   public
+   
+contains
+
 
 integer function sergdim3 ( inpunit, mstat, msurf, mprof,&
      nk_hybm, nk_hybt )
    use, intrinsic :: iso_fortran_env, only: REAL64
+   use seralc_mod, only: seralc2
+   use serdim_mod, only: serdim
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -23,7 +31,7 @@ integer function sergdim3 ( inpunit, mstat, msurf, mprof,&
    INTEGER NK
    INTEGER NSTT,NSRF,NPRF,MSTT,MSRF,MPRF
 
-   INTEGER SERDIM, DIMSERS, DIMSERP
+   INTEGER DIMSERS, DIMSERP
 
    !     ---------------------------------------------------------------
 
@@ -76,3 +84,5 @@ integer function sergdim3 ( inpunit, mstat, msurf, mprof,&
 
    return
 end function sergdim3
+
+end module sergdim_mod

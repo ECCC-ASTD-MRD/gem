@@ -1,3 +1,8 @@
+module convect_updraft_mod
+   implicit none
+   public
+
+contains
 
 subroutine CONVECT_UPDRAFT(KLON, KLEV,                   &
      &  KICE, PPRES, PDPRES, PZ, PTHL, PTHV, PTHES, PRW, &
@@ -78,6 +83,8 @@ subroutine CONVECT_UPDRAFT(KLON, KLEV,                   &
    use YOMCST
    use YOE_CONVPAR
    use YOE_CONVPAREXT
+   use convect_mixing_funct_mod, only: convect_mixing_funct
+   use convect_condens_mod, only: convect_condens1
 
    implicit none
 !!!#include <arch_specific.hf>
@@ -584,3 +591,4 @@ subroutine CONVECT_UPDRAFT(KLON, KLEV,                   &
 
 end subroutine CONVECT_UPDRAFT
 
+end module convect_updraft_mod

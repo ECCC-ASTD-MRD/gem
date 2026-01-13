@@ -21,6 +21,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    use sfc_options
    use sfcbus_mod
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
+   use phy_status, only: physeterror
+   use suncos, only: suncos2
    implicit none
 #include <arch_specific.hf>
    !@Object    CANADIAN SMALL LAKE MODEL
@@ -221,8 +223,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
  
       real,pointer,dimension(:) ::  T0, TKE, HDPTH,LKICEH,SNICEH,        &
            EXPW,DTEMP,DELU,GRED,RHOMIX,TSED,ROFICEH, SNO, RHOSNO, TSNOW, ALBSNO, WSNOW, &
-           QSENS, QEVAP, ALVS, QSURF, HLAKSIL, ZGRIDAREA, ZROFINLAK, ZLAKEFR, ZLAKD, FICE, &
-           ZLAKEAREA
+           QSENS, QEVAP, ALVS, QSURF, HLAKSIL, ZROFINLAK, ZLAKEFR, ZLAKD, FICE, &
+           ZLAKEAREA, ZDXDY
       real,pointer,dimension(:,:) ::  TLAK
       REAL,POINTER,DIMENSION(:) :: LSTD, LSTF, LFXI, LFXO, zevlak
 
@@ -331,7 +333,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    ZDLON    (1:n) => bus( x(dlon,1,1)         : )  !Longitude
    ZREFM    (1:n) => bus( x(zusl,1,1)         : )
    ZREFH    (1:n) => bus( x(ztsl,1,1)         : )
-   ZGRIDAREA(1:n) => bus( x(gridarea,1,1)     : )         !Grid cell surface area (m2)
+   ZDXDY(1:n)     => bus( x(dxdy,1,1)     : )         !Grid cell surface area (m2) : read directly from physics
    ZLAKEAREA(1:n) => bus( x(lakearea,1,1)     : )         !Lake surface area (km2)
    ZLAKD(1:n)     => bus( x(lakd,1,1)         : )         !Lake depth (average in grid cell) (m)
    ZLAKEFR  (1:n) => bus( x(lakefr,1,1)     : )           !Fraction of grid cell covered by lakes
@@ -376,9 +378,9 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
         IF (HLAK(I).LE.0.0) THEN ! Replace zero values with constant value for points where
           HLAK(I)=HLAKCON        ! VF3 is greater than zero but there is no data on depth (i.e. openstreet map data)
         ENDIF
-!        LLAK(I)=SQRT(ZLAKEFR(I)*ZGRIDAREA(I)) ! Lake fetch length scale (square-root of lake surface area)
+!        LLAK(I)=SQRT(ZLAKEFR(I)*ZDXDY(I)) ! Lake fetch length scale (square-root of lake surface area)
         IF (ZLAKEAREA(I).LT.0.01) THEN
-          LLAK(I)=SQRT(ZLAKEFR(I)*ZGRIDAREA(I)) ! Lake fetch length scale (square-root of lake fraction * grid area)
+          LLAK(I)=SQRT(ZLAKEFR(I)*ZDXDY(I)) ! Lake fetch length scale (square-root of lake fraction * grid area)
         ELSE
           LLAK(I)=SQRT(ZLAKEAREA(I)*1000000.0) ! Lake fetch length scale (square-root of lake surface area in m2)
         ENDIF
@@ -1306,19 +1308,19 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !           ZRUNOFFTOT(I) = DELT*RC1(I)*(HLAKSIL(I))**RC2(I)  !Rating curve for lake outflow (kg/m2/dt)
 
 ! EG_MOD 
-!           ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZGRIDAREA(I)))* &
+!           ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZDXDY(I)))* &
 !                 0.001*LLAK(I)*RC1(I)*(HLAKSIL(I)**RC2(I))
 
 ! check if the grid-cell belongs to a big lake by comparing the area of the grid cell
 ! to the actual full area of the lake.
-	    IF ( (ZLAKEAREA(I)*1000000.0) .GT. ZGRIDAREA(I) ) THEN
+	    IF ( (ZLAKEAREA(I)*1000000.0) .GT. ZDXDY(I) ) THEN
 	       ! Grid-cell belongs to a large lake spanning over multiple grid cells;
 	       ! don't slowdown lake outflow, let the routing scheme handle this.
                 ZRUNOFFTOT(I) = HLAKSIL(I) * RHOW
             ELSE
 	       ! Rating curve for rectangular weir (CMS) converted to kg/m^2
-                ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZGRIDAREA(I)))* &
-                 0.001*SQRT(ZLAKEFR(I)*ZGRIDAREA(I))*RC1(I)*(HLAKSIL(I)**RC2(I))
+                ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZDXDY(I)))* &
+                 0.001*SQRT(ZLAKEFR(I)*ZDXDY(I))*RC1(I)*(HLAKSIL(I)**RC2(I))
             ENDIF
 
 ! END_EG_MOD

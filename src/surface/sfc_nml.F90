@@ -251,7 +251,28 @@ contains
          call msg(MSG_ERROR,'(sfc_nml_check) sl_z0ref must be .TRUE. for any class of stability functions (sl_func_unstab) other than DELAGE92')
          return
       endif
- 
+
+      if (sl_re2 > 0.) then
+         if (tdiaglim) then
+            call msg(MSG_ERROR,'(sfc_nml_check) tdiaglim must be .FALSE. if sl_re2 is used (>0).')
+            return
+         endif
+         if (sl_diag_type /= 'INTERP') then
+            call msg(MSG_ERROR,'(sfc_nml_check) sl_diag_type must be INTERP if sl_re2 is used (>0).')
+            return
+         endif
+         if (sl_ximax <= 0.) then
+            call msg(MSG_ERROR,'(sfc_nml_check) sl_ximax must be >0 if sl_re2 is used (>0).')
+            return
+         endif
+      endif
+
+      if (sl_ximax > 0. .and. (sl_Lmin_glacier > 0. .or. sl_Lmin_seaice > 0. .or. sl_Lmin_soil > 0. &
+           .or. sl_Lmin_water > 0. .or. sl_Lmin_town > 0.)) then
+         call msg(MSG_ERROR,'(sfc_nml_check) no sl_Lmin* limits should be set if sl_ximax is used (>0).')
+         return
+      endif
+         
       if (.not.RMN_IS_OK(str_toreal(ice_emiss_const,ice_emiss))) then
          call msg(MSG_ERROR,'(sfc_nml_check) ice_emiss = '//trim(ice_emiss)//' : Should be a floating point number between 0 and 1')
          return
@@ -361,16 +382,26 @@ contains
          !Check if macropores are activated only if soil freezing is activated
          !If soil freezing is activated, make sure that the soil thermal conductivity is either the model from PL1998 or TIAN2016
          !If soil freezing is activated, make sure that the soil-snow heat flux is set to either DST_HD, DST_FD, DST_MAXD (default) or ST_D_DD
+         !If soil freezing is activated, make sure that the option for setting the skin conductivity/resistance for bare-ground is set to either RTH_GRND or LAM_BOU2021
          !If soil freezing is activated, make sure that the dbtm option is set to either MID (default), DEEP ort NOFL
          if (.not.lsoil_freezing_svs1) then
             if (lmacropores_svs1) then
                 call msg(MSG_ERROR, '(sfc_nml_check) lmacropores_svs1 should be set to TRUE only when lsoil_freezing_svs1 is set to TRUE')
                 return
             endif
+            if (lphase_change_eff_svs1) then
+                call msg(MSG_ERROR, '(sfc_nml_check) lphase_change_eff_svs1 should be set to TRUE only when lsoil_freezing_svs1 is set to TRUE')
+                return
+            endif
         else
             if (.not.any(soil_cond == SOIL_COND_OPT)) then
                 call str_concat(msg_S, SOIL_COND_OPT,', ')
                 call msg(MSG_ERROR,'(sfc_nml_check) soil_cond = '//trim(soil_cond)//' : Should be one of: '//trim(msg_S))
+                return
+            endif
+            if (.not.any(soilgrndhf_svs1 == SOILGRNDHF_SVS1_OPT)) then
+                call str_concat(msg_S, SOILGRNDHF_SVS1_OPT,', ')
+                call msg(MSG_ERROR,'(sfc_nml_check) soilgrndhf_svs1 = '//trim(soilgrndhf_svs1)//' : Should be one of: '//trim(msg_S))
                 return
             endif
             if (.not.any(soilsnowhf_svs1 == SOILSNOWHF_SVS1_OPT)) then
@@ -386,6 +417,12 @@ contains
             if (lmacropores_svs1) then
                 if (mp_alpha < 0 .or. mp_alpha > 1) then
                     call msg(MSG_ERROR, '(sfc_nml_check) mp_alpha must be within the 0 and 1 interval')
+                    return
+                endif
+            endif
+            if (lphase_change_eff_svs1) then
+                if (chi_min < 0 .or. chi_min > 1) then
+                    call msg(MSG_ERROR, '(sfc_nml_check) chi_min must be within the 0 and 1 interval')
                     return
                 endif
             endif
@@ -434,6 +471,21 @@ contains
                  ' : Should be one of: '//trim(msg_S))
             return
          endif
+         
+         if (.not.any(svs_snowalb == SVS_SNOWALB_OPT)) then
+            call str_concat(msg_S, SVS_SNOWALB_OPT, ', ')
+            call msg(MSG_ERROR, '(sfc_nml_check) svs_snowalb = '//trim(svs_snowalb)//&
+                 ' : Should be one of: '//trim(msg_S))
+            return
+         endif  
+
+         if (.not.any(svs_snowfrac_ground == SVS_SNOWFRAC_GROUND_OPT)) then
+            call str_concat(msg_S, SVS_SNOWFRAC_GROUND_OPT, ', ')
+            call msg(MSG_ERROR, '(sfc_nml_check) svs_snowfrac_ground = '//trim(svs_snowfrac_ground)//&
+                 ' : Should be one of: '//trim(msg_S))
+            return
+         endif  
+
          
          if (.not.any(soiltext == SOILTEXT_OPT)) then
             call str_concat(msg_S, SOILTEXT_OPT, ', ')
@@ -765,7 +817,10 @@ contains
 
       !# Surface Layer module init
       istat = SL_OK
+      if (istat == SL_OK) istat = sl_put('afd', sl_afd)
       if (istat == SL_OK) istat = sl_put('beta', beta)
+      if (istat == SL_OK) istat = sl_put('ximax',sl_ximax)
+      if (istat == SL_OK) istat = sl_put('re2', sl_re2)
       if (istat == SL_OK) istat = sl_put('rineutral',sl_rineutral)
       if (istat == SL_OK) istat = sl_put('tdiaglim',tdiaglim)
       if (istat == SL_OK) istat = sl_put('tdlrate',tdlrate)

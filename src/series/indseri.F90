@@ -1,3 +1,9 @@
+module indseri_mod
+   implicit none
+   public
+   
+contains
+
 !**FUNCTION INDSERI - RANG DU NOM DANS LA LISTE
 !
       FUNCTION INDSERI ( NOM , LISTE , N )
@@ -34,4 +40,6 @@
          ENDIF
    10 CONTINUE
       RETURN
-      END
+      END FUNCTION INDSERI
+
+end module indseri_mod

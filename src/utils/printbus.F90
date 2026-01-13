@@ -1,6 +1,11 @@
+module printbus
+   implicit none
+   public
+
+contains
 
 !/@*
-subroutine printbus(F_bus_S)
+subroutine printbus1(F_bus_S)
    use clib_itf_mod, only: clib_toupper
    use phymem, only: phymeta, nphyvars, phymem_busidx, phymem_getmeta
    implicit none
@@ -63,4 +68,6 @@ subroutine printbus(F_bus_S)
 130 format ('+',17('-'),'+',12('-'),'+',41('-'),'+',8('-'),'+',8('-'), &
         '+',5('-'),'+',5('-'),'+',3('-'),'+',4('-'),'+')
    return
-end subroutine printbus
+end subroutine printbus1
+
+end module printbus

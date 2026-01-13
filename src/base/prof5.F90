@@ -1,3 +1,9 @@
+module prof5_mod
+   implicit none
+   public
+   
+contains
+
 !** S/P PROF5
       SUBROUTINE PROF5(EQ,EE,UD)
 !
@@ -69,4 +75,6 @@
 !
 !
       RETURN
-      END
+   END SUBROUTINE PROF5
+
+end module prof5_mod

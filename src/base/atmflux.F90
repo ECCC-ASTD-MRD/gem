@@ -1,6 +1,7 @@
 module atmflux
   use integrals, only: int_profile, INT_OK, INT_TYPE_LINEAR
   use tdpack, only: GRAV
+  use phy_status, only: physeterror
   implicit none
   private
 #include <rmnlib_basics.hf>

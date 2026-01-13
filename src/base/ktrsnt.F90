@@ -1,8 +1,15 @@
+module ktrsnt_mod
+   implicit none
+   public
 
+contains
+
+ 
 subroutine KTRSNT4(CTT,CQT,ilab,CCF,QCKTL,QCKTI,DBDT,CRRL,CRRI, &
      QCN,TP,QM,GZM,TQDF,PSP, &
      SIGMA, TAU, KSHAL, NI, NK)
    use tdpack
+   use neark, only: neark_dp => neark_dp_orig
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -79,7 +86,6 @@ subroutine KTRSNT4(CTT,CQT,ilab,CCF,QCKTL,QCKTI,DBDT,CRRL,CRRI, &
    logical LO
    integer IS,IKA,IKB,jk,jkm1,jl,stat
    integer, dimension(NI) :: KMIN
-   integer, external :: neark
    real ZTVC,rgrav3,rcpd
    real ENTRM,TAUCU,DELTA2,DZETR
    real ZCOR,ZQSC,DETRN,ZQ0,ZT0,ZN0
@@ -190,7 +196,7 @@ subroutine KTRSNT4(CTT,CQT,ilab,CCF,QCKTL,QCKTI,DBDT,CRRL,CRRI, &
    end where
 
    !     Find the level nearest to a prescribed distance (in Pa) above the surface
-   stat = neark(sigma,psp,1000.,ni,nk,kmin)
+   kmin = neark_dp(sigma,psp,1000.,ni,nk)
 
 
 
@@ -708,3 +714,5 @@ subroutine KTRSNT4(CTT,CQT,ilab,CCF,QCKTL,QCKTI,DBDT,CRRL,CRRI, &
 
    return
 end subroutine KTRSNT4
+
+end module ktrsnt_mod

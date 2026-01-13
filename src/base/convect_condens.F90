@@ -1,3 +1,8 @@
+module convect_condens_mod
+   implicit none
+   public
+
+contains
 
 subroutine CONVECT_CONDENS1(KLON, &
      &  KICE, PPRES, PTHL, PRW, PRCO, PRIO, PZ, &
@@ -151,3 +156,4 @@ subroutine CONVECT_CONDENS1(KLON, &
 
 end subroutine CONVECT_CONDENS1
 
+end module convect_condens_mod

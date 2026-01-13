@@ -114,7 +114,7 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call calcdiag1(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call sfc_calcdiag3(pvars, moyhr, acchr, delt, kount, step_driver, ni)
+   call sfc_calcdiag3(pvars, moyhrsteps, acchrsteps, delt, kount, step_driver, ni)
    if (phy_error_L) return
 
 #ifdef HAVE_MACH

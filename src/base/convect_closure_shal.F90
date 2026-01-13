@@ -1,3 +1,9 @@
+module convect_closure_shal_mod
+   implicit none
+   public
+
+contains
+
 !#######################################################################
  SUBROUTINE CONVECT_CLOSURE_SHAL5( KLON, KLEV,                         &
                        &   PPRES, PDPRES, PZ, PDXDY, PMRK2, PCRAD, PLMASS,&
@@ -81,6 +87,10 @@ USE YOE_CONVPAREXT
 use integrals, only: int_profile,INT_OK
 use cnv_options
 use ens_perturb, only: ens_nc2d, ens_spp_get
+use phy_status, only: physeterror
+use convect_closure_thrvlcl_mod, only: convect_closure_thrvlcl
+use convect_closure_adjust_shal_mod, only: convect_closure_adjust_shal
+use convect_satmixratio_mod, only: convect_satmixratio
 
 IMPLICIT NONE
 !!!#include <arch_specific.hf>
@@ -634,3 +644,4 @@ ENDDO
 
 END SUBROUTINE CONVECT_CLOSURE_SHAL5
 
+end module convect_closure_shal_mod

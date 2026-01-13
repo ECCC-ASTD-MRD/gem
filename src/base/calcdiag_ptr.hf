@@ -319,6 +319,8 @@
    MKPTR1D(zrainrate, rainrate, pvars)
    MKPTR1D(zrc, rc, pvars)
    MKPTR1D(zrhdiag, rhdiag, pvars)
+   MKPTR2D(zribf, ribf, pvars)
+   MKPTR2D(zribr, ribr, pvars)
    MKPTR1D(zrlc, rlc, pvars)
    MKPTR1D(zrn, rn, pvars)
    MKPTR2D(zrnflx, rnflx, pvars)

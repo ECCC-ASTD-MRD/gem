@@ -1,4 +1,8 @@
+module ccc1_raddriv_mod
+   implicit none
+   public
 
+contains
 
 subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      fatb,fadb,fafb,fctb,fcdb,fcfb, &
@@ -15,6 +19,23 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    use tdpack_const
    use phy_options, only: RAD_NUVBRANDS, rad_atmpath
    use ens_perturb, only: ens_nc2d
+   use ccc1_gasopts_mod, only: ccc1_gasopts
+   use ccc1_gasoptl_mod, only: ccc1_gasoptl2
+   use ccc1_gasoptlgh_mod, only: ccc1_gasoptlgh3
+   use ccc1_strandngh_mod, only: ccc1_strandngh
+   use ccc1_strandn_mod, only: ccc1_strandn
+   use ccc1_preintp_mod, only: ccc1_preintp
+   use ccc1_preintr_mod, only: ccc1_preintr
+   use ccc1_raylev_mod, only: ccc1_raylev
+   use ccc1_sattenu_mod, only: ccc1_sattenu
+   use ccc1_stranup_mod, only: ccc1_stranup
+   use ccc1_planck_mod, only: ccc1_planck
+   use ccc1_lwtran_mod, only: ccc1_lwtran
+   use ccc1_lattenu_mod, only: ccc1_lattenu
+   use ccc1_lwtragh_mod, only: ccc1_lwtragh
+   use ccc_raylei_mod, only: ccc_raylei
+   use ccc_swtran_mod, only: ccc_swtran
+   use ccc_cldifm_mod, only: ccc_cldifm1
    implicit none
 
 !!!#include <arch_specific.hf>
@@ -1013,7 +1034,7 @@ include "nocld.cdk"
          !    reusing space o3g for dbf
          !----------------------------------------------------------------------
 
-         call ccc1_planck (bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
+         call ccc1_planck(bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
               il1, il2, ilg, lay, lev, tg)
 
          gh = .false.
@@ -1194,3 +1215,4 @@ include "nocld.cdk"
    return
 end subroutine ccc1_raddriv3
 
+end module ccc1_raddriv_mod
