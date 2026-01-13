@@ -91,11 +91,11 @@
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
 !$omp parallel
-      call adz_tracers_interp ()
+      call adz_tracers (.true.)
 
       call psadj_hlt ( Step_kount )
 
-      call adz_tracers_massfixing ()
+      call adz_tracers (.false.)
 !$omp end parallel
 
       call t02t1()

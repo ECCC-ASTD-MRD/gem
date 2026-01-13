@@ -17,8 +17,8 @@
 !                   for all tracers using Bermejo-Conde (assuming in Mixing Ratio)
 
       subroutine mass_tr_PM ( F_mass_p_8,F_mass_m_8,F_mass_fo_8,F_mass_fi_8,F_bc,        &
-                                  F_air_mass_p,F_air_mass_m,F_minx,F_maxx,F_miny,F_maxy,F_nk,&
-                                  F_i0,F_in,F_j0,F_jn,F_k0,F_ntr_bc )
+                              F_air_mass_p,F_air_mass_m,F_minx,F_maxx,F_miny,F_maxy,F_nk,&
+                              F_i0,F_in,F_j0,F_jn,F_k0,F_ntr_bc )
 
       use adz_mem
       use adz_options
@@ -28,12 +28,11 @@
       use geomh
       use HORgrid_options
       use ptopo
-      use omp_lib
-      use masshlt
-      use mem_tstp
 
       use, intrinsic :: iso_fortran_env
       implicit none
+
+#include <arch_specific.hf>
 
       !arguments
       !---------
@@ -54,49 +53,40 @@
       !===================================================================
 
       include 'mpif.h'
-      integer :: i,j,k,err,n,comm,dim
-      real(kind=REAL64), dimension(F_ntr_bc,4) :: c_mass_8
-      real(kind=REAL64) :: sum_8(4), gsum_8(4)
-!     real(kind=REAL64), dimension(:), pointer :: gsum_8
-      real(kind=REAL64), dimension(:,:), pointer :: gcsum_8
+      include 'rpn_comm.inc'
+      integer :: i,j,k,err,n,comm
+      real(kind=REAL64), dimension(F_ntr_bc,4) :: c_mass_8,gc_mass_8
+      real(kind=REAL64) :: gathV1(2*F_ntr_bc,Ptopo_numproc*Ptopo_ncolors), &
+                           gathV2(4*F_ntr_bc,Ptopo_numproc*Ptopo_ncolors)
       logical :: LAM_L,BC_LAM_Aranami_L
-
-      OMP_max_threads=OMP_get_max_threads()
-      thread_sum2(1:4,1:F_ntr_bc,0:OMP_max_threads-1) => WS1_8(1:) ; dim= 4*OMP_max_threads*F_ntr_bc
-      gcsum_8(1:4,1:F_ntr_bc) => WS1_8(1+dim:) 
 !
 !---------------------------------------------------------------------
 !
-      comm = COMM_multigrid
+!      call gtmg_start (15, 'MASS__', 74)
 
       LAM_L = .not.Grd_yinyang_L
 
       BC_LAM_Aranami_L = LAM_L.and.Adz_BC_LAM_flux==1
 
-      c_mass_8= 0.d0
-!$omp single
-      thread_sum2= 0.d0
-!$omp end single
-      
+      c_mass_8 = 0.0d0
+
+!      call gtmg_start (18, 'SOMME_', 15)
+
       do n=1,F_ntr_bc
 
          !Evaluate Local Mass of Tracer TIME P/M
          !--------------------------------------
-         if (Dynamics_autobar_L) then
-!$omp do
+         if (Schm_autobar_L) then
+
             do j=F_j0,F_jn
                do i=F_i0,F_in
                   c_mass_8(n,1) = c_mass_8(n,1) + F_bc(n)%p(i,j,1) * geomh_area_mask_8(i,j)
                   c_mass_8(n,2) = c_mass_8(n,2) + F_bc(n)%m(i,j,1) * geomh_area_mask_8(i,j)
                end do
             end do
-!$omp end do nowait 
-            thread_sum2(1,n,OMP_get_thread_num())=c_mass_8(n,1)
-            thread_sum2(2,n,OMP_get_thread_num())=c_mass_8(n,2)
 
          else
 
-!$omp do collapse(2)
             do k=F_k0,F_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
@@ -105,9 +95,6 @@
                   end do
                end do
             end do
-!$omp end do nowait
-            thread_sum2(1,n,OMP_get_thread_num())=c_mass_8(n,1)
-            thread_sum2(2,n,OMP_get_thread_num())=c_mass_8(n,2)
 
          end if
 
@@ -115,21 +102,17 @@
          !---------------------------------------
          if (LAM_L.and.BC_LAM_Aranami_L.and..not.Ctrl_theoc_L) then
 
-            if (Dynamics_autobar_L) then
-!$omp do
+            if (Schm_autobar_L) then
+
                do j=Adz_j0b,Adz_jnb
                   do i=Adz_i0b,Adz_inb
                      c_mass_8(n,3) = c_mass_8(n,3) + F_bc(n)%fo(i,j,1) * geomh_area_mask_8(i,j)
                      c_mass_8(n,4) = c_mass_8(n,4) + F_bc(n)%fi(i,j,1) * geomh_area_mask_8(i,j)
                   end do
                end do
-!$omp end do nowait 
-            thread_sum2(3,n,OMP_get_thread_num())=c_mass_8(n,3)
-            thread_sum2(4,n,OMP_get_thread_num())=c_mass_8(n,4)
 
             else
 
-!$omp do collapse(2)
                do k=1,F_nk
                   do j=Adz_j0b,Adz_jnb
                      do i=Adz_i0b,Adz_inb
@@ -138,37 +121,62 @@
                      end do
                   end do
                end do
-!$omp end do nowait 
-            thread_sum2(3,n,OMP_get_thread_num())=c_mass_8(n,3)
-            thread_sum2(4,n,OMP_get_thread_num())=c_mass_8(n,4)
 
             end if
 
          end if
 
       end do
-!$OMP BARRIER
+
+!      call gtmg_stop  (18)
+
+!      call gtmg_start (19, 'REDUCE', 15)
+
+      comm = RPN_COMM_comm ('MULTIGRID')
 
       !Evaluate Global Mass
       !----------------------------------------
-!$omp single
-      do n=1,F_ntr_bc
-         sum_8(1)= sum(thread_sum2(1,n,:))
-         sum_8(2)= sum(thread_sum2(2,n,:))
-         sum_8(3)= sum(thread_sum2(3,n,:))
-         sum_8(4)= sum(thread_sum2(4,n,:))
-         call MPI_ALLREDUCE ( sum_8, gsum_8, 4, MPI_DOUBLE_PRECISION,MPI_SUM,comm,err )
-         gcsum_8(1,n)=gsum_8(1)
-         gcsum_8(2,n)=gsum_8(2)
-         gcsum_8(3,n)=gsum_8(3)
-         gcsum_8(4,n)=gsum_8(4)
-      end do
-!$omp end single
+      if (LAM_L.and.BC_LAM_Aranami_L.and..not.Ctrl_theoc_L) then
 
-      F_mass_p_8  = gcsum_8(1,:)
-      F_mass_m_8  = gcsum_8(2,:)
-      F_mass_fo_8 = gcsum_8(3,:)
-      F_mass_fi_8 = gcsum_8(4,:)
+         call MPI_Allgather(c_mass_8,4*F_ntr_bc,MPI_DOUBLE_PRECISION,gathV2,4*F_ntr_bc,MPI_DOUBLE_PRECISION,comm,err)
+
+         do j=1,4
+         do i=1,F_ntr_bc
+
+            n = (j-1)*F_ntr_bc + i
+            gc_mass_8(i,j) = sum(gathV2(n,:))
+
+         end do
+         end do
+
+         F_mass_p_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,1)
+         F_mass_m_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,2)
+         F_mass_fo_8(1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,3)
+         F_mass_fi_8(1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,4)
+
+      else
+
+         call MPI_Allgather(c_mass_8,2*F_ntr_bc,MPI_DOUBLE_PRECISION,gathV1,2*F_ntr_bc,MPI_DOUBLE_PRECISION,comm,err)
+
+         do j=1,2
+         do i=1,F_ntr_bc
+
+            n = (j-1)*F_ntr_bc + i
+            gc_mass_8(i,j) = sum(gathV1(n,:))
+
+         end do
+         end do
+
+         F_mass_p_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,1)
+         F_mass_m_8 (1:F_ntr_bc) = gc_mass_8(1:F_ntr_bc,2)
+         F_mass_fo_8(1:F_ntr_bc) = 0.0
+         F_mass_fi_8(1:F_ntr_bc) = 0.0
+
+      end if
+
+!      call gtmg_stop (19)
+
+!      call gtmg_stop (15)
 !
 !---------------------------------------------------------------------
 !
