@@ -13,17 +13,26 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+module samegrid_mod
+   implicit none
+   private
+   public :: samegrid, samegrid2, samegrid_sid, is_samegrid2, is_samegrid_sid, samesubgrid, tst_parpo
+
+!!$   !#TODO: provide actual interfaces to these
+!!$   integer,external,private :: ezqkdef
+!!$   integer,external,private :: ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes
+#include <rmnlib_basics.hf>
+
+contains
+   
 !/@*
 logical function samegrid(unf, ni,nj, p1,p2,p3,g1,g2,g3,g4,xp,yp)
    implicit none
-!!!#include <arch_specific.hf>
    integer,intent(in) :: unf, ni,nj, p1,p2,p3, g1,g2,g3,g4
    real,intent(in) :: xp(*), yp(*)
    !@author M.Desgagne
    !@objective Compare positional parameters
    !*@/
-   logical,external :: is_samegrid_sid
-   integer,external :: ezqkdef
    integer :: src_gid
    ! ---------------------------------------------------------------------
    samegrid = .false.
@@ -44,7 +53,6 @@ end function samegrid
 function is_samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
      nid,njd, g1d, g2d, g3d, g4d, xpd,ypd ) result(F_samegrid_L)
    implicit none
-!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: nis,njs, g1s, g2s, g3s, g4s
    integer,intent(in) :: nid,njd, g1d, g2d, g3d, g4d
@@ -54,7 +62,6 @@ function is_samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
    !@author   M. Desgagne	-- Summer 2010 --
    !@objective Check if grid points are colocated
    !*@/
-   integer, external :: tst_parpo
    real,parameter :: eps1 = 1.e-4
    real,parameter :: eps2 = 1.e-5
    integer :: i,j,ideb,jdeb,cnt
@@ -120,7 +127,6 @@ end function is_samegrid2
 !/@*
 function samesubgrid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_ypd) result(F_subgridid)
    implicit none
-!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: F_sgid !# Source grid id (ezscint)
    integer,intent(in) :: F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d
@@ -129,8 +135,6 @@ function samesubgrid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_yp
    integer :: F_subgridid
    !@objective Check if source grid had grid points colocated to a subgrid
    !*@/
-   logical,external :: is_samegrid2
-   integer,external :: ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes
    integer :: istat,nis,njs,g1,g2,g3,g4,g1s,g2s,g3s,g4s
    integer :: nsubgrids, igrid
    integer,allocatable :: subgridsid(:)
@@ -166,7 +170,6 @@ end function samesubgrid
 !/@*
 function is_samegrid_sid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_ypd) result(F_samegrid_L)
    implicit none
-!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: F_sgid !# Source grid id (ezscint)
    integer,intent(in) :: F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d
@@ -175,7 +178,6 @@ function is_samegrid_sid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,
    logical :: F_samegrid_L
    !@objective Check if grid points are colocated
    !*@/
-   integer,external :: samesubgrid
    integer :: igrid
    ! ---------------------------------------------------------------------
    igrid = samesubgrid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_ypd)
@@ -188,7 +190,6 @@ end function is_samegrid_sid
 !/@*
 function tst_parpo(xps,nis, xpd,nid, ideb, epsi) result (F_cnt)
    implicit none
-!!!#include <arch_specific.hf>
    !@arguments
    integer,intent(in) :: nis,nid,ideb
    real   ,intent(in) :: xps(nis), xpd(nid), epsi
@@ -216,8 +217,6 @@ end function tst_parpo
 subroutine samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
      nid,njd, g1d, g2d, g3d, g4d, xpd,ypd, inttyp)
    implicit none
-!!!#include <arch_specific.hf>
-
    !@arguments
    character(len=*),intent(inout) ::  inttyp
    integer,intent(in) :: nis,njs, g1s, g2s, g3s, g4s
@@ -227,7 +226,6 @@ subroutine samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
    !@author   M. Desgagne	-- Summer 2010 --
    !@objective Set interp_type=nearest if grid points are colocated
    !*@/
-   logical,external :: is_samegrid2
    ! ---------------------------------------------------------------------
    if (inttyp == 'NEAREST' .or. inttyp == 'nearest') return
    if (is_samegrid2(nis,njs, g1s, g2s, g3s, g4s, xps,yps, &
@@ -241,7 +239,6 @@ end subroutine samegrid2
 !/@*
 subroutine samegrid_sid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F_ypd, F_inttyp_S)
    implicit none
-!!!#include <arch_specific.hf>
    !@arguments
    character(len=*),intent(inout) :: F_inttyp_S
    integer,intent(in) :: F_sgid !# Source grid id (ezscint)
@@ -249,7 +246,6 @@ subroutine samegrid_sid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F
    real   ,intent(in) :: F_xpd(F_nid), F_ypd(F_njd)
    !@objective Set interp_type=nearest if grid points are colocated
    !*@/
-   logical,external :: is_samegrid_sid
    ! ---------------------------------------------------------------------
    if (F_inttyp_S == 'NEAREST' .or. F_inttyp_S == 'nearest') return
    if (is_samegrid_sid(F_sgid,F_nid,F_njd,F_g1d,F_g2d,F_g3d,F_g4d,F_xpd,F_ypd)) &
@@ -257,3 +253,5 @@ subroutine samegrid_sid(F_sgid, F_nid,F_njd, F_g1d, F_g2d, F_g3d, F_g4d, F_xpd,F
    ! ---------------------------------------------------------------------
    return
 end subroutine samegrid_sid
+
+end module samegrid_mod

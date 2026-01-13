@@ -14,6 +14,12 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END --------------------------------
 
+module gmmx_name_mod
+   implicit none
+   public
+
+contains
+
 !/@*
 subroutine gmmx_name_ci(F_nameout_S,F_namein_S,F_update_L)
    use, intrinsic :: iso_fortran_env, only: INT64
@@ -57,6 +63,7 @@ end subroutine gmmx_name_ci
 
 !/@*
 subroutine gmmx_name_parts(F_name_S,F_prefix_S,F_basename_S,F_time_S,F_ext_S)
+   use str_split_mod
    implicit none
 !!!#include <arch_specific.hf>
    !@objective Split a GMM name into convential parts "prefix/basename:time,ext"
@@ -88,3 +95,5 @@ subroutine gmmx_name_parts(F_name_S,F_prefix_S,F_basename_S,F_time_S,F_ext_S)
    !---------------------------------------------------------------
    return
 end subroutine gmmx_name_parts
+
+end module gmmx_name_mod

@@ -25,6 +25,7 @@ module fstmpio_rdhint_mod
    use hinterp4yy_mod
    use ptopo_utils
    use vgrid_wb
+   use mod_handle_error, only: collect_error
    implicit none
    private
    !@objective 

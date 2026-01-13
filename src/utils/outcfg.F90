@@ -20,6 +20,7 @@ module outcfg_mod
    use, intrinsic :: iso_fortran_env, only: INT64
    use clib_itf_mod, only: clib_isfile, clib_tolower, clib_isreadok
    use str_mod, only: str_tab2space,str_rm_quotes,str_toint,str_tobool,str_toreal
+   use str_split_mod
    use sort_mod
    use mu_jdate_mod
    implicit none
@@ -392,7 +393,6 @@ contains
       integer :: F_istat
       !@author Stephane Chamberland, 2011-07
       !*@/
-      integer, external :: str_split2keyval
       integer, parameter :: NMAX = 32
       integer :: istat
       character(len=2048) :: key_S, val_S, string_S, msg_S

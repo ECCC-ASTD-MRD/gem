@@ -10,6 +10,7 @@
 
 !/@*
 subroutine test_stop_mpi()
+   use stop_mpi_mod, only: stop_mpi
    implicit none
 #include <utils4tests.hf>
    !@author  Stephane Chamberland, 2009-11
