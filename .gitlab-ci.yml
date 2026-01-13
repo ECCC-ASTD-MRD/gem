@@ -13,9 +13,9 @@ stages:
   - run_gnu_14.2.0
   - package
   - deploy
+  - deploy_U3
 
 before_script:
-  - export CLICOLOR_FORCE=1
   - source ~/ci-admin/env/init.sh
   - export PIPELINE_SUBDIR=${ECCI_BUILD_DIR}/precaution/${CI_PROJECT_PATH}/${CI_COMMIT_REF_NAME}/${CI_PIPELINE_ID}
 
@@ -23,18 +23,16 @@ before_script:
 # U3 Intel 2025 with installed RPN-SI libs
 build:rhel-9-graniterapids-64-intel-2025.1.0:
   variables:
-     ORD_SOUMET_MACH: ppp6t
      ORD_SOUMET_CPUS: "4"
      ORD_SOUMET_W: "30"
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
   tags:
-    - concurrent
+    - ppp7-concurrent
   when: always
   script:
     - set +e
-    - . r.env.dot --carch graniterapids
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
@@ -43,7 +41,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
-    - cmake --fresh -DTARGET_PROC=graniterapids -DCPL_BUILD_DIR=${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo ${SRC_DIR}
+    - cmake --fresh -DCPL_BUILD_DIR=${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -55,18 +53,16 @@ build:rhel-9-graniterapids-64-intel-2025.1.0:
 # U3 Intel 2025 with installed RPN-SI libs, WITH_NEMO
 build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
   variables:
-     ORD_SOUMET_MACH: ppp6t
      ORD_SOUMET_CPUS: "4"
      ORD_SOUMET_W: "30"
      ORD_SOUMET_M: "8G"
      ORD_SOUMET_TMPFS: "1G"
   stage: build
   tags:
-    - concurrent
+    - ppp7-concurrent
   when: always
   script:
     - set +e
-    - . r.env.dot --carch graniterapids
     - . ./.eccc_setup_intel_2025.1.0
     - set -e
     - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
@@ -76,7 +72,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
     - ./scripts/link-dbase.sh
     - SRC_DIR=$(pwd)
     - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
-    - cmake --fresh -DTARGET_PROC=graniterapids -DWITH_NEMO=1 ${SRC_DIR}
+    - cmake --fresh -DWITH_NEMO=1 ${SRC_DIR}
     - time make -j $NCPUS
     - time make work
   artifacts:
@@ -87,14 +83,13 @@ build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo:
 
 package:rhel-9-graniterapids-64-intel-2025.1.0:
    variables:
-      ORD_SOUMET_MACH: ppp6t
       ORD_SOUMET_CPUS: "2"
       ORD_SOUMET_W: "10"
       ORD_SOUMET_M: "8G"
       ORD_SOUMET_TMPFS: "1G"
    stage: package
    tags:
-      - concurrent
+      - ppp7-concurrent
    only:
       - tags
       - /^dev_5\.[0-9]*$/
@@ -104,7 +99,6 @@ package:rhel-9-graniterapids-64-intel-2025.1.0:
       - build:rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
    script:
       - set +e
-      - . r.env.dot --carch graniterapids
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
@@ -586,6 +580,17 @@ deploy:staging:
    stage: deploy
    tags:
       - U2
+   only:
+      - tags
+      - /^dev_5\.[0-9]$/
+      - schedules
+   script:
+      - ~/ci-admin/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
+
+deploy_U3:staging:
+   stage: deploy_U3
+   tags:
+      - ppp7
    only:
       - tags
       - /^dev_5\.[0-9]$/
