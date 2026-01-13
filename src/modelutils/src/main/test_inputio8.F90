@@ -34,6 +34,8 @@ subroutine test_inputio8()
    use ptopo_utils
 !!$   use statfld_dm_mod
    use vgrid_wb
+   use mod_handle_error, only: collect_error
+   use gmm_build_meta_mod
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-04, 2017-09, 2020-10

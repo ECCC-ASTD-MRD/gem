@@ -16,6 +16,7 @@
 integer function stretch_axis2(F_x_8, F_dxla, F_xbeg, F_xend, F_margin, &
      NX, F_nxla, F_amp, F_stagger_L, F_print_L, F_dxmax, F_nimax, F_gauss_L)
    use, intrinsic :: iso_fortran_env, only: REAL64
+   use mod_handle_error, only: handle_error1
    implicit none
 !!!#include <arch_specific.hf>
    include "rmnlib_basics.inc"
@@ -97,7 +98,7 @@ integer function stretch_axis2(F_x_8, F_dxla, F_xbeg, F_xend, F_margin, &
       if(F_gauss_L.and.F_stagger_L) then
 
         if( NX .ne. F_nxla) then
-            call handle_error(-1,'stretch_axis2','STRETCH_AXIS2 NOT VALID')
+            call handle_error1(-1,'stretch_axis2','STRETCH_AXIS2 NOT VALID')
         endif
 
         deg2rad_8 = acos( -ONE_8 )/CLXXX_8

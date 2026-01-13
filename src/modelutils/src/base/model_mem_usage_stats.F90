@@ -12,7 +12,11 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+module model_mem_usage_mod
+   implicit none
+   public
 
+contains
 
 !/@*
 subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
@@ -95,3 +99,6 @@ subroutine model_mem_usage_stats(Ptopo_numproc, Ptopo_myproc)
 
    return
 end subroutine model_mem_usage_stats
+
+
+end module model_mem_usage_mod

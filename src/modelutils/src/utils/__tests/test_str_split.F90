@@ -19,6 +19,7 @@
 subroutine test_str_split()
    use, intrinsic :: iso_fortran_env, only: INT64
    use str_mod
+   use str_split_mod
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2012-01
@@ -32,8 +33,6 @@ subroutine test_str_split()
    character(len=512) :: string_S,sep_S,part1_S,part2_S,parts_S(NMAX),kv_S(2,NMAX)
    integer :: nkeys,nn
    logical :: ok_L
-
-   integer,external :: str_split2keyval,str_split2keyval0
    ! ---------------------------------------------------------------------
    call msg_set_minMessageLevel(MSG_DEBUG)
    !call msg_set_minMessageLevel(MSG_ERROR)
