@@ -6,7 +6,9 @@ module ghg
    use clib_itf_mod, only: clib_isreadok, clib_tolower
    use mu_jdate_mod, only: jdate_year
    use str_mod
+   use str_split_mod
    use phy_options
+   use mod_handle_error, only: collect_error
    implicit none
    private
 

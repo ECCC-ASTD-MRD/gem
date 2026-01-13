@@ -1,12 +1,20 @@
+module phydebu_mod
+   implicit none
+   public
+
+contains
 
 !/@*
 function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    use iso_c_binding
    use rpn_comm_itf_mod
-   use phy_status, only: PHY_ERROR, PHY_OK, phy_error_L
+   use phy_status, only: PHY_ERROR, PHY_OK, phy_error_L, physeterror
    use phy_options
    use microphy_utils, only: mp_init, mp_post_init
    use ghg, only: ghg_init
+   use phybusinit_mod, only: phybusinit
+   use litblrad_mod, only: litblrad
+   use litozon_mod, only: litozon
    use mixing_length, only: ML_CLOSURES
    use ens_perturb, only: ens_spp_map, ENS_OK
    implicit none
@@ -155,10 +163,12 @@ function phydebu2(p_ni, p_nj, p_nk, F_path_S) result(F_istat)
    ! moyhr (acchr) est la periode de moyennage (accumulation) des diagnostics.
    ! conversion : nombre d'heures --> nombre de pas de temps.
 
-   moyhr = nint(moyhr * 3600./delt)
-   acchr = nint(acchr * 3600./delt)
+   moyhrsteps = nint(moyhr * 3600./delt)
+   acchrsteps = nint(acchr * 3600./delt)
 
    F_istat = PHY_OK
    !----------------------------------------------------------------------
    return
 end function phydebu2
+
+end module phydebu_mod

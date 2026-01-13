@@ -1,4 +1,8 @@
+module secajus_mod
+   implicit none
+   public
 
+contains
 
 subroutine secajus(tconv, t    , s    , ps,   niter, &
      conv , cdt1 , ni   , nk)
@@ -123,3 +127,5 @@ subroutine secajus(tconv, t    , s    , ps,   niter, &
 
    return
 end subroutine secajus
+
+end module secajus_mod

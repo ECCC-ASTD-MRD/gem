@@ -1,3 +1,9 @@
+module ccc1_tcontl_mod
+   implicit none
+   public
+
+contains
+
 !**S/P TCONTL - INFRARED WATER VAPOR CONTINUUM
 !
       subroutine ccc1_tcontl2 (taug, coef1, coef2, qq, dp, dip, dt, &
@@ -113,4 +119,6 @@
   300 continue
 !
       return
-      end
+      end subroutine ccc1_tcontl2
+
+end module ccc1_tcontl_mod

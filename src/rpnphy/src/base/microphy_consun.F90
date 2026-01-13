@@ -1,6 +1,7 @@
 
 module microphy_consun
   use phymem, only: phyvar
+  use phy_status, only: PHY_OK, PHY_ERROR, physeterror
   implicit none
   private
 
@@ -692,7 +693,6 @@ contains
     
   ! External diagnostic liquid-solid partitioning
   function consun_ice_partition(F_tt, F_qc, F_qliqs, F_qices) result(F_istat)
-    use phy_status, only: PHY_OK
     use tdpack, only: TCDK
     ! Compute fractional ice content (Rockel et al. Beitr. Atmos. Phy. 1991)
     implicit none
@@ -717,7 +717,6 @@ contains
   
   ! Define bus requirements
   function consun_phybusinit() result(F_istat)
-    use phy_status, only: PHY_OK, PHY_ERROR
     use bus_builder, only: bb_request
     implicit none
     integer :: F_istat                          !Function return status
@@ -734,7 +733,6 @@ contains
   ! Compute total water mass
   function consun_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
-    use phy_status, only: PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
@@ -761,7 +759,6 @@ contains
   ! Compute total ice mass
   function consun_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
-    use phy_status, only: PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)

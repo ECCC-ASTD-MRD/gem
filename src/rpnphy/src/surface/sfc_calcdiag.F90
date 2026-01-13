@@ -23,6 +23,7 @@ contains
 
    !/@*
    subroutine sfc_calcdiag3(pvars,moyhr,acchr,dt,kount,step_driver,ni)
+      use timing_omp
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
 !!$      use sfcbus_mod

@@ -18,14 +18,16 @@
 !
 subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use, intrinsic :: iso_fortran_env, only: INT64
-   use phy_status, only: phy_error_L
+   use phy_status, only: phy_error_L, physeterror
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
    use sfcbus_mod
    use sfc_options, only: atm_external, atm_tplus, radslope, jdateo, &
         use_photo, nclass, zu, zt, sl_Lmin_soil, VAMIN, svs_local_z0m, &
-        vf_type,lsoil_freezing_svs1,lwater_ponding_svs,critwater
+        vf_type,lsoil_freezing_svs1,lwater_ponding_svs,critwater, &
+        svs_snowfrac_ground
    use svs_configs
+   use suncos, only: suncos2
    implicit none
 !!!#include <arch_specific.hf>
 !
@@ -112,6 +114,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zzusl
    real,pointer,dimension(:) :: zztsl
 
+   real,pointer,dimension(:) :: zsigs
    real,pointer,dimension(:) :: zslop
    real,pointer,dimension(:) :: wsatur1
    real,pointer,dimension(:) :: isoil1
@@ -137,7 +140,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: rgla, rhoa, snowrate_mm, stom_rs, stomra
    real,dimension(n) :: suncosa, sunother1, sunother2, sunother3
    real,dimension(n) :: sunother4, trad, tva, vdir, vmod, vmod_lmin, wrmax, wvegt
-   real,dimension(n) :: wsaturc1
+   real,dimension(n) :: wsaturc1,sig_topo
 ! 
    real, dimension(n,nl_svs) :: isoilt, wsoilt
 !
@@ -189,6 +192,11 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       zvegh    (1:n) => bus( x(vegh,1,1)        : )
       zvegl    (1:n) => bus( x(vegl,1,1)        : )
 
+      if(svs_snowfrac_ground=='LA23') then
+           zsigs    (1:n) => bus( x(sigs,1,1)        : )
+      endif
+
+
       if (atm_tplus) then
          hu       (1:n) => bus( x(huplus,1,nk)      : )
          ps       (1:n) => bus( x(pplus,1,1)        : )
@@ -206,8 +214,16 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       endif
 
 
-
-
+      IF(SVS_SNOWFRAC_GROUND=='LA23') THEN
+           DO I =1, N
+             SIG_TOPO(I) = ZSIGS(I)
+           ENDDO    
+      ELSE
+           DO I =1, N
+             SIG_TOPO(I) = 0.
+           ENDDO    
+      ENDIF
+             
 !  
 !
       IF (RADSLOPE) THEN
@@ -330,7 +346,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            ALVA, BUS(x(LAIVA  ,1,1)), CVPA, EVA, BUS(x(Z0HA ,1,1)),&
            BUS(x(Z0MVG,1,1)), RGLA, STOMRA,   &
            GAMVA,    &
-           BUS(x(SOILHCAPZ,1,1)), BUS(x(SOILCONDZ,1,1)), N )
+           BUS(x(SOILHCAPZ,1,1)), BUS(x(SOILCONDZ,1,1)), &
+           SIG_TOPO, N )
 !
 !     
 
@@ -381,7 +398,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
               CALL SOIL_FREEZING(DT, &
                 bus(x(tpsoil   ,1,1)),bus(x(vegl    ,1,1)),&
                 bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
-                bus(x(psnvha  ,1,1)), bus(x(soilcondz,1,1)), &
+                bus(x(psnvh  ,1,1)) , bus(x(soilcondz,1,1)), &
                 bus( x(soilhcapz,1,1)), &
                 bus(x(tground, 1,1)), bus(x(tvege,1,1)), &
                 bus(x(wsoil   ,1,1)) , bus(x(isoil   ,1,1)), &
@@ -389,7 +406,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                 bus(x(tsnow   ,1,2)) , bus(x(tsnow   ,1,1)) ,  &
                 bus(x(snvro   ,1,1)) , bus(x(snvdp   ,1,1)), &
                 bus(x(tsnowveg   ,1,2)) , bus(x(tsnowveg   ,1,1)), bus(x(tperm, 1,1)),   &
-                bus(x(wunfrz, 1,1)), &
+                bus(x(wunfrz, 1,1)), bus(x(wsat    ,1,1)), &
                 dwaterdt_surf,dwaterdt_deep, N )
       ELSE
               ! Set to zero the release of latent heat from soil freezing and
@@ -527,7 +544,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 		   bus(x(impervu ,1,1)), bus(x(vegl    ,1,1)),&
 		   bus(x(vegh    ,1,1)), bus(x(psngrvl ,1,1)),&
 		   bus(x(psnvha  ,1,1)), bus(x(acroot  ,1,1)),&
-		   wrmax, bus(x(wmpfac,1,1)), bus(x(wsat    ,1,1)),&
+		   wrmax, bus(x(wsat    ,1,1)),               &
 		   bus(x(ksat    ,1,1)), bus(x(ksatnat ,1,1)),&
 		   bus(x(psisat  ,1,1)),&
 		   bus(x(bcoef   ,1,1)), bus(x(fbcof   ,1,1)),&

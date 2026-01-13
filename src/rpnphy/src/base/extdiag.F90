@@ -12,6 +12,7 @@ contains
       use phy_options
       use phybusidx
       use phymem, only: phyvar, nphyvars
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@Object calculate averages and accumulators of tendencies and diagnostics
@@ -85,7 +86,7 @@ contains
       if (associated(ztdew)) call series_xst(ztdew,     'TW', trnch) !TDK
       if (associated(zflusolaf)) call series_xst(zflusolaf, 'AF', trnch) !N4
 
-      if (moyhr > 0) then
+      if (moyhrsteps > 0) then
          if (associated(zuvsmax)) call series_xst(zuvsmax, 'UX', trnch) !UVMX
          if (associated(zuvsavg)) call series_xst(zuvsavg, 'WA', trnch) !UVAV
          if (associated(zhrsmax)) call series_xst(zhrsmax, 'HX', trnch) !HRMX

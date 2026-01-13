@@ -15,7 +15,7 @@ subroutine gwspectrum6(s, sh, pressg, th, &
    use tdpack_const, only: CAPPA, GRAV, RGASD
    use mo_gwspectrum, only: naz, rnaz
    use hines_extro, only: hines_extro5
-   use phy_status, only: phy_error_L
+   use phy_status, only: phy_error_L, physeterror
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>

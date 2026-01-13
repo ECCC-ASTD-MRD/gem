@@ -1,6 +1,12 @@
+module ccc2_planck_mod
+   implicit none
+   public
+
+contains
+
 !**S/P PLANCK - PLANCK FUNCTION
 !
-      subroutine ccc2_planck2 (bf, bs, urbf, bf0, urbf0, dbf, tfull, gt, ib, &
+      subroutine ccc2_planck(bf, bs, urbf, bf0, urbf0, dbf, tfull, gt, ib, &
                          il1, il2, ilg, lay, lev)
       implicit none
 !!!#include <arch_specific.hf>
@@ -126,4 +132,6 @@
       enddo
 
       return
-      end
+      end subroutine ccc2_planck
+
+end module ccc2_planck_mod

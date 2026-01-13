@@ -3,6 +3,7 @@ module phyfillbus
    use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    use rmn_gmm
    use clib_itf_mod, only: clib_tolower, clib_toupper
+   use gmmx_name_mod
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phy_lcl_i0, phy_lcl_in, phy_lcl_j0, phy_lcl_jn, phydim_nk
    use phyfold, only: phyfoldmeta1, phyfold1
    use phymem, only: phymeta, nphyvars, phymem_getmeta, PHY_DBUSIDX

@@ -26,6 +26,8 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
 
    use sfc_options
    use sfcbus_mod
+   use phy_status, only: physeterror
+   use difuvd12_mod, only: difuvd1, difuvd2
    implicit none
 !!!#include <arch_specific.hf>
    !@Object The multi-level model calculates the temperature profile across a

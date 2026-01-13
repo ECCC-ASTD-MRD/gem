@@ -1,3 +1,9 @@
+module convect_trigger_shal_mod
+   implicit none
+   public
+
+contains
+
 !######################################################################
 subroutine CONVECT_TRIGGER_SHAL4(KLON, KLEV, &
      &  PPRES, PTH, PTHV, PTHES, PMSE, &
@@ -75,6 +81,8 @@ subroutine CONVECT_TRIGGER_SHAL4(KLON, KLEV, &
    use YOMCST
    use YOE_CONVPAR_SHAL
    use YOE_CONVPAREXT
+   use phy_status, only: physeterror
+   use convect_satmixratio_mod, only: convect_satmixratio
 
    implicit none
 !!!#include <arch_specific.hf>
@@ -365,3 +373,4 @@ subroutine CONVECT_TRIGGER_SHAL4(KLON, KLEV, &
    return
 end subroutine CONVECT_TRIGGER_SHAL4
 
+end module convect_trigger_shal_mod

@@ -1,8 +1,18 @@
+module serie_mod
+   implicit none
+   public
+   
+contains
 
 subroutine serie3(INPUNIT,SERSTD,STATUS,ECHO,COMPRESS,HOUR64, &
      F_NIG,F_NK_HYBM,F_NK_HYBT)
    use, intrinsic :: iso_fortran_env, only: REAL64
    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_print,vgd_write,VGD_OK
+   use seracc_mod, only: seracc
+   use serpat_mod, only: serpat2
+   use indseri_mod, only: indseri
+   use serecri_mod, only: serecri4
+   use serfin_mod, only: serfin2
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -30,8 +40,7 @@ subroutine serie3(INPUNIT,SERSTD,STATUS,ECHO,COMPRESS,HOUR64, &
 
 #include "series.cdk"
 
-   integer, external :: FSTECR_S,INDSERI
-   external :: SERPAT2
+   integer, external :: FSTECR_S
 
    !     AUTOMATIC ARRAYS
    integer, dimension(F_nig) :: ig
@@ -439,3 +448,5 @@ subroutine serie3(INPUNIT,SERSTD,STATUS,ECHO,COMPRESS,HOUR64, &
    return
 
 end subroutine serie3
+
+end module serie_mod

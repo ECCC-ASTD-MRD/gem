@@ -10,10 +10,11 @@ contains
       ! Call API for surface schemes
       use sfc_main, only: sfc_main2
       use phy_options, only: fluvert, timings_L
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, physeterror
       use phybusidx
       use phymem, only: phyvar
       use tdpack_const, only: CAPPA
+      use timing_omp
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 

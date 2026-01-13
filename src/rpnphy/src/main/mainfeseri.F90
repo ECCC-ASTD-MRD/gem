@@ -1,5 +1,6 @@
 program mainfeseri
    use app
+   use feseri_mod, only: feseri
 
 #include <rpnphy_build_info.h>
 

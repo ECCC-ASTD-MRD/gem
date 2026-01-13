@@ -19,7 +19,7 @@ contains
     use tdpack, only: GRAV, KARMAN, RGASD
     use phy_options, only: ilongmel, etrmin2, phystepoutlist_s, nphystepoutlist, &
          pbl_progvar, pbl_ae, debug_alldiag_L
-    use phy_status, only: phy_error_L, PHY_OK
+    use phy_status, only: phy_error_L, PHY_OK, physeterror
     use mixing_length, only: ml_compute, ML_LMDA
     use ens_perturb, only: ens_nc2d
     use pbl_ri_utils, only: buoyflux, tkestep, tkebudget, kcalc, covareq, covarstep, &

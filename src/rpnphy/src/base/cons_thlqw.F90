@@ -1,5 +1,8 @@
 module cons_thlqw
-  use phy_status, only: PHY_OK
+  use phy_status, only: PHY_OK, physeterror
+  use mfdlesmx,   only: mfdlesmx1
+  use tdpack,     only: CHLC, CHLF, CPD, CAPPA, fqsmx, fdqsmx
+  use microphy_utils, only: mp_icefrac
   implicit none
   private
 
@@ -12,7 +15,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine thlqw_compute(F_tcon, F_qcon, F_tt, F_hu, F_lwc, F_iwc, F_sigt, &
        F_ni, F_nkm1)
-    use tdpack, only: CHLC, CHLF, CPD, CAPPA
     implicit none
 
     ! Argument declarations
@@ -49,8 +51,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine thlqw_thermco(F_thl, F_qw, F_tt, F_lwc, F_iwc, F_sigt, F_ps, &
        F_ni, F_nkm1, F_acoef, F_bcoef, F_ccoef, F_leff, F_rhc)
-    use tdpack
-    use microphy_utils, only: mp_icefrac
     implicit none
 
     !@Arguments
@@ -114,7 +114,7 @@ contains
              qsat(i,k) = rhc(i,k) * fqsmx(tl(i,k), pres(i,k), fice(i,k))
           enddo
        enddo
-       call mfdlesmx(esat, tl, fice, dfice, F_ni, F_nkm1)
+       call mfdlesmx1(esat, tl, fice, dfice, F_ni, F_nkm1)
        do k=1,F_nkm1
           do i=1,F_ni
              dqsat(i,k) = fdqsmx(qsat(i,k), rhc(i,k)*esat(i,k))

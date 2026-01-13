@@ -15,6 +15,7 @@ contains
       use tdpack_const, only: GRAV, TCDK, RGASD
       use phy_options
       use series_mod, only: series_xst
+      use liqwc_mod, only: liqwc
       implicit none
 
       !@Object  Calculate 2d variable  cloud cover NT - reproduce old newrad style effective cloud cover

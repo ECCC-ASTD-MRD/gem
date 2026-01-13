@@ -23,7 +23,7 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original       04/2013                      
+!!      Original       04/2013     
 !!
 !!      B. Decharme  06/2020 ADD LOLDGRID
 !

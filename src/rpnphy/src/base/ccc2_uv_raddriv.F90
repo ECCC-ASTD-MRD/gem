@@ -19,6 +19,12 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    use ens_perturb, only: ens_nc2d
    use ccc2_preintp_m, only: ccc2_preintp
    use ccc2_gasopts, only: ccc2_gasopts5
+   use ccc2_raylev_mod, only: ccc2_raylev2
+   use ccc2_stranup_mod, only: ccc2_stranup3
+   use ccc2_strandn_mod, only: ccc2_strandn3
+   use ccc2_sattenu_mod, only: ccc2_sattenu4
+   use ccc_swtran_mod, only: ccc_swtran
+   use ccc_cldifm_mod, only: ccc_cldifm1
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"

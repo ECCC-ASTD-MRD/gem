@@ -1,7 +1,7 @@
 
 module physlb
    use phymem, only: phyvar, phymem_get_slabvars
-   use phy_status, only: phy_error_L
+   use phy_status, only: phy_error_L, physeterror
    use phy_options
    use phyexe, only: phyexe1
    use testphy_phyexe, only: testphy_phyexe1

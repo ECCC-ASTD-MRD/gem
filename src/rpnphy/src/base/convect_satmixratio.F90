@@ -1,3 +1,9 @@
+module convect_satmixratio_mod
+   implicit none
+   public
+
+contains
+
 !################################################################
 SUBROUTINE CONVECT_SATMIXRATIO(KLON, PPRES, PT, PEW, PLV, PLS, PCPH)
 !################################################################
@@ -84,3 +90,4 @@ real                               :: ZEPS           ! R_d / R_v
     return
 END SUBROUTINE CONVECT_SATMIXRATIO
 
+end module convect_satmixratio_mod

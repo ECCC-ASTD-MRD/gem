@@ -1,3 +1,9 @@
+module convect_closure_mod
+   implicit none
+   public
+
+contains
+
 !####################################################################
  SUBROUTINE CONVECT_CLOSURE2( KLON, KLEV,                            &
                            & PPRES, PDPRES, PZ, PDXDY, PLMASS,      &
@@ -81,6 +87,9 @@
 USE YOMCST
 USE YOE_CONVPAR
 USE YOE_CONVPAREXT
+use convect_closure_thrvlcl_mod, only: convect_closure_thrvlcl
+use convect_closure_adjust_mod, only: convect_closure_adjust
+use convect_satmixratio_mod, only: convect_satmixratio
 
 IMPLICIT NONE
 !!!#include <arch_specific.hf>
@@ -697,3 +706,4 @@ PSPR(:) = MAX( _ZERO_ , PSPR(:) )
 
 END SUBROUTINE CONVECT_CLOSURE2
 
+end module convect_closure_mod

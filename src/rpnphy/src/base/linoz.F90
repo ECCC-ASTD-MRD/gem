@@ -18,6 +18,7 @@ contains
       use linoz_tend_mod, only: linoz_tend, linoz_tend_ghg
       use linoz_xcol, only: linoz_xcol1, ghg_xcol1
       use tendency, only: apply_tendencies
+      use timing_omp
       implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>

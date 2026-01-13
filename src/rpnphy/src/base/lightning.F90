@@ -1,3 +1,8 @@
+module lightning_mod
+   implicit none
+   public
+
+contains
 
 subroutine lightning2(foudre_rt, zp0_plus, zsigm, ztplus, zwplus, q_grpl, iiwc, ni, nk)
    use tdpack_const, only: GRAV, TCDK
@@ -83,3 +88,4 @@ subroutine lightning2(foudre_rt, zp0_plus, zsigm, ztplus, zwplus, q_grpl, iiwc, 
    return
 end subroutine lightning2
 
+end module lightning_mod

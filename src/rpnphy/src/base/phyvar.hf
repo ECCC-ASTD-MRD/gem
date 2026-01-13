@@ -105,6 +105,8 @@ PVARC (qdiagtyp2 , SLQ       , SLQ , U0  , nag  , "VD=Screen-level specific humi
 PVARC (tddiagtyp2, SLTD      , SLTD, U0  , nag  , "VD=Screen-level dew-point temperature at t+dt                  ; MIN=0;                  ", fsdiag)
 PVARC (udiagtyp2 , SLU       , SLU , U0  , nag  , "VD=Screen-level u-wind at t+dt                                 ;                         ", fsdiag)
 PVARC (vdiagtyp2 , SLV       , SLV , U0  , nag  , "VD=Screen-level w-wind at t+dt                                 ;                         ", fsdiag)
+PVARC (ribf      , RIBF      , RIBF, U0  , nag  , "VD=Bulk Richardson number at t+dt                              ;                         ", fsdiag)
+PVARC (ribr      , RIBR      , RIBR, U0  , nag  , "VD=Reference bulk Richardson number (stable case) at t+dt      ; MIN=0;                  ", fsdiag)
 
 !Section radiation schemes
 PVAR  (t2        , T2        , T2  , P0  , LVLT , "VD=SW heating rate interpo. from T20                           ; MIN=0;")
@@ -258,8 +260,10 @@ PVARC (tiwpin    , TIWPIN    , W2  , U0  , LVLA , "VD=In-cloud ice water path (R
 PVAR  (topthi    , TOPTHI    , W4  , U0  , LVLA , "VD=Optical thickness of ice in VIS                             ; MIN=0;")
 PVAR  (topthw    , TOPTHW    , W3  , U0  , LVLA , "VD=Optical thickness of water in VIS                           ; MIN=0;")
 PVARO (totot     , TOTOT     , TOTO, U0  , LVLT , "VD=total optical thickness in VIS                              ; MIN=0;")
-
-
+PVARO (tosi      , TOSI      , tosi  , P0  , LVLT , "VD=optical thickness of imp ice                              ; MIN=0;")
+PVARO (tose      , TOSE      , tose  , P0  , LVLT , "VD=optical thickness of exp ice                              ; MIN=0;")
+PVARO (toli      , TOLI      , toli  , P0  , LVLT , "VD=optical thickness of imp liq                              ; MIN=0;")
+PVARO (tole      , TOLE      , tole  , P0  , LVLT , "VD=optical thickness of exp liq                              ; MIN=0;")
 PVARC (c1slop    , C1SL      , C1SL, P0  , LVLA , "VD=C1 for radslope                                             ;                         ", radslope)
 PVARC (c2slop    , C2SL      , C2SL, P0  , LVLA , "VD=C2 for radslope                                             ;                         ", radslope)
 PVARC (c3slop    , C3SL      , C3SL, P0  , LVLA , "VD=C3 for radslope                                             ;                         ", radslope)
@@ -403,6 +407,7 @@ PVAR  (h         , H         , H   , P0  , LVLA , "VD=Height of boundary layer  
 PVAR  (hst       , HST       , H1  , P0  , nag  , "VD=PBL height for stable case                                  ; MIN=0;")
 PVAR  (km        , KM        , KM  , U0  , LVLE , "VD=Momentum vertical diff. coeff.(m2/s)                        ; MIN=0;")
 PVAR  (kt        , KT        , KT  , U0  , LVLE , "VD=T/HU vertical diff. coeff.(m2/s)                            ; MIN=0;")
+PVAR  (lscorer2  , LSCOR2    , LSC2, P0  , LVLE , "VD=Scorer parameter (m^-2)                                     ;")
 PVARC (n2        , N2        , N2  , P0  , LVLE , "VD=Buoyancy frequency squared                                  ;                         ", lrpnint)
 PVAR  (pri       , PRI       , PRI , U0  , LVLE , "VD=Inverse Prandtl number                                      ; MIN=0;")
 PVAR  (qcons     , QCONS     , QCON, U0  , LVLE , "VD=Conserved moisture variable for PBL                         ;")

@@ -14,11 +14,12 @@ contains
       use integrals, only: int_profile, INT_OK
       use form_drag, only: form_drag1
       use phy_options
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, physeterror
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
       use vintphy, only: vint_mom2thermo
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>

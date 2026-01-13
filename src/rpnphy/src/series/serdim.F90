@@ -1,3 +1,8 @@
+module serdim_mod
+   implicit none
+   public
+   
+contains
 
 !/@*
 function serdim(nstn,n,nk) result(F_dim)
@@ -32,3 +37,5 @@ function serdim(nstn,n,nk) result(F_dim)
    !---------------------------------------------------------------
    return
 end function serdim
+
+end module serdim_mod

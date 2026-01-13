@@ -22,7 +22,7 @@ contains
       use diagno_clouds, only: diagno_clouds2
       use prep_cw_rad, only: prep_cw_rad3
       use phy_options
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, physeterror
       use phybusidx, except=>znt
       use phymem, only: phyvar
       use linoz_param, only: mwt_air, mwt_o3, p_linoz_meso
@@ -31,7 +31,11 @@ contains
       use ens_perturb, only: ens_spp_get
       use ccc2_uv_raddriv, only: ccc2_uv_raddriv1
       use ccc2_raddriv, only: ccc2_raddriv3
+      use ccc2_uvindex_mod, only: ccc2_uvindex2
       use suncos, only: suncos3
+      use radfac_mod, only: radfac4
+      use ccc_aerooppro_mod, only: ccc_aerooppro2
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>

@@ -1,9 +1,15 @@
 
+module phystats
+   implicit none
+   public
+   
+contains
+   
 !/@*
-subroutine phystats(F_stepcount, F_delt)
+subroutine phystats1(F_stepcount, F_delt)
    use timestr_mod, only: timestr2step
    use statfld_dm_mod, only: statfld_dm, STATFLD_NCACHE, STATFLD_CACHE_DEFAULT
-   use phy_itf, only: phy_get
+   use phy_get_mod, only: phy_get
    use phy_options, only: phystat_freq_S, phystat_dble_l, phystat_2d_l, phystat_list_s, debug_mem_L
    use phy_typedef
    use phy_getmeta_mod, only: phy_getmeta
@@ -127,4 +133,6 @@ subroutine phystats(F_stepcount, F_delt)
    call msg(MSG_INFO, msg_S)
    !---------------------------------------------------------------
    return
-end subroutine phystats
+end subroutine phystats1
+
+end module phystats

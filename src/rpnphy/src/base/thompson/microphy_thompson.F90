@@ -8,6 +8,7 @@ module microphy_thompson
    use mpi_f08, only : MPI_Comm, MPI_COMM_WORLD
    use mp_thompson, only : mp_thompson_run, mp_thompson_init
    use module_mp_thompson, only: thompson_init, modelinput
+   use phy_status, only: PHY_OK, PHY_ERROR, physeterror
 #include "phymkptr.hf"
    implicit none
    private
@@ -126,7 +127,6 @@ contains
     logical :: fullradar_diag_L, &
          do_radar_ref_L,ext_diag_L,reset_diag3d_L,cplchm_L,restart_L
     character(len=256) :: errmsg_S
-    external physeterror
 
     status = THOMPSON_ERROR
     
@@ -532,7 +532,6 @@ contains
  
   ! Define bus requirements
   function thompson_phybusinit() result(F_istat)
-    use phy_status, only: PHY_OK, PHY_ERROR
     use bus_builder, only: bb_request
     implicit none
     integer :: F_istat                          !Function return status
@@ -562,7 +561,6 @@ contains
   ! Compute total water mass
   function thompson_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
-    use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
@@ -590,7 +588,6 @@ contains
   ! Compute total ice mass
   function thompson_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
-    use phy_status, only: PHY_OK, PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)

@@ -1,3 +1,9 @@
+module ccc1_tline3_mod
+   implicit none
+   public
+
+contains
+
 !**S/P TLINE3 - OPTICAL DEPTH FOR THREE MIXED GASES
 !
       subroutine ccc1_tline3 (taug, coef1, coef2, &
@@ -147,4 +153,6 @@
   200 continue
 !
       return
-      end
+      end subroutine ccc1_tline3
+
+end module ccc1_tline3_mod

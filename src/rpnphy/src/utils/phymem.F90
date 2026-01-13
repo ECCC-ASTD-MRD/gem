@@ -2,11 +2,13 @@ module phymem
    use clib_itf_mod, only: clib_toupper, clib_tolower
    use rmn_gmm, only: gmm_metadata, gmm_create, gmm_get, GMM_IS_OK, GMM_FLAG_RSTR, GMM_FLAG_IZER, GMM_FLAG_INAN, GMM_NULL_FLAGS, GMM_MAXNAMELENGTH
    use str_mod, only: str_normalize, str_concat
-   use phy_status, only: PHY_OK, PHY_ERROR
+   use phy_status, only: PHY_OK, PHY_ERROR, physeterror
    use splitst, only: splitst4
    use phygridmap, only: phy_lcl_ni, phy_lcl_nj, phydim_ni, phydim_nj, phydim_nk
    use phy_options, only: debug_mem_L
    use debug_mod, only: init2nan
+   use str_split_mod
+   use gmm_build_meta_mod
    implicit none
    private
 

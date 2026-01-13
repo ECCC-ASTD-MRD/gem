@@ -22,7 +22,7 @@ contains
       use microphy_statcond, only: sc_adjust
       use microphy_thompson, only: thompson_wrapper_gem, THOMPSON_OK
       use phy_options
-      use phy_status, only: phy_error_L, PHY_OK
+      use phy_status, only: phy_error_L, PHY_OK, physeterror
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
@@ -178,7 +178,7 @@ contains
               kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,                                                     &
               a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_tss_ws,                                                  &
               a_zet,a_zec,a_effradc,qcm,qcp,ncp,qrm,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,                           &
-              p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,                                                   &
+              p3_depfact,p3_subfact,p3_debug,p3_supid,a_h_cb,a_h_sn,a_vis,a_vis1,                                          &
               a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,a_diag_dhmax,                                         &
               a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6,                                                                   &
               qti1m,qti1p,qmi1p,nti1p,bmi1p,a_effradi1,zitot_1=zti1p,qiliq_1=qli1p,                                        &

@@ -13,6 +13,7 @@ contains
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@object Methane oxidation

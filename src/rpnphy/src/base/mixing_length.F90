@@ -2,18 +2,17 @@
 module mixing_length
    ! Container for calculation and manipulation of mixing and dissipation length scales in the PBL.
    use, intrinsic :: iso_fortran_env, only: INT64
+   use neark, only: neark_dp => neark_dp_orig
    use vintphy, only: vint_thermo2mom, vint_mom2thermo
    use phy_status, only: PHY_OK, PHY_ERROR
    use tdpack, only: GRAV, KARMAN, PI, DELTA, CAPPA
+   use timing_omp
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
 #include "phymkptr.hf"
    private
-
-   ! External symbols
-   integer, external :: neark
   
    ! Private parameters
    integer, parameter :: ML_LONG=1024              !Long character string
@@ -201,6 +200,7 @@ contains
      use pbl_utils, only: blweight
      use pbl_utils, only: LAMINAR
      use pbl_stabfunc, only: psf_stabfunc
+     use phy_status, only: physeterror
      ! High-level function to compute and blend mixing lengths
 
      ! Argument declaration
@@ -895,7 +895,7 @@ contains
       n = size(th,dim=1)
       nk = size(th,dim=2)
       gravinv = 1./GRAV
-      istat = neark(sigma,ps,1000.,n,nk,slk) !determine "surface layer" vertical index for buoyancy coefficient
+      slk = neark_dp(sigma,ps,1000.,n,nk) !determine "surface layer" vertical index for buoyancy coefficient
       myMask = .true.
       if (present(mask)) myMask = mask
       myInit = .true.
@@ -970,6 +970,7 @@ contains
       use pbl_utils, only: TURBULENT
       use cons_thlqw, only: thlqw_compute, thlqw_thermco
       use phy_options, only: pbl_znfilt, pbl_ricrit
+      use phy_status, only: physeterror
 
       ! Argument declaration
       real, dimension(:,:), intent(in) :: tt                !dry air temperature on thermo levs (K)
@@ -1040,7 +1041,7 @@ contains
       n = size(th,dim=1)
       nk = size(th,dim=2)
       gravinv = 1./GRAV
-      istat = neark(sigt, ps, 1000., n, nk, slk)
+      slk = neark_dp(sigt, ps, 1000., n, nk)
       myMask = .true.
       if (present(mask)) myMask = mask
       if (present(init)) then
