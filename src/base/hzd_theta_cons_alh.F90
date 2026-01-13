@@ -13,9 +13,10 @@
 
 !**s/r - 3D_diffusion operator   computation for GEM_H
 !
-      subroutine  hzd_theta_alh ( F_Sol1,HzdlnR, Minx, Maxx, Miny, Maxy,Nk,Niter)
+      subroutine  hzd_theta_cons_alh ( F_Sol1,HzdlnR, Minx, Maxx, Miny, Maxy,Nk,Niter)
       use gem_options
       use gmm_vt1
+      use gmm_hzd
       use geomh
       use glb_ld
       use cstv
@@ -38,8 +39,6 @@
 !
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, NK
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent (inout) :: F_Sol1
-
-!      real(kind=REAL64) Hzd_coef_8_Q(*)
       real  HzdlnR
       logical, save :: done=.false.
 
@@ -157,6 +156,7 @@
          Cflux_8=zero
 
 !Field  before diffusion on T-level K  on phii,j
+!$omp do
          do k = 1, nk
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
@@ -164,6 +164,7 @@
                enddo
             enddo
          enddo
+!$omp enddo
 
          call rpn_comm_xch_halo(fdg2_4,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -182,6 +183,9 @@
                C= half*(C+C1_8)
                Afdg1(i,j,k) = F_coef_8(k)*((Jzpi*fdg2_4(i+1,j,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDX_8(j) -C)
                Afdg2(i,j,k) = ((Jzpi*fdg2_4(i+1,j,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
+! conservative
+               Afdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*Afdg1(i,j,k)
+               Afdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*Afdg2(i,j,k)
 
             enddo
          enddo
@@ -207,6 +211,10 @@
             Jzm  = (GVM%zmom_8(i  ,j,k)-GVM%zmom_8(i  ,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
 !
             Afdg2(i,j,k) = ((Jzpi*fdg2_4(i+1,j,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
+! conservative
+               Afdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*Afdg1(i,j,k)
+               Afdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*Afdg2(i,j,k)
+
 
             enddo
          enddo
@@ -232,6 +240,11 @@
                   Jzmi= (GVM%zmom_8(i+1,j,k)-GVM%zmom_8(i+1,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
                   Jzm  = (GVM%zmom_8(i  ,j,k)-GVM%zmom_8(i  ,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
                   Afdg2(i,j,k) =((Jzpi*fdg2_4(i+1,j,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
+! conservative
+               Afdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*Afdg1(i,j,k)
+               Afdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*Afdg2(i,j,k)
+
+
                enddo
             enddo
          enddo
@@ -251,6 +264,11 @@
                Bfdg1(i,j,k) = (Jzpi*fdg2_4(i,j+1,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j) - C
                Bfdg1(i,j,k) =  F_coef_8(k)*Bfdg1(i,j,k) * geomh_cyv_8(j)
                Bfdg2(i,j,k) =(Jzpi*fdg2_4(i,j+1,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
+! conservative
+               Bfdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*Bfdg1(i,j,k)
+               Bfdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*Bfdg2(i,j,k)
+
+
             enddo
          enddo
 !
@@ -274,6 +292,12 @@
                Jzmi= (GVM%zmom_8(i,j+1,k)-GVM%zmom_8(i,j+1,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
                Jzm  = (GVM%zmom_8(i  ,j,k)-GVM%zmom_8(i  ,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
                Bfdg2(i,j,k) =(Jzpi*fdg2_4(i,j+1,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
+! conservative
+               Bfdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*Bfdg1(i,j,k)
+               Bfdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*Bfdg2(i,j,k)
+
+
+
             enddo
          enddo
          do k = 2,Nk-1
@@ -293,11 +317,17 @@
                   Jzpi= (GVM%zmom_8(i,j+1,k+1)-GVM%zmom_8(i,j+1,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k))
                   Jz  = (GVM%zmom_8(i,j,k+1  )-GVM%zmom_8(i,j,k)) /(Ver_z_8%m(k+1)-Ver_z_8%m(k))
                   Bfdg1(i,j,k) = (Jzpi*fdg2_4(i,j+1,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j) - C
-         	  Bfdg1(i,j,k) = F_coef_8(k)*Bfdg1(i,j,k) * geomh_cyv_8(j)
+                  Bfdg1(i,j,k) = F_coef_8(k)*Bfdg1(i,j,k) * geomh_cyv_8(j)
                   Jzmi = (GVM%zmom_8(i,j+1,k)-GVM%zmom_8(i,j+1,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
                   Jzm  = (GVM%zmom_8(i  ,j,k)-GVM%zmom_8(i  ,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
 
-         	  Bfdg2(i,j,k) =(Jzpi*fdg2_4(i,j+1,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
+                  Bfdg2(i,j,k) =(Jzpi*fdg2_4(i,j+1,k) - Jz*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
+! conservative
+               Bfdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*Bfdg1(i,j,k)
+               Bfdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*Bfdg2(i,j,k)
+
+
+
                enddo
             enddo
          enddo
@@ -363,7 +393,7 @@
                   cflux(i,j,k)= cflux_8(i,j,k)
 
 !Field after diffusion on T-level K  on phii,j
-                  F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-Cflux_8(i,j,k))
+                  F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8/air_dens(i,j,k)*( add_v8(i,j,k)+bdd_v8(i,j,k)-Cflux_8(i,j,k))
                enddo
             enddo
          enddo
@@ -379,48 +409,55 @@
                   Jz  =(Ver_z_8%t(k+1)-Ver_z_8%t(k))/(ztht_8(i  ,j,k+1  )-ztht_8(i  ,j,k))
                   Jzm =(Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i  ,j,k  )-ztht_8(i  ,j,k-1))
                   if ((k /= 1).and.(k /= NK)) then
-                     stencil_V(i,j,3,k)= one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
-                     half*(GVM%mc_Jyt_8(i,j,k+1)+GVM%mc_Jyt_8(i,j-1,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
-          	     one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
-          	     half*(GVM%mc_Jxt_8(i,j,k+1)+GVM%mc_Jxt_8(i-1,j,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
-         	     stencil_V(i,j,2,k)= one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
-         	     half*(GVM%mc_Jyt_8(i,j,k-1)+GVM%mc_Jyt_8(i,j-1,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
-         	     one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
-         	     half*(GVM%mc_Jxt_8(i,j,k-1)+GVM%mc_Jxt_8(i-1,j,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
+                     stencil_V(i,j,3,k)=&
+        half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
+           half*(GVM%mc_Jyt_8(i,j,k+1)+GVM%mc_Jyt_8(i,j-1,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
+        half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
+         half*(GVM%mc_Jxt_8(i,j,k+1)+GVM%mc_Jxt_8(i-1,j,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
+!
+                     stencil_V(i,j,2,k)= &
+      half*air_dens_m(i,j,k-1)* one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+             half*(GVM%mc_Jyt_8(i,j,k-1)+GVM%mc_Jyt_8(i,j-1,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
+      half*air_dens_m(i,j,k-1)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
+      half*(GVM%mc_Jxt_8(i,j,k-1)+GVM%mc_Jxt_8(i-1,j,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
+!
 
-    	             stencil_V(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
-        	                       half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-        	                       -one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
-        	                       half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-        	                       -one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
-        	                       half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-                                       - one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
-                                       half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
+                   stencil_V(i,j,1,k)= &
+     - half*air_dens_m(i,j,k-1)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+               half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+     -half*air_dens_m(i,j,k-1)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
+              half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+       -half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
+             half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+  -half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
+                half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-        	     stencil_V(i,j,3,k)=Jzpi *stencil_V(i,j,3,k)
-        	     stencil_V(i,j,2,k)=Jzpi *stencil_V(i,j,2,k)
-        	     stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
+            stencil_V(i,j,3,k)=Jzpi *stencil_V(i,j,3,k)
+            stencil_V(i,j,2,k)=Jzpi *stencil_V(i,j,2,k)
+            stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
 ! expilicit cflux computation
-      		     c1flux_8(i,j,k)=-stencil_V(i,j,1,k)* fdg2_4(i,j,k)- &
+         c1flux_8(i,j,k)=-stencil_V(i,j,1,k)* fdg2_4(i,j,k)- &
                                    stencil_V(i,j,2,k)* fdg2_4(i,j,k-1)&
                                    -stencil_V(i,j,3,k)* fdg2_4(i,j,k+1)
                   endif
                   if (k == Nk) then
-                     stencil_V(i,j,2,k)= one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
-                     half*(GVM%mc_Jyt_8(i,j,k-1)+GVM%mc_Jyt_8(i,j-1,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
-                     one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
-                     half*(GVM%mc_Jxt_8(i,j,k-1)+GVM%mc_Jxt_8(i-1,j,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
-
-                     Jxx=zero
-                     Jyy=zero
-                     stencil_V(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
-                     half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-                     - one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
-                     half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-                     -one* F_coef_8(k)*Jz*half*(Jyy+Jyy)*(&
-                     half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-                     - one* F_coef_8(k)*Jz*half*(Jxx+Jxx)*(&
-                     half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
+             stencil_V(i,j,2,k)= &
+      half*air_dens_m(i,j,k-1)* one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+      half*(GVM%mc_Jyt_8(i,j,k-1)+GVM%mc_Jyt_8(i,j-1,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
+      half*air_dens_m(i,j,k-1)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
+      half*(GVM%mc_Jxt_8(i,j,k-1)+GVM%mc_Jxt_8(i-1,j,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
+!
+              Jxx=zero
+              Jyy=zero
+                     stencil_V(i,j,1,k)= &
+     - half*air_dens_m(i,j,k-1)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+           half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+    - half*air_dens_m(i,j,k-1)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
+           half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+           -half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(Jyy+Jyy)*(&
+            half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+                 - half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(Jxx+Jxx)*(&
+                half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
                      stencil_V(i,j,2,k)=Jzpi *stencil_V(i,j,2,k)
                      stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
@@ -431,22 +468,25 @@
                   endif
 
                   if (k == 1) then
-      		     stencil_V(i,j,3,k)= one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
-                     half*(GVM%mc_Jyt_8(i,j,k+1)+GVM%mc_Jyt_8(i,j-1,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
-                     one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
-                     half*(GVM%mc_Jxt_8(i,j,k+1)+GVM%mc_Jxt_8(i-1,j,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
+                    stencil_V(i,j,3,k)=&
+        half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
+           half*(GVM%mc_Jyt_8(i,j,k+1)+GVM%mc_Jyt_8(i,j-1,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
+        half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
+        half*(GVM%mc_Jxt_8(i,j,k+1)+GVM%mc_Jxt_8(i-1,j,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-		     stencil_V(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
-                     half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-     		     - one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
-                     half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-                     -one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
-                     half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
-                     - one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
+
+                    stencil_V(i,j,1,k)=&
+      - half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+              half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+      - half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
+               half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+       -half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
+                half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
+      - half*air_dens_m(i,j,k)*one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
                      half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-       		     stencil_V(i,j,3,k)=Jzpi *stencil_V(i,j,3,k)
-                     stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
+                    stencil_V(i,j,3,k)=Jzpi *stencil_V(i,j,3,k)
+                    stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
 
 ! expilicit  cflux computation
                      c1flux_8(i,j,k)=-stencil_V(i,j,1,k)* fdg2_4(i,j,k)- &
@@ -459,10 +499,16 @@
 ! stencill de NK pour inclure la condition frontiere
                   endif
                   if (k==NK) then
-          	     stencil_V(i,j,2,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  * stencil_V(i,j,2,k-1 )
-                                        stencil_V(i,j,1,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  *(stencil_V(i,j,1,k-1 )+&
-                                        stencil_V(i,j,3,k-1 ))
+           stencil_V(i,j,2,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  * stencil_V(i,j,2,k-1 )
+           stencil_V(i,j,1,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  *(stencil_V(i,j,1,k-1 )+&
+                              stencil_V(i,j,3,k-1 ))
                   endif
+
+! conservation 
+                 stencil_V(i,j,1,k )= stencil_V(i,j,1,k ) /air_dens(i,j,k)  
+                 stencil_V(i,j,2,k )= stencil_V(i,j,2,k )/air_dens(i,j,k)
+                 stencil_V(i,j,3,k )= stencil_V(i,j,3,k )/air_dens(i,j,k)
+                 
                enddo
             enddo
          enddo
@@ -512,7 +558,7 @@
 
    enddo
 
-      ! Hybrid diffusion if hzd_hyb_nk >0
+      ! Hybrid diffusion if hzd_hyb_th_nk >0
       if(hzd_hyb_nk >0) then
          do k = nk-hzd_hyb_nk+1, nk
             do j=1+pil_s-1, l_nj-pil_n+1

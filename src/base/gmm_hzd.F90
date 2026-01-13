@@ -12,19 +12,19 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
-module ilmc_lam_array
+module gmm_hzd
    implicit none
    public
    save
-   type a_ilmc
-      ! Comment the following line to let the compiler reorganize structure and avoid misalignments
-      !sequence
-      integer, pointer, dimension(:):: i_rd ! I indice of neighbor in a given sweep
-      integer, pointer, dimension(:):: j_rd ! J indice of neighbor in a given sweep
-      integer, pointer, dimension(:):: k_rd ! J indice of neighbor in a given sweep
-      integer                       :: cell ! # neighbors in a given sweep
-   end type a_ilmc
 
-   type (a_ilmc), dimension(:,:,:,:), pointer :: sweep_rd
-end module ilmc_lam_array
+   real, pointer, contiguous, dimension (:,:,:) :: hzd_th_tend  => null()
+   real, pointer, contiguous, dimension (:,:,:) :: air_dens  => null()
+   real, pointer, contiguous, dimension (:,:,:) :: air_dens_m  => null()
+
+   integer, parameter :: MAXNAMELENGTH = 32
+
+   character(len=MAXNAMELENGTH), parameter:: gmmk_hzd_th_tend_s= 'THDT'
+   character(len=MAXNAMELENGTH), parameter:: gmmk_air_dens_s= 'ADT'
+   character(len=MAXNAMELENGTH), parameter:: gmmk_air_dens_m_s= 'ADM'
+
+end module gmm_hzd

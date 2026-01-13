@@ -94,10 +94,20 @@ module hvdif_options
    namelist /hvdif  /  hzd_smago_ALH_L
 
 ! Hybrid diffusion: number of vert level on TFC
-   integer :: hzd_hyb_nk =-1
+   integer :: hzd_hyb_nk =0
    namelist /hvdif  / hzd_hyb_nk
    namelist /hvdif_p/ hzd_hyb_nk 
- 
+
+! Conservation of DEl2 Diffusion operator
+   logical :: hzd_conserv_th = .false.
+   namelist /hvdif  / hzd_conserv_th 
+   namelist /hvdif_p/ hzd_conserv_th
+
+! Apply Theta diffusion as tendency in RHS eqs
+   logical :: hzd_apply_th_tend = .false.
+   namelist /hvdif  / hzd_apply_th_tend 
+   namelist /hvdif_p/ hzd_apply_th_tend
+
 
    !# Main Smagorinsky control parameter (usual range 0.1-0.3)
    real :: Hzd_smago_param= -1.
