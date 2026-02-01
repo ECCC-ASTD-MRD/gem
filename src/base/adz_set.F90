@@ -337,8 +337,8 @@
                Adz_pb (3,Adz_i0b:Adz_inb, Adz_j0b:Adz_jnb,      1:l_nk) )
 
 !for Adz_BC_LAM_Aranami_hlt
-      allocate(Adz_o(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk,1:MAXTR3D+1),&
-               Adz_i(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk,1:MAXTR3D+1))
+      allocate(Adz_o(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk,1:Tr3d_ntr+1),&
+               Adz_i(Adz_lminx:Adz_lmaxx,Adz_lminy:Adz_lmaxy,1:l_nk,1:Tr3d_ntr+1))
 
       flag_m_f = FLAG_LVL_M
       flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_IZER

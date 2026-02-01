@@ -1,0 +1,34 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r nest_init_current -- Initializes nesting times
+
+      subroutine nest_init_current ()
+      use lam_options
+      use step_options
+      implicit none
+
+      integer yy,mo,dd,hh,mm,ss,dum
+!
+!     ---------------------------------------------------------------
+!
+      Lam_current_S = Step_runstrt_S
+      call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
+      call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)
+      Lam_tdeb      = Lam_tfin
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end subroutine nest_init_current

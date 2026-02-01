@@ -27,7 +27,7 @@
 !
 !----------------------------------------------------------------------
 !
-      if (.not. Lam_ctebcs_L) call nest_intt
+      if (.not. Lam_ctebcs_L) call nest_intt ('LU')
 
       call nest_bcs_t0 ( F_dt_8, F_rhsu, F_rhsv, Minx,Maxx,Miny,Maxy,Nk )
 !

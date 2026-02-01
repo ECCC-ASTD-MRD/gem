@@ -24,12 +24,13 @@
       use gmm_vt1
       use HORgrid_options
       use init_options
+      use svro_mod
       use rstr
+      use spn_options
       use step_options
       use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       logical F_rstrt_L
 
@@ -92,13 +93,18 @@
                case ('DYNAMICS_FISL_P')
                   write (Lun_out,1003) Lctl_step, last_step
                case default
-                  stop 'Something has gone horribly wrong. Back away slowly'
+                  stop &
+                  'Something has gone horribly wrong. Back away slowly'
             end select
 
          end if
 
          call out_outdir()
 
+         if ( Grd_yinyang_L .and. Spn_ON_L ) then
+            if (Spn_indyn_L) call nest_intt ('GY')
+         endif
+            
          call dynstep()
 
          call out_dyn (.false., .true.) ! casc output
@@ -109,15 +115,22 @@
 
          call canonical_cases ("ERR")
 
-         call iau_apply (Step_kount)
+         if (Iau_indyn_L) then
+            call iau_increments (Step_kount)
+         else
+            call iau_apply (Step_kount)
+         endif
          
-         call nudge_read (Step_kount, Lctl_step)
+         if ( Grd_yinyang_L .and. Spn_ON_L ) then
+            if (.not.Spn_indyn_L) call nudge_read (Step_kount,Lctl_step)
+         endif
 
-         if (Grd_yinyang_L .and. Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL') then
+         if (Grd_yinyang_L .and. &
+             Dynamics_Kernel_S(1:13) == 'DYNAMICS_FISL') then
             call yyg_xchng_all()
          end if
 
-         if ( Ctrl_phyms_L.or.Dcmip_physics_L ) then
+         if ( Ctrl_phyms_L.or.Dcmip_physics_L.or.Ctrl_iau_L ) then
             call tt2virt (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
             call itf_phy_UVupdate()
             call pw_update_GW()
@@ -129,7 +142,7 @@
 
          if ( Init_mode_L ) call digflt ! digital filter
          
-         if (Lun_out > 0) write(Lun_out,3000) Lctl_step
+         call gemtime ( Lun_out, 'TIME STEP COMPLETED', .false. )
 
          call save_restart()
 

@@ -29,6 +29,8 @@
       use levels
       use metric
       use out3
+      use svro_mod
+      use out_meta
       use out_mod
       use out_options
       use out_vref
@@ -57,16 +59,6 @@
 !
 !------------------------------------------------------------------
 !
-      nullify (pw_tt_plus,pw_uu_plus,pw_vv_plus)
-      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
-      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
-      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
-      istat = gmm_get (gmmk_pw_p0_plus_s, pw_p0_plus)
-
-      istat = gmm_get(gmmk_zdt1_s,zdt1)
-      istat = gmm_get(gmmk_fis0_s,fis0)
-      istat = gmm_get(gmmk_wt1_s ,wt1 )
-
       do k=1,G_nk+2
          indo(k) = k
       end do
@@ -86,30 +78,47 @@
       hybt_gnk2(1)=hybt(G_nk+2)
       ind0(1)=1
 
+      Out_nfstecr = 0
       Out_reduc_l = .true.
+      Out_stride  = 1            ! can only be one for now
+      Out_gridi0  = max( 1   , Grdc_gid)
+      Out_gridin  = min( G_ni, Grdc_gif)
+      Out_gridj0  = max( 1   , Grdc_gjd)
+      Out_gridjn  = min( G_nj, Grdc_gjf)
+      Out_prefix_S= 'casc'
 
-      call out_href ( 'Mass_point', Grdc_gid, Grdc_gif, 1,&
+      if ( .not. OUTs_server_L) then
+         call out_href ( 'Mass_point', Grdc_gid, Grdc_gif, 1,&
                                      Grdc_gjd, Grdc_gjf, 1 )
 
-      call out_vref_itf ( etiket=Out3_etik_S )
-
+         call out_vref_itf ( etiket=Out3_etik_S )
+      endif
+      
       conv = -tcdk_8
       nbits= Grdc_nbits(1)
       if (done) nbits= Grdc_nbits(2)
       done= .true.
 
+      call OUTs_metaS ()
+
+      Out_stag_S= 'MT '
       call out_fstecr ( pw_tt_plus,l_minx,l_maxx,l_miny,l_maxy,hybt,&
                          'TT  ',1., conv,Level_kind_ip1,-1,G_nk,indo,&
                          G_nk,nbits,.false. )
       if (Out3_sfcdiag_L) then
+         Out_stag_S(3:3)= 'D'
          call out_fstecr ( tdiag,l_minx,l_maxx,l_miny,l_maxy ,&
                             hybt_gnk2, 'TT  ', 1., conv,4,-1,1,&
                             ind0,1,nbits, .false. )
       end if
 
+      conv = 1.d0 / grav_8
       if (.not. Schm_autobar_L) then
+         Out_stag_S= 'MS '
          call out_fstecr ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
                    'P0  ',.01, 0., 2,-1,1, ind0, 1, nbits, .false. )
+         call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
+              'ME  ', conv, 0.,2,-1,1, ind0, 1, nbits, .false. )
          if(Schm_sleve_L)then
             if( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P' )then
                do j=l_miny,l_maxy
@@ -121,12 +130,12 @@
                        'P0LS',0.01,0.,2,-1,1, ind0, 1, nbits, .false. )
             else
                call out_fstecr(sls,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
-                  'MELS',1.,0.,2,-1,1, ind0, 1, nbits, .false. )
+                  'MELS',conv,0.,2,-1,1, ind0, 1, nbits, .false. )
             end if
          end if
-
       end if
 
+      Out_stag_S= 'MT '
       call out_fstecr ( wt1 ,l_minx,l_maxx,l_miny,l_maxy, hybt,&
                          'WT1 ',1., 0.,Level_kind_ip1,-1,G_nk  ,&
                           indo,G_nk,nbits,.false. )
@@ -134,29 +143,12 @@
                          'ZDT1',1., 0.,Level_kind_ip1,-1,G_nk  ,&
                          indo,G_nk,nbits,.false. )
 
+      Out_stag_S= 'MM '
       if ( Dynamics_hauteur_L ) then
          istat = gmm_get(gmmk_qt1_s ,qt1 )
          call out_fstecr ( qt1,l_minx,l_maxx,l_miny,l_maxy, hybm,&
-                         'QT1',1., 0.,Level_kind_ip1,-1,G_nk+1 ,&
+                         'QT1 ',1., 0.,Level_kind_ip1,-1,G_nk+1 ,&
                          indo,G_nk+1,nbits,.false. )
-         if (.not. Schm_autobar_L) then
-            conv = 0.1d0
-            gzm(1:l_ni,1:l_nj,1:G_nk+1)= real(GVM%zmom_8(1:l_ni,1:l_nj,1:G_nk+1))
-            call out_fstecr ( gzm, l_minx,l_maxx,&
-                    l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo,G_nk,nbits,.false. )
-            gzt(1:l_ni,1:l_nj,1:G_nk+1)= real(GVM%ztht_8(1:l_ni,1:l_nj,1:G_nk+1))
-            call out_fstecr ( gzt, l_minx,l_maxx,&
-                    l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo,G_nk+1,nbits,.false. )
-         else
-            conv = 0.1d0 / grav_8
-            istat = gmm_get(gmmk_qt1_s,qt1)
-            gzm(:,:,1:G_nk+1) = qt1(:,:,1:G_nk+1) + 1.0d0/Cstv_invFI_8
-            call out_fstecr ( gzm(l_minx,l_miny,1), l_minx,l_maxx ,&
-                    l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
-                    -1,G_nk+1,indo,G_nk,nbits,.false. )
-         end if
       else
          istat = gmm_get(gmmk_qt1_s      , qt1     )
          istat = gmm_get(gmmk_pw_log_pt_s, wlnph_ta)
@@ -168,14 +160,15 @@
                          l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
          conv = 0.1d0 / grav_8
          call out_fstecr ( gzm(l_minx,l_miny,1), l_minx,l_maxx ,&
-                 l_miny,l_maxy,hybm,'GZ',conv, 0.,Level_kind_ip1,&
+                 l_miny,l_maxy,hybm,'GZ  ',conv, 0.,Level_kind_ip1,&
                  -1,G_nk+1,indo,G_nk,nbits,.false. )
+         Out_stag_S(3:3)= 'D'
          if (.not.Schm_autobar_L) then
          call out_fstecr ( gzt(l_minx,l_miny,1), l_minx,l_maxx ,&
-                 l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
+                 l_miny,l_maxy,hybt,'GZ  ',conv, 0.,Level_kind_ip1,&
                  -1,G_nk+1,indo,G_nk,nbits,.false. )
          call out_fstecr ( gzt(l_minx,l_miny,1), l_minx,l_maxx ,&
-                 l_miny,l_maxy,hybt,'GZ',conv, 0.,Level_kind_ip1,&
+                 l_miny,l_maxy,hybt,'GZ  ',conv, 0.,Level_kind_ip1,&
                  -1,G_nk+1,indo(G_nk+1),1,nbits,.false. )
          end if
       endif
@@ -184,10 +177,12 @@
          nullify (tr2)
          varname = 'TR/'//trim(Grdc_trnm_S(k))//':P'
          istat= gmm_get (varname,tr2)
+         Out_stag_S= 'MT '
          call out_fstecr ( tr2 ,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                             Grdc_trnm_S(k),1.,0.,Level_kind_ip1,-1,&
                             G_nk, indo, G_nk, nbits,.false. )
          if ( Out3_sfcdiag_L ) then
+            Out_stag_S(3:3)= 'D'
             if (trim(varname)=='TR/HU:P') then
                if (istat == 0) &
                call out_fstecr ( qdiag ,l_minx,l_maxx,l_miny,l_maxy, &
@@ -207,6 +202,7 @@
       end do
 
       conv = 1.d0 / knams_8
+      Out_stag_S= 'MM '
       call out_fstecr ( pw_uu_plus, l_minx,l_maxx,l_miny,l_maxy, hybm,&
                          'UU  ',conv, 0., Level_kind_ip1,-1,G_nk,indo ,&
                          G_nk,nbits,.false. )
@@ -214,6 +210,7 @@
                          'VV  ',conv, 0., Level_kind_ip1,-1,G_nk,indo ,&
                          G_nk,nbits,.false. )
       if (Out3_sfcdiag_L) then
+         Out_stag_S(3:3)= 'D'
          call out_fstecr ( udiag,l_minx,l_maxx,l_miny,l_maxy,hybm_gnk2,&
                     'UU  ' , conv, 0., 4,-1,1,ind0,1,nbits,.false. )
          call out_fstecr (vdiag, l_minx,l_maxx,l_miny,l_maxy,hybm_gnk2,&
@@ -221,6 +218,7 @@
       end if
 
       deallocate (hybm,hybt)
+      call OUTs_metaF (Out_nfstecr, OUTs_nvar_indx)
 !
 !------------------------------------------------------------------
 !

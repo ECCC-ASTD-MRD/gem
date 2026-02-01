@@ -34,12 +34,14 @@
                err_code= -1
             end if
          end do
+         if (associated(Inp_list_files)) &
          deallocate (Inp_list_files) ; nullify (Inp_list_files)
       end if
-      err_code = vgd_free(Inp_vgd_src)
+      Inp_nfiles= 0
 
       call gem_error ( err_code, 'inp_close', &
                        'Problems opening input files' )
+      err_code = vgd_free(Inp_vgd_src)
 !
 !--------------------------------------------------------------------
 !

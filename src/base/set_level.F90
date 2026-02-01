@@ -25,6 +25,8 @@
       use dimout
       use out_mod
       use levels
+      use set_level_mod, only : set_level_usr_vgrid, set_level_ERROR
+      use vgrid_descriptors, only: vgd_get, vgd_new, vgd_nullify,vgd_associated,vgd_print, VGD_ERROR
       implicit none
 #include <arch_specific.hf>
 !
@@ -77,14 +79,20 @@
 !
 !Notes:
 !
-!    levels=levelset#,pres/eta/arbitrary,{list};
+!    levels=levelset#,pres/eta/user_vgrid[1-9]/arbitrary,{list};
 ! ie:  levels=2,eta,[1,5,10];
 !      levels=3,eta,<1,28,2>;
 !      levels=4,eta,-1;
 !
+!      Note : lists are not supported for user_vgrid[1-9], only -1.
+!             But user may use levels=5,bot_user_vgrid,4;
+!             to get the last n levels (4 for the above example).
+!
 !      Should label the levelset# sequentially: 1,2,3,....
 !      'eta'       - model levels (eta)
 !      'pres'      - pressure (hPa)
+!      'user_vgrid[1-9] - user defined vgrid. Record !! must be in a file
+!                         named user_vgrid[1-9] in MODEL_INPUT directory.
 !      '-1' with "eta" levels will give all model levels.
 !      [a,b,c] means level a,b and c are requested
 !      <a,b,c> means levels a to b, incrementing every c are requested
@@ -94,11 +102,28 @@
 !*
       logical :: press_L,eta_L
       character(len=5) :: stuff_S
-      integer :: i,j,k,ii,idx,levset,num,levdesc
+      integer :: i,j,k,ii,idx,levset,num,levdesc,nlev,ier,ip1,knd
+      integer :: vcode,count
       integer, dimension(size(Level_allpres)) :: ip1_stub
+      character(len=20) :: file_S
+      character(len=1), dimension(9) :: OK_list_S
+      character(len=8) :: dumc
+      logical,save :: done_L=.false.
+      
 !
 !     ---------------------------------------------------------------
-!
+      !
+      if(.not.done_L)then
+         done_L=.true.
+         do i=1,MAXLEV
+            call vgd_nullify(Level_vgrid_usr(i)%vgd)
+            Level_vgrid_usr(i)%stag_S="0"
+            Level_vgrid_usr(i)%usr_grid_L=.false.
+            Level_vgrid_usr(i)%vcode=0
+            Level_vgrid_usr(i)%class_S=""
+         end do
+      endif
+      OK_list_S = ['1','2','3','4','5','6','7','8','9']
       if (Lun_out > 0) then
           write(Lun_out,*)
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
@@ -130,7 +155,7 @@
       press_L = .false.
       eta_L   = .false.
       levdesc = -1
-
+      
       each_lev: do ii=2,F_argc
 
          if (index(F_argv_S(ii),'[') > 0) then
@@ -175,6 +200,18 @@
             levdesc = 3
             eta_L = .true.
 
+         else if ( index(F_argv_S(ii),"user_vgrid") > 0 )then
+            if ( index(F_argv_S(ii),"bot_user_vgrid") > 0) then
+               levdesc = 5
+               file_S = F_argv_S(ii)(5:15)
+            else
+               levdesc = 4
+               file_S = F_argv_S(ii)(1:11)
+            endif
+
+         else if ( index(F_argv_S(ii),"heights_agl") > 0 )then
+            levdesc = 6
+            
          else if (levdesc == 1) then
 
             Level_typ_S(j)='M'
@@ -194,40 +231,154 @@
             end if
 
          else if (levdesc == 3) then
-                  Level_typ_S(j)='M'
+            Level_typ_S(j)='M'
+            i = i+1
+            read( F_argv_S(ii), * ) Level(i,j)
+            k=nint(Level(i,j))
+            !              request for model levels close and include the surface
+            if (k > 0.and. k < Level_thermo) then
+               i=i-1
+               do idx=k,1,-1
                   i = i+1
-                  read( F_argv_S(ii), * ) Level(i,j)
-                  k=nint(Level(i,j))
-!              request for model levels close and include the surface
-                  if (k > 0.and. k < Level_thermo) then
-                     i=i-1
-                     do idx=k,1,-1
-                        i = i+1
-                        Level(i,j) = -1.0*idx + 1.0
-                     end do
-                  else
-                     if (Lun_out > 0) then
-                        write(Lun_out,*) 'SET_LEVEL WARNING: Level index out of range'
-                     end if
-
-                     i = i - 1
-                  end if
+                  Level(i,j) = -1.0*idx + 1.0
+               end do
+            else
+               if (Lun_out > 0) then
+                  write(Lun_out,*) 'SET_LEVEL WARNING: Level index out of range'
+               end if
+               
+               i = i - 1
+            end if
          else if (levdesc == 2) then
 
-                  Level_typ_S(j)='P'
-                  i = i+1
-                  read( F_argv_S(ii), * ) Level(i,j)
-                  Level_allpres(Level_npres+i) = Level(i,j)
-
-         else
-
+            Level_typ_S(j)='P'
+            i = i+1
+            read( F_argv_S(ii), * ) Level(i,j)
+            Level_allpres(Level_npres+i) = Level(i,j)
+            Level_vgrid_usr(Level_sets)%vcode=2001
+            Level_vgrid_usr(Level_sets)%class_S='P'
+            
+         else if (levdesc == 4 .or. levdesc == 5) then
+            ! Level_typ_S(j) will be 1, 2, 3 ... since possible values
+            ! for file_S are:
+            ! user_vgrid1    , user_vgrid2    , user_vgrid3     ...
+            Level_vgrid_usr(Level_sets)%class_S='P'
+            if(file_S(12:12) /= " ") then
+               if (Lun_out > 0) then
+                  write(Lun_out,*)'SET_LEVEL WARNING: user vertical ',&
+                       ' grid ',trim(file_S),' last character must be between ',&
+                       '1 and 9, got ',file_S(11:12),'. Directive skipped'
+               endif
+               Level_sets = Level_sets -1
+               set_level=1
+               return
+            endif
+            Level_typ_S(j)=file_S(11:11)
+            if(.not. any(Level_typ_S(j) == OK_list_S))then
+               if (Lun_out > 0) then
+                  write(Lun_out,*)'SET_LEVEL WARNING: user vertical ',&
+                       ' grid ',trim(file_S),' file index must be between ',&
+                       '1 and 9, got ',file_S(11:11),'. Directive skipped'
+               endif
+               Level_sets = Level_sets -1
+               set_level=1
+               return
+            endif
+            ! Note that not all Level_vgrid_usr array members will be initialized
+            !      for exmaple native model level output will not have a Level_vgrid_usr
+            if(.not. Level_vgrid_usr(Level_sets)%usr_grid_L)then
+               if( set_level_usr_vgrid(Level_vgrid_usr(Level_sets), file_S) == &
+                    set_level_ERROR )then
                   if (Lun_out > 0) then
-                     write(Lun_out,*) 'SET_LEVEL WARNING: Level type not recognizable'
+                     write(Lun_out,*)'SET_LEVEL WARNING: could not construct vgrid for vertical grid ', trim(file_S)
                   end if
                   Level_sets = Level_sets -1
                   set_level=1
                   return
-
+               endif
+            endif
+            Level_vgrid_usr(Level_sets)%stag_S=trim(Level_typ_S(j))
+            if( vgd_get(Level_vgrid_usr(Level_sets)%vgd,"VCOD",vcode) == VGD_ERROR )then
+               if (Lun_out > 0) then
+                  write(Lun_out,*)'SET_LEVEL WARNING: could not get Vcode for user vertical grid ', trim(file_S)
+               end if
+               Level_sets = Level_sets -1
+               set_level=1
+               return
+            endif
+            if( vcode /= 1002 .and. vcode /= 4001 )then
+               if (Lun_out > 0) then
+                  write(Lun_out,*)'SET_LEVEL WARNING: user vcode ',vcode, &
+                       ' is not supported. Problematic file is '//trim(file_S)
+               endif
+               Level_sets = Level_sets -1
+               set_level=1
+               return
+            endif
+            if( vgd_get(Level_vgrid_usr(Level_sets)%vgd,"NL_M",nlev) == VGD_ERROR )then
+               if (Lun_out > 0) then
+                  write(Lun_out,*)'SET_LEVEL WARNING: could not get get number of level for user vertical grid ', trim(file_S)
+               endif
+               Level_sets = Level_sets -1
+               set_level=1
+               return
+            endif
+            if(levdesc == 4)then
+               !user_vgrid*
+               i = i+1
+               read( F_argv_S(ii), * ) Level(i,j)
+               if (Level(i,j) /= -1) then
+                  if (Lun_out > 0) then
+                     write(Lun_out,*) 'SET_LEVEL WARNING: level list is not supported for ',trim(file_S),', you may want to use bot_',trim(file_S)
+                     i = i-1
+                     cycle
+                  end if
+               endif
+               i = i-1
+               do idx=1,nlev
+                  i = i+1
+                  Level(i,j) = float( idx )
+               end do
+            endif
+            if(levdesc == 5)then
+               i = i+1
+               read( F_argv_S(ii), * ) Level(i,j)
+               k=nint(Level(i,j))
+               !              request for model levels close and include the surface
+               i = i-1              
+               if (k > 0.and. k < nlev) then
+                  do idx=nlev-k+1,nlev
+                     i = i+1
+                     Level(i,j) = float( idx )
+                  end do
+               else
+                  if (Lun_out > 0) then
+                     write(Lun_out,*) 'SET_LEVEL WARNING: Level index out of range'
+                  end if                  
+               end if
+            endif
+            
+         else if(levdesc == 6)then
+            Level_typ_S(j)='H'
+            i = i+1
+            read( F_argv_S(ii), * ) Level(i,j)
+            ! Convert real level value to ip1 and back to make sure
+            ! save real level value can be obtained from ip1
+            call convip (ip1,Level(i,j),4,2,dumc,.false.)
+            call convip (ip1,Level(i,j),knd,-1,dumc,.false.)            
+            Level_allheights(Level_nheights+i) = Level(i,j)
+            Level_vgrid_usr(Level_sets)%vcode=4001
+            Level_vgrid_usr(Level_sets)%class_S='H'
+            
+         else
+            
+            if (Lun_out > 0) then
+               write(Lun_out,*) 'SET_LEVEL WARNING: Level type not recognizable'
+            end if
+            Level_sets = Level_sets -1
+            set_level=1
+            return
+            
          end if
 
       end do each_lev
@@ -262,6 +413,32 @@
       if (Level_typ_S(j) == 'P') then
          call sortlev(Level_allpres(1:Level_npres+i),ip1_stub(1:Level_npres+i), &
               Level_npres+i,Level_npres)
+         if(.not.vgd_associated(Level_vgrid_usr(Level_sets)%vgd))then
+            if(vgd_new(Level_vgrid_usr(Level_sets)%vgd,2,1,Level(1:Level_max(j),j)) == VGD_ERROR)then
+               if (Lun_out > 0) then
+                  write(Lun_out,*)'SET_LEVEL WARNING: could not construct pressure Level_id=',Level_id(j)
+               end if
+               Level_sets = Level_sets -1
+               set_level = 1
+               return
+            endif
+         endif
+      end if
+
+!     Eliminate repeated levels in the full height list
+      if (Level_typ_S(j) == 'H') then
+         call sortlev(Level_allheights(1:Level_nheights+i),ip1_stub(1:Level_nheights+i), &
+              Level_nheights+i,Level_nheights)
+         if(.not.vgd_associated(Level_vgrid_usr(Level_sets)%vgd))then
+            if(vgd_new(Level_vgrid_usr(Level_sets)%vgd,4,1,Level(1:Level_max(j),j)) == VGD_ERROR)then
+               if (Lun_out > 0) then
+                  write(Lun_out,*)'SET_LEVEL WARNING: could not construct heights_agl Level_id=',Level_id(j)
+               end if
+               Level_sets = Level_sets -1
+               set_level = 1
+               return
+            endif
+         endif
       end if
 
       if (Lun_out > 0) then

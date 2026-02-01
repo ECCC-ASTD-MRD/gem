@@ -46,7 +46,9 @@
       call gem_error ( err, 'itf_phy_nml', &
                        'Wrong physics compatibility level')
 
+      call gemtime ( Lun_out, 'PHY_NML', .false. )
       phy_code = phy_nml ( trim(Path_nml_S) )
+      call gemtime ( Lun_out, 'PHY_NML ...DONE', .false. )
 
       Ctrl_phyms_L = phy_code == PHY_OK
 

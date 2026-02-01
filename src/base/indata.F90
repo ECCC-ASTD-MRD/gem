@@ -25,7 +25,9 @@
       use gmm_vt1
       use inp_mod
       use inp_options
+      use spn_options
       use lun
+      use svro_mod
       use metric
       use step_options
       use theo_options
@@ -51,6 +53,7 @@
 
          call get_topo ()
 
+         Inp_src_GZ_L= .false. ; Inp_gtmg= (/72,71/)
          call inp_data (pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,qt1       ,&
                         zdt1,st1,trt1,fis0,orols,.false.,Step_runstrt_S,&
                         l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr )
@@ -61,12 +64,12 @@
          call gtmg_stop  ( 71 )
       end if
 
-      call gemtime ( Lun_out, 'AFTER INITIAL INPUT', .false. )
+      call gemtime ( Lun_out, 'INDATA: INITIAL INPUT', .false. )
 
       if (Schm_sleve_L) then
          call update_sls (orols,sls,l_minx,l_maxx,l_miny,l_maxy)
       endif
-     
+
       if (Grd_yinyang_L) then
          call yyg_int_xch_scal (fis0 , 1, .false., 'CUBIC', .true.)
          call yyg_int_xch_scal (orols, 1, .false., 'CUBIC', .true.)
@@ -117,17 +120,25 @@
       tdiag(:,:) = pw_tt_plus(:,:,G_nk)
       qdiag(:,:) = tracers_P(Tr3d_hu)%pntr(:,:,G_nk)
 
-      call out_outdir()
-
       call iau_apply (0)
-      
-      call nudge_read (0,Lctl_step)
 
-      if ( Ctrl_phyms_L ) call itf_phy_step (0,Lctl_step)
+      if ( Grd_yinyang_L .and. Spn_ON_L ) then
+         if (Spn_indyn_L) then
+            call nest_intt ('GY')
+            call nest_init_current ()
+         else
+            call nudge_read (0,Lctl_step)
+         endif
+      endif
+
+      if ( Ctrl_phyms_L ) then
+         call out_outdir()
+         call itf_phy_step (0,Lctl_step)
+         call gemtime ( Lun_out, 'After physics (0)', .false. )
+         call OUTs_end (.false.)
+      endif
 
       if ( Dynamics_FISL_L ) call firstguess()
-
-!      call nest_glbstat ((/'now','deb','fin'/),3)
 !
 !     ---------------------------------------------------------------
 !

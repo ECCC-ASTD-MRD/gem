@@ -17,6 +17,7 @@ module omp_timing
 
       use ISO_C_BINDING
       use, intrinsic :: iso_fortran_env
+      use timing_omp
       implicit none
 
       public
@@ -24,21 +25,23 @@ module omp_timing
       integer, parameter :: MAX_instrumented=400
       integer, parameter :: MAX_event=500
 
-      character(len=16) nam_subr_S(MAX_instrumented)
+      character(len=16) :: nam_subr_S(MAX_instrumented)
 
       logical, save :: Gem_timing_dyn_L, New_timing_dyn_L, &
                        timing_barrier_L
 
-      integer timer_cnt (MAX_instrumented), timer_level (MAX_instrumented)
+      integer :: timer_cnt (MAX_instrumented), &
+                 timer_level (MAX_instrumented), gtmg_COMM
 
-      real(kind=REAL64) tb(MAX_instrumented), sum_tb(MAX_instrumented), total_time
+      real(kind=REAL64) tb(MAX_instrumented), &
+                        sum_tb(MAX_instrumented), total_time
 
 contains
 
-      subroutine gtmg_init ( myproc, msg )
+      subroutine gtmg_init ( myproc, F_comm, msg )
       implicit none
       character(len=*), intent(in) :: msg
-      integer         , intent(in) :: myproc
+      integer         , intent(in) :: myproc, F_comm
 #include <clib_interface_mu.hf>
 
       character(len=16) timer_type_S,dumc_S
@@ -62,11 +65,10 @@ contains
       if (Gem_timing_dyn_L) then
          sum_tb= 0.; timer_cnt= 0 ; timer_level= 0 ; nam_subr_S= ''
          total_time= omp_get_wtime()
+         gtmg_COMM= F_comm
       else
          call timing_init2 ( myproc, msg )
       endif
-
-      call rpn_comm_barrier ("GRID", err)
 !
 !-------------------------------------------------------------------
 !
@@ -88,7 +90,7 @@ contains
 !$OMP BARRIER
       endif
 !$omp single
-      if (timing_barrier_L) call rpn_comm_barrier ("GRID", err)
+      if (timing_barrier_L) call MPI_barrier (gtmg_COMM, err)
       if (Gem_timing_dyn_L) then
          nam_subr_S (mynum) = myname_S
          timer_level(mynum) = mylevel
@@ -118,7 +120,7 @@ contains
 !$OMP BARRIER
       endif
 !$omp single
-      if (timing_barrier_L) call rpn_comm_barrier ("GRID", err)
+      if (timing_barrier_L) call MPI_barrier (gtmg_COMM, err)
       if (Gem_timing_dyn_L) then
          sum_tb(mynum)= sum_tb (mynum) + (omp_get_wtime() - tb (mynum))
       else if(New_timing_dyn_L) then
@@ -131,7 +133,7 @@ contains
       return
       end subroutine gtmg_stop
 
-      subroutine gtmg_terminate ( myproc, msg )
+      subroutine gtmg_terminate3( myproc, mycomm, msg )
       use ptopo
       use glb_ld
       use path
@@ -142,7 +144,7 @@ contains
       implicit none
 
       character(len=*), intent(in) :: msg
-      integer         , intent(in) :: myproc
+      integer         , intent(in) :: myproc, mycomm
 
       character(len=16) name
       character(len=64) fmt,nspace
@@ -196,12 +198,12 @@ contains
       print *,'_______________________________________________________________'
 
       else
-         call timing_terminate2 ( myproc, msg )
+         call timing_terminate3 ( myproc, mycomm, msg )
       endif
 !
 !-------------------------------------------------------------------
 !
       return
-      end subroutine gtmg_terminate
+      end subroutine gtmg_terminate3
       
 end module omp_timing

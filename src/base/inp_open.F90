@@ -37,9 +37,11 @@
 !
 !-----------------------------------------------------------------------
 !
+      Inp_datev= F_datev
+      if (Inp_src_GZ_L) return
+
       Inp_nfiles= 0 ; err_code= 0 ; i= 0
 
-      Inp_datev= F_datev
       call datp2f ( Inp_cmcdate, F_datev )
 
       if (Inp_iome >= 0) then

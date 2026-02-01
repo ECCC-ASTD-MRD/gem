@@ -43,9 +43,9 @@
       use levels
       use rstr
       use wb_itf_mod
+      use mem_iau
       use ptopo
       use omp_timing
-      use spn_options
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -57,7 +57,8 @@
       integer :: i, ipcode, ipkind, err
       real :: pcode,deg_2_rad,sec
       real(kind=REAL64) :: dayfrac
-      real(kind=REAL64), parameter :: sec_in_day = 86400.0d0
+      real(kind=REAL64), parameter :: sec_in_day = 86400.0d0,&
+                                      rsid=1.d0/sec_in_day
 !
 !-------------------------------------------------------------------
 !
@@ -74,7 +75,8 @@
       if ( (Step_nesdt <= 0) .and. (Grd_typ_S(1:1) == 'L') &
                              .and. (.not. Lam_ctebcs_L ) ) then
          if (Lun_out > 0) then
-            write(Lun_out,*) ' Fcst_nesdt_S must be specified in namelist &step'
+            write(Lun_out,*) &
+            ' Fcst_nesdt_S must be specified in namelist &step'
          end if
          return
       end if
@@ -84,6 +86,8 @@
          if (Lun_out>0) write(Lun_out,6010)
       end if
 
+      dayfrac= Step_total * Step_dt / sec_in_day
+      call incdatsd (Step_runend_S, Step_runstrt_S, dayfrac)
       dayfrac= - (Step_initial * Step_dt / sec_in_day)
       call incdatsd (datev, Step_runstrt_S, dayfrac)
       call datp2f ( Out3_date, datev )
@@ -97,7 +101,6 @@
 
       if (Grd_yinyang_L) then
          Lam_blend_H  = 0
-         Lam_ctebcs_L = .true.
          Lam_blendoro_L = .false.
       else
          Lam_blend_H = max(0,Lam_blend_H)
@@ -126,7 +129,8 @@
       if (Out3_close_interval <= 0.) Out3_close_interval_S= '1H'
       err = timestr_parse(Out3_close_interval,Out3_unit_S,Out3_close_interval_S)
       if (.not.RMN_IS_OK(err)) then
-         if (lun_out>0) write (Lun_out, *) "(gemdm_config) Invalid Out3_close_interval_S="//trim(Out3_close_interval_S)
+         if (lun_out>0) write (Lun_out, *) &
+         "(gemdm_config) Invalid Out3_close_interval_S="//trim(Out3_close_interval_S)
          return
       end if
       Out3_postproc_fact = max(0,Out3_postproc_fact)
@@ -149,7 +153,8 @@
       Dynamics_hauteur_L = Dynamics_Kernel_S(14:15) == '_H'
 
       if (Dynamics_hydro_L.and.Dynamics_hauteur_L) then
-         if(lun_out>0) write (Lun_out, '(/"   ====> Dynamics_hydro_L= .TRUE. Not allowed in GEM-H")' )
+         if(lun_out>0) write (Lun_out, &
+         '(/"   ====> Dynamics_hydro_L= .TRUE. Not allowed in GEM-H")' )
          return
       endif
 
@@ -210,7 +215,8 @@
       end if
 
       if ((Cstv_bA_8 < 0.5).or.(Cstv_bA_m_8 < 0.5).or.(Cstv_bA_nh_8 < 0.5)) then
-         if(lun_out>0) write (Lun_out, '(/"   ====> Cstv_bA_* < 0.5 not allowed")' )
+      if(lun_out>0) write (Lun_out, &
+      '(/"   ====> Cstv_bA_* < 0.5 not allowed")' )
          return
       endif
 
@@ -225,18 +231,9 @@
          end if
          return
       end if
-
-      if (Grd_yinyang_L .and. Spn_freq>0) then
-         if (Spn_yy_nudge_data_freq <0.) then
-            if (lun_out>0) write(Lun_out,9950)
-            return
-         end if
-      end if
+      dayfrac = Iau_period*rsid
+      call incdatsd (Iau_last_S, Step_runstrt_S, dayfrac)
       
-      if (Spn_relax_hours_end < 0.) then
-         Spn_relax_hours_end = Spn_relax_hours
-      end if
-
       Ctrl_testcases_L = Ctrl_canonical_dcmip_L .or. &
                          Ctrl_canonical_williamson_L
 
@@ -328,7 +325,6 @@
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9700 format (/,'ABORT: Schm_psadj not valid'/)
- 9950 format (/,'ABORT: Spn_yy_nudge_data_freq must be defined for spectral nudging with YY grid'/)
 !
 !-------------------------------------------------------------------
 !

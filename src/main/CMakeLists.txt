@@ -47,4 +47,37 @@ target_link_libraries(prgemnml
    rmn::rmn
 )
 
-install(TARGETS checkdmpart gemgrid prgemnml RUNTIME DESTINATION bin)
+add_executable(serverOUT mainserverout.F90)
+target_link_libraries(serverOUT
+  gemdyn
+  modelutils
+  modelutils_tmg_stubs
+  rmn::rmn-ompi
+  vgrid::vgrid
+  tdpack::tdpack
+  OpenMP::OpenMP_Fortran
+  OpenMP::OpenMP_C
+  MPI::MPI_Fortran
+  MPI::MPI_C
+  )
+
+add_executable(serverIN mainserverIN.F90)
+target_link_libraries(serverIN
+  gemdyn
+  modelutils
+  modelutils_tmg_stubs
+  rmn::rmn-ompi
+  vgrid::vgrid
+  tdpack::tdpack
+  OpenMP::OpenMP_Fortran
+  OpenMP::OpenMP_C
+  MPI::MPI_Fortran
+  MPI::MPI_C
+  )
+
+add_executable(check_usr_int_dic main_check_usr_int_dic.F90)
+target_link_libraries(check_usr_int_dic
+  gemdyn
+  )
+
+install(TARGETS checkdmpart gemgrid prgemnml serverOUT serverIN RUNTIME DESTINATION bin)

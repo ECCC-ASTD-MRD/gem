@@ -46,6 +46,7 @@ subroutine iau_apply (F_kount)
    use ver 
    use metric
    use path
+   use lun
    use step_options
    use var_gmm
    use VERgrid_options, only: VGRID_M_S, VGRID_T_S
@@ -112,7 +113,7 @@ subroutine iau_apply (F_kount)
    !--------------------------------------------------------------------------
 !!$   write(msg_S,'(l,i4,a,i7,a,i7)') (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.),F_kount,'; t=',nint(Cstv_dt_8*F_kount),'; p=',nint(Iau_period)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
-
+   if (Iau_indyn_L) return
    if (Iau_period<=0. .or. Iau_interval<=0.) return
 
    call gtmg_start(50, 'IAU', 1)
@@ -518,6 +519,8 @@ subroutine iau_apply (F_kount)
            trim(datev_S))
    end if
    call gtmg_stop(50)
+   call gemtime ( Lun_out, 'iau_apply', .false. )
+
    !--------------------------------------------------------------------------
    return
 end subroutine iau_apply
