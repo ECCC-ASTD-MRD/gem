@@ -21,18 +21,11 @@ create_maestro -location [mysuite_name] -cfg $gem_DIR/share/configurations/GEM_c
 For those who have uploaded GEM via the GoaS method to use your own binaries,
 scripts, etc.:
 
-You must be in your $gem_DIR/work-* directory to use the script "create_maestro"
-In your $gem_DIR/work-* directory, you will see a link for the 
-configurations to $gem_DIR/share/configurations
-
-If you are not in your $gem_DIR/work-*, you may use -exp to indicate the full path
-to your $gem_DIR/work-* 
-
 Here are 3 examples in creating maestro suites
 a) create_maestro (uses GEM_cfgs configuration)
    creates maestro suite in
    $HOME/.suites/goas/$GEM_version/${gem_DIR}/GEM_cfgs_work-*
-b) create_maestro -cfg [configurations/GEM_cfgs_GY_FISL_H] for example
+b) create_maestro -cfg configurations/GEM_cfgs_GY_FISL_H for example
    creates maestro suite in
    $HOME/.suites/goas/$GEM_version/${gem_DIR}/GEM_cfgs_GY_FISL_H_work-*
 c) create_maestro -location TATA
@@ -43,8 +36,8 @@ A link for each suite is made under ${gem_DIR}/work-*/suites/[name_of_suite]
 for each maestro suite created.
 
 Some extra notes/examples for "experiment.cfg"
-GEM_version=GOAS:[full path to GIT clone work directory]:[support_scripts]
-GEM_version=[5.3.0-a12] (for GEM version published in SSM)
+GEM_version=GOAS:[full path to GIT clone work directory]:[GEM_version]:[compiler]
+GEM_version=[5.3.0-a16] (for GEM version published in SSM)
 GEM_ovbin=[full path to GEM binaries]
 GEM_ovbin=release (to use binary in GEM version published in SSM)
 GEM_settings=[full path]/gem_settings.nml

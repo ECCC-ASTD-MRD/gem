@@ -60,7 +60,7 @@ transfer(){
    local_src=${1}
    dir_dest=${2}
    file_dest=${3}
-   ext=${4}
+   ext=$(echo $local_src | sed 's|/|_|g')
 
    # set error return status
    touch .abort${ext}
@@ -101,20 +101,19 @@ transfer(){
 
 # Process available files in the input directory
 domain_list=$(ls -1d ${TASK_WORK}/cfg_* || true)
-for file in ${domain_list} ; do 
-
+for file in ${domain_list} ; do
    mydomain=$(basename ${file})
    size=$(du -s -m ${TASK_WORK}/${mydomain})
    printf "\n=====>  Transfer of ${mydomain} ${size} Mbytes `date` ###########\n\n"
-
-   set +ex
-   transfer_list=$(find ${TASK_WORK}/${mydomain}/files_2_xfer/* 2> /dev/null | grep -v casc_ || true)
-   set -ex
-
+   cnt=0 ; unset list_dir xfer_fn
+   transfer_list=$(find ${TASK_WORK}/${mydomain}/files_2_xfer/* -type f 2> /dev/null | grep -v casc_ || true)
    if [[ -n ${transfer_list} ]] ; then
-      count=0
       for fn in ${transfer_list}; do
-         count=$(( count + 1 ))
+        # echo "check fst file: ${fn}"
+        # /home/jfc001/scripts/fstckcl/fst_check ${fn}
+        # if [ $? -ne 0 ] ; then
+        #           echo "before transfer: problematic fst file: ${fn}"
+        # fi
          set +ex
          # Determine the file type
          type=$(basename ${fn} | cut -c1-2)
@@ -144,13 +143,14 @@ for file in ${domain_list} ; do
                ;;
             "ZZ")
                case "$levl" in
-                  "m" | "p" | "h")
+                  "m" | "p" | "h" | [1-9])
                      nn=$(basename $fn | cut -c 3-12 | sed 's/[a-zA-Z]//' | wc -m)
                      if [ $nn -ge 10 ] ; then
                         case "$levl" in
                            "m") path_dest='model'  ;;
                            "p") path_dest='pres'   ;;
                            "h") path_dest='height' ;;
+			                [1-9]) path_dest="usr$levl" ;;
                            *) path_dest='unknown'  ;;
                         esac
                         fname_dest=$(basename $fn | cut -c 2-100)
@@ -164,37 +164,76 @@ for file in ${domain_list} ; do
                path_dest=other
                ;;
          esac
-         
-         # Transfer up to "$nthreads" files simultaneously
-         set -ex
-         ext=$(echo $fn | sed 's|/|_|g')
-         echo ${mydomain}/${path_dest}:${fname_dest} >> ${TASK_OUTPUT}/${mydomain}/List_${Sortie}
-         transfer ${fn} ${mydomain}/${path_dest} ${fname_dest} ${ext} 1> transfer_$(basename ${fn})_${mydomain}.lis 2>&1 &
-         if [[ $count -eq $nthreads ]]; then
-            date ; wait ; date
-            count=0
+         yela=$(echo $list_dir | grep $path_dest | wc -l)
+         if [ $yela -eq 0 ] ; then
+            list_dir=${list_dir}" "$path_dest
          fi
+         xfer_fn[$cnt]=$fn
+         xfer_fname_dest[$cnt]=$fname_dest
+         xfer_path_dest[$cnt]=$path_dest
+         cnt=$((cnt+1))
       done
-      date ; wait ; date
    fi
+   CASC_list=$(find ${TASK_WORK}/${mydomain}/files_2_xfer -type d 2> /dev/null | grep casc_ || true)
+   if [ -n ${CASC_list} ] ; then list_dir=${list_dir}" other" ; fi
 
-   transfer_list=$(find ${TASK_WORK}/${mydomain}/files_2_xfer -type d 2> /dev/null | grep casc_ || true)
-
-   if [ -n ${transfer_list} ] ; then
-      count=0
-      for fn in ${transfer_list}; do
+   destination=$(readlink ${TASK_OUTPUT}/${mydomain}/DEST)
+   DEST_DIR=${destination##*:} ; unset DEST_MACH
+   if [ $(echo ${destination} | cut -d ":" -f 1 | wc -w) -gt 1 ] ; then
+      DEST_MACH=${destination%%:*}
+   fi
+   for i in ${list_dir} ; do
+      cmd="mkdir -p $DEST_DIR/$i"
+      if [ -n "${DEST_MACH}" ] ; then  cmd="ssh ${DEST_MACH} $cmd" ; fi
+      $cmd
+      (cd ${TASK_OUTPUT}/${mydomain} ; /bin/rm -f $i ; ln -s ${destination}/$i $i)
+   done
+   count=0
+   for i in $(seq 0 $((${#xfer_fn[@]}-1))) ; do
+      count=$(( count + 1 ))
+      echo ${mydomain}/${xfer_path_dest[$i]}:${xfer_fname_dest[$i]} >> ${TASK_OUTPUT}/${mydomain}/List_${Sortie}
+      transfer ${xfer_fn[$i]} ${mydomain}/${xfer_path_dest[$i]} ${xfer_fname_dest[$i]} 1> transfer_$(basename ${xfer_fn[$i]} ).lis 2>&1 &
+      if [[ $count -eq $nthreads ]]; then
+         date ; wait ; date
+         count=0
+      fi
+   done
+   date ; wait ; date
+   count=0
+   if [ -n ${CASC_list} ] ; then
+      for fn in ${CASC_list}; do
          count=$(( count + 1 ))
-         ext=$(echo $fn | sed 's|/|_|g')
-         transfer ${fn} ${mydomain}/other ${fname_dest} ${ext} 1> transfer_$(basename ${fn})_${mydomain}.lis 2>&1 &
+         transfer ${fn} ${mydomain}/other 1> transfer_$(basename ${fn}).lis 2>&1 &
          if [[ $count -eq $nthreads ]]; then
             date ; wait ; date
             count=0
          fi
+         date ; wait ; date
       done
-      date ; wait ; date
    fi
 done
 
+# Force close all fst files after transfer 
+echo "force close all fst files after transfer"
+transfer_list=$(find ${TASK_WORK}/${mydomain}/files_2_xfer/* -type f 2> /dev/null | grep -v casc_ || true)
+for file in ${transfer_list} ; do
+     filetransfer=$(basename ${file})
+     if echo ${filetransfer} | grep -q "m" ; then
+	     desti=${DEST_DIR}/"model"
+     	     filename=${filetransfer#"m"}
+     else
+	     desti=${DEST_DIR}/"pres"
+     	     filename=${filetransfer#"p"}
+     fi
+#     /home/jfc001/scripts/fstckcl/fst_check ${desti}/${filename}
+#     if [ $? -ne 0 ] ; then
+#	     echo "after transfer : problematic fst file: ${desti}/${filename}"
+#     fi 
+#     echo "force transfer closing fst file: ${desti}/${filename}"
+#     /home/jfc001/scripts/fstckcl/fst_force_close ${desti}/${filename}
+done
+
+set -ex
 # Process listings upon request
 mydomain=cfg_${DOMAIN_end4}
 if [[ -L ${TASK_INPUT}/Model_npass && -h ${TASK_OUTPUT}/${mydomain}/listings ]] ; then

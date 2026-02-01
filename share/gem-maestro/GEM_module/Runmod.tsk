@@ -11,7 +11,11 @@ if [[ ${BASE_ARCH} = Linux ]] ; then
 fi
 
 # Obtain sequencer information and adjust settings file
-ptopo=$(nodeinfo -n ${SEQ_NODE} -f res | grep node\.cpu= | cut -d '=' -f 2)
+if [ "${model_ptopo}" == "NoNe" ] ; then
+   ptopo=$(nodeinfo -n ${SEQ_NODE} -f res | grep node\.cpu= | cut -d '=' -f 2)
+else
+   ptopo=${model_ptopo}
+fi
 
 # We currently do not allow over-comitting of OMP threads
 omp_nthreads=$(echo ${ptopo} | cut -d "x" -f 3)
@@ -80,7 +84,7 @@ elif [[ "$_status" == "RS" ]] ; then
    if [[ ${SEQ_XFER} != "stop" ]] ; then
       action="submit"
    fi
-   # Must use 10# to indicate decimal (leading zeros mean octal) for the value of Runmod
+   # Must use 10# to indicate decimal (leading zeros mean octal) for the value
    nbclone=$(printf "%d" $((10#${Runmod})))
    clone=$(printf "%03d" $((${nbclone}+1)))
    for file in ${domain_list} ; do
@@ -103,6 +107,7 @@ elif [[ "$_status" == "RS" ]] ; then
    model_workbase=${TASK_BASEDIR%${Runmod}}
    rm -fr ${model_workbase}${clone}
    ln -s $(realpath ${model_workbase}000) ${model_workbase}${clone}
+
 
 else
    echo "Unknown _status ${_status} retrieved"
