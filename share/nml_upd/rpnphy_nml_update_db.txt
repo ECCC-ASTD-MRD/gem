@@ -752,5 +752,25 @@ rm:  surface_cfgs/lcano_svs2
 #New:  surface_cfgs/sl_lmin_type
 #New:  surface_cfgs/svs2_crodebug
 #------
-fileVersion: 6.3.0-a17 > 6.3.0-a17
+fileVersion: 6.3.0-a16 > 6.3.0-a17
+#New:  physics_cfgs/p3_iparam
+#New:  physics_cfgs/p3_supid
+rm:  physics_cfgs/pbl_cucloud
+#New:  physics_cfgs/pbl_fnn
+#New:  physics_cfgs/pbl_supid
+#New:  physics_cfgs/sgs_gwfac
+#New:  surface_cfgs/chi_min
+#New:  surface_cfgs/lphase_change_eff_svs1
+#New:  surface_cfgs/lsfclayer_crocus_svs2
+rm:  surface_cfgs/mp_beta
+#New:  surface_cfgs/sl_afd
+#New:  surface_cfgs/sl_re2
+#New:  surface_cfgs/sl_ximax
+#New:  surface_cfgs/soilgrndhf_svs1
+#New:  surface_cfgs/svs_snowalb
+#New:  surface_cfgs/svs_snowfrac_ground
+#New:  surface_cfgs/svs_soiltext2prop
+#------
+fileVersion: 6.3.0-a17 > 6.3.0-a18
+#------
 
