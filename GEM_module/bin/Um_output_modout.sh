@@ -27,7 +27,7 @@ printf "\n    =====> `basename $0` $arguments\n"
 process_modout(){
   set -ex
   type=${1}
-  ls -1 $src/ | grep [0-9]*-[0-9]* > dir_list$$
+  ls -1 $src/ | grep '[0-9][0-9][0-9]*' > dir_list$$
   rep_search=$(head -n 1 dir_list$$)
   nrep=$(cat dir_list$$ | wc -l)
   rm dir_list$$
@@ -80,12 +80,20 @@ find -L ./ >${flist}
 cd ${here}
 
 # Loop over file types to process
-touch .thread_init
+
 for ftype in ${liste} ; do
-  printf "\n  ==> PROCESSING ${ftype} files \n\n"
-  process_modout ${ftype}
+   printf "\n  ==> PROCESSING ${ftype} files \n\n"
+   process_modout ${ftype}
 done
 date ; wait ; date
+
+cnt=$(ls -1 assemble.abort_* 2> /dev/null | wc -l)
+if [ $cnt -gt 0 ] ; then
+   set +x
+   printf "\n  ==> Something wrong with Um_reassemble.sh"
+   printf "\n  ==> Check listing in [workdir]/*/prep/assemble*\n\n"
+   exit 1
+fi
 
 for ftype in ${liste} ; do
   cnt=$(head -n 1 file_count_${ftype})

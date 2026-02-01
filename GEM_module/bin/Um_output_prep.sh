@@ -19,6 +19,9 @@ eval `cclargs_lite $0 \
 
 set ${SETMEX:-+ex}
 
+# ANDRE A ENLEVER
+set -x
+
 printf "\n    =====> `basename $0` $arguments: `date`\n"
 
 ici=`pwd`
@@ -51,6 +54,16 @@ assemble_error=${_nerr}
 flag_err=${assemble_error}
 printf "  =====> MODOUT ends: $nbfiles files treated: $assemble_error errors detected `date`\n"
 laliste=${laliste}" dm pm dp pp dh ph"
+
+# User output files
+for dir in $(find -L ${input}/${dir} -type d -name usr\*);do
+    laliste="${laliste} ${dir##*/}"
+    . r.call.dot ${TASK_BIN}/Um_output_usr.sh -src ${input} -dst ${output} -type ${dir##*/} -nthreads ${nthreads}
+    nbfiles=$((nbfiles+_nf2t))
+    assemble_error=${_nerr}
+    flag_err=${assemble_error}
+    printf "  =====> Um_output_usr.sh ends: $nbfiles files treated: $assemble_error errors detected `date`\n"
+done
 
 ##### Then we deal with other special files
 prefix=''

@@ -3,21 +3,32 @@
 #====> Obtaining the arguments:
 arguments=$*
 eval `cclargs_lite $0 \
-     -progh    ""            ""     "[Source directory                   ]"\
-     -type     ""            ""     "[dm pm dh ph dp pp file type        ]"\
-     -assemble "0"           "1"    "[Reassemble or not                  ]"\
-     -dplusp   "0"           "1"    "[Combine dynamics and physics output]"\
-     -src      "input"   "input"    "[Source directory                   ]"\
-     -dst      "output"  "output"   "[Destination directory for output   ]"\
-     -flist    ""            ""     "[List of all model output files     ]"\
+     -progh    ""            ""     "[Source directory                    ]"\
+     -type     ""            ""     "[dm pm dh ph dp pp usr[1-9] file type]"\
+     -assemble "0"           "1"    "[Reassemble or not                   ]"\
+     -dplusp   "0"           "1"    "[Combine dynamics and physics output ]"\
+     -src      "input"   "input"    "[Source directory                    ]"\
+     -dst      "output"  "output"   "[Destination directory for output    ]"\
+     -flist    ""            ""     "[List of all model output files      ]"\
   ++ $arguments`
 
 # Preliminary setup
 set -ex
-bliste=$(grep "/${type}.*_${progh}$" ${flist} | xargs)
+
+is_usr=0
+if echo ${type} | grep -q usr[1-9];then
+    # User output
+    is_usr=1
+    bliste=$(grep "/.*_${progh}$" ${flist} | xargs)
+else
+    # Regular model output
+    bliste=$(grep "/${type}.*_${progh}$" ${flist} | xargs)
+fi
 
 # Determine number of filest to process
 ienati=$(echo ${bliste} | wc -w)
+echo 'exclure (-1,[">>","^^","^>","!!"])' > e1.dir
+echo 'desire (-1,[">>","^^","^>","!!"])' > e2.dir
 
 if [ ${ienati} -gt 0 ] ; then
 
@@ -28,31 +39,42 @@ if [ ${ienati} -gt 0 ] ; then
   # Reassemble files
   if [ ${assemble} -gt 0 ] ; then
 
-    for ii in ${bliste} ; do
-      destination=${ii##*/}
-      if [ ${dplusp} -gt 0 ] ; then
-        destination=$(echo $destination | sed 's/\(^.\)\(.*\)/\2/')
-      fi
-      destination=${destination%%-*}_${destination#*_}
-      break
-    done
-    printf "    destination          : ${destination}\n"
+     abort_file=assemble.abort_$$
+     touch ${abort_file}
+     for ii in ${bliste} ; do
+        destination=${ii##*/}
+        if [ ${dplusp} -gt 0 ] ; then
+           destination=$(echo $destination | sed 's/\(^.\)\(.*\)/\2/')
+        fi
+        if [ ${is_usr} = 1 ];then
+	        destination=${type: -1}${destination}
+        fi
+        cnt=$(echo ${destination} | sed 's/-/ /g' | wc -w)
+        if [ $cnt -gt 1 ] ; then
+           destination=${destination%%-*}_${destination#*_}
+        fi
+        break
+     done
+     printf "    destination          : ${destination}\n"
 
-    fplis=" "
-    for j in ${bliste} ; do
-      fplis=${fplis}" "${src}/$j
-    done
-    bliste=${fplis}
+     fplis=" "
+     for j in ${bliste} ; do
+        fplis=${fplis}" "${src}/$j
+     done
+     bliste=${fplis}
+     
+     nfiles=$(echo ${bliste} | wc -w)
+     del=80 ; upv=1 ; cur=1
+     while [ $upv -lt $nfiles ] ; do
+        upv=$((cur+del-1))
+        upv=$((upv < nfiles ? upv : nfiles))
+        subl=$(echo ${bliste} | cut -d " " -f ${cur}-${upv})
+        editfst -s ${subl} -d ${dst}/${destination} -i e1.dir
+        editfst -s ${subl} -d ${dst}/${destination} -e -i e2.dir
+        cur=$((upv+1))
+     done
 
-    nfiles=$(echo ${bliste} | wc -w)
-    echo "editfst -s ${bliste} -d ${dst}/${destination} #input files=$nfiles"
-    editfst -s ${bliste} -d ${dst}/${destination} -i <<EOF
-exclure (-1,[">>","^^","^>","!!"])
-EOF
-    editfst -s ${bliste} -d ${dst}/${destination} -e -i <<EOF
-desire (-1,[">>","^^","^>","!!"])
-EOF
-
+     /bin/rm -f ${abort_file}
   else
 
     # No file reassembly
