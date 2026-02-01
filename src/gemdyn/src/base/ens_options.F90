@@ -24,7 +24,7 @@ module ens_options
 
    ! Internal variables
    integer, public :: nchains
-   logical, public :: spp_L
+   logical, public :: spp_L, NO_nml_L=.false.
 
    !# Switch to activate generation of Markov chains, use of SKEB
    !# and use of PTP
@@ -300,7 +300,7 @@ contains
       ens_nml= 0 ; goto 1000
  1001 if (Lun_out >= 0) write (Lun_out, 6005) trim(nml_S)
       if (.not.nml_must) then
-         ens_nml= 1
+         ens_nml= 1 ; NO_nml_L= .true.
          if (Lun_out >= 0) write (Lun_out, 6002) trim(nml_S)
       end if
       goto 1000

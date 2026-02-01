@@ -78,7 +78,8 @@
       integer process_f_callback
       external process_f_callback
       integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
-      external set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
+      external set_level,set_step,set_grid,set_usrdir,set_filt,set_xnbit,&
+           set_var,set_conv,set_comment
 
       integer p1a,p1b,istat,j
 !*
@@ -87,6 +88,7 @@
       OutGrid_sets = 0
       Level_sets = 0
       Level_npres = 0
+      Level_nheights = 0
       Timestep_sets = 0
       Outd_sets = 0
       Outp_sets = 0
@@ -105,11 +107,18 @@
       call rpn_fortran_callback('sortie'  ,set_var  ,' ',p1a,p1b)
       call rpn_fortran_callback('sortie_p',set_var  ,' ',p1a,p1b)
       call rpn_fortran_callback('sortie_c',set_var  ,' ',p1a,p1b)
+      call rpn_fortran_callback('usrdir'  ,set_usrdir,' ',p1a,p1b)
+      call rpn_fortran_callback('comment' ,set_comment,' ',p1a,p1b)
 
       istat= process_f_callback(trim(Path_outcfg_S))
 
       if (Lun_out > 0) then
-         write(Lun_out,*)' Level_allpres=',(Level_allpres(j),j=1,Level_npres)
+         if(Level_npres > 0 )then
+            write(Lun_out,*)' Level_allpres=',(Level_allpres(j),j=1,Level_npres)
+         endif
+         if(Level_nheights > 0 )then
+            write(Lun_out,*)' Level_allheights=',(Level_allheights(j),j=1,Level_nheights)
+         endif
          write(Lun_out,*)'SREQUET:Number of warnings =',istat
       end if
       srequet=istat

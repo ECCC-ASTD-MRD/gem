@@ -54,8 +54,9 @@ module mem_nest
       real, pointer, dimension (:,:,:) :: nest_weightu=> null()
       real, pointer, dimension (:,:,:) :: nest_weightv=> null()
 
-      real, pointer, dimension (:) :: nest_deb, nest_now,&
-                                      nest_fin
+      real, pointer, dimension (:) :: nest_deb=> null()
+      real, pointer, dimension (:) :: nest_fin=> null()
+      real, pointer, dimension (:) :: nest_now=> null()
 
       type(Vmetric) :: nest_metric
 end module mem_nest

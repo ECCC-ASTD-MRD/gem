@@ -35,15 +35,16 @@
 #include <rmnlib_basics.hf>
       integer, external :: gemdm_config, domain_decomp
       character(len=120) :: ofile,ofileU,ofileV,ofileR,etk,etk_ext
+      character(len=256) :: component_S
       character(len=2024) :: fn
       logical :: radians
-      integer :: unf,err
-
+      integer :: unf,unf1,unf2,unf3,unf4,unf5,unf6,err,npack
       type(fst_file)   :: file
       type(fst_record) :: rec
       logical          :: success
  
       logical, parameter :: gauss_L = .false.
+      integer :: colors(3), COMMs(3), wnum, wme, cnum, cme, un_out
       integer :: i,j,i0,j0,ip1,ip2
       integer :: Grd_ip1,Grd_ip2,Grd_ip3,ni,nj, in,jn
       real, dimension(:), allocatable, target :: xposu, yposv, xpos,ypos
@@ -295,7 +296,7 @@
       
       err = domain_decomp (1, 1, .false.)
       call set_gmm ()
-      call nest_set_mem ()
+      call nest_set_mem (G_nk)
 
       if (.not. file%open(trim(ofile)//'_core','RND+R/W')) then
           print *,'problem opening', trim(ofile//'_core')

@@ -60,7 +60,10 @@
 
       call t02t1()
 
-      call HOR_bndry_hlt ()
+      call HOR_bndry ()
+!$omp single
+      call spn_main ()
+!$omp end single
 
       call canonical_cases ("VRD")
 

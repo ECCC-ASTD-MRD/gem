@@ -23,8 +23,11 @@
       use lam_options
       use step_options
       use init_options
+      use spn_options
       use glb_ld
+      use ctrl
       use gmm_geof
+      use svri_mod
       use mem_nest
       use lun
       use rstr
@@ -37,8 +40,11 @@
 !     Beginning of the integration. This subroutine
 !     reads the data and performs initialization if required.
 !     It then initiates the forward intergration of the model.
-
+      character(len=16) :: Next_pilot_S
       logical :: rstrt_L= .false.
+      real(kind=REAL64) :: dayfrac
+      real(kind=REAL64), parameter :: one=1.0d0, &
+      sid=86400.0d0, rsid=one/sid
 !     
 !     ---------------------------------------------------------------
 !
@@ -47,6 +53,20 @@
       call final_setup ()
 
       if ( .not. Rstri_rstn_L ) then
+         if ( .not. Grd_yinyang_L .and. .not. Lam_ctebcs_L ) then
+            dayfrac = Step_nesdt*rsid
+            call incdatsd (Next_pilot_S, Step_runstrt_S, dayfrac)
+            call itf_Iserv_request (Next_pilot_S,INs_Neslist_S,&
+                                    INs_Nes_tag,INs_Nes_nrequests)
+         endif
+         if ( (Spn_indyn_L) .and. Spn_ON_L .and. (spn_freq > 0) ) then
+            call itf_Iserv_request (Step_runstrt_S,INs_Spnlist_S,&
+                                    INs_Spn_tag,INs_Spn_nrequests)
+         endif
+         if (Iau_indyn_L .and. Ctrl_iau_L) then                
+            call itf_Iserv_request (Step_runstrt_S,INs_Iaulist_S,&
+                                    INs_Iau_tag,INs_Iau_nrequests)
+         endif
          call indata()
       else
          if (Dynamics_hauteur_L) &

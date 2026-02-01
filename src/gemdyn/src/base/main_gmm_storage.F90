@@ -25,6 +25,7 @@
       use rmn_gmm
       use HORgrid_options
       use init_options
+      use spn_options
       use lun
       use metric
       use var_gmm
@@ -33,6 +34,8 @@
       use mem_tstp
       use ldnh
       use tr3d
+      use mem_nest
+      use lam_options
       implicit none
 
 #include "gmm_gem_flags.hf"
@@ -56,9 +59,9 @@
          call yyg_init()
          call yyg_initstencils()
          call yyg_rhs_initscalbc()
-      else
-         call nest_set_mem
       end if
+
+      call iau_set_mem ()
 
 !     Initialize digital filter variables modules
 !     --------------------------------------------

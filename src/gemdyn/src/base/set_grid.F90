@@ -23,6 +23,8 @@
       use out3
       use glb_pil
       use outgrid
+      use path, only : Path_ind_S
+      use fst_utils, only : fst_rpn, fst_fstprm, FST_ERROR
       implicit none
 #include <arch_specific.hf>
 
@@ -84,8 +86,12 @@
 !
 
       integer i, j, gridset,gridout(5)
-      integer niout,njout
-      character(len=8) grdtyp_S
+      integer niout,njout,ni,nj,nk,fnom,key
+      ! TODO get intelligent way to get unit no
+      integer,save :: unit = 72
+      character(len=11) grdtyp_S
+      type(fst_rpn) :: rec
+      logical, save :: done_L=.false.
 !
 !-------------------------------------------------------------------
 !
@@ -93,6 +99,15 @@
           write(Lun_out,*)
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
       end if
+      if(.not.done_L)then
+         done_L=.true.
+         do i=1,OUTGRID_MAXGRID1
+            !nullify(OutGrid_hgrid_usr(i)%tic,OutGrid_hgrid_usr(i)%tac)
+            OutGrid_hgrid_usr(i)%usr_grid_L=.false.
+            OutGrid_hgrid_usr(i)%usr_grid_index_S="M"
+         end do
+      end if
+            
       set_grid = 0
       read(F_argv_S(1),*) gridset
       OutGrid_sets = OutGrid_sets + 1
@@ -126,6 +141,8 @@
          if (F_argc > 6) then
             if (index(F_argv_S(7),'"') == 0) read(F_argv_S(7),*)gridout(5)
          end if
+      else if (index(F_argv_S(2),'user_hgrid') /= 0) then
+         grdtyp_S=trim(F_argv_S(2))
       else
          if (Lun_out > 0) then
             write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
@@ -176,6 +193,14 @@
             end if
          end if
 
+      else if (grdtyp_S(1:10) == 'user_hgrid') then
+         ! Note the is the size of the source grid, not the target grid
+         OutGrid_x0(j)=1
+         OutGrid_x1(j)=G_ni
+         OutGrid_y0(j)=1
+         OutGrid_y1(j)=G_nj
+         OutGrid_hgrid_usr(j)%usr_grid_L=.true.
+         OutGrid_hgrid_usr(j)%usr_grid_index_S=grdtyp_S(11:11)
       end if
 
       niout=OutGrid_x1(j) - OutGrid_x0(j) + 1
@@ -190,9 +215,6 @@
           return
       end if
 
-!      if (Lun_out > 0) write(Lun_out,*) ' Grid_set(',j,') : OutGrid_id=',OutGrid_id(j)
-!
 !-------------------------------------------------------------------
-!
       return
       end

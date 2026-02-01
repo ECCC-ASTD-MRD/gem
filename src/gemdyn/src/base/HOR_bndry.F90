@@ -24,8 +24,8 @@
       use gmm_pw
       use tr3d
       use spn_options
+      
       implicit none
-#include <arch_specific.hf>
 
       integer i,j,k,n
       integer jin, jj
@@ -33,21 +33,24 @@
 !     ---------------------------------------------------------------
 !
       if (Grd_yinyang_L) then
+!$omp single
          do n=1, Tr3d_ntr
             call yyg_xchng (tracers_P(n)%pntr, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
                             G_nk, .true., 'CUBIC', .false.)
          end do
+!$omp end single
       else
-         call nest_HOR_gwa ()
-         call pressure ( pw_pm_plus,pw_pt_plus,pw_p0_plus,pw_log_pm,pw_log_pt, &
-                         pw_pm_plus_8,pw_p0_plus_8, &
-                         l_minx,l_maxx,l_miny,l_maxy,l_nk,1 )
+         call nest_HOR_gwa_hlt ()
+         call pressure_hlt ( pw_pm_plus,pw_pt_plus,pw_p0_plus,pw_log_pm,pw_log_pt, &
+                             pw_pm_plus_8,pw_p0_plus_8, &
+                             l_minx,l_maxx,l_miny,l_maxy,l_nk,1 )
       endif
 
       if ( Ctrl_theoc_L ) then
       do n=1,Tr3d_ntr
          if (l_north) then
-            do k=1,G_nk
+!$omp do
+           do k=1,G_nk
                jin = l_nj-pil_n
                do j=1,pil_n
                   jj  = l_nj-pil_n+j
@@ -56,8 +59,10 @@
                   end do
                end do
             end do
+!$omp end do
          end if
          if (l_south) then
+!$omp do
             do k=1,G_nk
                jin = pil_s+1
                do j=1,pil_s
@@ -67,12 +72,10 @@
                   end do
                end do
             end do
+!$omp end do
          end if
       end do
       endif
-
-      if (Grd_yinyang_L .and. Spn_ON_L) call spn_main ()
-
 !
 !     ---------------------------------------------------------------
 !

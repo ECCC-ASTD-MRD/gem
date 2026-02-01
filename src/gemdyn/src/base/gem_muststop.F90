@@ -22,7 +22,9 @@
       use gem_options
       use init_options
       use lun
+      use svro_mod
       use out_mod
+      use out_listes
       use path
       use ptopo
       use step_options
@@ -38,7 +40,7 @@
       include "rpn_comm.inc"
 
       character(len=2048) :: filen, filen_link, append
-      logical :: flag, pe0_master_L, output_L, finalstep_L, end_of_run_L
+      logical :: flag, pe0_master_L, finalstep_L, end_of_run_L, signal_L
       integer :: err
       real(kind=REAL64) :: timeleft, hugetype
       integer, parameter :: unf = 474
@@ -97,22 +99,25 @@
       end if
 
       ! Send a signal to gem_monitor_output
-      output_L = Out_post_L .or. end_of_run_L
-      if ( output_L .and. (.not.finalstep_L) ) then
-
-         call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
-         if (pe0_master_L) then
-            err = clib_symlink ( trim(filen), trim(filen_link) )
-            write (output_unit,1001) trim(Out_laststep_S),lctl_step
+      Out_sigready_L = Out_post_L .or. end_of_run_L
+      signal_L = Out_sigready_L .and. (.not.finalstep_L)
+      
+      if ( OUTs_server_L ) then
+         call OUTs_end (signal_L)
+      else
+         if ( signal_L ) then
+            call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
+            if (pe0_master_L) then
+               err = clib_symlink ( trim(filen), trim(filen_link) )
+               write (output_unit,1001) trim(Out_laststep_S),lctl_step
+            end if
          end if
-
-      end if
+      endif
 
       gem_muststop = gem_muststop .and. .not.end_of_run_L
 
       if (gem_muststop) call wrrstrt()
 
-      call gemtime ( Lun_out, 'CURRENT TIMESTEP', .false. )
       call gtmg_stop (70)
 
  1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a, &

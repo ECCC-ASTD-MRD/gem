@@ -43,13 +43,14 @@ contains
       integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1         ,&
                          F_sfc_src, F_sfcLS_src, F_sfc_dst, F_sfcLS_dst,&
                          F_gz, F_GZ_ip1, F_dest , Minx,Maxx,Miny,Maxy  ,&
-                         F_nk, F_inttype_S, F_quiet_L )
+                         F_nk, F_inttype_S, F_quiet_L, F_type_S )
 
       implicit none
 
       character(len=*)          , intent(in) :: F_var_S,F_hgrid_S
       character(len=*), optional, intent(in) :: F_inttype_S
       logical         , optional, intent(in) :: F_quiet_L
+      character(len=1), optional,intent(in)  :: F_type_S
       integer                   , intent(in) :: Minx,Maxx,Miny,Maxy, F_nk
       integer, dimension(:)  , pointer, intent(in) :: F_ver_ip1,F_gz_ip1
       real, dimension (:,:), pointer, intent(in) :: &
@@ -58,6 +59,7 @@ contains
       real, dimension(:,:,:), pointer, intent(in ) :: F_gz
 
 !     local variables
+      character(len=1) :: typ
       character(len=12) :: inttype
       logical quiet_L
       integer nka
@@ -73,9 +75,11 @@ contains
       nullify (ip1_list, wrkr)
       quiet_L=.false.
       if (present(F_quiet_L)) quiet_L= F_quiet_L
-
+      typ= ' '
+      if (present(F_type_S)) typ= F_type_S
+      
       inp_get= inp_read_mt ( F_var_S, F_hgrid_S, wrkr, 1, &
-                             ip1_list, nka, F_quiet_L=quiet_L )
+           ip1_list, nka, F_quiet_L=quiet_L, F_type_S=typ )
 
       if (inp_get < 0) then
          if (associated(ip1_list)) deallocate (ip1_list)
@@ -111,9 +115,10 @@ contains
 !                    interpolation to F_nd Arakawa grid destinations
 
       integer function inp_read_mt ( F_var_S, F_hgrid_S, F_dest, &
-                         F_nd, F_ip1, F_nka, F_hint_S, F_quiet_L )
+               F_nd, F_ip1, F_nka, F_hint_S, F_quiet_L, F_type_S )
 
       use rmn_fst24
+      use svri_mod
 
       implicit none
 
@@ -121,15 +126,16 @@ contains
       character(len=*), dimension(*),intent(in)  :: F_hgrid_S
       character(len=*), optional,intent(in)  :: F_hint_S
       logical         , optional,intent(in)  :: F_quiet_L
+      character(len=1), optional,intent(in)  :: F_type_S
       integer                   ,intent(in ) :: F_nd
       integer                   ,intent(out) :: F_nka
       integer, dimension(:    ), pointer,intent(inout) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(inout) :: F_dest
 
       integer, external :: samegrid_gid, samegrid_rot, inp_is_real_wind
-      character(len=1) typ
+      character(len=1) typ,grd
       character(len=4) nomvar,var,dumc
-      character(len=12) lab,interp_S
+      character(len=12) lab,interp_S,req_S
       logical :: quiet_L
       integer, parameter :: nlis = 1024
 
@@ -137,8 +143,8 @@ contains
       type(fst_record) :: recs(nlis) 
       logical          :: success
       
-       integer i, k, idst, err, nz, &
-              liste_sorted(nlis),lislon,maxdim_wk2
+      integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
+              liste_sorted(nlis),lislon,maxdim_wk2,n,deb
       integer ni_dest,nj_dest
       integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1, p1
@@ -153,6 +159,8 @@ contains
 !
 !---------------------------------------------------------------------
 !
+      ! Impossible to use gtmg_start outside an omp parallel region
+!      call gtmg_start (Inp_gtmg(1), 'read_mt', Inp_gtmg(2) )
       inp_read_mt= -1
       F_nka= -1 ; local_nk= 0
       add= 0.d0 ; mult= 1.d0
@@ -161,6 +169,10 @@ contains
       nullify (F_ip1,F_dest)
       quiet_L=.false.
       if (present(F_quiet_L)) quiet_L= F_quiet_L
+      typ= ' '
+      if (present(F_type_S)) typ= F_type_S
+      call low2up (typ,dumc)
+      typ= dumc
 
       nomvar = F_var_S ; ip1= -1
       select case (F_var_S)
@@ -184,11 +196,17 @@ contains
                call convip ( ip1, surface_level,Inp_kind,1,dumc,.false. )
             endif
             if ( Inp_src_hauteur_L ) then
-               nomvar= 'GZ'
-               if (Inp_kind==21) surface_level= 0.
-               if (Inp_kind==5 ) surface_level= 1.
-               call convip ( ip1, surface_level,Inp_kind,1,dumc,.false. )
+               if (Inp_src_GZ_L) then
+                  nomvar= 'GZ'
+                  if (Inp_kind==21) surface_level= 0.
+                  if (Inp_kind==5 ) surface_level= 1.
+                  call convip ( ip1, surface_level,Inp_kind,1,dumc,.false.)
+               else
+                  nomvar= 'ME'
+                  ip1=0
+               endif
             endif
+            if ( nomvar == 'ME' ) mult= grav_8
             if ( nomvar == 'GZ' ) mult= 10.d0 * grav_8
          case ('SFCPRES')
             if (Inp_kind == 2  ) nomvar= '@NUL'
@@ -220,16 +238,59 @@ contains
 
       if ( nomvar == '@NUL' ) return
 
+      if (INs_server_L) then
+         if ((trim(F_var_S)=='OROGRAPHY' ).and.GZ3d%me_L) then
+            if (.not.associated(F_dest)) allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,1) )
+            inp_read_mt= 0
+            F_dest(:,:,1)= GZ3d%sfc(:,:,1)* grav_8
+            goto 876
+         else if ((trim(F_var_S)=='MELS' ).and.GZ3d%mels_L) then
+            if (.not.associated(F_dest)) allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,1) )
+            inp_read_mt= 0
+            F_dest(:,:,1)= GZ3d%sfc(:,:,2)* grav_8
+            goto 876
+         else
+            do n=1,INs_recv_nreqs
+               req_S=trim(nomvar)
+               if (typ/=' ') req_S=trim(nomvar)//":"//typ
+            if ((trim(SRL(n)%vname(1)) == trim(F_var_S) ) .and.&
+                (trim(SRL(n)%vname(2)) == trim(req_s)   ) .and.&
+                (SRL(n)%nk>0) ) then
+               F_nka= SRL(n)%nk
+               deb= (SRL(n)%deb - 1) * INs_dimgzH
+               allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,F_nka) )
+               allocate ( F_ip1(F_nka)) ; F_ip1= -1
+               call reshapeH ( INS_ND(deb+1:),F_dest,&
+                         l_minx,l_ni+G_halox,l_miny,l_nj+G_haloy,&
+                         l_minx,l_maxx,l_miny,l_maxy,F_nka)
+               F_ip1(1:F_nka)= INs_DIP1(SRL(n)%deb:SRL(n)%deb+F_nka-1)
+               if (lun_out>0) write(6,'(3a,i4)') ' I-svr FOUND: ',&
+                   trim(F_var_S)//'/'//trim(req_s),' at indexe: ',n
+               inp_read_mt= 0
+               goto 876
+            endif
+         end do
+         endif
+         if ((inp_read_mt<0).and.(INs_recv_nreqs>0)) then
+            if ((lun_out>0).and.(.not.quiet_L)) &
+            write(output_unit,'(7a)') ' FIELD: ',trim(F_var_S),':',&
+                        trim(nomvar),' valid: ',Inp_datev, 'NOT FOUND'
+            goto 876
+         endif
+      endif
+
       nz= -1
       maxdim_wk2 = 1
       if (Inp_iome >= 0) then
          vcode= -1
-         query = Inp_file%new_query(datev=datev,nomvar=nomvar,ip1=ip1)
+         query = Inp_file%new_query(datev=datev,nomvar=nomvar,ip1=ip1,typvar=typ)
          lislon = query%find_all(recs)
 
          if (lislon == 0) goto 999
 
-         src_gid= ezqkdef (recs(1)%ni,recs(1)%nj,recs(1)%grtyp,recs(1)%ig1,recs(1)%ig2,recs(1)%ig3,recs(1)%ig4,Inp_file%get_unit())
+         src_gid= ezqkdef (recs(1)%ni,recs(1)%nj,recs(1)%grtyp,&
+                           recs(1)%ig1,recs(1)%ig2,recs(1)%ig3,&
+                           recs(1)%ig4,Inp_file%get_unit())
 
          if ((trim(nomvar) == 'URT1').or.(trim(nomvar) == 'VRT1').or.&
              (trim(nomvar) == 'UT1' ).or.(trim(nomvar) == 'VT1' )) then
@@ -317,8 +378,9 @@ contains
 
             err = ezdefset ( dstf_gid , src_gid )
             err = ezsetopt ('INTERP_DEGREE', interp_S)
-            write(output_unit,1001) 'Interpolating: ',trim(F_var_S),trim(nomvar),', nka= ',&
-               lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
+            write(output_unit,1001) 'Interpolating: ',trim(F_var_S),&
+                            trim(nomvar)//':'//typ,', nka= ',lislon,&
+                   'valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
 
          err = -1
@@ -327,8 +389,9 @@ contains
             err = ezsint(wk4(1,(idst-1)*nz+i), wk1)
          end do
          if (err == 2) then
-            write(output_unit,1001) 'EXTRApolating: ',trim(F_var_S),trim(nomvar),', nka= ',&
-               lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
+            write(output_unit,1001) 'EXTRApolating: ',trim(F_var_S),&
+                            trim(nomvar)//':'//typ,', nka= ',lislon,&
+                   'valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
          end if
          err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
 
@@ -371,11 +434,13 @@ contains
       else
 
          inp_read_mt= -1
-         if ((Inp_iome >= 0).and.(.not.quiet_L)) write(output_unit,'(7a)') &
+         if ((Inp_iome >= 0).and.(.not.quiet_L)) &
+                       write(output_unit,'(7a)') &
             ' FIELD: ',trim(F_var_S),':',trim(nomvar),' valid: ',&
             Inp_datev, 'NOT FOUND'
 
       end if
+ 876  continue !call gtmg_stop (Inp_gtmg(1))
 
  1001 format (2a,':',2a,i3,5a)
 !
@@ -383,6 +448,273 @@ contains
 !
       return
       end function inp_read_mt
+!
+!**s/r inp_read_mt - Parallel read of variable F_var_S and horizontal
+!                    interpolation to F_nd Arakawa grid destinations
+
+      integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
+               F_nd, F_ip1, F_nka, F_datev, F_fstfile, F_hint_S, F_quiet_L, F_type_S )
+
+      use rmn_fst24
+      use svri_mod
+
+      implicit none
+
+      character(len=*)          ,intent(in)  :: F_var_S,F_datev
+      character(len=*), dimension(*),intent(in)  :: F_hgrid_S
+      character(len=*), optional,intent(in)  :: F_hint_S
+      logical         , optional,intent(in)  :: F_quiet_L
+      character(len=1), optional,intent(in)  :: F_type_S
+      integer                   ,intent(in ) :: F_nd
+      integer                   ,intent(out) :: F_nka
+      integer, dimension(:    ), pointer,intent(inout) :: F_ip1
+      real   , dimension(:,:,:), pointer,intent(inout) :: F_dest
+      type(fst_file) :: F_fstfile
+
+      integer, external :: samegrid_gid, samegrid_rot, inp_is_real_wind
+      character(len=1) typ,grd
+      character(len=4) nomvar,var,dumc
+      character(len=12) lab,interp_S,req_S
+      logical :: quiet_L
+      integer, parameter :: nlis = 1024
+
+      type(fst_query)  :: query
+      type(fst_record) :: recs(nlis) 
+      logical          :: success
+      
+      integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
+              liste_sorted(nlis),lislon,maxdim_wk2,n,deb
+      integer ni_dest,nj_dest
+      integer subid,nicore,njcore,datev
+      integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1, p1
+
+      integer, dimension(:  ), allocatable :: zlist
+      real :: surface_level
+      real   , dimension(:  ), allocatable, target :: wk1
+      real   , dimension(:,:), allocatable :: wk4
+      real   , dimension(:  ), pointer     :: posx,posy
+      real(kind=REAL64) add, mult
+      common /bcast_i / lislon,nz
+!
+!---------------------------------------------------------------------
+!
+!      call gtmg_start (Inp_gtmg(1), 'read_mt', Inp_gtmg(2) )
+      inp_read= -1
+      F_nka= -1
+      if (associated(F_ip1 )) deallocate (F_ip1 )
+      if (associated(F_dest)) deallocate (F_dest)
+      nullify (F_ip1,F_dest)
+      quiet_L=.false.
+      if (present(F_quiet_L)) quiet_L= F_quiet_L
+      typ= ' '
+      if (present(F_type_S)) typ= F_type_S
+      call low2up (typ,dumc)
+      typ= dumc
+
+      nomvar = F_var_S ; ip1= -1
+      mult= 1.d0 ; add= 0.d0 ; local_nk= 0
+
+      call datp2f ( datev, F_datev )
+  !    datev= Inp_cmcdate
+      if ( F_var_S(1:min(3,len_trim(F_var_S))) == 'TR/' ) then
+         nomvar= F_var_S(4:)
+         if (Tr3d_anydate_L) datev= -1
+      end if
+
+      if (INs_server_L) then
+         do n=1,INs_recv_nreqs
+            req_S= trim(nomvar)
+            if (typ/=' ') req_S=trim(nomvar)//":"//typ
+            if ((trim(SRL(n)%vname(2)) == trim(req_s)   ) .and.&
+                (SRL(n)%nk>0) ) then
+         !   if ((trim(SRL(n)%vname(1)) == trim(F_var_S) ) .and.&
+         !       (trim(SRL(n)%vname(2)) == trim(req_s)   ) .and.&
+         !       (SRL(n)%nk>0) ) then
+               F_nka= SRL(n)%nk
+               deb= (SRL(n)%deb - 1) * INs_dimgzH
+               allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,F_nka) )
+               allocate ( F_ip1(F_nka)) ; F_ip1= -1
+               call reshapeH ( INS_ND(deb+1:),F_dest,&
+                    l_minx,l_ni+G_halox,l_miny,l_nj+G_haloy,&
+                    l_minx,l_maxx,l_miny,l_maxy,F_nka)
+               F_ip1(1:F_nka)= INs_DIP1(SRL(n)%deb:SRL(n)%deb+F_nka-1)
+               if (lun_out>0) write(6,'(3a,i4)') ' I-svr FOUND: ',&
+                   trim(F_var_S)//'/'//trim(req_s),' at indexe: ',n
+               inp_read= 0
+               goto 876
+            endif
+         end do
+         if ((inp_read<0).and.(INs_recv_nreqs>0)) then
+            if ((lun_out>0).and.(.not.quiet_L)) &
+            write(output_unit,'(7a)') ' FIELD: ',trim(F_var_S),':',&
+                      trim(nomvar),' valid: ',F_datev, 'NOT FOUND'
+            goto 876
+         endif
+      endif
+      
+      nz= -1
+      maxdim_wk2 = 1
+      if (Inp_iome >= 0) then
+         vcode= -1
+         query = F_fstfile%new_query(datev=datev,nomvar=nomvar,ip1=ip1,typvar=typ)
+         lislon = query%find_all(recs)
+
+         if (lislon == 0) goto 999
+
+         src_gid= ezqkdef (recs(1)%ni,recs(1)%nj,recs(1)%grtyp,&
+                           recs(1)%ig1,recs(1)%ig2,recs(1)%ig3,&
+                           recs(1)%ig4,F_fstfile%get_unit())
+
+         if ((trim(nomvar) == 'URT1').or.(trim(nomvar) == 'VRT1').or.&
+             (trim(nomvar) == 'UT1' ).or.(trim(nomvar) == 'VT1' )) then
+             err= samegrid_rot (src_gid, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro)
+             if (err < 0) then
+                lislon= 0
+                goto 999
+             end if
+          end if
+          
+          call record_sort_ip1 (recs,liste_sorted,lislon)
+          
+          allocate (F_ip1(max(1,lislon)))
+          if (lislon > 1) then
+             F_ip1(1:lislon) = liste_sorted(1:lislon)
+          else
+             F_ip1(1) = recs(1)%ip1
+          end if
+
+          nz= (lislon + Inp_npes - 1) / Inp_npes
+
+          maxdim_wk2=nz*F_nd
+          mpx      = mod( Inp_iome, Inp_npes )
+          local_nk = lislon / Inp_npes
+          irest  = lislon  - local_nk * Inp_npes
+          kstart = mpx * local_nk + 1
+          if ( mpx < irest ) then
+             local_nk   = local_nk + 1
+             kstart = kstart + mpx
+          else
+             kstart = kstart + irest
+          end if
+
+          ni_dest= G_ni+2*G_halox
+          nj_dest= G_nj+2*G_haloy
+          allocate (wk4(ni_dest*nj_dest,maxdim_wk2))
+          allocate (wk1(recs(1)%ni*recs(1)%nj))
+
+          interp_S= 'CUBIC'
+          if (present(F_hint_S)) interp_S= F_hint_S
+
+          do idst= 1, F_nd      !IDST loop
+             if (local_nk > 0) then
+                if (F_hgrid_S(idst) == 'Q') then
+                   posx => geomh_lonQ
+                   posy => geomh_latQ
+                end if
+                if (F_hgrid_S(idst) == 'U') then
+                   posx => geomh_lonF
+                   posy => geomh_latQ
+                end if
+                if (F_hgrid_S(idst) == 'V') then
+                   posx => geomh_lonQ
+                   posy => geomh_latF
+                end if
+                if (F_hgrid_S(idst) == 'F') then
+                   posx => geomh_lonF
+                   posy => geomh_latF
+                end if
+
+                dstf_gid = ezgdef_fmem (ni_dest, nj_dest, 'Z', 'E', &
+                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                        posx, posy)
+
+                if ( recs(1)%grtyp == 'U' ) then
+                   nicore = G_ni-Glb_pil_w-Glb_pil_e
+                   njcore = G_nj-Glb_pil_s-Glb_pil_n
+                   if (recs(1)%ni >= nicore .and. recs(1)%nj/2 >= njcore) then
+                      subid= samegrid_gid ( &
+                      src_gid, Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,&
+                      posx(1+Glb_pil_w), posy(1+Glb_pil_s), nicore,njcore )
+                   else
+                      subid=-1
+                   end if
+                   if (subid >= 0) then
+                      interp_S = 'NEAREST'
+                      err = ezsetopt ('USE_1SUBGRID', 'YES')
+                      err = ezsetival('SUBGRIDID', subid)
+                   else
+                      err = ezsetopt ('USE_1SUBGRID', 'NO')
+                   end if
+                end if
+
+                err = ezdefset ( dstf_gid , src_gid )
+                err = ezsetopt ('INTERP_DEGREE', interp_S)
+                write(output_unit,1001) 'Interpolating: ',trim(F_var_S),&
+                                trim(nomvar)//':'//typ,', nka= ',lislon,&
+                      'valid: ',F_datev,' on ',F_hgrid_S(idst),' grid'
+             end if
+
+             do i=1,local_nk
+                success=recs(kstart+i-1)%read(data=c_loc(wk1))
+                err = ezsint(wk4(1,(idst-1)*nz+i), wk1)
+             end do
+             if (err == 2) then
+                write(output_unit,1001) 'EXTRApolating: ',trim(F_var_S),&
+                                trim(nomvar)//':'//typ,', nka= ',lislon,&
+                      'valid: ',F_datev,' on ',F_hgrid_S(idst),' grid'
+             end if
+             err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
+             
+          END DO                !IDST loop
+
+          deallocate (wk1)
+       else                     !Inp_iome >= 0
+          allocate (wk4(1,1))
+          maxdim_wk2 = 1
+       end if                   !Inp_iome >= 0
+
+ 999   call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
+                            "grid", err ) !NOTE: bcast lislon AND nz
+       F_nka= lislon
+
+       if (F_nka > 0) then
+
+          inp_read= 0
+          if (F_nka >= 1) then
+             if (Inp_iome < 0) allocate ( F_ip1(F_nka) )
+             call rpn_comm_bcast ( F_ip1, F_nka, "MPI_INTEGER", &
+                                   Inp_iobcast, "grid", err )
+          end if
+          allocate (zlist(nz)) ; zlist= -1
+          do i=1, local_nk
+             zlist(i)= i + kstart - 1
+          end do
+          allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,lislon*F_nd) );F_dest=0.
+          do idst=1, F_nd
+             k=min((idst-1)*nz+1,maxdim_wk2)
+             call glbdist_os (wk4(1,k),F_dest(l_minx,l_miny,(idst-1)*lislon+1),&
+                              l_minx,l_maxx,l_miny,l_maxy,F_nka,&
+                              G_ni+G_halox,G_nj+G_haloy,zlist,nz,mult,add)
+          end do
+          deallocate (wk4,zlist)
+
+       else
+
+          inp_read= -1
+          if ((Inp_iome >= 0).and.(.not.quiet_L)) &
+                        write(output_unit,'(7a)') &
+            ' FIELD: ',trim(F_var_S),':',trim(nomvar),' valid: ',&
+            F_datev, 'NOT FOUND'
+
+       end if
+ 876   continue
+
+ 1001  format (2a,':',2a,i3,5a)
+!
+!---------------------------------------------------------------------
+!
+      return
+      end function inp_read
 
 !**s/r inp_oro - Read orography from input dataset valid at F_datev
 
@@ -405,7 +737,7 @@ contains
 
       integer i,j,err,err_ls,nka
       integer, dimension (:), pointer :: ip1_list
-      real, dimension (:,:,:), pointer :: wrk
+      real, dimension (:,:,:), pointer :: wrk,wrk_ls
       real, dimension (:,:), pointer :: ls
       real step_current
       real(kind=REAL64) diffd
@@ -413,24 +745,35 @@ contains
 !---------------------------------------------------------------------
 !
       if (associated(F_meqr)) deallocate (F_meqr)
-      nullify (F_meqr, wrk, ip1_list)
+      nullify (F_meqr, wrk, wrk_ls, ip1_list)
       err_ls= -1
 
-      err = inp_read_mt ( 'OROGRAPHY', 'Q', wrk, 1, ip1_list, nka )
-
+      err    = inp_read_mt ( 'OROGRAPHY', 'Q', wrk   , 1, ip1_list, nka )
       if ( associated(ip1_list) ) then
          deallocate (ip1_list) ; nullify (ip1_list)
       end if
+      err_ls = inp_read_mt ( 'MELS'     , 'Q', wrk_ls, 1, ip1_list, nka )!, F_quiet_L=.true.)
+      if ( associated(ip1_list) ) then
+         deallocate (ip1_list) ; nullify (ip1_list)
+      end if 
+
+      allocate (F_meqr(l_minx:l_maxx,l_miny:l_maxy,2))
       if ( associated(wrk) ) then
-         allocate (F_meqr(l_minx:l_maxx,l_miny:l_maxy,2))
-         F_meqr(:,:,1) = wrk(:,:,1)
-         deallocate (wrk) ; nullify (wrk)
-         err_ls = inp_read_mt ( 'MELS', 'Q', wrk, 1, ip1_list, nka, F_quiet_L=.true.)
-         if ( associated(wrk) ) then
-            F_meqr(:,:,2) = wrk(:,:,1)
-            deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
-         endif
+         F_meqr(:,:,1) = wrk(:,:,1) ; F_meqr(:,:,2)= 0.
+         if (err_ls==0) F_meqr(:,:,2) = wrk_ls(:,:,1)
+      else
+         deallocate (F_meqr) ; nullify (F_meqr)
       endif
+      
+      if (associated(F_meqr)) then
+         if (associated(Inp_meqr)) then
+            deallocate (Inp_meqr) ; nullify (Inp_meqr)
+         endif
+         allocate (Inp_meqr(l_minx:l_maxx,l_miny:l_maxy,2))
+         Inp_meqr(:,:,1)= F_meqr(:,:,1)/grav_8
+         Inp_meqr(:,:,2)= F_meqr(:,:,2)
+      endif
+      
       if ( trim(F_datev) == trim(Step_runstrt_S) ) then
          if ( associated(F_meqr) ) then
             topo_low(:,:,1) = F_meqr(:,:,1)
@@ -459,6 +802,8 @@ contains
             call mc2_topols (ls,F_meqr,&
                    l_minx,l_maxx,l_miny,l_maxy,Schm_orols_np)
          endif
+
+         if (.not.associated(nest_now)) call nest_set_mem (G_nk)
          do j= 1-G_haloy, l_nj+G_haloy
             do i= 1-G_halox, l_ni+G_halox
                F_topo(i,j)= F_topo(i,j)*(1.-nest_weightm(i,j,G_nk+1)) +&
@@ -470,7 +815,14 @@ contains
          deallocate (ls) ; nullify (ls)
       end if
       end if
-!
+      
+      if ( associated(wrk) ) then
+         deallocate (wrk) ; nullify (wrk)
+      endif
+      if ( associated(wrk_ls) ) then
+         deallocate (wrk_ls) ; nullify (wrk_ls)
+      endif
+!     
 !---------------------------------------------------------------------
 !
       return
@@ -503,7 +855,7 @@ contains
       call gem_error ( minval(err(:)),'inp_tv','MISSING DATA')
 
       allocate (F_tv(l_minx:l_maxx,l_miny:l_maxy,F_nka_tt))
-      F_tv=F_tt
+      F_tv= F_tt
 
       do kt=1, F_nka_tt
          inner:      do kh=1, F_nka_hu
@@ -523,14 +875,17 @@ contains
 
 !**s/r inp_src_surface - Read surface information from input dataset
 
-      subroutine inp_src_surface ( F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv,F_topo,F_nka )
+      subroutine inp_src_surface ( F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv,&
+                                   F_topo,F_nka,F_type_S )
       use dynkernel_options
       implicit none
 
       integer, intent(in) :: F_nka
       real   , dimension (:,:), pointer, intent(inout) :: F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv
       real   , dimension (*  ),          intent(in   ) :: F_topo
+      character(len=1), optional,intent(in) :: F_type_S
 
+      character(len=1) :: typ
       integer err,err2,i,j,k,nk,kind
       integer, dimension (:    ), pointer     :: ip1_list
       real   , dimension (:,:,:), pointer     :: wrk
@@ -546,15 +901,16 @@ contains
       if (associated(F_LSsu)) deallocate (F_LSsu)
       if (associated(F_LSsv)) deallocate (F_LSsv)
       nullify (F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv,ip1_list,wrk)
-
+      typ= ' '
+      if (present(F_type_S)) typ= F_type_S
+      
       if (Inp_dst_hauteur_L.and..not.Schm_autobar_L) then
 
          err = -1
          nullify (wrk,ip1_list)
 
          err = inp_read_mt ( 'SFCPRES', 'Q', wrk, 1,&
-                                ip1_list, nk )
-
+                              ip1_list, nk, F_type_S=typ )
          if (associated(wrk)) then
             allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy) )
             F_sq(:,:) = wrk(:,:,1)
@@ -570,7 +926,7 @@ contains
       grid_S=['Q','U','V']
 
       err = inp_read_mt ( 'SFCPRES', grid_S, wrk, 3,&
-                           ip1_list, nk)
+                           ip1_list, nk, F_type_S=typ)
       if (associated(wrk)) then
          allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy),&
                     F_su(l_minx:l_maxx,l_miny:l_maxy),&
@@ -772,16 +1128,17 @@ contains
 !                    and perform vectorial horizontal interpolation
 !                    on proper Arakawa grid u and v respectively
 
-      subroutine inp_read_uv ( F_u, F_v, F_target_S, F_ip1, F_nka )
+      subroutine inp_read_uv ( F_u, F_v, F_target_S, F_ip1, F_nka, F_datev, F_fstfile )
       use rmn_fst24
 
       implicit none
 
-      character(len=*)                  , intent(in)  :: F_target_S
+      character(len=*)                  , intent(in)  :: F_target_S,F_datev
       integer                           , intent(out) :: F_nka
       integer, dimension(:    ), pointer, intent(inout) :: F_ip1
       real   , dimension(:,:,:), pointer, intent(inout) :: F_u, F_v
-
+      type(fst_file) :: F_fstfile
+      
 !     local variables
       character(len=1) typ
       character(len=4) var
@@ -790,7 +1147,7 @@ contains
       integer liste_sorted(nlis),lislon
       integer i,err, nz, same_rot, ni_dest, nj_dest
       integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode
-      integer dstu_gid,dstv_gid,erru,errv
+      integer dstu_gid,dstv_gid,erru,errv,cmcdate
       integer, dimension(:  ), allocatable :: zlist
       real(kind = real32), dimension(:,:), allocatable :: uhr,vhr
       real(kind = real32), dimension(:  ), allocatable, target :: uv,u,v
@@ -809,19 +1166,20 @@ contains
       if (associated(F_u  )) deallocate (F_u  )
       if (associated(F_v  )) deallocate (F_v  )
       nullify (F_ip1, F_u, F_v)
+      call datp2f ( cmcdate, F_datev )
 
       if (Inp_iome >= 0) then
          vcode= -1 ; nz= -1 ; same_rot= -1
 
-         query_u = Inp_file%new_query(datev=Inp_cmcdate,nomvar='UU  ')
+         query_u = F_fstfile%new_query(datev=cmcdate,nomvar='UU  ')
          lislon = query_u%find_all(recs_u)
 
-         query_v = Inp_file%new_query(datev=Inp_cmcdate,nomvar='VV  ')
+         query_v = F_fstfile%new_query(datev=cmcdate,nomvar='VV  ')
          lislon = query_v%find_all(recs_v)
 
          if (lislon == 0) goto 999
 
-         src_gid = ezqkdef (recs_u(1)%ni,recs_u(1)%nj,recs_u(1)%grtyp,recs_u(1)%ig1,recs_u(1)%ig2,recs_u(1)%ig3,recs_u(1)%ig4,Inp_file%get_unit())
+         src_gid = ezqkdef (recs_u(1)%ni,recs_u(1)%nj,recs_u(1)%grtyp,recs_u(1)%ig1,recs_u(1)%ig2,recs_u(1)%ig3,recs_u(1)%ig4,F_fstfile%get_unit())
 
          i= lislon
          call record_sort_ip1 (recs_u,liste_sorted,i)
@@ -866,12 +1224,12 @@ contains
                posyv => geomh_latF
 
                write(output_unit,1001) 'Interpolating: UU, nka= ',&
-                             lislon,', valid: ',Inp_datev,' on U grid'
+                             lislon,', valid: ',F_datev,' on U grid'
                dstu_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxu, posyu )
                write(output_unit,1001) 'Interpolating: VV, nka= ',&
-                             lislon,', valid: ',Inp_datev,' on V grid'
+                             lislon,', valid: ',F_datev,' on V grid'
                dstv_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxv, posyv )
@@ -886,10 +1244,10 @@ contains
                end do
                if (erru == 2) &
                       write(output_unit,1002) 'EXTRApolating: UU, nka= ',&
-                             lislon,', valid: ',Inp_datev,' on U grid'
+                             lislon,', valid: ',F_datev,' on U grid'
                if (errv == 2) &
                       write(output_unit,1002) 'EXTRApolating: VV, nka= ',&
-                             lislon,', valid: ',Inp_datev,' on V grid'
+                             lislon,', valid: ',F_datev,' on V grid'
 
             else !Q
 
@@ -897,7 +1255,7 @@ contains
                posyu => geomh_latQ
 
                write(output_unit,1001) 'Interpolating: UV, nka= ',&
-                              lislon,', valid: ',Inp_datev,' on Q grid'
+                              lislon,', valid: ',F_datev,' on Q grid'
                dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
                        Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                                       posxu, posyu )
@@ -910,7 +1268,7 @@ contains
                end do
                if (err == 2) &
                  write(output_unit,1002) 'EXTRApolating: UV, nka= ',&
-                             lislon,', valid: ',Inp_datev,' on Q grid'
+                             lislon,', valid: ',F_datev,' on Q grid'
 
             end if
 
@@ -952,7 +1310,7 @@ contains
       else
 
          if (Inp_iome >= 0) write(output_unit,'(3a)') &
-                  'Variable: UU,VV valid: ',Inp_datev, 'NOT FOUND'
+                  'Variable: UU,VV valid: ',F_datev, 'NOT FOUND'
          call gem_error ( -1, 'inp_read_uv', &
                   'Missing input data: horizontal winds')
 
@@ -1001,7 +1359,7 @@ contains
          else
            istat= vgd_levels (F_vgd,F_ip1(k0:kn),ptr3d, pres, &
                                in_log=inlog)
-         end if
+      end if
 
       else
 
@@ -1053,14 +1411,20 @@ contains
 !---------------------------------------------------------------------
 !
       F_nk= ubound(F_ip1,1)
+
       if (Inp_src_hauteur_L.and..not.Schm_autobar_L) then
-         istat= inp_match (F_dest, F_gz, F_ip1, F_gz_ip1, &
-                       Minx,Maxx,Miny,Maxy,F_nk, ubound(F_gz_ip1,1))
+         if (Inp_src_GZ_L) then
+            istat= inp_match (F_dest, F_gz, F_ip1, F_gz_ip1, &
+                 Minx,Maxx,Miny,Maxy,F_nk, ubound(F_gz_ip1,1))
+         else
+            istat= vgd_levels ( F_vgd, F_ip1, F_dest, &
+            sfc_field=Inp_meqr(:,:,1), sfc_field_ls=Inp_meqr(:,:,2))
+         endif
       else
-         call inp_3dpres ( F_vgd,  F_ip1,  F_sfc,  F_sfcL, F_dest, &
-                           1, F_nk, F_inlog_S='in_log' )
+         call inp_3dpres ( F_vgd,  F_ip1,  F_sfc,  F_sfcL, &
+                       F_dest, 1, F_nk, F_inlog_S='in_log' )
       endif
-!
+!     
 !---------------------------------------------------------------------
 !
       return
@@ -1224,6 +1588,7 @@ contains
                       F_ssq0,F_ssu0,F_ssv0, F_ssq0LS,F_ssu0LS,F_ssv0LS,&
                             F_gz_q, F_gz_u, F_gz_v, F_GZ_ip1          ,&
                             Minx,Maxx,Miny,Maxy, F_nk )
+      use svri_mod
       implicit none
 
       logical                , intent(in)  :: F_stag_L
@@ -1237,21 +1602,65 @@ contains
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out) :: F_u, F_v
 
 !     local variables
-      integer nka
+      logical :: urt1_L
+      integer nka,dim,deb,err,n
       integer, contiguous, dimension (:    ), pointer :: ip1_list, ip1_target
       real   , contiguous, dimension (:,:,:), pointer :: srclev,dstlev
       real   , contiguous, dimension (:,:,:), pointer :: ur,vr
 !
 !---------------------------------------------------------------------
 !
+      urt1_L= .false. ; err = -1
+      if (INs_server_L) then
+      !   call gtmg_start (Inp_gtmg(1)+1, 'read_hwnd', Inp_gtmg(2) )
+         do n=1,INs_recv_nreqs
+            if ((trim(SRL(n)%vname(2)) == 'UVRT1' ) .or. &
+                (trim(SRL(n)%vname(2)) == 'UV'    ) .and.&
+                (SRL(n)%nk>0) ) then
+               nka= SRL(n)%nk/2
+               deb= (SRL(n)%deb - 1) * INs_dimgzH + 1
+               dim= INs_dimgzH*nka
+               allocate ( ur(l_minx:l_maxx,l_miny:l_maxy,SRL(n)%nk),&
+                          vr(l_minx:l_maxx,l_miny:l_maxy,SRL(n)%nk) )
+               allocate ( ip1_list(nka) ) ; ip1_list= -1
+               call reshapeH ( INS_ND(deb:),ur,&
+                         l_minx,l_ni+G_halox,l_miny,l_nj+G_haloy,&
+                         l_minx,l_maxx,l_miny,l_maxy,nka)
+               call reshapeH ( INS_ND(deb+dim:),vr,&
+                         l_minx,l_ni+G_halox,l_miny,l_nj+G_haloy,&
+                         l_minx,l_maxx,l_miny,l_maxy,nka)
+               ip1_list(1:nka)= INs_DIP1(SRL(n)%deb:SRL(n)%deb+nka-1)
+               urt1_L= .true.
+               if (lun_out>0) write(6,'(a,a15,a,i4)') &
+               ' I-svr FOUND: ','UV',' at indexe: ',n
+            endif
+         end do
+       !  call gtmg_stop (Inp_gtmg(1)+1)
+      endif
+
+      if (urt1_L) goto 988
+
+      if (F_stag_L) then
+         err = inp_get ( 'URT1', 'U', Ver_ip1%m, &
+                   F_ssur, F_ssqrLS, F_ssu0, F_ssu0LS,F_gz_u,F_GZ_ip1,F_u,&
+                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+         if ( err == 0 ) then
+            err = inp_get ( 'VRT1', 'V', Ver_ip1%m, &
+                   F_ssvr, F_ssqrLS, F_ssv0, F_ssv0LS,F_gz_v,F_GZ_ip1,F_v,&
+                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+         end if
+         urt1_L= ( err == 0 )
+      end if
+      if (urt1_L) return
+
       nullify (ip1_list, ur, vr)
       if (F_stag_L) then
-         call inp_read_uv ( ur, vr, 'UV' , ip1_list, nka )
+         call inp_read_uv ( ur, vr, 'UV' , ip1_list, nka, Inp_datev, Inp_file )
       else
-         call inp_read_uv ( ur, vr, 'Q ' , ip1_list, nka )
+         call inp_read_uv ( ur, vr, 'Q ' , ip1_list, nka, Inp_datev, Inp_file )
       end if
 
-      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
+988   allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
       allocate (ip1_target(1:G_nk))
       ip1_target(1:G_nk)= Ver_ip1%m(1:G_nk)
@@ -1339,7 +1748,9 @@ contains
       if (associated(F_3dv%valq)) deallocate (F_3dv%valq)
       if (associated(F_3dv%valu)) deallocate (F_3dv%valu)
       if (associated(F_3dv%valv)) deallocate (F_3dv%valv)
-      nullify (F_3dv%valq,F_3dv%valu,F_3dv%valv,val)
+      if (associated(F_3dv%ip1 )) deallocate (F_3dv%ip1 )
+      
+      nullify (F_3dv%valq,F_3dv%valu,F_3dv%valv,F_3dv%ip1,val)
       inp_src_vert3d = .false.
       grid_S=['Q','U','V']
 
@@ -1348,18 +1759,10 @@ contains
       inp_src_vert3d= ((err_mt == 0) .and. (lislon>1))
 
       if (inp_src_vert3d) then
-!!$do k=1,lislon
-!!$         call convip (F_3dv%ip1(k), level, &
-!!$                      F_3dv%kind, -1,dumc,.false. )
-!!$print*, k,F_3dv%ip1(k), level,F_3dv%kind
-!!$                   end do
-!!$call gem_error(-1,'','')
          F_3dv%nk= lislon
          call convip (F_3dv%ip1(F_3dv%nk), level, &
                       F_3dv%kind, -1,dumc,.false. )
          if (Lun_out > 0) write(lun_out,9000) F_3dv%nk,F_var_S,F_3dv%kind
- 9000 format(x,i3,' levels of ',a,' provided in input file with kind=',i5)
-
 !!$         limit_near_sfc= abs(level-1.)
 !!$         if (F_3dv%kind==21) limit_near_sfc=level  
 !!$         if (F_3dv%kind==2 ) limit_near_sfc=0.
@@ -1373,12 +1776,11 @@ contains
             F_3dv%valq(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk)= val(l_minx:l_maxx,l_miny:l_maxy,           1:  F_3dv%nk)
             F_3dv%valu(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk)= val(l_minx:l_maxx,l_miny:l_maxy,  F_3dv%nk+1:2*F_3dv%nk)
             F_3dv%valv(l_minx:l_maxx,l_miny:l_maxy,1:F_3dv%nk)= val(l_minx:l_maxx,l_miny:l_maxy,2*F_3dv%nk+1:3*F_3dv%nk)
-!         endif
-!         deallocate (val)
       endif
       if (associated(val)) deallocate (val)
       nullify (val)
-!      call gem_error ( err,'inp_src_vert3d', message_S)
+
+ 9000 format(1x,i3,' levels of ',a,' provided in input file with kind=',i5)
 !
 !---------------------------------------------------------------------
 !

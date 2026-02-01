@@ -1,0 +1,306 @@
+!**s/r inp_read_mt - Parallel read of variable F_var_S and horizontal
+!                    interpolation to F_nd Arakawa grid destinations
+
+      integer function inp_read_mt ( F_var_S, F_hgrid_S, F_dest, &
+                         F_nd, F_ip1, F_nka, F_hint_S, F_quiet_L )
+
+      use rmn_fst24
+      use svri_mod
+
+      implicit none
+
+      character(len=*)          ,intent(in)  :: F_var_S
+      character(len=*), dimension(*),intent(in)  :: F_hgrid_S
+      character(len=*), optional,intent(in)  :: F_hint_S
+      logical         , optional,intent(in)  :: F_quiet_L
+      integer                   ,intent(in ) :: F_nd
+      integer                   ,intent(out) :: F_nka
+      integer, dimension(:    ), pointer,intent(inout) :: F_ip1
+      real   , dimension(:,:,:), pointer,intent(inout) :: F_dest
+
+      integer, external :: samegrid_gid, samegrid_rot, inp_is_real_wind
+      character(len=1) typ,grd
+      character(len=4) nomvar,var,dumc
+      character(len=12) lab,interp_S
+      logical :: quiet_L
+      integer, parameter :: nlis = 1024
+
+      type(fst_query)  :: query
+      type(fst_record) :: recs(nlis) 
+      logical          :: success
+      
+      integer i, k, idst, err, nz, n1,n2,n3, nrec, liste(nlis),&
+              liste_sorted(nlis),lislon,maxdim_wk2,n,deb
+      integer ni_dest,nj_dest
+      integer subid,nicore,njcore,datev
+      integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1, p1
+
+      integer, dimension(:  ), allocatable :: zlist
+      real :: surface_level
+      real   , dimension(:  ), allocatable, target :: wk1
+      real   , dimension(:,:), allocatable :: wk4
+      real   , dimension(:  ), pointer     :: posx,posy
+      real(kind=REAL64) add, mult
+      common /bcast_i / lislon,nz
+!
+!---------------------------------------------------------------------
+!
+!      call gtmg_start (Inp_gtmg(1), 'read_mt', Inp_gtmg(2) )
+      inp_read_mt= -1
+      F_nka= -1 ; local_nk= 0
+      add= 0.d0 ; mult= 1.d0
+      if (associated(F_ip1 )) deallocate (F_ip1 )
+      if (associated(F_dest)) deallocate (F_dest)
+      nullify (F_ip1,F_dest)
+      quiet_L=.false.
+      if (present(F_quiet_L)) quiet_L= F_quiet_L
+
+      nomvar = F_var_S ; ip1= -1
+      select case (F_var_S)
+         case ('OROGRAPHY')
+            if (Inp_kind == 2  ) then
+               nomvar= '@NUL'
+               if (Inp_src_PX_L) then
+                  nomvar= 'GZ' ; surface_level= 1. ; p1=5
+                  call convip ( ip1, surface_level,p1,1,dumc,.false. )
+               endif
+            endif
+            if (Inp_kind == 1 ) then
+               nomvar= 'GZ' ; ip1= 12000
+               if (Inp_src_PX_L) then
+                  nomvar= 'GZ' ; surface_level= 1. ; p1=5
+                  call convip ( ip1, surface_level,p1,1,dumc,.false. )
+               endif
+            endif
+            if (Inp_kind == 5 ) then
+               nomvar= 'GZ' ; surface_level= 1.
+               call convip ( ip1, surface_level,Inp_kind,1,dumc,.false. )
+            endif
+            if ( Inp_src_hauteur_L ) then
+               nomvar= 'GZ'
+               if (Inp_kind==21) surface_level= 0.
+               if (Inp_kind==5 ) surface_level= 1.
+               call convip ( ip1, surface_level,Inp_kind,1,dumc,.false. )
+            endif
+            if ( nomvar == 'GZ' ) mult= 10.d0 * grav_8
+         case ('SFCPRES')
+            if (Inp_kind == 2  ) nomvar= '@NUL'
+            if (Inp_kind == 1  ) nomvar= 'P0'
+            if (Inp_kind == 5  ) nomvar= 'P0'
+            if (Inp_src_hauteur_L ) nomvar= 'P0'
+            if ( nomvar == 'P0' ) mult= 100.d0
+         case ('TEMPERATURE')
+            if (Inp_kind == 2  ) nomvar= 'TT'
+            if (Inp_kind == 1  ) nomvar= 'TT'
+            if (Inp_kind == 5  ) nomvar= 'TT'
+            if (Inp_src_hauteur_L ) nomvar= 'TT'
+            if ( nomvar == 'TT' ) add= tcdk_8
+         case ('GEOPOTENTIAL')
+            nomvar= 'GZ' ; mult= 10.d0
+         case ('PX')
+            mult= 100.d0
+         case ('UU')
+            mult= knams_8
+         case ('VV')
+            mult= knams_8
+      end select
+
+      datev= Inp_cmcdate
+      if ( F_var_S(1:min(3,len_trim(F_var_S))) == 'TR/' ) then
+         nomvar= F_var_S(4:)
+         if (Tr3d_anydate_L) datev= -1
+      end if
+
+      if ( nomvar == '@NUL' ) return
+
+      if (INs_server_L) then
+         do n=1,INs_recv_nreqs
+            if ((trim(SRL(n)%vname(1)) == trim(F_var_S) ) .and.&
+                (trim(SRL(n)%vname(2)) == trim(nomvar ) ) .and.&
+                (SRL(n)%nk>0) ) then
+               F_nka= SRL(n)%nk
+               deb= (SRL(n)%deb - 1) * INs_dimgzH
+               allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,F_nka) )
+               allocate ( F_ip1(F_nka)) ; F_ip1= -1
+               call reshapeH ( INS_ND(deb+1:),F_dest,&
+                         l_minx,l_ni+G_halox,l_miny,l_nj+G_haloy,&
+                         l_minx,l_maxx,l_miny,l_maxy,F_nka)
+               F_ip1(1:F_nka)= INs_DIP1(SRL(n)%deb:SRL(n)%deb+F_nka-1)
+               if (lun_out>0) write(6,'(a,a15,a,i4)') &
+                      ' I-svr FOUND: ',trim(F_var_S),' at indexe: ',n
+               inp_read_mt= 0
+               goto 876
+            endif
+         end do
+         if ((inp_read_mt<0).and.(INs_recv_nreqs>0)) then
+            if ((lun_out>0).and.(.not.quiet_L)) &
+            write(output_unit,'(7a)') ' FIELD: ',trim(F_var_S),':',&
+                        trim(nomvar),' valid: ',Inp_datev, 'NOT FOUND'
+            goto 876
+         endif
+      endif
+
+
+      nz= -1
+      maxdim_wk2 = 1
+      if (Inp_iome >= 0) then
+         vcode= -1
+         query = Inp_file%new_query(datev=datev,nomvar=nomvar,ip1=ip1)
+         lislon = query%find_all(recs)
+
+         if (lislon == 0) goto 999
+
+         src_gid= ezqkdef (recs(1)%ni,recs(1)%nj,recs(1)%grtyp,recs(1)%ig1,recs(1)%ig2,recs(1)%ig3,recs(1)%ig4,Inp_file%get_unit())
+
+         if ((trim(nomvar) == 'URT1').or.(trim(nomvar) == 'VRT1').or.&
+             (trim(nomvar) == 'UT1' ).or.(trim(nomvar) == 'VT1' )) then
+             err= samegrid_rot (src_gid, Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro)
+             if (err < 0) then
+                lislon= 0
+                goto 999
+             end if
+         end if
+
+         call record_sort_ip1 (recs,liste_sorted,lislon)
+
+         allocate (F_ip1(max(1,lislon)))
+         if (lislon > 1) then
+            F_ip1(1:lislon) = liste_sorted(1:lislon)
+         else
+            F_ip1(1) = recs(1)%ip1
+         end if
+
+         nz= (lislon + Inp_npes - 1) / Inp_npes
+!        lislon should be >0 here so, nz  >=1
+
+         maxdim_wk2=nz*F_nd
+         mpx      = mod( Inp_iome, Inp_npes )
+         local_nk = lislon / Inp_npes
+         irest  = lislon  - local_nk * Inp_npes
+         kstart = mpx * local_nk + 1
+         if ( mpx < irest ) then
+            local_nk   = local_nk + 1
+            kstart = kstart + mpx
+         else
+            kstart = kstart + irest
+         end if
+
+         ni_dest= G_ni+2*G_halox
+         nj_dest= G_nj+2*G_haloy
+         allocate (wk4(ni_dest*nj_dest,maxdim_wk2))
+         allocate (wk1(recs(1)%ni*recs(1)%nj))
+
+         interp_S= 'CUBIC'
+         if (present(F_hint_S)) interp_S= F_hint_S
+
+         do idst= 1, F_nd !IDST loop
+         if (local_nk > 0) then
+
+            if (F_hgrid_S(idst) == 'Q') then
+               posx => geomh_lonQ
+               posy => geomh_latQ
+            end if
+            if (F_hgrid_S(idst) == 'U') then
+               posx => geomh_lonF
+               posy => geomh_latQ
+            end if
+            if (F_hgrid_S(idst) == 'V') then
+               posx => geomh_lonQ
+               posy => geomh_latF
+            end if
+            if (F_hgrid_S(idst) == 'F') then
+               posx => geomh_lonF
+               posy => geomh_latF
+            end if
+
+            dstf_gid = ezgdef_fmem (ni_dest, nj_dest, 'Z', 'E', &
+                    Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                    posx, posy)
+
+            if ( recs(1)%grtyp == 'U' ) then
+              nicore = G_ni-Glb_pil_w-Glb_pil_e
+              njcore = G_nj-Glb_pil_s-Glb_pil_n
+              if (recs(1)%ni >= nicore .and. recs(1)%nj/2 >= njcore) then
+                 subid= samegrid_gid ( &
+                    src_gid, Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,&
+                    posx(1+Glb_pil_w), posy(1+Glb_pil_s), nicore,njcore )
+              else
+                 subid=-1
+              end if
+              if (subid >= 0) then
+                 interp_S = 'NEAREST'
+                 err = ezsetopt ('USE_1SUBGRID', 'YES')
+                 err = ezsetival('SUBGRIDID', subid)
+              else
+                 err = ezsetopt ('USE_1SUBGRID', 'NO')
+              end if
+            end if
+
+            err = ezdefset ( dstf_gid , src_gid )
+            err = ezsetopt ('INTERP_DEGREE', interp_S)
+            write(output_unit,1001) 'Interpolating: ',trim(F_var_S),trim(nomvar),', nka= ',&
+               lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
+         end if
+
+         do i=1,local_nk
+            success=recs(kstart+i-1)%read(data=c_loc(wk1))
+            err = ezsint(wk4(1,(idst-1)*nz+i), wk1)
+         end do
+         if (err == 2) then
+            write(output_unit,1001) 'EXTRApolating: ',trim(F_var_S),trim(nomvar),', nka= ',&
+               lislon,',valid: ',Inp_datev,' on ',F_hgrid_S(idst),' grid'
+         end if
+         err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
+
+         END DO !IDST loop
+
+         deallocate (wk1)
+      else !Inp_iome >= 0
+         allocate (wk4(1,1))
+         maxdim_wk2 = 1
+      end if !Inp_iome >= 0
+
+ 999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
+                            "grid", err ) !NOTE: bcast lislon AND nz
+      F_nka= lislon
+
+      if (F_nka > 0) then
+
+         inp_read_mt= 0
+         if (F_nka >= 1) then
+            if (Inp_iome < 0) allocate ( F_ip1(F_nka) )
+            call rpn_comm_bcast ( F_ip1, F_nka, "MPI_INTEGER", &
+                                  Inp_iobcast, "grid", err )
+         end if
+
+         allocate (zlist(nz)) ; zlist= -1
+         do i=1, local_nk
+            zlist(i)= i + kstart - 1
+         end do
+
+         allocate ( F_dest(l_minx:l_maxx,l_miny:l_maxy,lislon*F_nd) );F_dest=0.
+
+         do idst=1, F_nd
+            k=min((idst-1)*nz+1,maxdim_wk2)
+            call glbdist_os (wk4(1,k),F_dest(l_minx,l_miny,(idst-1)*lislon+1),&
+                             l_minx,l_maxx,l_miny,l_maxy,F_nka,&
+                             G_ni+G_halox,G_nj+G_haloy,zlist,nz,mult,add)
+         end do
+         deallocate (wk4,zlist)
+
+      else
+
+         inp_read_mt= -1
+         if ((Inp_iome >= 0).and.(.not.quiet_L)) write(output_unit,'(7a)') &
+            ' FIELD: ',trim(F_var_S),':',trim(nomvar),' valid: ',&
+            Inp_datev, 'NOT FOUND'
+
+      end if
+ 876  continue !call gtmg_stop (Inp_gtmg(1))
+
+ 1001 format (2a,':',2a,i3,5a)
+!
+!---------------------------------------------------------------------
+!
+      return
+      end function inp_read_mt

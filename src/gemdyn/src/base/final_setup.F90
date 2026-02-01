@@ -17,6 +17,10 @@
 !
       subroutine final_setup ()
       use gmm_table
+      use glb_ld
+      use svri_mod
+      use svro_mod
+      use IOserver
       use lun
       implicit none
 
@@ -24,6 +28,15 @@
 !     
 !     ---------------------------------------------------------------
 !
+      call SVR_init ('IN-server', INs_COMM,INs_server_L,INs_comm_L,&
+                              INs_1on1,INs_rank,INs_pe,INs_services)
+
+      call SVR_init ('OUT-server', OUTs_COMM,OUTs_server_L,OUTs_comm_L,&
+                              OUTs_1on1,OUTs_rank,OUTs_pe,OUTs_services)
+      
+      call itf_Oserv_init ()
+      call itf_Iserv_init ()
+      
       gmm_ncles= gmm_nkeys()
       allocate (gmm_keylist(gmm_ncles))
       gmm_ncles= gmm_keys(gmm_keylist)

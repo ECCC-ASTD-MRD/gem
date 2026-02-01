@@ -93,8 +93,8 @@ module spn_options
    namelist /spn  / Spn_cutoff_scale_small
    namelist /spn_p/ Spn_cutoff_scale_small
 
-   !# Nudging interval - in sec
-   !# Nudging is performed every every Spn_freq sec
+   !# Nudging interval - in timesteps
+   !# Nudging is performed every Spn_freq timesteps
    integer :: Spn_freq = -1
    namelist /spn  / Spn_freq
    namelist /spn_p/ Spn_freq
@@ -164,13 +164,24 @@ module spn_options
    namelist /spn  / Spn_nudge_UV_L
    namelist /spn_p/ Spn_nudge_UV_L   
 
+   !# Nudging Input in dynamics
+   logical :: Spn_indyn_L = .false.
+   namelist /spn/ Spn_indyn_L
+   namelist /spn_p/ Spn_indyn_L
+
    !# Nudging specific humidity (.true. or .false.).
    logical :: Spn_nudge_HU_L = .false.
    namelist /spn  / Spn_nudge_HU_L
    namelist /spn_p/ Spn_nudge_HU_L
 
+   !# Update list of FST input files every time (Iserver)
+   logical :: Spn_listfst_L = .false.
+   namelist /spn  / Spn_listfst_L 
+   namelist /spn_p/ Spn_listfst_L 
+
    character(len=16) :: Spn_nudging_S = ' ' ! depricated
    logical :: Spn_ON_L = .false.
+   integer :: Spn_nka
    integer :: Spn_12smin, Spn_12smax, Spn_12sn, Spn_12sn0
    integer :: Spn_22min , Spn_22max , Spn_22n , Spn_22n0
    integer :: Spn_22pil_w, Spn_22pil_e, Spn_interval, Spn_ws
@@ -179,19 +190,19 @@ module spn_options
    !real(kind=REAL64) :: Spn_relax_time
    real:: Spn_relax_time
    real, dimension(:), allocatable :: prof
+   real , dimension(:,:,:), allocatable :: Spn_pres
    real(kind=REAL64) , dimension(:,:  ), allocatable :: Spn_flt
    real(kind=REAL64) , dimension(:,:,:), allocatable :: Spn_fft,&
                                                Spn_fdg, Spn_wrk
-
 contains
 
 !**s/r spn_nml - Read namelist spn
 
       integer function spn_nml (F_unf)
       use clib_itf_mod, only: clib_tolower
+      use HORgrid_options
       use lun
       implicit none
-#include <arch_specific.hf>
 
       integer, intent(in) :: F_unf
 
@@ -201,7 +212,6 @@ contains
 !
 !-------------------------------------------------------------------
 !
-! boiler plate - start
       if ( F_unf < 0 ) then
          spn_nml= 0
          if ( Lun_out >= 0) then
@@ -215,7 +225,7 @@ contains
 
       rewind(F_unf)
       read (F_unf, nml=spn, end= 1001, err=1003)
-      spn_nml= 0 ; goto 1000
+      spn_nml= 0 ; Spn_ON_L= .true. ; goto 1000
  1001 if (Lun_out >= 0) write (Lun_out, 6005) trim(nml_S)
       if (.not.nml_must) then
          spn_nml= 1
@@ -225,22 +235,33 @@ contains
  1003 if (Lun_out >= 0) write (Lun_out, 6007) trim(nml_S)
 
  1000 if (spn_nml < 0 ) return
-      
-      istat = clib_tolower(Spn_yy_nudge_data_tint)
-      if (.not.any(Spn_yy_nudge_data_tint == Spn_yy_nudge_data_tint_opt)) then
-         if (Lun_out >= 0) write (Lun_out, *) "SPN namelist Spn_yy_nudge_data_tint - invalid value"
-         return
-      endif
 
       if ((Lun_out>=0).and.(spn_nml==0)) write (Lun_out, 6004) trim(nml_S)
       spn_nml= 1
+
+      if (Spn_ON_L) then
+         istat = clib_tolower(Spn_yy_nudge_data_tint)
+         if (.not.any(Spn_yy_nudge_data_tint == Spn_yy_nudge_data_tint_opt)) then
+         if (Lun_out >= 0) write (Lun_out, *) &
+         "SPN namelist Spn_yy_nudge_data_tint - invalid value"
+         spn_nml= -1
+      endif
+         if (Grd_yinyang_L .and. Spn_freq>0) then
+            if (Spn_yy_nudge_data_freq <0.) then
+               if (lun_out>0) write(Lun_out,9950)
+               spn_nml= -1
+            end if
+         endif
+         if (Spn_relax_hours_end < 0.) Spn_relax_hours_end = Spn_relax_hours
+      endif
+      if (spn_nml < 0) Spn_ON_L= .false.
       
+
  6002 format (' Skipping reading of namelist ',A)
  6004 format (' Reading of namelist ',A,' is successful')
  6005 format (' Namelist ',A,' NOT AVAILABLE')
  6007 format (/,' NAMELIST ',A,' IS INVALID'/)
-! boiler plate - end
-
+ 9950 format (/,'ABORT: Spn_yy_nudge_data_freq must be defined for spectral nudging with YY grid'/)
 !
 !-------------------------------------------------------------------
 !
