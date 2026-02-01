@@ -2,18 +2,19 @@
 module timing_omp
    use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    use iso_c_binding
-   use rpn_comm_itf_mod
+   use rpn_comm_itf_mod, only: RPN_COMM_comm, RPN_COMM_REAL8, RPN_COMM_INTEGER8, RPN_COMM_MIN, RPN_COMM_MAX, RPN_COMM_MASTER, RPN_COMM_GRID
    use clib_itf_mod, only: clib_getenv, clib_toupper, CLIB_IS_OK
    implicit none
    private
       
 #include <rmnlib_basics.hf>
+   include 'mpif.h'
 
    integer, external :: omp_get_thread_num
    DOUBLE PRECISION, external :: omp_get_wtime
 
    public :: timing_init_omp, timing_start1, timing_start_omp, &
-        timing_stop1, timing_stop_omp, timing_terminate1
+        timing_stop1, timing_stop_omp, timing_terminate1, timing_terminate3
 
    integer, parameter :: MAX_instrumented=512
    integer, parameter :: MAX_threads=128
@@ -133,12 +134,25 @@ contains
       return
    end subroutine timing_stop_omp
 
-   
    subroutine timing_terminate1(myproc, msg)
       implicit none
       !@arguments
       character(len=*), intent(in) :: msg
       integer, intent(in) :: myproc
+      
+      integer :: mycomm
+      !--------------------------------------------------------
+      mycomm = RPN_COMM_comm(RPN_COMM_GRID)
+      call timing_terminate3(myproc, mycomm, msg)
+      !--------------------------------------------------------
+      return
+   end subroutine timing_terminate1
+
+   subroutine timing_terminate3(myproc,  mycomm, msg)
+      implicit none
+      !@arguments
+      character(len=*), intent(in) :: msg
+      integer, intent(in) :: myproc, mycomm
       !@author M. Desgagne   -- Winter 2012 --
 
       character(len=64) :: fmt,nspace,nspace2,nspace3,tmp1_s,tmp2_s
@@ -167,12 +181,13 @@ contains
       sum_tb_mn2 = 0.D0
       sum_tb_mx2 = 0.D0
       timer_cnt2 = 0
-      call rpn_comm_reduce(sum_tb_mn,    sum_tb_mn2,    MAX_instrumented, &
-           RPN_COMM_REAL8,    RPN_COMM_MIN, RPN_COMM_MASTER, RPN_COMM_GRID, err)
-      call rpn_comm_reduce(sum_tb_mx,    sum_tb_mx2,    MAX_instrumented, &
-           RPN_COMM_REAL8,    RPN_COMM_MAX, RPN_COMM_MASTER, RPN_COMM_GRID, err)
-      call rpn_comm_reduce(timer_cnt(:,1), timer_cnt2, MAX_instrumented, &
-           RPN_COMM_INTEGER8, RPN_COMM_MAX, RPN_COMM_MASTER, RPN_COMM_GRID, err)
+      
+      call MPI_reduce(sum_tb_mn,      sum_tb_mn2,    MAX_instrumented, &
+           MPI_DOUBLE_PRECISION, MPI_MIN, 0, mycomm, err)
+      call MPI_reduce(sum_tb_mx,      sum_tb_mx2,    MAX_instrumented, &
+           MPI_DOUBLE_PRECISION, MPI_MAX, 0, mycomm, err)
+      call MPI_reduce(timer_cnt(:,1), timer_cnt2,    MAX_instrumented, &
+           MPI_INTEGER8,         MPI_MAX, 0, mycomm, err)
 
       if (myproc.ne.0) return
 
@@ -185,7 +200,7 @@ contains
       write(6,'(a)') '|---|-------------------------------|----------------|-------------------------|--------|'
       flag=.false.
       mymax = maxval(sum_tb_mx2)
-      write (nspace3,'(i3)') max(5, maxlen)
+      write (nspace3,'(i3)') max(13, maxlen)
       do i = 1,MAX_instrumented
          lvl= 0 ; elem= i
 55       if ( (trim(nam_subr_S(elem)).ne.'') .and. (.not.flag(elem)) ) then
@@ -224,8 +239,8 @@ contains
       write(6,'(a)') '________________________________________________________________________________________'
       !--------------------------------------------------------
       return
-   end subroutine timing_terminate1
-   
+   end subroutine timing_terminate3
+
 end module timing_omp
 
 
