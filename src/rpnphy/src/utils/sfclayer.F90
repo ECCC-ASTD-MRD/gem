@@ -788,7 +788,7 @@ contains
 
           ! Ensure that the Obukhov length is finite
           ilmoj = sign(max(abs(ilmoj), EPSLN), ilmoj)
-          if (lmin_type == LMIN_TYPE_SFO .and. lmin > 0. .and. ilmoj > 0.) &
+          if (lmin_type == LMIN_TYPE_SFO .and. ilmax(j) > 0. .and. ilmoj > 0.) &
                ilmoj = min( ilmoj, ilmax(j) )
           
           ! Estimate PBL height based on surface layer properties
