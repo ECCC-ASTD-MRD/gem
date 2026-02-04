@@ -10,5 +10,6 @@ gem_dbase.tar.gz
 /work*
 src/gemdyn/src/main/main*.F90
 src/gemdyn/src/no_mpi/maingem_monitor*.c
+share/gem-maestro/GEM_module/VERSION
 DYN
 PHY
