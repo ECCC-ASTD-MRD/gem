@@ -8,7 +8,7 @@ variables:
 
 stages:
   - build
-  - run_intel_icelake
+  - run_intel_graniterapids
   - run_gnu_9.3.0
   - run_gnu_14.2.0
   - package
@@ -48,6 +48,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0:
     expire_in: 4 hrs
     paths:
     - work-rhel-9-graniterapids-64-intel-2025.1.0
+    - gem_dbase
 
 #----- rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
 # U3 Intel 2025 with installed RPN-SI libs, WITH_NEMO
@@ -600,7 +601,7 @@ deploy_U3:staging:
 
 #----- Testing findtopo for rhel-9-graniterapids-64-intel-2025
 findtopo:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
     - ppp7
   needs:
@@ -619,11 +620,11 @@ findtopo:
 
 #----- Running configurations for rhel-8-icelake-64-intel-2025.1.0
 5.2GEM_GY_FISL_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -645,11 +646,11 @@ findtopo:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   allow_failure: true
   only:
@@ -671,11 +672,11 @@ CANO_W7cascP_intel:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -697,11 +698,11 @@ CANO_dcmip163r100_intel:
     - test "${_status}" == "ED"
 
 CANO_wil7_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -723,11 +724,11 @@ CANO_wil7_intel:
     - test "${_status}" == "ED"
 
 GEM_cfgs_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -749,11 +750,11 @@ GEM_cfgs_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -775,11 +776,11 @@ GEM_GY_FISL_P_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -801,11 +802,11 @@ GEM_GY_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_spnGC_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -827,11 +828,11 @@ GEM_GY_spnGC_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -853,11 +854,11 @@ GEM_LU_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -879,11 +880,11 @@ GEM_LU_OFFC_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_EXP_P_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -905,11 +906,11 @@ GEM_LU_EXP_P_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_MoSA_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -931,11 +932,11 @@ GEM_LU_MoSA_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_TEB_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -957,11 +958,11 @@ GEM_LU_TEB_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_THM_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -983,11 +984,11 @@ GEM_LU_THM_intel:
     - test "${_status}" == "ED"
 
 IOSVR_GY_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1009,11 +1010,11 @@ IOSVR_GY_H_intel:
     - test "${_status}" == "ED"
 
 IOSVR_LU_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1035,11 +1036,11 @@ IOSVR_LU_H_intel:
     - test "${_status}" == "ED"
 
 OPS_GYens_ic4_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1061,11 +1062,11 @@ OPS_GYens_ic4_intel:
     - test "${_status}" == "ED"
 
 OPS_GY_ic4_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1087,11 +1088,11 @@ OPS_GY_ic4_intel:
     - test "${_status}" == "ED"
 
 OPS_LU_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1113,11 +1114,11 @@ OPS_LU_intel:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1139,11 +1140,11 @@ PTOPO_GYH_intel:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1165,11 +1166,11 @@ PTOPO_LUP_intel:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1191,11 +1192,11 @@ RSTRT_GYP_intel:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -1213,11 +1214,11 @@ THEO_bubbleG_intel:
     - test "${_status}" == "ED"
 
 THEO_schar_intel:
-  stage: run_intel_icelake
+  stage: run_intel_graniterapids
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
