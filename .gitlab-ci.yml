@@ -8,13 +8,9 @@ variables:
 
 stages:
   - build
-  - run_intel_icelake
-  - run_gnu_9.3.0
-  - run_gnu_12.1.0
-  - run_gnu_14.2.0
+  - run_intel_U3
   - package
   - deploy
-  - deploy_U3
 
 before_script:
   - export CLICOLOR_FORCE=1
@@ -104,257 +100,6 @@ package:rhel-9-graniterapids-64-intel-2025.1.0:
       - . ./.eccc_setup_intel_2025.1.0
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
-      - make package
-      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-
-#----- rhel-8-amd64_gnu-9.3.0
-build:rhel-8-amd64_gnu-9.3.0:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-9.3.0 .
-    - ./scripts/link-dbase.sh
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-9.3.0
-    - cmake --fresh ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
-  artifacts:
-    expire_in: 4 hrs
-    paths:
-    - work-rhel-8-amd64-64-gnu-9.3.0
-    - gem_dbase
-
-#----- rhel-8-amd64_gnu-14.2.0
-build:rhel-8-amd64_gnu-14.2.0:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu_14.2.0
-    - set -e
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.2.0
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-14.2.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-amd64-64-gnu-14.2.0 . 
-    - ./scripts/link-dbase.sh
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-amd64-64-gnu-14.2.0
-    - cmake --fresh ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
-  allow_failure: true
-  artifacts:
-    expire_in: 4 hrs
-    paths:
-    - work-rhel-8-amd64-64-gnu-14.2.0
-    - gem_dbase
-
-#----- rhel-8-icelake-64-intel-2022.1.2 with sources
-# U2 Intel 2022 with RPN-SI sources
-build:intel-with-sources-rhel-8-icelake-64-intel-2022.1.2:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ./.eccc_setup_intel_2022.1.2
-    - set -e
-    - export WITH_SYSTEM_RPN=FALSE
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2-with-sources
-    - cmake --fresh -DWITH_SYSTEM_RPN=FALSE ${SRC_DIR}
-    - time make -j $NCPUS
-  allow_failure: true
-
-#----- rhel-8-icelake-64-intel-2025.1.0
-# U2 Intel 2025 with installed RPN-SI libs
-# Used for testing configs and for SSM package
-build:rhel-8-icelake-64-intel-2025.1.0:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ./.eccc_setup_intel_2025.1.0
-    - set -e
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2025.1.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2025.1.0 .
-    - ./scripts/link-dbase.sh
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
-    - cmake --fresh -DSTRICT=TRUE ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
-  artifacts:
-    expire_in: 4 hrs
-    paths:
-    - work-rhel-8-icelake-64-intel-2025.1.0
-    - gem_dbase
-
-package:rhel-8-icelake-64-intel-2025.1.0:
-   variables:
-      ORD_SOUMET_CPUS: "2"
-      ORD_SOUMET_W: "10"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: package
-   tags:
-      - concurrent
-   only:
-      - tags
-      - /^dev_5\.[0-9]$/
-      - schedules
-   dependencies:
-      - build:rhel-8-icelake-64-intel-2025.1.0
-   script:
-      - set +e
-      - . ./.eccc_setup_intel_2025.1.0
-      - set -e
-      - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2025.1.0
-      - make package
-      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-
-#----- rhel-8-icelake-64-intel-2022.1.2
-# U2 Intel 2022 with installed RPN-SI libs
-build:rhel-8-icelake-64-intel-2022.1.2:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build
-  tags:
-    - concurrent
-  when: always
-  script:
-    - set +e
-    - . ./.eccc_setup_intel_2022.1.2
-    - set -e
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2022.1.2 .
-    - ./scripts/link-dbase.sh
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
-    - cmake --fresh -DSTRICT=TRUE ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
-  artifacts:
-    expire_in: 4 hrs
-    paths:
-    - work-rhel-8-icelake-64-intel-2022.1.2
-    - gem_dbase
-
-package:rhel-8-icelake-64-intel-2022.1.2:
-   variables:
-      ORD_SOUMET_CPUS: "2"
-      ORD_SOUMET_W: "10"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: package
-   tags:
-      - concurrent
-   only:
-      - tags
-      - /^dev_5\.[0-9]$/
-      - schedules
-   dependencies:
-      - build:rhel-8-icelake-64-intel-2022.1.2
-   script:
-      - set +e
-      - . ./.eccc_setup_intel_2022.1.2
-      - set -e
-      - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2022.1.2
-      - make package
-      - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
-
-#----- rhel-8-icelake-64-intel-2021.4.0
-# U2 Intel 2021 with installed RPN-SI libs
-# Used for SSM package
-build:rhel-8-icelake-64-intel-2021.4.0:
-  variables:
-     ORD_SOUMET_CPUS: "4"
-     ORD_SOUMET_W: "30"
-     ORD_SOUMET_M: "8G"
-     ORD_SOUMET_TMPFS: "1G"
-  stage: build
-  tags:
-  - concurrent
-  only:
-  - tags
-  - /^dev_5\.[0-9]$/
-  - schedules
-  when: always
-  script:
-    - set +e
-    - . ./.eccc_setup_intel_2021.4.0
-    - set -e
-    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
-    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0
-    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-8-icelake-64-intel-2021.4.0 .
-    - SRC_DIR=$(pwd)
-    - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
-    - cmake --fresh -DSTRICT=TRUE ${SRC_DIR}
-    - time make -j $NCPUS
-    - time make work
-  artifacts:
-    expire_in: 4 hrs
-    paths:
-    - work-rhel-8-icelake-64-intel-2021.4.0
-
-package:rhel-8-icelake-64-intel-2021.4.0:
-   variables:
-      ORD_SOUMET_CPUS: "2"
-      ORD_SOUMET_W: "10"
-      ORD_SOUMET_M: "8G"
-      ORD_SOUMET_TMPFS: "1G"
-   stage: package
-   tags:
-      - concurrent
-   only:
-      - tags
-      - /^dev_5\.[0-9]$/
-      - schedules
-   dependencies:
-      - build:rhel-8-icelake-64-intel-2021.4.0
-   script:
-      - set +e
-      - . ./.eccc_setup_intel_2021.4.0
-      - set -e
-      - cd ${PIPELINE_SUBDIR}/build-rhel-8-icelake-64-intel-2021.4.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
 
@@ -548,17 +293,6 @@ package:ubuntu-22.04-amd64-intel-2023.2.0:
 deploy:staging:
    stage: deploy
    tags:
-      - U2
-   only:
-      - tags
-      - /^dev_5\.[0-9]$/
-      - schedules
-   script:
-      - ~/ci-admin/bin/ci-stage-ssm.sh gem gem "${CI_COMMIT_TAG}" "${ECCI_PROCESS}"
-
-deploy_U3:staging:
-   stage: deploy_U3
-   tags:
       - ppp7
    only:
       - tags
@@ -569,7 +303,7 @@ deploy_U3:staging:
 
 #----- Testing findtopo for rhel-9-graniterapids-64-intel-2025
 findtopo:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
     - ppp7
   needs:
@@ -586,13 +320,13 @@ findtopo:
     - cd share/configurations/5.2GEM_cfgs_GY_FISL_H/cfg_0000
     - findtopo
 
-#----- Running configurations for rhel-8-icelake-64-intel-2025.1.0
+#----- Running configurations for rhel-9-graniterapids-64-intel-2025.1.0
 5.2GEM_GY_FISL_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -614,11 +348,11 @@ findtopo:
     - test "${_status}" == "ED"
 
 CANO_W7cascP_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   allow_failure: true
   only:
@@ -640,11 +374,11 @@ CANO_W7cascP_intel:
     - test "${_status}" == "ED"
 
 CANO_dcmip163r100_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -666,11 +400,11 @@ CANO_dcmip163r100_intel:
     - test "${_status}" == "ED"
 
 CANO_wil7_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -692,11 +426,11 @@ CANO_wil7_intel:
     - test "${_status}" == "ED"
 
 GEM_cfgs_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -718,11 +452,11 @@ GEM_cfgs_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_P_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -744,11 +478,11 @@ GEM_GY_FISL_P_intel:
     - test "${_status}" == "ED"
 
 GEM_GY_FISL_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -770,11 +504,11 @@ GEM_GY_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_FISL_H_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -796,11 +530,11 @@ GEM_LU_FISL_H_intel:
     - test "${_status}" == "ED"
 
 GEM_LU_OFFC_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -822,11 +556,11 @@ GEM_LU_OFFC_intel:
     - test "${_status}" == "ED"
 
 PTOPO_GYH_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -848,11 +582,11 @@ PTOPO_GYH_intel:
     - test "${_status}" == "ED"
 
 PTOPO_LUP_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -874,11 +608,11 @@ PTOPO_LUP_intel:
     - test "${_status}" == "ED"
 
 RSTRT_GYP_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -900,11 +634,11 @@ RSTRT_GYP_intel:
     - test "${_status}" == "ED"
 
 THEO_bubbleG_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -922,11 +656,11 @@ THEO_bubbleG_intel:
     - test "${_status}" == "ED"
 
 THEO_schar_intel:
-  stage: run_intel_icelake
+  stage: run_intel_U3
   tags:
-    - U2
+    - ppp7
   needs:
-  - build:rhel-8-icelake-64-intel-2025.1.0
+  - build:rhel-9-graniterapids-64-intel-2025.1.0
   when: always
   only:
   - /^dev_5\.[0-9]$/
@@ -941,391 +675,4 @@ THEO_schar_intel:
     - . ./configurations/$CFG/cfg_0000/configexp.cfg
     - _status=ABORT
     - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-    - test "${_status}" == "ED"
-
-#----- Running configurations for rhel-8-amd64_gnu-9.3.0
-5.2GEM_GY_FISL_H_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=5.2GEM_cfgs_GY_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-CANO_W7cascP_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_W7cascP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-CANO_dcmip163r100_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_dcmip163r100
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-CANO_wil7_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=CANO_cfgs_wil7
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_cfgs_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_GY_FISL_P_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_GY_FISL_P
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_GY_FISL_H_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_GY_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_LU_FISL_H_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_LU_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-GEM_LU_OFFC_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_LU_OFFC
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-PTOPO_GYH_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=PTOPO_cfgs_GYH
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-PTOPO_LUP_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=PTOPO_cfgs_LUP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-RSTRT_GYP_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=RSTRT_cfgs_GYP
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-      fi
-    - test "${_status}" == "ED"
-
-THEO_bubbleG_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=THEO_cfgs_bubbleG
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-    - test "${_status}" == "ED"
-
-THEO_schar_gnu:
-  stage: run_gnu_9.3.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-9.3.0
-  when: always
-  only:
-  - /^dev_5\.[0-9]$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu
-    - set -e
-    - cd $GEM_WORK
-    - CFG=THEO_cfgs_schar
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-    - test "${_status}" == "ED"
-
-#----- Running one configuration for rhel-8-amd64_gnu-14.2.0
-# Add needed mpi flag for gnu 14
-GEM_GY_FISL_H_gnu_14:
-  variables:
-    ORD_SOUMET_MPI : mpi
-  stage: run_gnu_14.2.0
-  tags:
-    - U2
-  needs:
-  - build:rhel-8-amd64_gnu-14.2.0
-  when: always
-  only:
-  - /^dev_5\.[0-9].*$/
-  - tags
-  allow_failure: true
-  script:
-    - set +e
-    - . ./.eccc_setup_gnu_14.2.0
-    - set -e
-    - cd $GEM_WORK
-    - CFG=GEM_cfgs_GY_FISL_H
-    - . ./configurations/$CFG/cfg_0000/configexp.cfg
-    - _status=ABORT
-    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-    - if [ "${_status}" == "ED" ]; then
-      _status=ABORT;
-      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -inorder 1;
-      fi
     - test "${_status}" == "ED"
