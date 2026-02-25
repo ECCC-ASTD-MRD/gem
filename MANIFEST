@@ -16,8 +16,8 @@ mach = 3.2.1-u3
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-rmn  = 20.0.15
-tdpack = 1.6.4
-vgrid = 6.9.11
-rpncomm = 4.6.12
-fst-tools = 20.0.10
+rmn  = 20.0.16
+tdpack = 1.6.4.1
+vgrid = 6.9.11.1
+rpncomm = 4.6.13
+fst-tools = 20.0.13
