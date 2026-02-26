@@ -46,6 +46,7 @@ build:rhel-9-graniterapids-64-intel-2025.1.0:
     expire_in: 4 hrs
     paths:
     - work-rhel-9-graniterapids-64-intel-2025.1.0
+    - gem_dbase
 
 #----- rhel-9-graniterapids-64-intel-2025.1.0-gem-nemo
 # U3 Intel 2025 with installed RPN-SI libs, WITH_CPL
