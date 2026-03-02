@@ -1,11 +1,11 @@
 Here, we provide general information about GEM-MACH project. Specific
 information on compilation, configuration, etc are provided in
-[readme](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/readme)
+[readme](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/-/blob/RAQDPSDeliveries_3.2/readme)
 directory:
-- Compilation: [README_compilation.md](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/readme/README_compilation.md)
-- Configuration: [README_namelist.md](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/readme/README_namelist.md)
-- Available output fields: [README_variables](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/readme/README_variables.md)
-- Regression test: [README_regression.md](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/-/blob/3.2/readme/README_regression.md)
+- Compilation: [README_compilation.md](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/-/blob/RAQDPSDeliveries_3.2/readme/README_compilation.md)
+- Configuration: [README_namelist.md](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/-/blob/RAQDPSDeliveries_3.2/readme/README_namelist.md)
+- Available output fields: [README_variables](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/-/blob/RAQDPSDeliveries_3.2/readme/README_variables.md)
+- Regression test: [README_regression.md](https://gitlab.science.gc.ca/ARQI-GEMMACH/GEM-MACH/-/blob/RAQDPSDeliveries_3.2/readme/README_regression.md)
 
 # GEM-MACH
 

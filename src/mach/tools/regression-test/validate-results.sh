@@ -5,7 +5,7 @@
 #  Script for validating GEM-MACH regression test results
 #
 #  USAGE: 
-#      ord_soumet ${TASK_BIN}/validate-results.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${VldtJobNcpu} -cm ${Test_JobsMemory} -t ${VldtJobTime} -queue ${Test_JobsQueue} -jn ${VldtJobName} -listing ${TASK_LIST}
+#      ord_soumet ${TASK_BIN}/validate-results.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${VldtJobNcpu} -cm ${VldtJobMemory} -t ${VldtJobTime} -queue ${Test_JobsQueue} -jn ${VldtJobName} -listing ${TASK_LIST}
 #      or
 #      validate-results.sh ${TASK_BASEDIR} 2>&1 > ${TASK_LIST}/gm-test-${TRUE_HOST}-validation-listings.txt
 #
@@ -74,9 +74,9 @@ test_outfile=${TASK_OUTPUT}/model/${rundate}_${fhr}
 
 # Inform the world about the location of the files that are compared
 [[ ! -f ${ctrl_outfile} ]] && \
-  echo -e "\n ERROR: control file not found: ${ctrl_outfile}" |tee -a ${gmtestinfo} && exit 1
+ echo -e "\n ERROR: control file not found: ${ctrl_outfile}" |tee -a ${gmtestinfo} && exit 1
 [[ ! -f ${test_outfile} ]] && \
-  echo -e "\n ERROR: run output not found: ${test_outfile}" |tee -a ${gmtestinfo} && exit 1
+ echo -e "\n ERROR: run output not found: ${test_outfile}" |tee -a ${gmtestinfo} && exit 1
 echo -e "\n ref. control: ${ctrl_outfile}" | tee -a ${gmtestinfo}
 echo -e "\n test outfile: ${test_outfile}" | tee -a ${gmtestinfo}
 
