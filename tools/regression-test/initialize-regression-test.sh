@@ -38,8 +38,8 @@
 #      - Checks if the header modules in MACH library have been updated.
 #      - Builds a directory structure necessary for GEM's runmod.sh 
 #        script to run GEM-MACH (bin, input, work, output, listings).
-#      - Copies relevant inputs, configuration files and scripts to
-#        respective directories. 
+#      - Links and copies relevant inputs, configuration files and
+#        scripts to respective directories. 
 #      - Saves the information about the model versions, repo, computer
 #        and location of the input and control output files into 
 #        gm-test-${TRUE_HOST}-info.txt_${latest_commit} file.
@@ -93,66 +93,66 @@ ci_opt=false
 
 # Chosen options
 while getopts "hdcpnl:mug:soi" opt; do
-  case $opt in
-    h)
-      echo -e ${usage}
-      exit 0
-      ;;
-    d)
-      echo -e "Compile in debug mode and run with tracing turned off.\n"
-      cmpl_opt=dbg
-      ;;
-    c)
-      echo -e "Run with tracing turned on only in chemistry code. \n  Warning: This produces very long listings.\n"
-      chm_trcng_opt=on
-      ;;
-    p)
-      echo -e "Run with tracing turned on in physics code. \n  Warning: This produces very long listings.\n"
-      phy_trcng_opt=on
-      ;;
-    n)
-      echo -e "Prepare new control files.\n"
-      cntrl_fl_opt=new
-      ;;
-    l)
-      control_dir=${OPTARG}
-      echo -e "Use ${control_dir} for control directory.\n"
-      ;;
-    m)
-      echo -e "Run the test from local MACH repository using remote GEM super repository.\n"
-      mach_repo=true
-      ;;
-    u)
-      echo -e "Different MACH hisotries in local MACH repository and remote GEM super repository.\n"
-      common_mach_history=false
-      ;;
-    g)
-      GEM_remote=$(echo ${OPTARG} | cut -d "," -f1)
-      GEM_version=$(echo ${OPTARG} | cut -d "," -f2)
-      echo -e "Compile GEM-MACH with GEM from super repository ${GEM_remote} using branch/tag ${GEM_version}.\n"
-      ;;
-    s)
-      echo -e "Compile and create an ssm package"
-      cmpl_opt=pkg
-      ;;
-    o)
-      echo -e "Run only initialization script"
-      sequench_opt=false
-      ;;
-    i)
-     echo -e "Applying Continuous Integration"
-     echo -e "Combine work of -m, -u and -o options"
-     ci_opt=true
-     mach_repo=true
-     common_mach_history=false
-     sequence_opt=false
-     ;;
-    *)
-      echo "Invalid option '-${OPTARG}'"
-      echo -e ${usage}
-      exit 1
-      ;;
-  esac
+ case $opt in
+  h)
+   echo -e ${usage}
+   exit 0
+   ;;
+  d)
+   echo -e "Compile in debug mode and run with tracing turned off.\n"
+   cmpl_opt=dbg
+   ;;
+  c)
+   echo -e "Run with tracing turned on only in chemistry code. \n  Warning: This produces very long listings.\n"
+   chm_trcng_opt=on
+   ;;
+  p)
+   echo -e "Run with tracing turned on in physics code. \n  Warning: This produces very long listings.\n"
+   phy_trcng_opt=on
+   ;;
+  n)
+   echo -e "Prepare new control files.\n"
+   cntrl_fl_opt=new
+   ;;
+  l)
+   control_dir=${OPTARG}
+   echo -e "Use ${control_dir} for control directory.\n"
+   ;;
+  m)
+   echo -e "Run the test from local MACH repository using remote GEM super repository.\n"
+   mach_repo=true
+   ;;
+  u)
+   echo -e "Different MACH histories in local MACH repository and remote GEM super repository.\n"
+   common_mach_history=false
+   ;;
+  g)
+   GEM_remote=$(echo ${OPTARG} | cut -d "," -f1)
+   GEM_version=$(echo ${OPTARG} | cut -d "," -f2)
+   echo -e "Compile GEM-MACH with GEM from super repository ${GEM_remote} using branch/tag ${GEM_version}.\n"
+   ;;
+  s)
+   echo -e "Compile and create an ssm package"
+   cmpl_opt=pkg
+   ;;
+  o)
+   echo -e "Run only initialization script"
+   sequench_opt=false
+   ;;
+  i)
+   echo -e "Applying Continuous Integration"
+   echo -e "Combine work of -m, -u and -o options"
+   ci_opt=true
+   mach_repo=true
+   common_mach_history=false
+   sequence_opt=false
+   ;;
+  *)
+   echo "Invalid option '-${OPTARG}'"
+   echo -e ${usage}
+   exit 1
+   ;;
+ esac
 done
 shift $((OPTIND -1))
 
@@ -177,12 +177,12 @@ repo_br=$(git branch --show-current)
 
 # Check if the choice of options works from the local git repository
 if [[ "${mach_repo}" != "true" ]] ; then
-   gmgit_dir=${repo_dir}/src/mach
-   [[ ! -d  ${gmgit_dir} ]] && echo -e "ERROR: When running test from MACH repository, have to use -m option.\n" && exit 1 
-   repo_nm="GEM-MACH"
+ gmgit_dir=${repo_dir}/src/mach
+ [[ ! -d  ${gmgit_dir} ]] && echo -e "ERROR: When running test from MACH repository, have to use -m option.\n" && exit 1 
+ repo_nm="GEM-MACH"
 elif [[ "${mach_repo}" == "true" ]] ; then
-   gmgit_dir=${repo_dir}
-   repo_nm="MACH"
+ gmgit_dir=${repo_dir}
+ repo_nm="MACH"
 fi
 
 # Get GEM-MACH, GEM and regression test versions
@@ -239,32 +239,32 @@ gemmach_dir=${TASK_BASEDIR}/GEM-MACH
 
 # Using git commands, build GEM-MACH source code in the new test directory
 if [[ "${mach_repo}" != "true" ]] ; then
-   # git clone local GEM super repo to the test directory and checkout current commit
-   git clone -l --single-branch --no-hardlinks ${repo_dir} ${gemmach_dir}
-   cd ${gemmach_dir}; git reset --hard ${repo_id}
+ # git clone local GEM super repo to the test directory and checkout current commit
+ git clone -l --single-branch --no-hardlinks ${repo_dir} ${gemmach_dir}
+ cd ${gemmach_dir}; git reset --hard ${repo_id}
 elif [[ "${mach_repo}" == "true" ]] ; then
-   # git clone remote GEM super repo to the test directory, reset it to the tagged GEM version, and
-   # git subtree pull local MACH repo into the GEM super repo in the test directory
-   git clone -b ${GEM_version} ${GEM_remote} ${gemmach_dir}
-   cd ${gemmach_dir}
-   git switch -c ${Test_version}
-   sed -i "s|MACH_VERSION : .*|MACH_VERSION : ${MACH_version}|g" MANIFEST
-   sed -i "s|mach = .*|mach = ${MACH_version}|g" MANIFEST 
-   git add MANIFEST
-   git commit -m "Update mach version in MANIFEST"
-   mach_subtree_path="src/mach"
-   export GIT_MERGE_AUTOEDIT=no
-   if [[ "${common_mach_history}" == "true" ]] ; then
-      git subtree pull --squash -P ${mach_subtree_path} ${gmgit_dir} ${repo_br}
-      [[ $(grep ${MACH_version} ${mach_subtree_path}/MANIFEST) == '' ]] && echo -e "ERROR: src/mach is not updated to ${MACH_version} version.\n" | tee -a ${gmtestinfo} && exit 1
-   else
-      git rm -rf src/mach
-      git commit -m "Remove ${mach_subtree_path} subtree"
-      git subtree add --squash -P ${mach_subtree_path} ${gmgit_dir} ${repo_br}
-      [[ ! -d ./src/mach ]] && echo -e "ERROR: ${mach_subtree_path} is missing.\n" | tee -a ${gmtestinfo} && exit 1
-   fi
-   sed -i "s|^--prefix=${mach_subtree_path}.*|--prefix=${mach_subtree_path} ${gmgit_dir} ${repo_br}|" .git-subtree
-   git add .git-subtree ; git commit -m "Update info on ${mach_subtree_path} source"
+ # git clone remote GEM super repo to the test directory, reset it to the tagged GEM version, and
+ # git subtree pull local MACH repo into the GEM super repo in the test directory
+ git clone -b ${GEM_version} ${GEM_remote} ${gemmach_dir}
+ cd ${gemmach_dir}
+ git switch -c ${Test_version}
+ sed -i "s|MACH_VERSION : .*|MACH_VERSION : ${MACH_version}|g" MANIFEST
+ sed -i "s|mach = .*|mach = ${MACH_version}|g" MANIFEST 
+ git add MANIFEST
+ git commit -m "Update mach version in MANIFEST"
+ mach_subtree_path="src/mach"
+ export GIT_MERGE_AUTOEDIT=no
+ if [[ "${common_mach_history}" == "true" ]] ; then
+  git subtree pull --squash -P ${mach_subtree_path} ${gmgit_dir} ${repo_br}
+  [[ $(grep ${MACH_version} ${mach_subtree_path}/MANIFEST) == '' ]] && echo -e "ERROR: src/mach is not updated to ${MACH_version} version.\n" | tee -a ${gmtestinfo} && exit 1
+ else
+  git rm -rf src/mach
+  git commit -m "Remove ${mach_subtree_path} subtree"
+  git subtree add --squash -P ${mach_subtree_path} ${gmgit_dir} ${repo_br}
+  [[ ! -d ./src/mach ]] && echo -e "ERROR: ${mach_subtree_path} is missing.\n" | tee -a ${gmtestinfo} && exit 1
+ fi
+ sed -i "s|^--prefix=${mach_subtree_path}.*|--prefix=${mach_subtree_path} ${gmgit_dir} ${repo_br}|" .git-subtree
+ git add .git-subtree ; git commit -m "Update info on ${mach_subtree_path} source"
 fi
 
 # Check if the headers in MACH library have been updated
@@ -274,7 +274,7 @@ ${mach_dir}/tools/regen_headers.sh -s ${mach_dir}/src/base
 [[ -n $(diff -q ${mach_dir}/src/base/imported_headers/ ${mach_dir}/src/base/regenerated_headers/) ]] && (echo -e "ERROR: Heather modules in MACH library are not updated.\n" | tee -a ${gmtestinfo} ; echo -e "Review headers in ${mach_dir}/src/base/regenerated_headers directory.\n" | tee -a ${gmtestinfo}) && exit 1
 
 # Load environment needed for compiling and running GEM 
-#source ${gemmach_dir}/.eccc_setup_intel
+#common_env_script=.eccc_setup_intel
 common_env_script=.eccc_setup_intel_2025.1.0
 source ${gemmach_dir}/${common_env_script}
 
@@ -290,13 +290,18 @@ control_dir=${control_dir:-/space/${current_hall}/sitestore/eccc/aq/r1/sarq000/g
 control_input_dir=${control_dir}/gm-input
 [[ ! -d $control_input_dir ]] && echo "ERROR: control_input_dir does not exist: $control_input_dir" | tee -a ${gmtestinfo} && exit 1
 echo -e "Regression-test input dir: ${control_input_dir}" | tee -a ${gmtestinfo}
-# Copy control input files to the test directory
-cp -r ${control_input_dir}/* ${TASK_INPUT}/
+# Link control input files to the test directory
+mkdir -p ${TASK_INPUT}/cfg_0000
+for fl in ${control_input_dir}/cfg_0000/* ; do 
+ ln -s ${fl} ${TASK_INPUT}/cfg_0000/$(basename $fl)
+done
 
 ## If local config files are provided, override config files e.g:
 ##  'physics_input_table->gm_phy_intable'; 'model_settings.nml->gem_settings.nml'
 ##  'output_settings->outcfg.out'
-for file in $(ls ${gmgit_dir}/tools/gemmach_cfg/* | grep -v README.md) ; do
+if [[ -d ${gmgit_dir}/tools/gemmach_cfg ]] ; then 
+ if [[ -n $(ls ${gmgit_dir}/tools/gemmach_cfg) ]] ; then
+  for file in $(ls ${gmgit_dir}/tools/gemmach_cfg/* | grep -v README.md) ; do
    [ -e "$file" ] || continue
    echo -e "override file: ${file} \n"
    cp -fv ${file} ${TASK_INPUT}
@@ -304,7 +309,9 @@ for file in $(ls ${gmgit_dir}/tools/gemmach_cfg/* | grep -v README.md) ; do
    [[ $filename == 'gem_settings.nml' ]] && ln -sfv ${TASK_INPUT}/${filename} ${TASK_INPUT}/cfg_0000/model_settings.nml
    [[ $filename == 'outcfg.out' ]] && ln -sfv ${TASK_INPUT}/${filename} ${TASK_INPUT}/cfg_0000/output_settings
    [[ $filename == 'gm_phy_intable' ]] && ln -sfv ${TASK_INPUT}/${filename} ${TASK_INPUT}/cfg_0000/physics_input_table
-done
+  done
+ fi
+fi
 
 # For either debug compilation or running with tracing, namelist has to be modified locally
 if [[ "${cmpl_opt}" == "dbg" ]] || [[ "${chm_trcng_opt}" == "on" ]] || [[ "${phy_trcng_opt}" == "on" ]] ; then
@@ -348,11 +355,9 @@ export TASK_OUTPUT=${TASK_OUTPUT}
 export TASK_LIST=${TASK_LIST}
 # Set the commonly use job resources
 export Test_JobsMach=${TRUE_HOST}
-export Test_JobsMemory=2G
 export Test_JobsQueue=development
 # Set environment for compiling and running GEM, and for working with fst files
 cd ${gemmach_dir}
-export I_MPI_ADJUST_ALLREDUCE=5
 source ./${common_env_script}
 EOF
 
@@ -360,6 +365,7 @@ EOF
  cat << EOF >${TASK_BASEDIR}/compile_env_arg
 source ${TASK_BASEDIR}/common_env_arg
 export GMRunJobProcTopo=10x8x1
+export GMRunJobMemory=2G
 [[ "${cmpl_opt}" == "dbg" ]] && export GMRunJobTime=3600 || export GMRunJobTime=1200
 export GMRunJobName=rungm
 EOF
@@ -368,7 +374,8 @@ EOF
  cat << EOF >${TASK_BASEDIR}/run_env_arg
 source ${TASK_BASEDIR}/common_env_arg
 export GMRunJobProcTopo=10x8x1
-export AssmblJobNcpu=80
+export AssmblJobNcpu=1
+export AssmblJobMemory=2G
 export AssmblJobTime=300
 export AssmblJobName=assmblgmo
 EOF
@@ -377,6 +384,7 @@ EOF
  cat << EOF >${TASK_BASEDIR}/assemble_env_arg
 source ${TASK_BASEDIR}/common_env_arg
 export VldtJobNcpu=1
+export VldtJobMemory=2G
 export VldtJobTime=300
 export VldtJobName=vldtgm
 EOF
@@ -389,17 +397,20 @@ EOF
 if [[ "${sequence_opt}" == "true" ]] ; then
  # Set the resources specific for compilation of GEM-MACH
  export Test_JobsMach=${TRUE_HOST}
- export Test_JobsMemory=2G
  export Test_JobsQueue=development
- export CmplJobNcpu=80
+ export CmplJobNcpu=1
+ export CmplJobMem=160G
  export CmplJobTime=300
  export CmplJobName=cmplgm
 
  # Submit the GEM-MACH compilation script
  echo -e "\n == Submit the GEM-MACH compilation script at $(date) == \n"
+ set -x
  ord_soumet ${TASK_BIN}/compile-gm.sh -args "${TASK_BASEDIR}" \
-           -mach ${Test_JobsMach} -cpus ${CmplJobNcpu} -cm ${Test_JobsMemory} -t ${CmplJobTime} \
-           -mpi 1 -queue ${Test_JobsQueue} -jn ${CmplJobName} -listing ${TASK_LIST}
+            -mach ${Test_JobsMach} -cpus ${CmplJobNcpu} -cm ${CmplJobMem} \
+            -t ${CmplJobTime} -queue ${Test_JobsQueue} -jn ${CmplJobName} \
+            -listing ${TASK_LIST}
+ set +x
 
  # Inform the world about the regression test
  cat << EOF | tee -a ${gmtestinfo}

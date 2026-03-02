@@ -7,7 +7,7 @@
 #      Generated combined output files can be used as the new control.
 #
 #  USAGE: 
-#      ord_soumet ${TASK_BIN}/assemble-output.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${AssmblJobNcpu} -cm ${Test_JobsMemory} -t ${AssmblJobTime} -mpi 1 -queue ${Test_JobsQueue} -jn ${AssmblJobName} -listing ${BASE_LIST}
+#      ord_soumet ${TASK_BIN}/assemble-output.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${AssmblJobNcpu} -cm ${AssmblJobMemory} -t ${AssmblJobTime} -queue ${Test_JobsQueue} -jn ${AssmblJobName} -listing ${BASE_LIST}
 #      or
 #      assemble-output.sh ${TASK_BASEDIR} 2>&1 > ${TASK_LIST}/gm-test-${TRUE_HOST}-assemble-listings.txt
 #
@@ -103,11 +103,10 @@ done
 if [[ "${sequence_opt}" == "true" ]] ; then
  if [[ "${cntrl_fl_opt}" != "new" ]] ; then
   echo -e "\n Validate results against a control run \n" | tee -a ${gmtestinfo}
-  ord_soumet ${TASK_BIN}/validate-results.sh \
-              -args "${TASK_BASEDIR}" \
-              -mach ${Test_JobsMach} -cpus ${PostProcJobProcTopo} -cm ${Test_JobsMemory} \
-              -t ${PostProcJobTime} -queue ${Test_JobsQueue} -jn ${PostProcJobName} \
-              -listing ${TASK_LIST}
+  ord_soumet ${TASK_BIN}/validate-results.sh -args "${TASK_BASEDIR}" \
+             -mach ${Test_JobsMach} -cpus ${PostProcJobProcTopo} -cm ${VldtJobMemory} \
+             -t ${PostProcJobTime} -queue ${Test_JobsQueue} -jn ${PostProcJobName} \
+             -listing ${TASK_LIST}
  else
   # Create expected control-directory structure
   ln -s ${TASK_BASEDIR}/input ${TASK_BASEDIR}/gm-input

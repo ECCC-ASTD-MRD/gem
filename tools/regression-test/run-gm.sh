@@ -6,7 +6,7 @@
 #      for assembling of the regression test results.
 #
 #  USAGE: 
-#      ord_soumet ${TASK_BIN}/run-gm.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${GMRunJobProcTopo} -cm ${Test_JobsMemory} -t ${GMRunJobTime} -mpi 1 -queue ${Test_JobsQueue} -jn ${GMRunJobName} -listing ${TASK_LIST}
+#      ord_soumet ${TASK_BIN}/run-gm.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${GMRunJobProcTopo} -cm ${GMRunJobMemory} -t ${GMRunJobTime} -mpi 1 -queue ${Test_JobsQueue} -jn ${GMRunJobName} -listing ${TASK_LIST}
 #
 #      Note that the variables provided in quotes to ord_soumet after
 #      "-args" will be read by this script, not the ord_soumet.
@@ -59,12 +59,11 @@ fi
 
 if [[ ${sequence_opt} == "true" ]]; then
  # Submit job to assemble outputs to one file per forecast hour
-   echo -e "\n Assemble output to one file per requested forecast hour \n" | tee -a ${gmtestinfo}
-   ord_soumet ${TASK_BIN}/assemble-output.sh \
-              -args "${TASK_BASEDIR}" \
-              -mach ${Test_JobsMach} -cpus ${AssmblJobNcpu} -cm ${Test_JobsMemory} \
-              -t ${AssmblJobTime} -queue ${Test_JobsQueue} -jn ${AssmblJobName} \
-              -listing ${TASK_LIST}
+ echo -e "\n Assemble output to one file per requested forecast hour \n" | tee -a ${gmtestinfo}
+ ord_soumet ${TASK_BIN}/assemble-output.sh -args "${TASK_BASEDIR}" \
+            -mach ${Test_JobsMach} -cpus ${AssmblJobNcpu} -cm ${AssmblJobMemory} \
+            -t ${AssmblJobTime} -queue ${Test_JobsQueue} -jn ${AssmblJobName} \
+            -listing ${TASK_LIST}
 
  # Tell the world how long it took to run GEM-MACH
  echo -e "\n== It took $(r.date -n -MM -L $(date '+%C%y%m%d%H%M%S') ${scriptstartdate}) seconds to run the script that runs GEM-MACH. == \n" | tee -a ${gmtestinfo}

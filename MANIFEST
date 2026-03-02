@@ -1,6 +1,6 @@
 NAME       : mach
-VERSION    : 3.2.1-u3
-GEM_VERSION: 5.2.6-u3
+VERSION    : 3.2.2-u3
+GEM_VERSION: 5.2.9-u3
 BUILD      : 
 DESCRIPTION: MACH chemistry library
 SUMMARY    : Atmospheric gas and aerosol chemistry module within RPN physics. This replaces the rpnphy_chm_stubs library within rpnphy. This library also carries some modifications of base rpnphy codes under src/gemmod directory. These are listed explicitly in 'GEMMOD_OBJ_FILES' and used in final linking of the executable.

@@ -6,7 +6,7 @@
 #      and for preparing all necessary scripts for running GEM-MACH.
 #
 #  Usage:
-#      ord_soumet ${TASK_BIN}/compile-gm.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${CmplJobNcpu} -cm ${Test_JobsMemory} -t ${CmplJobTime} -mpi 1 -queue ${Test_JobsQueue} -jn ${CmplJobName} -listing ${TASK_LIST}
+#      ord_soumet ${TASK_BIN}/compile-gm.sh -args "${TASK_BASEDIR}" -mach ${Test_JobsMach} -cpus ${CmplJobNcpu} -cm ${CmplJobMemory} -t ${CmplJobTime} -queue ${Test_JobsQueue} -jn ${CmplJobName} -listing ${TASK_LIST}
 #
 #  The script relies on:
 #      1. Existence of directory structure needed for Runmod task with 
@@ -80,15 +80,15 @@ EOF
 
 # Build Makefile, and compile/link binary
 if [[ "${cmpl_opt}" == "dbg" ]] ; then
-   (time make VERBOSE=1 cmake-mach-debug) |& tee ${cmake_dir}/make.cmake-mach-debug.out
-   (time make VERBOSE=1 -j work) |& tee ${cmake_dir}/make.work.out
+ (time make VERBOSE=1 -j cmake-mach-debug) |& tee ${cmake_dir}/make.cmake-mach-debug.out
+ (time make VERBOSE=1 -j work) |& tee ${cmake_dir}/make.work.out
 elif [[ "${cmpl_opt}" == "pkg" ]] ; then
-   (time make cmake-mach-static) |& tee ${cmake_dir}/make.cmake-mach-static.out
-   (time make -j work) |& tee ${cmake_dir}/make.work.out
-   (time make  package) |& tee ${cmake_dir}/make.package.out
+ (time make -j cmake-mach-static) |& tee ${cmake_dir}/make.cmake-mach-static.out
+ (time make -j work) |& tee ${cmake_dir}/make.work.out
+ (time make  package) |& tee ${cmake_dir}/make.package.out
 else
-   (time make cmake-mach) |& tee ${cmake_dir}/make.cmake-mach.out
-   (time make -j work) |& tee ${cmake_dir}/make.work.out
+ (time make -j cmake-mach) |& tee ${cmake_dir}/make.cmake-mach.out
+ (time make -j work) |& tee ${cmake_dir}/make.work.out
 fi
 
 ### Link compiled binary and copy all supporting programs to the bin directory
@@ -101,19 +101,23 @@ echo -e " GEM_ovbin=${TASK_BIN} \n\n"
 
 ### Copy the scripts necessary for running GEM-MACH into the bin directory
 gemmach_bin=${cmake_dir}/work-${GEM_ARCH}/bin
-cp -r ${gemmach_bin}/* ${TASK_BIN}/
-cp $(which r.run_in_parallel) ${TASK_BIN} ; ln -s ${TASK_BIN}/r.run_in_parallel ${TASK_BIN}/r.mpirun
-cp $(which rungem.sh) ${TASK_BIN}
-cp $(which runmod.sh) ${TASK_BIN}
-cp $(which editfst) ${TASK_BIN}
+if [[ -f ${gemmach_bin}/maingemdm ]] ; then
+ cp -r ${gemmach_bin}/* ${TASK_BIN}/
+ cp $(which r.run_in_parallel) ${TASK_BIN} ; ln -s ${TASK_BIN}/r.run_in_parallel ${TASK_BIN}/r.mpirun
+ cp $(which rungem.sh) ${TASK_BIN}
+ cp $(which runmod.sh) ${TASK_BIN}
+ cp $(which editfst) ${TASK_BIN}
+else
+ echo "ERROR: Something went wrong with compilation. No GEM-MACH binary produced"
+ exit 1
+fi
 
 if [[ ${sequence_opt} == true ]] ;then
  # Submit GEM-MACH run
  echo -e "\n == Submit the GEM-MACH run at $(date) == \n"
- ord_soumet ${TASK_BIN}/run-gm.sh \
-           -args "${TASK_BASEDIR}" \
-           -mach ${Test_JobsMach} -cpus ${GMRunJobProcTopo} -cm ${Test_JobsMemory} -t ${GMRunJobTime} \
-           -mpi 1 -queue ${Test_JobsQueue} -jn ${GMRunJobName} -listing ${TASK_LIST}
+ ord_soumet ${TASK_BIN}/run-gm.sh -args "${TASK_BASEDIR}" \
+            -mach ${Test_JobsMach} -cpus ${GMRunJobProcTopo} -cm ${GMRunJobMemory} -t ${GMRunJobTime} \
+            -mpi 1 -queue ${Test_JobsQueue} -jn ${GMRunJobName} -listing ${TASK_LIST}
 
  # Update status
  echo -e "\n== It took $(r.date -n -MM -L $(date '+%C%y%m%d%H%M%S') ${scriptstartdate}) seconds to run the compilation script. == \n" | tee -a ${gmtestinfo}
