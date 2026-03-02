@@ -2,5 +2,5 @@
 --prefix=src/cplocn git@gitlab.science.gc.ca:concepts/cplocn.git v5.2.1
 --prefix=src/rpnphy git@gitlab.science.gc.ca:MIG/rpnphy.git rpnphy_6.2.5-u3
 --prefix=src/gemdyn git@gitlab.science.gc.ca:dynamics_research/gemdyn.git gemdyn_5.2.6-u3
---prefix=src/mach git@gitlab.science.gc.ca:ARQI-GEMMACH/GEM-MACH.git mach_3.2.1-u3
+--prefix=src/mach git@gitlab.science.gc.ca:ARQI-GEMMACH/GEM-MACH.git mach_3.2.2-u3
 --prefix=share/gem-maestro git@gitlab.science.gc.ca:MIG/gem-maestro.git 1.4.0
