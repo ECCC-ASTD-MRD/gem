@@ -26,12 +26,14 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
      PTGLOBE_SUN, PTGLOBE_SHADE, PTWETB,                &
      PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H ,N)
    use tdpack_const, only: TCDK
+   use sfc_options, only: thermal_stress_utci, thermal_stress_shade
    implicit none
 
    !    PURPOSE       : COMPUTES THERMAL STRESS INDICATORS over a slab surface
    !    AUTHOR        : S. Leroyer   (Original  10/2016)
    !    REFERENCE     : Leroyer et al. (2018) , urban climate
    !    MODIFICATIONS : S Leroyer (2020), wetbulb in C
+   !                    S Leroyer (2026), modularity for UTCI computation
    !    METHOD        :
    !--------------------------------------------------------------------------
 
@@ -155,23 +157,17 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
 
       PTRAD_HSUN(JJ)     = MRT_BODY_SURF(ZEB_H,PQ2_H(JJ),PQ3_H(JJ),PQ4_H(JJ), &
            PQ5_H(JJ),PQ6_H(JJ),PQ7_H(JJ),PQ1_H(JJ) )
-      PTRAD_HSHADE(JJ)   = MRT_BODY_SURF(ZEB_H,PQ2_H(JJ),PQ3_H(JJ),PQ4_H(JJ), &
-           PQ5_H(JJ),PQ6_H(JJ),PQ7_H(JJ),ZUNDEF(JJ))
 
       ! 2-calculation of mean radiant temperature values for a black globe sensor (eg, for WBGT)
 
       PTRAD_GSUN(JJ)     = MRT_BODY_SURF(ZEB_G,PQ2_G(JJ),PQ3_G(JJ),PQ4_G(JJ),   &
            PQ5_G(JJ),PQ6_G(JJ),PQ7_G(JJ),PQ1_G(JJ))
-      PTRAD_GSHADE(JJ)   = MRT_BODY_SURF(ZEB_G,PQ2_G(JJ),PQ3_G(JJ),PQ4_G(JJ),   &
-           PQ5_G(JJ),PQ6_G(JJ),PQ7_G(JJ),ZUNDEF(JJ) )
 
       !========================================================
       ! COMPUTE THE GLOBE TEMPERATURE (K)
       !========================================================
 
       PTGLOBE_SUN(JJ)  = TGLOBE_BODY_SURF(PTRAD_GSUN(JJ), PTA(JJ), PUSR(JJ),    &
-           ZGD, ZEB_G)
-      PTGLOBE_SHADE(JJ)= TGLOBE_BODY_SURF(PTRAD_GSHADE(JJ), PTA(JJ), PUSR(JJ),   &
            ZGD, ZEB_G)
 
       !========================================================
@@ -181,17 +177,6 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
       PTWETB(JJ)       = WETBULBT_SURF(PPS(JJ), PTA(JJ)-TCDK, PQA(JJ))
 
       !========================================================
-      ! compute the Universal Thermal and Climate Index UTCI (C)
-      !========================================================
-
-      ZEHPA(JJ) = PQA(JJ)* PPS(JJ)/ (0.622 + 0.378 * PQA(JJ)) /100.
-
-      PUTCI_OUTSUN(JJ) = UTCI_APPROX_SURF(PTA(JJ) -TCDK, ZEHPA(JJ),       &
-           PTRAD_HSUN(JJ) -TCDK, PU10(JJ))
-      PUTCI_OUTSHADE(JJ) = UTCI_APPROX_SURF(PTA(JJ) -TCDK, ZEHPA(JJ),     &
-           PTRAD_HSHADE(JJ)-TCDK, PU10(JJ) )
-
-      !========================================================
       ! compute the wet bulb globe temperature indices  (WBGT) (C)
       !========================================================
 
@@ -199,10 +184,50 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
            0.7 *  PTWETB(JJ)                +   &
            0.1 * (PTA(JJ)-TCDK)
 
+      IF_SURF_THERMAL_STRESS_SHADE: if ( thermal_stress_shade ) then
+      ! do again the steps corresponding to shaded Environment
+
+      ! MRT - Standard output and used for UTCI
+
+      PTRAD_HSHADE(JJ)   = MRT_BODY_SURF(ZEB_H,PQ2_H(JJ),PQ3_H(JJ),PQ4_H(JJ), &
+           PQ5_H(JJ),PQ6_H(JJ),PQ7_H(JJ),ZUNDEF(JJ))
+
+      ! MRT - for the globe sensor and used for WBGT
+
+      PTRAD_GSHADE(JJ)   = MRT_BODY_SURF(ZEB_G,PQ2_G(JJ),PQ3_G(JJ),PQ4_G(JJ),   &
+           PQ5_G(JJ),PQ6_G(JJ),PQ7_G(JJ),ZUNDEF(JJ) )
+
+      ! Globe T
+      PTGLOBE_SHADE(JJ)= TGLOBE_BODY_SURF(PTRAD_GSHADE(JJ), PTA(JJ), PUSR(JJ),   &
+           ZGD, ZEB_G)
+
+      ! WBGT - formulae for shaded env.
       WBGT_SHADE(JJ) = 0.3 * (PTGLOBE_SHADE(JJ) -TCDK)   +   &
            0.7 * PTWETB(JJ)
 
+      endif IF_SURF_THERMAL_STRESS_SHADE
+
+
+      IF_SURF_THERMAL_STRESS_UTCI: if ( thermal_stress_utci ) then
       !========================================================
+      ! compute the Universal Thermal and Climate Index UTCI (C)
+      !========================================================
+
+      ZEHPA(JJ) = PQA(JJ)* PPS(JJ)/ (0.622 + 0.378 * PQA(JJ)) /100.
+
+      PUTCI_OUTSUN(JJ) = UTCI_APPROX_SURF(PTA(JJ) -TCDK, ZEHPA(JJ),       &
+           PTRAD_HSUN(JJ) -TCDK, PU10(JJ))
+
+      IF_SURF_THERMAL_STRESS_UTCI_SHADE: if ( thermal_stress_shade ) then
+
+      PUTCI_OUTSHADE(JJ) = UTCI_APPROX_SURF(PTA(JJ) -TCDK, ZEHPA(JJ),     &
+           PTRAD_HSHADE(JJ)-TCDK, PU10(JJ) )
+
+      endif IF_SURF_THERMAL_STRESS_UTCI_SHADE
+
+     endif IF_SURF_THERMAL_STRESS_UTCI
+
+
    enddo
 
 end subroutine SURF_THERMAL_STRESS

@@ -96,7 +96,7 @@ contains
 
     real, dimension(:), allocatable :: tausimp, omsimp, gsimp, taulimp, omlimp, glimp
 
-    real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, vs1, dp
+    real, dimension(ni,nkm1) :: aird, rew, rei, rewxp, reixp, rec_cdd, vs1, dp
     real, dimension(ni,nkm1) :: lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps
     real, dimension(ni,nkm1) :: wexp,wimp
     real, dimension(ni,nkm1) :: zrieff
@@ -124,6 +124,7 @@ contains
     real, pointer, dimension(:), contiguous :: zmg,zml,zdlat
     real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp
     real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
+    real, pointer, dimension(:,:), contiguous   :: zrewx, zreix, zrewi, zreii
     real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
          zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4,zmrk2
     !----------------------------------------------------------------
@@ -138,6 +139,10 @@ contains
     MKPTR1D(ztlwpin, tlwpin, pvars)
     MKPTR1D(ztopthi, topthi, pvars)
     MKPTR1D(ztopthw, topthw, pvars)
+    MKPTR2Dm1(zrewx, rewx, pvars)
+    MKPTR2Dm1(zreix, reix, pvars)
+    MKPTR2Dm1(zrewi, rewi, pvars)
+    MKPTR2Dm1(zreii, reii, pvars)
     MKPTR2Dm1(ztose, tose, pvars)
     MKPTR2Dm1(ztosi, tosi, pvars)
     MKPTR2Dm1(ztole, tole, pvars)
@@ -176,7 +181,7 @@ contains
     MKPTR2Dm1(ztmoins, tmoins, pvars)
     MKPTR2D(zmrk2, mrk2, pvars)
 
-    call init2nan(zrieff,aird, rew, rei, rec_cdd, vs1, dp)
+    call init2nan(zrieff,aird, rew, rei, rewxp, reixp, rec_cdd, vs1, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)
     call init2nan(reifac, rewfac)
 
@@ -198,6 +203,10 @@ contains
 
     rec_grav = 1./GRAV
     nostrlwc = (climat.or.stratos)
+    zrewx    = 0.0
+    zreix    = 0.0
+    zrewi    = 0.0
+    zreii    = 0.0
     ztlwp    = 0.0
     ztiwp    = 0.0
     ztlwpin  = 0.0
@@ -519,9 +528,8 @@ contains
        ztopthi(i) = 0.0
     end do
 
-!begin-code: Effective radii of Implicit clouds (non-mp sources)
-! choice of effective radius for implicit water clouds
 
+! necessary for effective radii calculations for liquid clouds below
     do k = 1, nkm1
        do i = 1, ni
     !     for BARKER case, set cloud droplet concentration per cm^3 to 100 over oceans and 500 over land
@@ -533,6 +541,8 @@ contains
           aird(i,k) = sig(i,k) * ps(i) / ( tt(i,k) * RGASD )  !aird is air density in kg/m3
        end do
     end do
+
+! 1) choice of effective radius for IMPLICIT WATER clouds
 
     select case (rad_cond_rew)
       case ('BARKER')
@@ -560,6 +570,7 @@ contains
          ! Radius is a user-specified constant (in microns)
          rew = rew_const
     end select
+    zrewi=rew*1.e-6
 
       ! Adjust the effective radius using stochastic perturbations
       rewfac(:) = ens_spp_get('rew_mult', zmrk2, default=1.)
@@ -567,7 +578,40 @@ contains
          rew(:,k) = rewfac(:) * rew(:,k)
       enddo
 
-!...   choice of effective radius for implicit ice clouds
+! 2) choice of effective radius for EXPLICIT WATER clouds
+
+    select case (rad_exp_rew)
+      case ('BARKER')
+         ! Radius as in newrad: from H. Barker based on aircraft data (range 4-17um from Slingo)
+         rewxp(:,:) = min(max(4., 754.6 * (lwcinmp*aird*rec_cdd)**THIRD), 17.0)
+      case ('NEWRAD')
+         ! Radius as in newrad: corresponds to so called new optical properties
+         vs1(:,:) = (1.0 + lwcinmp(:,:) * 1.e4) &
+              * lwcinmp(:,:) * aird(:,:) * rec_cdd(:,:)
+         rewxp(:,:) =  min(max(2.5, 3000. * vs1**THIRD), 50.0)
+      case ('ROTSTAYN03')
+         ! Radius according to Rotstayn and Liu (2003)
+         do k = 1, nkm1
+            do i = 1, ni
+               epsilon =  1.0 - 0.7 * exp(- 0.001 / rec_cdd(i,k))
+               epsilon2 =  epsilon * epsilon
+               betad =  1.0 + epsilon2
+               betan =  betad + epsilon2
+               rewxp(i,k) = 620.3504944*((betan*betan*lwcinmp(i,k)*aird(i,k)) &
+                    / (betad / rec_cdd(i,k)) )**third
+               rewxp(i,k) =  min (max (2.5, rewxp(i,k)), 17.0)
+            end do
+         end do
+      case ('MP')
+         ! Use what P3 provides 
+         rewxp(:,:) = zeffradc(:,:)*1.e6  ![microns]
+      case DEFAULT
+         ! Radius is a user-specified constant (in microns)
+         rewxp = rewx_const
+    end select
+    zrewx=rewxp*1.e-6
+
+! 3) choice of effective radius for IMPLICIT ICE clouds
 
      ! Effective radius of crystals in ice clouds
       select case (rad_cond_rei)
@@ -589,7 +633,7 @@ contains
             do i = 1, ni
                zrieff(i,k) = 1000. * icewcin(i,k) * aird(i,k) ! convert to gm-3
                zrieff(i,k) = (1.2351 + 0.0105*(tt(i,k) - TCDK)) * (45.8966*zrieff(i,k)**0.2214 + 0.7957*zrieff(i,k)**0.2535*(tt(i,k) - 83.15))
-               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*abs(zdlat(i)))) ! impose a lat dependent min
+               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*cos(zdlat(i)))) ! impose a lat dependent min
                rei(i,k) = 0.64952*zrieff(i,k)
                rei(i,k) =  min(rei(i,k), 70.0) ! necessary to avoid crashes
             enddo
@@ -598,12 +642,60 @@ contains
          ! Radius is a user-specified constant (in microns)
          rei(:,:) = rei_const
       end select
+      zreii=rei*1.e-6
 
       ! Adjust the effective radius using stochastic perturbations
       reifac(:) = ens_spp_get('rei_mult', zmrk2, default=1.)
       do k=1, nkm1
          rei(:,k) = reifac(:) * rei(:,k)
       enddo
+
+! 4)  choice of effective radius for EXPLICIT ice clouds
+
+     ! Effective radius of crystals in ice clouds
+     ! for validation with P3 default reixp needs to be in m, not in microns
+      select case (rad_exp_rei)
+      case ('CCCMA')
+         ! Units of icewcin must be in g/m3 for this parameterization of rei (in microns)
+         zrieff(:,:) = (1000. * iwcinmps * aird)**0.216
+         where (iwcinmps(:,:) >= 1.e-9)
+            zrieff(:,:) = 83.8 * zrieff(:,:)
+         elsewhere
+            zrieff(:,:) = 20.
+         endwhere
+         reixp(:,:) =  max(min(zrieff(:,:), 50.0), 20.0) * 1.e-6
+      case ('SIGMA')
+         ! Radius varies from 60um (near-surface) to 15um (upper-troposphere)
+         reixp(:,:) = (max(sig(:,:)-0.25, 0.0)*60. + 15.) * 1.e-6
+      case ('ECMWF')
+         ! see IFS documentation for Cy47R3 -eqns 2.74 and 2.75 - beware of parenthesis error for first term
+         do k = 1, nkm1
+            do i = 1, ni
+               zrieff(i,k) = 1000. * iwcinmps(i,k) * aird(i,k) ! convert to gm-3
+               zrieff(i,k) = (1.2351 + 0.0105*(tt(i,k) - TCDK)) * (45.8966*zrieff(i,k)**0.2214 + 0.7957*zrieff(i,k)**0.2535*(tt(i,k) - 83.15))
+               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*cos(zdlat(i)))) ! impose a lat dependent min
+               reixp(i,k) = 0.64952*zrieff(i,k)
+               reixp(i,k) =  min(reixp(i,k), 70.0) * 1.e-6 ! necessary to avoid crashes
+            enddo
+         enddo
+      case ('MP')
+         ! Use what P3 provides, some filters were applied before and are applied below !!!!coded only for mpcat=1
+         reixp(:,:) = effradi(:,:,1) ! quoi faire si mpcat =/ 1
+      case DEFAULT
+         ! Radius is a user-specified constant (in microns)
+         reixp(:,:) = reix_const *1.e-6
+      end select
+      zreix=reixp
+
+! mask output effective radii where there is no cloud
+      where (cldfxp(:,:) < mpcldth)
+            zreix(:,:)= 0.0
+            zrewx(:,:)= 0.0
+      endwhere
+      where (cldfmp(:,:) < mpcldth)
+            zreii(:,:)= 0.0
+            zrewi(:,:)= 0.0
+      endwhere
 
     ! end-code : FOR EFFECTIVE RADII OF IMPLICIT CLOUDS (NON-mp SOURCES)
     !
@@ -641,7 +733,7 @@ contains
                 omcs(i,k,j)  = 0.
                 gcs(i,k,j)   = 0.
              else
-                if (liqwpin(i,k) > wpth) then  !implicit
+                if (liqwpin(i,k) > wpth) then  !implicit liquid
                    rew2 = rew(i,k) * rew(i,k)
                    rew3 = rew2 * rew(i,k)
                    tausw = liqwpin(i,k) * &
@@ -657,7 +749,7 @@ contains
                    gsw   = 0.
                 endif
 
-                if (icewpin(i,k) > wpth) then  !implicit
+                if (icewpin(i,k) > wpth) then  !implicit ice
                    dg   = 1.5396 * rei(i,k)
                    dg2  = dg  * dg
                    dg3  = dg2 * dg
@@ -672,8 +764,9 @@ contains
                    gsi   = 0.
                 endif
 
-                if (lwpinmp(i,k) > wpth) then  !explicit
-                   rew1 = zeffradc(i,k) * 1.e+6
+                if (lwpinmp(i,k) > wpth) then  !explicit liquid
+!                   rew1 = zeffradc(i,k) * 1.e+6
+                   rew1 = rewxp(i,k) 
                    if (kount == 0) rew1 = 10.    ![microns] assign value at step zero (in case QC is non-zero at initial conditions)
                    rew1 = min(max(4., rew1), 40.0) !where does this 40 come from?
                    rew2 = rew1*rew1
@@ -691,9 +784,10 @@ contains
                    gswmp   = 0.
                 endif
 
-                do l=1,mpcat  !explicit
+                do l=1,mpcat                     !explicit ice
                    if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then
-                      dg   = 1.5396 * effradi(i,k,l)*1.e6  ![microns]
+!                      dg   = 1.5396 * effradi(i,k,l)*1.e6  ![microns]
+                      dg   = 1.5396 * reixp(i,k)*1.e6       ![microns]
                       !if (kount == 0) dg = 1.5396*50.   ![microns] assign value at step zero (in case "QI" is non-zero at initial conditions)
                       dg   = min(max(dg, 15.), 110.)  ! max value is lower otherwise, model is crashing
                       dg2  = dg  * dg
@@ -771,7 +865,7 @@ contains
                 omcl(i,k,j)  = 0.
                 gcl(i,k,j)   = 0.
              else
-                if (liqwpin(i,k) > wpth) then    !implicit
+                if (liqwpin(i,k) > wpth) then    !implicit liquid
                    rew2 = rew(i,k) * rew(i,k)
                    rew3 = rew2 * rew(i,k)
                    taulw = liqwpin(i,k) * (awl(1,j) + awl(2,j) * rew(i,k)+ &
@@ -792,7 +886,7 @@ contains
                 !     icewpin(i,k) / tauli for single scattering albedo
                 !----------------------------------------------------------------------
 
-                if (icewpin(i,k) > wpth) then    !implicit
+                if (icewpin(i,k) > wpth) then    !implicit ice
                    dg    = 1.5396 * rei(i,k)
                    dg2   = dg  * dg
                    dg3   = dg2 * dg
@@ -809,8 +903,9 @@ contains
                    gli   = 0.
                 endif
 
-                if (lwpinmp(i,k) > wpth) then    !explicit
-                   rew1 = zeffradc(i,k) * 1.e6
+                if (lwpinmp(i,k) > wpth) then    !explicit liquid
+!                   rew1 = zeffradc(i,k) * 1.e6
+                   rew1 = rewxp(i,k) 
                    rew1 = min(max(4., rew1), 40.0)  !TEST, JM
                    if (kount == 0) rew1 = 10.    !assign value at step zero (in case QC is non-zero at initial conditions)
                    rew2 = rew1*rew1
@@ -835,8 +930,9 @@ contains
                 endif
 
                 do l=1,mpcat
-                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then    !explicit
-                      dg = 1.5396 * effradi(i,k,l)*1.e6
+                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then    !explicit ice
+!                      dg = 1.5396 * effradi(i,k,l)*1.e6
+                      dg   = 1.5396 * reixp(i,k)*1.e6 ! to microns
                       if (kount == 0) dg = 1.5396*50.     !assign value at step zero (in case "QI" is non-zero at initial conditions)
                       dg  = min(max(dg, 15.), 110.)  ! max value is lower to avoid model crashing!
                       dg2 = dg  * dg

@@ -6,7 +6,7 @@ module kfmid
 
 contains
 
-   subroutine kfmid1(tp1, qp1, ub, vb, wb, gzm, sigt, ps, dxdy, latr, &
+   subroutine kfmid1(tp1, qp1, ub, vb, wb, wbtrig, gzm, sigt, ps, dxdy, latr, &
         deep_cape, deep_active, cond_prflux, &
         dtdt, dqdt, dudt, dvdt, dqcdt, dqidt, &
         active, zcrr, clouds, rliqout, riceout, rnflx, snoflx, mcd, mpeff, mainc, &
@@ -40,6 +40,7 @@ contains
       real, dimension(:,:), intent(in) :: ub                       !U-component wind speed (m/s)
       real, dimension(:,:), intent(in) :: vb                       !V-component wind speed (m/s)
       real, dimension(:,:), intent(in) :: wb                       !Vertical motion (m/s)
+      real, dimension(:,:), intent(in) :: wbtrig                   !Vertical motion for use in trigger test (m/s)
       real, dimension(:,:), intent(in) :: gzm                      !Geopotential heights (m)
       real, dimension(:,:), intent(in) :: sigt                     !Eta level value (0-1)
       real, dimension(:), intent(in) :: ps                         !Surface pressure (Pa)
@@ -108,7 +109,7 @@ contains
       real, dimension(kx+1)  :: omg
       real, dimension(1,kx) :: pp0c,q00c,qst1c
       real, dimension(ix,kx) :: tt0,tv00,q00,u00,v00,wz0,dzp,dpp,qst1,  &
-           pp0,z0g,sigkfc,ql0,qi0,thv0,areaup
+           pp0,z0g,sigkfc,ql0,qi0,thv0,areaup,wztrig
       logical :: need_buoyancy_sorting,need_above_let,need_mixing
 !!$      character(len=8) :: cdmf
 !!$      character(len=2) :: cderl,cderr,cddrl,cddrr
@@ -169,7 +170,7 @@ contains
       call init2nan(qipa,qlg,qig,qtpa,qtdt,qtg,thpai,qtpai,qlpai,qipai)
       call init2nan(td_thta,td_qt,td_ql,td_qi,tri_thta,tri_qt,tri_ql,tri_qi)
       call init2nan(workk,emf,td_q,tri_q,qpai,td_u,td_v,tri_u,tri_v,upai)
-      call init2nan(pp0c,q00c,qst1c)
+      call init2nan(pp0c,q00c,qst1c,wztrig)
       call init2nan(tt0,tv00,q00,u00,v00,wz0,dzp,dpp,qst1)
       call init2nan(pp0,z0g,sigkfc,ql0,qi0,thv0,areaup)
 
@@ -243,6 +244,7 @@ contains
             ROCPQ=0.2854*(1.-0.28*Q00(I,K))
             THV0(I,K) = TV00(I,K)*(1.E5/PP0(I,K))**ROCPQ
             WZ0(I,K)  = WB(I,NK)
+            WZTRIG(I,K) = WBTRIG(I,NK)
 
          end do
       end do
@@ -311,7 +313,7 @@ contains
 
          ! Find the first level that meets the vertical motion criterion
          k = 1
-         do while (dxdy(i)*wz0(i,k)*(pp0(i,k)/(RGASD*tv00(i,k))) < minemf(i) .and. k < kx)
+         do while (dxdy(i)*wztrig(i,k)*(pp0(i,k)/(RGASD*tv00(i,k))) < minemf(i) .and. k < kx)
             k = k+1
          enddo
          if (k < kx) then

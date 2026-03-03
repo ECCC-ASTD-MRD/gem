@@ -58,7 +58,9 @@ subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu
         high(i)= 0.0
         deci(i)= 0.0
         ever(i)= 0.0
-        agfrac(i) = fcover(i,15)
+        ! with the option "vf_type='CCILC_ECO'", only classes 15, 17 and 20
+        ! consist of agricultural areas (see inside inicover_svs_ccilceco)
+        agfrac(i) = fcover(i,15) + fcover(i,17) + fcover(i,20)
       END DO
 !
 !

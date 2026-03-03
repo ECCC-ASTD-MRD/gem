@@ -70,19 +70,21 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    23/01/98 
+!       S. Leroyer  jan 2026 : custom parameters with teb_snow options
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_SNOW_PAR_TEB, ONLY : XANSMIN, XANSMAX, XANS_TODRY, XRHOSMIN, XRHOSMAX, &
-                          XZ0SN, XZ0HSN, XWCRN, SWE_CRIT
+                         XZ0SN, XZ0HSN, XWCRN, XWCRN_MA00, XWCRN_JA14, SWE_CRIT
 USE MODD_CSTS,     ONLY : XSTEFAN
 !
 USE MODE_SURF_SNOW_FRAC
 !
 USE MODI_SNOW_COVER_1LAYER
 USE MODI_URBAN_LW_COEF
+use sfc_options, only: teb_snow,teb_snroof,teb_snroad
 !
 implicit none
 !!!#include <arch_specific.hf>
@@ -174,10 +176,12 @@ REAL, DIMENSION(SIZE(PTA)) :: ZSR_ROAD    ! snow fall on road snow (kg/s/m2 of s
 REAL, DIMENSION(SIZE(PTA)) :: UCAN_MOD    ! module of canyon wind
 
 REAL  :: WCRN_SMALLER ,  ANS_BIGGER  
-!
+REAL  :: PANSMIN, PANSMAX, PRHOSMIN, PRHOSMAX, PRHOFOLD,PDRAIN_TIME, PWCRN
+REAL  :: PZ0SN, PZ0HSN
 ! flags to call to snow routines
 !
 LOGICAL :: GSNOW_ROOF, GSNOW_ROAD
+LOGICAL :: OALL_MELT
 !
 !
 !-------------------------------------------------------------------------------
@@ -237,14 +241,75 @@ IF ( GSNOW_ROOF ) THEN
 !
 !* call to snow mantel scheme
 !
+! TESTS ON DIFFERENT PARAMETERS FOR SNOW AGING ON ROOF
+ IF (TEB_SNOW .EQ. 'MA00') THEN
+! DEFAULT Masson 2000
+  PWCRN = XWCRN_MA00               !! xwcrn*0.1= 1.0 kg m-2
+  ANS_BIGGER = XANS_TODRY  * 5.    !! tau_a = 0.04 = 0.008 * 5
+  PANSMIN=XANSMIN                  !!= 0.5
+  PANSMAX=XANSMAX
+  PRHOSMIN=XRHOSMIN                 !! Minimim density
+  PRHOSMAX=XRHOSMAX                 !!       = 750  kg m-3  ! elevated in gem-isa ? !! Maximum density
+  PRHOFOLD=0.01                     !! tau_r =
+  PDRAIN_TIME=0.                    !!  drainage folding time (days)
+  OALL_MELT = .true.
+! ! ! ANS_T = 0.01                 !! tau_f set in modd_snow_par_teb.F90
+! ! ! PEMIS = 1                    !! set in SNOW_COVER_1LAYER with modd_snow_par_teb.F90
+  PZ0SN=XZ0SN
+  PZ0HSN=XZ0HSN
 
-  WCRN_SMALLER= XWCRN * 0.1
- 
-  ANS_BIGGER = XANS_TODRY * 5.
-  CALL SNOW_COVER_1LAYER(PTSTEP, XANSMIN, XANSMAX,ANS_BIGGER,             &
-                         XRHOSMIN, XRHOSMAX, 0.01, .TRUE.,                    &
-                         0.,WCRN_SMALLER,                                     &
-                         XZ0SN,XZ0HSN,                                        &
+ ELSE IF (TEB_SNOW .EQ. 'JA14') THEN
+! JA14 - Järvi et al 2014
+  PWCRN = XWCRN_JA14               !! 0.8 kg m-2  !XWCRN_JA14v1
+  !WCRN_SMALLER = XWCRN * 0.08       !!       = 0.8 kg m-2
+  ANS_BIGGER = XANS_TODRY  * 2.25   !! tau_a = 0.018
+  PANSMIN=0.18                      !! Minimum albedo
+  PANSMAX=XANSMAX
+  PRHOSMIN=XRHOSMIN                 !! Minimim density
+  PRHOSMAX=400                      !! Maximum density
+  PRHOFOLD=0.043                    !! tau_r = 0.043
+  PDRAIN_TIME=0.                    !!  drainage folding time (days)
+  OALL_MELT = .true.
+! !ANS_T = 0.11                      !! tau_f set in SNOW_COVER_1LAYER with modd_snow_par_teb.F90
+! emissivity=0.99                    !! set in SNOW_COVER_1LAYER with modd_snow_par_teb.F90
+  PZ0SN=XZ0SN
+  PZ0HSN=XZ0HSN
+
+ ELSE IF (TEB_SNOW .EQ. 'LE10') THEN
+! LE10 - Lemonsu et al 2010
+  PWCRN = XWCRN_MA00                  !! xwcrn*0.1= 1.0 kg m-2
+  ANS_BIGGER = XANS_TODRY  * 5        !! tau_a = 0.04- not found in LE10. veg 0.008 but 'The evolution rate of the snow albedo is enhanced (MA00)
+  PANSMIN=0.30                        !! Minimum albedo
+  PANSMAX=XANSMAX
+  PRHOSMIN=XRHOSMIN                   !! Minimim density
+  PRHOSMAX=300                        !! Maximum density
+  PRHOFOLD=0.01                       !! tau_r = ??  I don<t find it in LE10 carefull
+  PDRAIN_TIME=0.                       !!  drainage folding time (days)
+  OALL_MELT = .true.
+!  !ANS_T = 0.174                       !! tau_f set in modd_snow_par_teb.F90
+  PZ0SN=XZ0SN
+  PZ0HSN=XZ0HSN
+
+ ELSE IF (TEB_SNOW .EQ. 'CUSTOM') THEN
+  PWCRN = teb_snroof(1)
+  ANS_BIGGER = teb_snroof(2)          !! tau_a
+  PANSMIN=teb_snroof(3)               !! Minimum albedo
+  PANSMAX=teb_snroof(4)               !! Maximum albedo
+  PRHOSMIN=teb_snroof(5)              !! Minimim density
+  PRHOSMAX=teb_snroof(6)              !! Maximum density
+  PRHOFOLD=teb_snroof(7)              !! tau_r
+  PDRAIN_TIME=teb_snroof(10)          !!  Anthropogenic drainage folding time (days)
+  OALL_MELT = .true.
+!  !ANS_T = 0.174                       !! tau_f set in modd_snow_par_teb.F90
+  PZ0SN=teb_snroof(11)
+  PZ0HSN=teb_snroof(12)
+
+ END IF
+
+  CALL SNOW_COVER_1LAYER(PTSTEP, PANSMIN, PANSMAX,ANS_BIGGER,             &
+                         PRHOSMIN, PRHOSMAX, PRHOFOLD, OALL_MELT,             &
+                         PDRAIN_TIME,PWCRN,                                   &
+                         PZ0SN,PZ0HSN,                                        &
                          PTSNOW_ROOF, PASNOW_ROOF,                            &
                          PRSNOW_ROOF, PWSNOW_ROOF, PTSSNOW_ROOF,              &
                          PESNOW_ROOF,                                         &
@@ -303,12 +368,74 @@ IF ( GSNOW_ROAD ) THEN
   
   UCAN_MOD(:)=MAX(ABS(PU_CANYON(:)),1.0)
 
-  WCRN_SMALLER = XWCRN * 0.1 
-  ANS_BIGGER = XANS_TODRY  * 10.
-  CALL SNOW_COVER_1LAYER(PTSTEP, 0.2, XANSMAX, ANS_BIGGER,                &
-                         XRHOSMIN, XRHOSMAX, 0.1, .FALSE.,                    &
-                         1., WCRN_SMALLER,                                    &
-                         XZ0SN,XZ0HSN,                                        &
+! TESTS ON DIFFERENT PARAMETERS FOR SNOW AGING ON ROAD
+ IF (TEB_SNOW .EQ. 'MA00') THEN
+ ! DEFAULT Masson 2000
+  PWCRN = XWCRN_MA00               !! xwcrn*0.1= 1.0 kg m-2
+  ANS_BIGGER = XANS_TODRY  * 10.    !! tau_a = 0.08 = 0.008 * 10
+  PANSMIN=0.2                       !! = 0.2
+  PANSMAX=XANSMAX                   !! = 0.85
+  PRHOSMIN=XRHOSMIN                 !! Minimim density
+  PRHOSMAX=XRHOSMAX                 !!       = 750  kg m-3   !! Maximum density
+  PRHOFOLD=0.1                      !! tau_r =
+  PDRAIN_TIME=1.                    !!  drainage folding time (days)
+  OALL_MELT = .false.
+ ! ! ANS_T = 0.01                      !! tau_f set in modd_snow_par_teb.F90
+  PZ0SN=XZ0SN
+  PZ0HSN=XZ0HSN
+
+ ELSE IF (TEB_SNOW .EQ. 'JA14') THEN
+! JA14 - Järvi et al 2014
+  PWCRN =  XWCRN_JA14               !! 0.8 kg m-2  XWCRN_JA14v1
+  ANS_BIGGER = XANS_TODRY  * 2.25   !! tau_a = 0.018
+  PANSMIN=0.18                      !! Minimum albedo
+  PANSMAX=XANSMAX
+  PRHOSMIN=XRHOSMIN                 !! Minimim density
+  PRHOSMAX=400                      !! Maximum density
+  PRHOFOLD=0.043                    !! tau_r = 0.043
+  PDRAIN_TIME=0.                    !!  drainage folding time (days)
+  OALL_MELT = .false.
+! ! ANS_T = 0.11                      !! tau_f set in modd_snow_par_teb.F90
+! emissivity=0.99
+  PZ0SN=XZ0SN
+  PZ0HSN=XZ0HSN
+
+ELSE IF (TEB_SNOW .EQ. 'LE10') THEN
+! LE10 - Lemonsu et al 2010
+  PWCRN = XWCRN_MA00                  !! xwcrn*0.1= 1.0 kg m-2
+  ANS_BIGGER = XANS_TODRY  * 10       !! tau_a = 0.08- not found in LE10. only veg 0.008 but 'The evolution rate of the snow albedo is enhanced
+  PANSMIN=0.15                        !! Minimum albedo
+  PANSMAX=XANSMAX                     !! = 0.85
+  PRHOSMIN=XRHOSMIN                   !! Minimim density
+  PRHOSMAX=350                        !! Maximum density
+  PRHOFOLD=0.1                        !! tau_r = ??  I don<t find it in LE10 carefull - take default (MA00)
+  PDRAIN_TIME=1.                      !!  drainage folding time (days)
+  OALL_MELT = .false.
+! ! ANS_T = 0.174                       !! tau_f set in modd_snow_par_teb.F90
+  PZ0SN=XZ0SN
+  PZ0HSN=XZ0HSN
+
+ELSE IF (TEB_SNOW .EQ. 'CUSTOM') THEN
+  PWCRN = teb_snroad(1)
+  ANS_BIGGER = teb_snroad(2)          !! tau_a
+  PANSMIN=teb_snroad(3)               !! Minimum albedo
+  PANSMAX=teb_snroad(4)               !! Maximum albedo
+  PRHOSMIN=teb_snroad(5)              !! Minimim density
+  PRHOSMAX=teb_snroad(6)              !! Maximum density
+  PRHOFOLD=teb_snroad(7)              !! tau_r
+  PDRAIN_TIME=teb_snroad(10)          !!  Anthropogenic drainage folding time (days)
+  OALL_MELT = .false.
+!  !ANS_T =                     !! tau_f set in modd_snow_par_teb.F90
+! emissivity=0.99
+  PZ0SN=teb_snroad(11)
+  PZ0HSN=teb_snroad(12)
+
+END IF
+
+  CALL SNOW_COVER_1LAYER(PTSTEP, PANSMIN, PANSMAX, ANS_BIGGER,                &
+                         PRHOSMIN, PRHOSMAX, PRHOFOLD, OALL_MELT,             &
+                         PDRAIN_TIME, PWCRN,                                  &
+                         PZ0SN,PZ0HSN,                                        &
                          PTSNOW_ROAD, PASNOW_ROAD,                            &
                          PRSNOW_ROAD, PWSNOW_ROAD, PTSSNOW_ROAD,              &
                          PESNOW_ROAD,                                         &

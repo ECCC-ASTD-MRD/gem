@@ -70,7 +70,7 @@ contains
          ier = min(wb_get('phy/phyoutlist',phyoutlist_S,nphyoutlist),ier)
       endif
       ier = min(wb_get('phy/debug_alldiag',debug_alldiag_L),ier)
-      
+            
       ier = min(wb_put('sfc/beta',beta,options),ier)
       ier = min(wb_put('sfc/bh91_a',bh91_a,options),ier)
       ier = min(wb_put('sfc/bh91_b',bh91_b,options),ier)
@@ -123,17 +123,75 @@ contains
          endif
       endif
 
-      ! Trigger calculation of on-demand diagnostics
-      if (associated(phyoutlist_S)) then
+      IF_PHYOUTLIST: if (associated(phyoutlist_S)) then
+         ! Trigger calculation of on-demand diagnostics. Modular computation to save comp. time
+
+         ! List for UTCI (algorithm costs a bit) (4)
          i = 1
-         do while (i <= nphyoutlist .and. .not.thermal_stress)
-            if (any(phyoutlist_S(i) == (/'DXSU','DXHD','GXSU','GXHD','GTSU', &
-                 'GTHD','RTSU','RTHD','QSSU','QSSK','QLSK','QSRD','QLRD',  &
-                 'QWSL','QLWL'/))) thermal_stress = .true.
+         do while (i <= nphyoutlist .and. .not.thermal_stress_utci)
+            if (any(phyoutlist_S(i) == (/'DXSU','DXHD', &
+                 'DXFS','DXFD'/))) then
+               thermal_stress_utci = .true.
+               thermal_stress = .true.
+            endif
             i = i+1
          enddo
-      endif
-      thermal_stress = (thermal_stress .or. debug_alldiag_L .or. nphyoutlist < 0)
+
+         ! List for var in shade
+         if (associated(phyoutlist_S)) then
+            i = 1
+            do while (i <= nphyoutlist .and. .not.thermal_stress_shade)
+               if (any(phyoutlist_S(i) == (/'GXHD','RTHD','GTHD','DXHD','DXFD'/))) then
+                  thermal_stress_shade = .true.
+                  thermal_stress = .true.
+               endif
+               i = i+1
+            enddo
+         endif
+
+         ! List for var over roof (17)
+         if (associated(phyoutlist_S)) then
+            i = 1
+            do while (i <= nphyoutlist .and. .not.thermal_stress_roof)
+               if (any(phyoutlist_S(i) == (/'DXFS','DXFD', &
+                    'GXFS','GXFD','RTFS','RTFD','GTFS','GTFD',  &
+                    'QSRF','QSFK','QLRF','QLFK','QSFW','QLFW',  &
+                    'DCFS','DCFD','WBRF'  &
+                    /))) then
+                  thermal_stress_roof = .true.
+                  thermal_stress = .true.
+               endif
+               i = i+1
+            enddo
+         endif
+
+         ! List for main var
+         if (associated(phyoutlist_S)) then
+            i = 1
+            do while (i <= nphyoutlist .and. .not.thermal_stress)
+               if (any(phyoutlist_S(i) == (/'GXSU','RTSU', &
+                    'GTSU','QSSU','QSSK','QLSK',    &
+                    'QSWL','QLWL','QSRD','QLRD'/))) thermal_stress = .true.
+               i = i+1
+            enddo
+         endif
+         
+      else !IF_PHYOUTLIST
+         
+         iverb = wb_verbosity(WB_MSG_FATAL)
+         if (.not.RMN_IS_OK(wb_get('sps_cfgs/ThStress_L',       thermal_stress)))       thermal_stress       = .false.
+         if (.not.RMN_IS_OK(wb_get('sps_cfgs/ThStress_utci_L',  thermal_stress_utci)))  thermal_stress_utci  = .false.
+         if (.not.RMN_IS_OK(wb_get('sps_cfgs/ThStress_shade_L', thermal_stress_shade))) thermal_stress_shade = .false.
+         if (.not.RMN_IS_OK(wb_get('sps_cfgs/ThStress_roof_L',  thermal_stress_roof)))  thermal_stress_roof  = .false.
+         iverb = wb_verbosity(iverb)
+
+      endif IF_PHYOUTLIST
+      
+      thermal_stress_utci  = (thermal_stress_utci  .or. debug_alldiag_L)
+      thermal_stress_shade = (thermal_stress_shade .or. debug_alldiag_L)
+      thermal_stress_roof  = (thermal_stress_roof  .or. debug_alldiag_L)
+      thermal_stress       = (thermal_stress       .or. debug_alldiag_L .or. &
+           thermal_stress_utci .or. thermal_stress_shade .or. thermal_stress_roof)
 
       F_istat = RMN_OK
       !----------------------------------------------------------------------

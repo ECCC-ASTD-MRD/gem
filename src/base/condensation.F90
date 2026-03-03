@@ -13,7 +13,8 @@ contains
       use tdpack_const, only: GRAV, DELTA, RGASD, CAPPA
       use phybudget, only: pb_compute, pb_conserve, pb_residual
       use microphy_utils, only: mp_lwc, mp_iwc
-      use microphy_p3,  only: mp_p3_wrapper_gem, P3_OK=>STATUS_OK
+      use microphy_p3,    only: mp_p3x_wrapper_gem  => mp_p3_wrapper_gem
+      use microphy_p3v5,  only: mp_p3v5_wrapper_gem => mp_p3_wrapper_gem, P3_OK=>STATUS_OK
       use microphy_p3v3,  only: mp_p3v3_wrapper_gem => mp_p3_wrapper_gem
       use microphy_kessler, only: kessler
       use microphy_consun, only: consun
@@ -161,41 +162,45 @@ contains
             call physeterror('condensation', 'Error returned by P3v3 gem wrapper')
             return
          endif
-
-         ! Adjust tendencies to impose conservation
-         if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
-              F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
-            call physeterror('condensation', &
-                 'Cannot correct conservation for '//trim(stcond))
-            return
-         endif
          
       case('MP_P3')
          
          ! Predicted Particle Properties (P3) microphysics
-         istat1 = mp_p3_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend,                                                          &
-              qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,zgzmom,sigma,                                                    &
-              kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,                                                     &
-              a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_tss_ws,                                                  &
-              a_zet,a_zec,a_effradc,qcm,qcp,ncp,qrm,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,                           &
-              p3_depfact,p3_subfact,p3_debug,p3_supid,a_h_cb,a_h_sn,a_vis,a_vis1,                                          &
-              a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,a_diag_dhmax,                                         &
-              a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6,                                                                   &
-              qti1m,qti1p,qmi1p,nti1p,bmi1p,a_effradi1,zitot_1=zti1p,qiliq_1=qli1p,                                        &
+         istat1 = mp_p3v5_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend,                                                                       &
+              qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,zgzmom,sigma,                                                                   &
+              kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,                                                                    &
+              a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_tss_ws,                                                                 &
+              a_zet,a_zec,a_effradc,qcm,qcp,ncp,qrm,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,                                          &
+              p3_depfact,p3_subfact,p3_debug,p3_supid,a_h_cb,a_h_sn,a_vis,a_vis1,                                                         &
+              a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,a_diag_dhmax,                                                        &
+              a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6,                                                                                  &
+              qti1m,qti1p,qmi1p,nti1p,bmi1p,a_effradi1,zitot_1=zti1p,qiliq_1=qli1p,                                                       &
               qitot_2m=qti2m,qitot_2=qti2p,qirim_2=qmi2p,nitot_2=nti2p,birim_2=bmi2p,diag_effi_2=a_effradi2,zitot_2=zti2p,qiliq_2=qli2p,  &
               qitot_3m=qti3m,qitot_3=qti3p,qirim_3=qmi3p,nitot_3=nti3p,birim_3=bmi3p,diag_effi_3=a_effradi3,zitot_3=zti3p,qiliq_3=qli3p,  &
               qitot_4m=qti4m,qitot_4=qti4p,qirim_4=qmi4p,nitot_4=nti4p,birim_4=bmi4p,diag_effi_4=a_effradi4,zitot_4=zti4p,qiliq_4=qli4p)
          if (istat1 /= P3_OK) then
-            call physeterror('condensation', 'Error returned by P3 gem wrapper') 
+            call physeterror('condensation', 'Error returned by P3 gem wrapper')
            return
          endif
 
-         ! Adjust tendencies to impose conservation
-         if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
-              F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
-            call physeterror('condensation', &
-                 'Cannot correct conservation for '//trim(stcond))
-            return
+      case('MP_P3X')
+         
+         ! Predicted Particle Properties (P3) microphysics
+         istat1 = mp_p3x_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend,                                                                        &
+              qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,zgzmom,sigma,                                                                   &
+              kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,                                                                    &
+              a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_tss_ws,                                                                 &
+              a_zet,a_zec,a_effradc,qcm,qcp,ncp,qrm,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,                                          &
+              p3_depfact,p3_subfact,p3_debug,p3_supid,a_h_cb,a_h_sn,a_vis,a_vis1,                                                         &
+              a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,p3_freq3Ddiag,a_diag_dhmax,                                          &
+              a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6,                                                                                  &
+              qti1m,qti1p,qmi1p,nti1p,bmi1p,a_effradi1,zitot_1=zti1p,qiliq_1=qli1p,                                                       &
+              qitot_2m=qti2m,qitot_2=qti2p,qirim_2=qmi2p,nitot_2=nti2p,birim_2=bmi2p,diag_effi_2=a_effradi2,zitot_2=zti2p,qiliq_2=qli2p,  &
+              qitot_3m=qti3m,qitot_3=qti3p,qirim_3=qmi3p,nitot_3=nti3p,birim_3=bmi3p,diag_effi_3=a_effradi3,zitot_3=zti3p,qiliq_3=qli3p,  &
+              qitot_4m=qti4m,qitot_4=qti4p,qirim_4=qmi4p,nitot_4=nti4p,birim_4=bmi4p,diag_effi_4=a_effradi4,zitot_4=zti4p,qiliq_4=qli4p)
+         if (istat1 /= P3_OK) then
+            call physeterror('condensation', 'Error returned by P3 gem wrapper')
+           return
          endif
 
       case('THOMPSON')
@@ -210,14 +215,6 @@ contains
             call physeterror('condensation', 'Error returned by thompson_wrapper_gem') 
            return
         endif
-
-        ! Adjust tendencies to impose conservation
-        if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
-              F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
-            call physeterror('condensation', &
-                 'Cannot correct conservation for '//trim(stcond))
-            return
-         endif
         
       CASE DEFAULT
            call physeterror('condensation','Error stcond='//stcond//' not valid')
@@ -225,6 +222,16 @@ contains
            
       end select GRIDSCALE_SCHEME
 
+      ! Adjust tendencies to impose conservation
+      if (stcond(1:5) == 'MP_P3' .or. stcond == 'THOMPSON') then
+         if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
+              F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
+            call physeterror('condensation', &
+                 'Cannot correct conservation for '//trim(stcond))
+            return
+         endif
+      endif
+      
       ! Split diagnostic tables into the bus
       if (associated(a_d2d01)) a_d2d01 = diag_2d(:,1)
       if (associated(a_d2d02)) a_d2d02 = diag_2d(:,2)

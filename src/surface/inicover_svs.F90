@@ -290,6 +290,7 @@ subroutine inicover_svs(pvars, kount, ni)
    real, external :: interpveg
 
    integer :: i,k
+   integer(INT64) :: delti64
    real :: julien, juliens
 
    real, dimension(nclass) :: laidatdn, laidatds, logz0mloc
@@ -364,7 +365,8 @@ subroutine inicover_svs(pvars, kount, ni)
       end do
 
      ! Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
+      delti64 = int (delti64)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
       
       ! Use a monthly climatology of rooting depth for crops
       ! Only applies to class 15 et 16 and the same values are used in both hemispheres!!!

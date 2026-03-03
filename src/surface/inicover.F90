@@ -217,6 +217,7 @@ contains
    real, external :: interpveg
 
    integer :: i
+   integer(INT64) :: delti64
    real :: julien, juliens
 
    real, dimension(nclass) :: aldatd, cvdatd, d2datd, gammadatd, &
@@ -226,7 +227,8 @@ contains
    IF_ISBA: if (schmsol == 'ISBA') then
 
       ! Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
+      delti64 = int(delt)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
 
       ! Do the aggregation
       do i=1,nclass

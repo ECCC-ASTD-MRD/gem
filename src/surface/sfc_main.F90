@@ -85,6 +85,7 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
    ! 020      L. Spacek   (Nov 2011)  - insert calculations of tve, za etc.
    !                                    call to calz, lin_kdif_sim1
    ! 021      K. Winger,M. Mackay   (Feb 2017/Sep 2022)  - Add call to lake and river (M.A.) models
+   ! 022      S. Leroyer   (Feb 2026)  - Add option sfc_poids for surface weight computations
    !*@/
 #include <rmn/msg.h>
    include "sfcinput.cdk"
@@ -111,6 +112,8 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
         ptr_glacier, ptr_urb, ptr_lake, ptr_river
    real,   dimension(surfesptot*ni) :: bus_soil, bus_water, bus_ice, &
         bus_glacier, bus_urb, bus_lake, bus_river
+!
+   real   ,dimension(ni) :: sumpoids
    !
    real, pointer, dimension(:)      :: zdtdiag, zmg, zfvapliq, zfvapliqaf, &
         zglacier, zglsea, zpmoins, zpplus, ztdiag, ztnolim, zurban, zztsl, &
@@ -219,11 +222,13 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
    ! Update coupling fields GL, TM, SD and I8
 
 #ifdef HAVE_NEMO
+   if (cplocn) then
       call cpl_update (zglsea (1:ni), 'GLI' , ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
       call cpl_update (ztwater(1:ni), 'TMO' , ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
       call cpl_update (zicedp (1:ni), 'I8I' , ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
       call cpl_update (zsnodp(1:ni,indx_ice:indx_ice), 'SDI', &
            ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
+   endif
 #endif
 
    ! mg, glsea, glacier, urban, lakefr, et riverfr doivent etre bornes entre 0 et 1
@@ -244,6 +249,7 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
    rg_water=0. ; rg_ice=0. ; rg_urb=0. ; rg_lake=0. ; rg_river=0.
 
    ! calcul des poids
+   IF (sfc_poids.eq.'LEGACY') THEN
 
    do i=1,ni
 
@@ -278,6 +284,172 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
       poids(i,indx_river)   =   zriverfr(i)
 
    end do
+
+
+   ELSEIF (sfc_poids.eq.'CONSER') THEN
+!= NOTES =
+!  ==> solution for a stronger conservation of the geophysical field information
+! rq: mask mg can be somehow different from VF fractions. GA might be different from VF_2
+      !!! Part terrestrial /mask
+!  Glacier      : GEM reads zglacier from GA from geophysical field (not VF_2). It  is a fraction relative to the total non-water fractions sumVF(2;4-26) - not MG
+!  Urban        : GEM reads bldf and pavf from geophysical fields and adds it up to zurban in initown. It is the real fraction in the grid cell
+!  Soil and veg : remaining fraction of the continental mask
+      !!! Part water pounds /1-mask
+!  Sea ice      : GEM reads glsea0 from LG from analysis file and put it in zglsea in inisurf. It is a fraction relative to the total water (assumed sea...) fractions
+!  Lake         : GEM reads lakf in geophysical field.  It is the real fraction in the grid cell
+!  River        : GEM reads rivf in geophysical field.  It is the real fraction in the grid cell
+!  Water        : remaining fraction of the non-continental mask
+!========
+   do i=1,ni
+
+      mask = zmg(i)
+      if      (mask.gt.(1.-critmask)) then
+         mask = 1.0
+         poids(i,indx_soil)    =    1.0 -zurban(i)-zglacier(i)
+         poids(i,indx_urb )    =    zurban(i)
+         poids(i,indx_glacier) =    zglacier(i)
+         poids(i,indx_lake)    =    0.0
+         poids(i,indx_river)   =    0.0
+         poids(i,indx_ice)     =    0.0
+         poids(i,indx_water)   =    0.0
+
+      else if (mask.lt.    critmask ) then
+         mask = 0.0
+         poids(i,indx_soil)    =    0.0
+         poids(i,indx_urb )    =    0.0
+         poids(i,indx_glacier) =    0.0
+         poids(i,indx_lake)    = zlakefr(i)
+         poids(i,indx_river)   = zriverfr(i)
+         poids(i,indx_ice)     = (1.-zlakefr(i)-zriverfr(i)) *zglsea(i)
+         poids(i,indx_water)   = (1.-zlakefr(i)-zriverfr(i)) *(1.-zglsea(i))
+
+      else
+
+      ! Part terrestrial /mask
+      sumpoids(i)=0.0
+      sumpoids(i)= mask * zglacier(i) +zurban(i)
+      if (sumpoids(i).GT.mask)THEN
+       print*,sfc_poids,'  (***land) DEBUG SFC_POIDS, MG MASK TOO SMALL, MODIFY poids(urb),(glacier)= ',i,mask,sumpoids(i),mask * zglacier(i),zurban(i)
+!        stop
+!        this may happen due to multiple data manipulation in geophy
+        poids(i,indx_soil)    =    0.0
+        poids(i,indx_urb )    =    zurban(i)  * mask / sumpoids(i)
+        poids(i,indx_glacier) =    mask * zglacier(i) * mask / sumpoids(i)
+       else
+       poids(i,indx_soil)    =    mask * (1. - zglacier(i)) -zurban(i)
+       poids(i,indx_urb )    =     zurban(i)
+       poids(i,indx_glacier) =    mask * zglacier(i)
+       endif
+
+   ! Part water pounds /1-mask
+      sumpoids(i)=0.0
+      sumpoids(i)= zlakefr(i)+zriverfr(i)+(1.-mask-zlakefr(i)-zriverfr(i)) *zglsea(i)
+       if (sumpoids(i).GT.(1.-mask))THEN
+        print*,sfc_poids,'  (***water) DEBUG SFC_POIDS, (1-MG) MASK TOO SMALL, MODIFY poids(lake),(river),(ice)= ',i,(1.-mask),sumpoids(i),zlakefr(i),zriverfr(i),zglsea(i)
+!        stop
+         poids(i,indx_water)   = 0.0
+         poids(i,indx_lake)    = zlakefr(i) * (1. -mask) / sumpoids(i)
+         poids(i,indx_ice)     = (1.-mask-zlakefr(i)-zriverfr(i)) *zglsea(i)  * (1. -mask) / sumpoids(i)
+         poids(i,indx_river)   = zlakefr(i) * (1. -mask) / sumpoids(i)
+       else
+       poids(i,indx_lake)    = zlakefr(i)
+       poids(i,indx_river)   = zriverfr(i)
+       poids(i,indx_ice)     = (1.-mask-zlakefr(i)-zriverfr(i)) *zglsea(i)
+       poids(i,indx_water)   = (1.-mask-zlakefr(i)-zriverfr(i)) *(1.-zglsea(i))
+       endif
+
+       endif   ! check zmg
+
+!  Last check
+      sumpoids(i)=0.0
+      sumpoids(i)= poids(i,indx_soil)+ poids(i,indx_urb )+poids(i,indx_glacier)+  &
+              poids(i,indx_water)+poids(i,indx_ice)+poids(i,indx_river)+poids(i,indx_lake)
+      if (sumpoids(i).GT.1.001.OR.sumpoids(i).LT.0.999)THEN
+        print*,sfc_poids,'  ERROR ** surface weights sum not 1= ',i,sumpoids(i)
+        stop
+      endif
+
+   end do
+
+   ELSEIF (sfc_poids.eq.'MODMG') THEN
+!= NOTES =
+!  ==> similar as CONSER but the mask is modified instead of urban fraction
+!========
+   do i=1,ni
+
+      mask = zmg(i)
+      if      (mask.gt.(1.-critmask)) then
+         mask = 1.0
+         poids(i,indx_soil)    =    1.0 -zurban(i)-zglacier(i)
+         poids(i,indx_urb )    =    zurban(i)
+         poids(i,indx_glacier) =    zglacier(i)
+         poids(i,indx_lake)    =    0.0
+         poids(i,indx_river)   =    0.0
+         poids(i,indx_ice)     =    0.0
+         poids(i,indx_water)   =    0.0
+
+      else if (mask.lt.    critmask ) then
+         mask = 0.0
+         poids(i,indx_soil)    =    0.0
+         poids(i,indx_urb )    =    0.0
+         poids(i,indx_glacier) =    0.0
+         poids(i,indx_lake)    = zlakefr(i)
+         poids(i,indx_river)   = zriverfr(i)
+         poids(i,indx_ice)     = (1.-zlakefr(i)-zriverfr(i)) *zglsea(i)
+         poids(i,indx_water)   = (1.-zlakefr(i)-zriverfr(i)) *(1.-zglsea(i))
+
+      else
+
+      ! Part terrestrial /mask
+      sumpoids(i)=0.0
+      sumpoids(i)= mask * zglacier(i) +zurban(i)
+      if (sumpoids(i).GT.mask)THEN
+       print*,sfc_poids,'  (***land) DEBUG SFC_POIDS, MG MASK TOO SMALL, MODIFY mask= ',i,mask,sumpoids(i),mask * zglacier(i),zurban(i)
+!        stop
+        poids(i,indx_soil)    =    0.0
+        poids(i,indx_urb )    =    zurban(i)
+        poids(i,indx_glacier) =    mask * zglacier(i)
+! here we gfive priority to  zurban and update the mask.
+        mask=sumpoids(i)
+       else
+       poids(i,indx_soil)    =    mask * (1. - zglacier(i)) -zurban(i)
+       poids(i,indx_urb )    =     zurban(i)
+       poids(i,indx_glacier) =    mask * zglacier(i)
+       endif
+
+   ! Part water pounds /1-mask
+      sumpoids(i)=0.0
+      sumpoids(i)= zlakefr(i)+zriverfr(i)+(1.-mask-zlakefr(i)-zriverfr(i)) *zglsea(i)
+       if (sumpoids(i).GT.(1.-mask))THEN
+        print*,sfc_poids,'  (***water) DEBUG SFC_POIDS, (1-MG) MASK TOO SMALL, MODIFY poids(lake),(river),(ice)= ',i,(1.-mask),sumpoids(i),zlakefr(i),zriverfr(i),zglsea(i)
+!        stop
+         poids(i,indx_water)   = 0.0
+         poids(i,indx_lake)    = zlakefr(i) * (1. -mask) / sumpoids(i)
+         poids(i,indx_ice)     = (1.-mask-zlakefr(i)-zriverfr(i)) *zglsea(i)  * (1. -mask) / sumpoids(i)
+         poids(i,indx_river)   = zlakefr(i) * (1. -mask) / sumpoids(i)
+       else
+       poids(i,indx_lake)    = zlakefr(i)
+       poids(i,indx_river)   = zriverfr(i)
+       poids(i,indx_ice)     = (1.-mask-zlakefr(i)-zriverfr(i)) *zglsea(i)
+       poids(i,indx_water)   = (1.-mask-zlakefr(i)-zriverfr(i)) *(1.-zglsea(i))
+       endif
+
+       endif   ! check zmg
+
+!  Last check
+      sumpoids(i)=0.0
+      sumpoids(i)= poids(i,indx_soil)+ poids(i,indx_urb )+poids(i,indx_glacier)+  &
+              poids(i,indx_water)+poids(i,indx_ice)+poids(i,indx_river)+poids(i,indx_lake)
+      if (sumpoids(i).GT.1.001.OR.sumpoids(i).LT.0.999)THEN
+        print*,sfc_poids,'  ERROR ** surface weights sum not 1= ',i,sumpoids(i)
+        stop
+      endif
+
+   end do
+
+   ENDIF    ! sfc_poids option
+
+
 
    ni_water     = 0; bus_water(1)   = 0.
    ni_ice       = 0; bus_ice(1)     = 0.

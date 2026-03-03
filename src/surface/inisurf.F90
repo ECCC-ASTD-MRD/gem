@@ -96,7 +96,7 @@ subroutine inisurf4(pvars, kount, ni, nk)
    
    real, pointer, dimension(:,:) :: &
         zalvis, zclay, zclayen, zsand, zsanden, zsnodp, &
-        zgravel, zgravelen, zbulksoil, zbulksoilen, zoc, zocen, &
+        zbulksoil, zbulksoilen, zoc, zocen, &
         ztglacier, ztmice, ztmoins, ztsoil, zvegf, zz0, zz0t
 
    !!---- SVS multiplying coefficients for agricultural areas ------
@@ -174,8 +174,6 @@ subroutine inisurf4(pvars, kount, ni, nk)
    MKPTR2D(zbulksoilen,bulksoilen)
    MKPTR2D(zclay,clay)
    MKPTR2D(zclayen,clayen)
-   MKPTR2D(zgravel,gravel)
-   MKPTR2D(zgravelen,gravelen)
    MKPTR2D(zoc,oc)
    MKPTR2D(zocen,ocen)
    MKPTR2D(zsand,sand)
@@ -692,7 +690,7 @@ subroutine inisurf4(pvars, kount, ni, nk)
 !
 !VDIR NODEP
       soil_data: if ( soiltext == "GSDE" .or. soiltext == "SLC" &
-           .or. soiltext == "SOILGRIDS" ) then 
+           .or. soiltext == "SOILGRIDS" .or. soiltext == "SOILGRIDSV2") then 
 
          if (any('sanden' == phyinread_list_s(1:phyinread_n))) then
             do k=1,nl_stp
@@ -712,40 +710,23 @@ subroutine inisurf4(pvars, kount, ni, nk)
          endif
 
          if (read_oc .AND. schmsol.EQ.'SVS2') then
-	    if (any('gravelen' == phyinread_list_s(1:phyinread_n))) then
-	       do k=1,nl_stp
-		  do i=1,ni
-		     zgravel(i,k) = zgravelen(i,k)
-		  end do
-	       end do
-	    endif
 
-	    if (any('bulksoilen' == phyinread_list_s(1:phyinread_n))) then
-	       do k=1,nl_stp
-		  do i=1,ni
-		     zbulksoil(i,k) = zbulksoilen(i,k)
-		  end do
-	       end do
-	    endif
+            if (any('bulksoilen' == phyinread_list_s(1:phyinread_n))) then
+               do k=1,nl_stp
+                  do i=1,ni
+                     zbulksoil(i,k) = zbulksoilen(i,k)
+                  end do
+               end do
+            endif
 
-	    if (any('ocen' == phyinread_list_s(1:phyinread_n))) then
-	       do k=1,nl_stp
-		  do i=1,ni
-		     zoc(i,k) = zocen(i,k)
-		  end do
-	       end do
-	    endif
+            if (any('ocen' == phyinread_list_s(1:phyinread_n))) then
+               do k=1,nl_stp
+                  do i=1,ni
+                     zoc(i,k) = zocen(i,k)
+                  end do
+               end do
+            endif
 
-            do k=1,nl_stp
-               do i=1,ni
-                  if (zmg(i).lt.critmask) then
-                     ! OVER WATER...
-                     zgravel  (i,k)    = 0.0
-                     zbulksoil  (i,k)    = 0.0
-                     zoc  (i,k)    = 0.0
-                  endif           
-               enddo
-            enddo
          endif
 
          clay_n_sand:if (any('clayen' == phyinread_list_s(1:phyinread_n)) .or. &
@@ -757,22 +738,26 @@ subroutine inisurf4(pvars, kount, ni, nk)
                      ! OVER WATER...
                      zsand  (i,k)    = 0.0
                      zclay  (i,k)    = 0.0
+                     if (read_oc) then
+                        zoc  (i,k)    = 0.0
+                        zbulksoil  (i,k)    = 0.0
+                     endif
                   else
                      ! OVER LAND
-                     
+
                      if (zsand(i,k)+zclay(i,k).lt.critexture) then
                         !                If no sand and clay component
                         !                attribute to these points characteristics
-                        !                of typical loamy soils
+                        !                of typical clay loamy (fine loamy) soils with no OC
                         zsand(i,k) = 35.
                         zclay(i,k) = 35.
                      else 
-                        !                 Minimum of 1% of sand and clay 
+
+                        !                 Minimum of 1% of sand, clay
                         zsand(i,k) =  max( zsand(i,k) , 1.0) 
-                        
                         zclay(i,k) =  max( zclay(i,k) , 1.0)
                         
-                        if ( zsand(i,k)+zclay(i,k).gt.100 ) then
+                        if ( zsand(i,k)+zclay(i,k).gt.100. ) then
                            ! reduce sand & clay  percentage proportionally 
                            tempsum= zsand(i,k) + zclay(i,k)
                            zsand(i,k) = zsand(i,k)/tempsum * 100.

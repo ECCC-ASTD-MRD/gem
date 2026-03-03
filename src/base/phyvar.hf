@@ -141,6 +141,10 @@ PVARDC(iwcradm   , IWCRADM   , IWRM, P0  , LVLT , "VD=Specific cloud ice water f
 PVARC (fmp       , FMP       , FMP , P0  , LVLT , "VD=Implicit clouds fraction                                    ; MIN=0;                  ", lmp)
 PVARC (iwcimp    , IWCIMP    , IWCI, P0  , LVLT , "VD=Implicit cloud ice content                                  ; MIN=0;                  ", lmp)
 PVARC (lwcimp    , LWCIMP    , LWCI, P0  , LVLT , "VD=Implicit cloud/water content                                ; MIN=0;                  ", lmp)
+PVAR  (rewx      , REWX      , REWX, U0  , LVLT , "VD=Effective radii of exp liq clouds                           ; MIN=0;")
+PVAR  (reix      , REIX      , REIX, U0  , LVLT , "VD=Effective radii of exp ice clouds                           ; MIN=0;")
+PVAR  (rewi      , REWI      , REWI, U0  , LVLT , "VD=Effective radii of imp liq clouds                           ; MIN=0;")
+PVAR  (reii      , REII      , REII, U0  , LVLT , "VD=Effective radii of imp ice clouds                           ; MIN=0;")
 
 PVAR  (fluxdl    , FLUXDL    , FLDL, P0  , LVLT , "VD=Flux down lw                                                ; MIN=0;")
 PVAR  (fluxds    , FLUXDS    , FLDS, U0  , LVLT , "VD=Flux down sw                                                ; MIN=0;")
@@ -1012,6 +1016,7 @@ PVAR  (umoins    , PW_UU:M   , U8  , D1  , LVLM , "VD=Wind speed along-x at t-dt
 PVAR  (uplus     , PW_UU:P   , UP  , D1  , LVLM , "VD=Wind speed along-x at t+dt                                  ; IN=UU;")
 PVAR  (vmoins    , PW_VV:M   , V8  , D1  , LVLM , "VD=Wind speed along-y at t-dt                                  ;")
 PVAR  (vplus     , PW_VV:P   , VP  , D1  , LVLM , "VD=Wind speed along-y at t+dt                                  ; IN=VV;")
+PVARC (wavg      , WAVG      , WAVG, P0  , LVLT , "VD=Wind speed along-z averaged over trigtauw                   ;                         ", ltrigtauw)
 PVAR  (wplus     , PW_WZ:P   , WP  , DWWZ, LVLT , "VD=Wind speed along-z at t+dt                                  ;")
 PVARDC(p0avg     , P0AVG     , P0AV, P0  , LVLA , "VD=Surface pressure average over last moyhr hours              ; MIN=0;                  ", lmoyhr, (/"PPLUS"/))
 PVAR  (pmoins    , PMOINS    , P8  , P0  , LVLA , "VD=Surface pressure at t-dt (actually t+dt currently)          ; MIN=0;")
