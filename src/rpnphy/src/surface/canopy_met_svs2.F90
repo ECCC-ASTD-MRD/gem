@@ -263,6 +263,9 @@
 
           ENDIF
 
+        ELSE
+          ILW_CAN(I) = ILW(I)
+          ISW_CAN(I) = ISW(I)
         ENDIF
 
       ENDDO

@@ -134,7 +134,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
    integer i,m, masklat50(n)
 
-   real,dimension(n) :: alva, cg, cvpa, del, dhusurf_dqsat, dwaterdt_surf,dwaterdt_deep
+   real,dimension(n) :: alva, cvpa, del, dhusurf_dqsat, dwaterdt_surf,dwaterdt_deep
    real,dimension(n) :: esnofrac, esvnofrac, eva, gamva, hrsurf
    real,dimension(n) :: leff, lesnofrac, lesvnofrac, rainrate_mm
    real,dimension(n) :: rgla, rhoa, snowrate_mm, stom_rs, stomra
@@ -152,7 +152,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       REAL HZ, HZ0, JULIEN, pond_infilt
 
       integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200    
-!
+      integer(INT64) :: dti64
+      
 !     In the offline mode the t-step 0 is (correctly) not performed
       if (atm_external .and. kount == 0) return
 !
@@ -248,7 +249,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       hz = amod(hz0+ (float(kount)*dt)/3600., 24.)
       
       !Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(dt) + MU_JDATE_HALFDAY))
+      dti64 = int(dt)
+      julien = real(jdate_day_of_year(jdateo + kount*dti64 + MU_JDATE_HALFDAY))
       !Get local solar angle
       call suncos2(suncosa,sunother1,sunother2,sunother3,sunother4,n, &
                    bus(x(dlat,1,1)),bus(x(dlon,1,1)),hz,julien,.false.)
@@ -338,7 +340,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            BUS(x(DECIDUOUS,1,1)),BUS(x(EVERGREEN,1,1)), &  
            BUS(x(LAIDECI,1,1)),   &
            BUS(x(CONDDRY   ,1,1)), BUS(x(CONDMINFAC ,1,1)), BUS(x(CONDSLD  ,1,1)), &
-           BUS(x(SVS_WTA,1,1)), CG, &
+           BUS(x(SVS_WTA,1,1)), BUS(x(CG  ,1,1)), &
            BUS(x(PSNGRVL,1,1)),  &  
            BUS(x(Z0T  ,1,indx_soil)),  & 
            BUS(x(ALGR,1,1)),BUS(x(EMISGR,1,1)), &  
@@ -366,7 +368,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(RST     ,1,1)),     &
            bus(x(SKYVIEW ,1,1)), bus(x(VEGTRANS,1,1)),   &   
            bus(x(frootd   ,1,1)), bus(x(frootdyn,1,1)), &
-           bus(x(acroot ,1,1)), WRMAX, N)
+           BUS(x(BETAVG,1,1)), BUS(x(GWSOL,1,1))   , &
+           bus(x(AVG_GWSOL,1,1)), BUS(x(acroot ,1,1)), WRMAX, N)
 
       If ( (.not.atm_external) .AND. (kount.EQ.0) ) then
           ! GEM first timestep
@@ -419,7 +422,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 !
       CALL DRAG_SVS ( bus(x(TGROUND,1,1)), &
            bus(x(TVEGE,1,1)),  &   
-           bus(x(WSOIL ,1,1)) ,  &   
+           bus(x(WSOIL ,1,1)) , bus(x(ISOIL ,1,1)) ,   &   
            bus(x(WVEG   ,1,1)), zthetaa,  &   
            VMOD, VDIR, hu,     &
            ps, STOM_RS,   &  
@@ -501,7 +504,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                   z0m, z0mland , bus(x(Z0T,1,indx_soil)),&
                   bus(x(HRSURFGR,1,1)), DHUSURF_DQSAT,      & 
                   bus(x(HV         ,1,1)) , DEL, STOM_RS ,& 
-                  CG,CVPA,EVA,bus(x(PSNGRVL    ,1,1)) ,    &    
+                  BUS(x(CG    ,1,1)),CVPA,EVA,bus(x(PSNGRVL    ,1,1)) ,    &
                   bus(x(RESAGR,1,1)), bus(x(RESAVG,1,1)),   &        
                   bus(x(RESASA,1,1)), bus(x(RESASV,1,1)), &
                   bus(x(RNETSA     ,1,1)) , bus(x(HFLUXSA,1,1)),   &   
@@ -588,13 +591,13 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                         BUS(x(TVEGE  ,1,1))  , ps, &
                         BUS(x(RESAVG ,1,1))  , hu, &
                         zFSOLIS              , BUS(x(WSOIL ,1,1)), &
-                        BUS(x(FROOTD ,1,1))  , SUNCOSA            , &
+                        BUS(x(FROOTDYN ,1,1))  , SUNCOSA            , &
                         BUS(x(WFC    ,1,1))  , BUS(x(WWILT  ,1,1)), &
-                        MASKLAT50            , BUS(x(VGCTEM ,1,1))  , &
-                        BUS(x(LAICTEM,1,1))  ,                      &
+                        MASKLAT50            , &
+                        BUS(x(BETAVG,1,1))   , BUS(x(GWSOL,1,1)), &
+                        BUS(x(VGCTEM ,1,1))  , BUS(x(LAICTEM,1,1)), &
                         BUS(x(RCCTEM ,1,1))  , BUS(x(CO2I1  ,1,1)), &
-                        BUS(x(AVG_GWSOL,1,1)), &
-                        NCLASS, N)
+                        BUS(x(AVG_GWSOL,1,1)), NCLASS, N)
 
          endif
       ENDIF

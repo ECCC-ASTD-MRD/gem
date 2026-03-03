@@ -48,12 +48,12 @@ subroutine inisoili_svs(pvars, ni)
    REAL b, usb, fb, crit1_wfcint, crit2_wfcint, ts
    
    ! "geo" variables are on the levels of the geophysical soil texture datbase
-   REAL, dimension(ni,nl_stp) :: wsat_geo, wwilt_geo, wfc_geo, b_geo, psisat_geo, &
+   REAL, dimension(ni,nl_stp) :: cgsat_geo, wsat_geo, wwilt_geo, wfc_geo, b_geo, psisat_geo, &
            ksat_geo, wfcint_geo, fb_geo, quartz_geo,rhosoil_geo,conddry_geo, condminfac_geo, condsld_geo , wunfrz_geo
-   real, pointer, dimension(:) :: zcgsat, zgrkef, zdraindens, zslop, zagrifrac
+   real, pointer, dimension(:) :: zgrkef, zdraindens, zslop, zagrifrac
 
    ! variables on the levels of SVS
-   real, pointer, dimension(:,:) :: zbcoef, zclay, zfbcof, zksat, zksatnat, zpsisat, zsand, zwfc, zwfcint, zwsat, &
+   real, pointer, dimension(:,:) :: zbcoef, zclay, zfbcof, zcgsat, zksat, zksatnat, zpsisat, zsand, zwfc, zwfcint, zwsat, &
                                zwwilt, zconddry, zcondminfac, zcondsld , zquartz, zrhosoil, zwunfrz
 
    ! SVS multiplying coefficient to adjust ksat in agricultural areas
@@ -69,7 +69,6 @@ subroutine inisoili_svs(pvars, ni)
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
 #define MKPTR2D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni,1:vd%NAME2%mul*vd%NAME2%niveaux) => pvars(vd%NAME2%idxv)%data(:)
 
-   MKPTR1D(zcgsat, cgsat)
    MKPTR1D(zdraindens, draindens)
    MKPTR1D(zgrkef, grkef)
    MKPTR1D(zslop, slop)
@@ -77,6 +76,7 @@ subroutine inisoili_svs(pvars, ni)
    MKPTR1D(zkasmod_a, kasmod_a)
 
    MKPTR2D(zbcoef, bcoef)
+   MKPTR2D(zcgsat, cgsat)
    MKPTR2D(zclay, clay)
    MKPTR2D(zfbcof, fbcof)
    MKPTR2D(zksat, ksat)
@@ -151,6 +151,8 @@ subroutine inisoili_svs(pvars, ni)
 
    do i=1,ni
       do k=1,nl_stp
+         cgsat_geo (i,k)  = ( -1.557e-2 * zsand(i,k) &
+                             -  1.441e-2 * zclay(i,k) + 4.7021 ) * 1.E-6 
          psisat_geo(i,k)  =  0.01 * ( 10.0**(-0.0131 * zsand(i,k) + 1.88) )
          ksat_geo  (i,k)  =  ( 10.0**(0.0153 * zsand(i,k) - 0.884) ) * 7.0556E-6
 
@@ -224,7 +226,7 @@ subroutine inisoili_svs(pvars, ni)
             
             zwsat  (i,k)  = zwsat  (i,k) + wsat_geo  (i,kk)  * weights( k , kk)
             zwwilt (i,k)  = zwwilt (i,k) + wwilt_geo (i,kk)  * weights( k , kk)
-            
+            zcgsat (i,k)  = zcgsat (i,k) + cgsat_geo (i,kk)  * weights( k , kk)
             zwfc   (i,k)  = zwfc   (i,k) + wfc_geo   (i,kk)  * weights( k , kk)
             zbcoef (i,k)  = zbcoef (i,k) + b_geo     (i,kk)  * weights( k , kk)
             zfbcof (i,k)  = zfbcof (i,k) + fb_geo    (i,kk)  * weights( k , kk)
@@ -251,11 +253,21 @@ subroutine inisoili_svs(pvars, ni)
          ENDIF
 
       enddo
-      ! compute thermal coeff. 
+      ! -- vfo001 ---
+      ! zcgsat is now computed for each layer but for
+      ! retrocompatibility with IC4 version of SVS in NSRPS that
+      ! relies on GSDE database we re-compute zcgsat for the first
+      ! level from the mapped soil texture. This way results are
+      ! neutral for NSRPS IC4. This code has no impact on SVS
+      ! configs that use a 5cm depth for the first layer and use
+      ! the SOILGRIDS database (e.g. MoSA IC5). After IC5 (assuming
+      ! no OPS system based on SVS uses GSDE anymore) this line of
+      ! code that re-computes zcgsat(i,1) should be removed.
+      ! --- vfo001 ---
+      ! compute thermal coeff.
       ! for 1st model layer only --- here simply use 1st GEO soil texture !!! Do not map !
-      zcgsat (i)  = ( -1.557e-2 * zsand(i,1) &
-           -  1.441e-2 * zclay(i,1) + 4.7021 ) * 1.E-6 
-      
+      zcgsat (i,1)  = ( -1.557e-2 * zsand(i,1) &
+           -  1.441e-2 * zclay(i,1) + 4.7021 ) * 1.E-6
       ! Compute effective parameter for watdrain
       zgrkef(i)   = 2.* zdraindens(i) * zslop(i)
 

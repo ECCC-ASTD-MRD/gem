@@ -9,6 +9,7 @@ contains
    !/@*
    subroutine radiation3(pvars, kount, ni, nk, trnch)
       use iso_c_binding
+      use, intrinsic :: iso_fortran_env, only: INT64, REAL64
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use debug_mod, only: init2nan
       use ccc1_cccmarad, only: cccmarad1
@@ -41,6 +42,7 @@ contains
 #include "phymkptr.hf"
 
       integer :: yy, mo, dd, hh, mn, ss, nkm1
+      integer(INT64) :: delti64
       real :: hz0, hz, julien
 
       real, dimension(ni,nk) :: cldfrac, liqwcin, icewcin, liqwp, icewp, trav2d
@@ -88,7 +90,8 @@ contains
       call mu_js2ymdhms(jdateo, yy, mo, dd, hh, mn, ss)
       hz0 = hh + float(mn)/60. + float(ss)/3600.
       hz = amod(hz0 + (float(kount)*delt)/3600., 24.)
-      julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
+      delti64 = int(delt)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
 
       call radslop3(pvars, hz, julien, ni, trnch)
 

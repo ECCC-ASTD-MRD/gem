@@ -310,6 +310,7 @@ subroutine inicover_svs_ccilceco(pvars, kount, ni)
    real, external :: interpveg
 
    integer :: i,k
+   integer(INT64) :: delti64
    real :: julien, juliens
 
    real, dimension(nclass) :: laidatdn, laidatds, logz0mloc
@@ -345,7 +346,8 @@ subroutine inicover_svs_ccilceco(pvars, kount, ni)
 
       
      ! Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
+      delti64 = int(delt)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
 
       do i=1,nclass
          ! initialize arrays that differ for N and S hemispheres

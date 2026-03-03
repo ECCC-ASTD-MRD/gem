@@ -153,6 +153,11 @@ REAL, DIMENSION(:) , POINTER    :: XQ10  !
 REAL, DIMENSION(:) , POINTER    :: XQ11  ! 
 REAL, DIMENSION(:) , POINTER    :: XQ12  ! 
 REAL, DIMENSION(:) , POINTER    :: XQ13  ! 
-
 !
+REAL, DIMENSION(:)  , POINTER :: XDSNOW_ROOF     ! Snow Depth/Height over roofs
+REAL, DIMENSION(:)  , POINTER :: XFSNOW_ROOF     ! Snow cover/fraction over roofs
+REAL, DIMENSION(:)  , POINTER :: XDSNOW_ROAD     ! Snow Depth/Height over roads
+REAL, DIMENSION(:)  , POINTER :: XFSNOW_ROAD     ! Snow cover/fraction over roads
+!
+REAL, DIMENSION(:)  , POINTER :: XTEMP          ! temp
 END MODULE MODD_TOWN

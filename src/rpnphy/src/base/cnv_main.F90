@@ -55,7 +55,7 @@ contains
 
       include "surface.cdk"
 
-      real    :: cdt1, rcdt1
+      real    :: cdt1, rcdt1, wfact
       integer :: i,k,niter, ier, nkm1
 
       real(REAL64), dimension(ni) :: l_en0, l_pw0
@@ -84,7 +84,6 @@ contains
       real,    dimension(ni,nk-1)      :: ppres,pudr, pddr, phsflx, dmsedt
       real,    dimension(ni,nk-1,kchm) :: pch1, pch1ten
 
-
       ! Switches for convection call
       !
       !integer:: kice = 0           ! take ice phase into account or not (0)
@@ -107,14 +106,14 @@ contains
            zcoadvu,zcoadvv,zcoage,zcowlcl,zwklcl,zcozlcl,ztlcm, zconemc, zconqmc, &
            zmcd,zmpeff,zmainc
       real, pointer, dimension(:,:), contiguous :: ncp, nip, qcm, qcp, qip, qqm, qqp, qrp, &
-           sigma, ttm, ttp, uu, vv, wz, zfdc, zgztherm, zhufcp, zhushal, &
+           sigma, ttm, ttp, uu, vv, wzavg, wz, zfdc, zgztherm, zhufcp, zhushal, &
            zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc,  &
            zufcp, zvfcp, zufcp1, zvfcp1, zufcp2, zvfcp2, zufcp3, zvfcp3,  zsufcp, zsvfcp, &
            zprctns,zpritns,qti1p, nti1p, zti1p, zfsc, zqlsc, zqssc, &
            zumfs, ztpostshal, zhupostshal, zcqce, zcqe, zcte, zen, zkt, &
            zareaup, zdmfkfc, zkfcrf, zkfcsf, zqldi, zqrkfc, zqsdi, zumfkfc, &
            zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
-           zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2
+           zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2, wztrigd, wztrigm
 
       logical :: kfcmom
       !----------------------------------------------------------------
@@ -185,6 +184,7 @@ contains
       MKPTR2Dm1(ttp, tplus, pvars)
       MKPTR2Dm1(uu, uplus, pvars)
       MKPTR2Dm1(vv, vplus, pvars)
+      MKPTR2Dm1(wzavg, wavg, pvars)
       MKPTR2Dm1(wz, wplus, pvars)
       MKPTR2Dm1(zcqce, cqce, pvars)
       MKPTR2Dm1(zcqe, cqe, pvars)
@@ -276,6 +276,24 @@ contains
       pch1ten = 0.
       zkkfc = 0.
 
+      ! Compute time-relaxed vertical velocity
+      wztrigd => wz
+      wztrigm => wz
+      if (associated(wzavg)) then
+         if ( kount == 0 ) then
+            wfact = 0. 
+         else
+            wfact = trigtauw/(trigtauw + cdt1)
+         endif
+         do i=1,ni
+            do k=1,nkm1
+               wzavg(i,k) = wz(i,k) + (wzavg(i,k) - wz(i,k)) * wfact
+            enddo
+         enddo
+         if (deep_wavg) wztrigd => wzavg
+         if (mid_wavg) wztrigm => wzavg
+      endif
+
       ! Run selected deep convective scheme
       DEEP_CONVECTION: if (convec == 'SEC') then            ! ajustement convectif sec
          call secajus(zcte, ttp, sigma, psp, niter, 0.1, cdt1, ni, nkm1)
@@ -285,7 +303,7 @@ contains
       else if (convec == 'KFC') then
 
          call kfcp8(ni,nkm1,zfcpflg,zkkfc,psp,ttp,qqp, &
-              uu,vv,wz, &
+              uu,vv,wztrigd, &
               ztfcp,zhufcp,zufcp,zvfcp, &
               zprcten,zpriten, zqrkfc, &
               sigma,zdxdy,zrckfc,geop, &
@@ -303,7 +321,7 @@ contains
       else if (convec == 'KFC2') then
 
          call kfrpn4(ni,nkm1,zfcpflg,zkkfc,psp,ttp,qqp, &
-              uu,vv,wz, &
+              uu,vv,wztrigd, &
               ztfcp,zhufcp,zufcp,zvfcp, &
               zufcp1,zvfcp1,zufcp2,zvfcp2, zufcp3,zvfcp3, zsufcp,zsvfcp, &
               zprcten,zpriten, zqrkfc, &
@@ -336,7 +354,7 @@ contains
               dt, bkf_ldown, bkf_kice,                           &
               bkf_kens,                                          &
               ppres, zgztherm,zdxdy, phsflx,                     &
-              ttp, qqp, dummy1, dummy2, uu, vv, wz,              &
+              ttp, qqp, dummy1, dummy2, uu, vv, wztrigd,          &
               kcount, ztfcp, zhufcp, zprcten, zpriten,           &
               ztlc,ztsc,                                         &
               zumfkfc, zdmfkfc, zkfcrf, zkfcsf, zcapekfc, zztopkfc, zzbasekfc, &
@@ -487,7 +505,7 @@ contains
          cnv_active = 0.
          if (associated(zkkfc)) cnv_active = zkkfc
          cond_prflux = zrnflx + zsnoflx
-         call kfmid1(ttp, qqp, uu, vv, wz, zgztherm, sigma, psp, zdxdy, zdlat, &
+         call kfmid1(ttp, qqp, uu, vv, wz, wztrigm, zgztherm, sigma, psp, zdxdy, zdlat, &
               cape, cnv_active, cond_prflux, &
               zmte, zmqe, zumid, zvmid, zprctnm, zpritnm, &
               zkmid, ztlcm, zfmc, zqlmi, zqsmi, zkfmrf, zkfmsf, zmcd, zmpeff, zmainc, &

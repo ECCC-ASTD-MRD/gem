@@ -8,9 +8,6 @@ module phy_nml_mod
    use phy_options
    use cnv_options
    use cnv_nml_mod, only: cnv_nml2
-#ifdef HAVE_NEMO
-      use cpl_itf, only: cpl_nml
-#endif
    use mixing_length, only: ML_CLOSURES
    private
    public :: phy_nml
@@ -78,15 +75,6 @@ contains
       !# Read surface namelist
       err = sfc_nml2(F_namelist)
       if (.not.RMN_IS_OK(err)) return
-
-#ifdef HAVE_NEMO
-      !# Read coupling namelist and initialize coupling configuration
-      err   = cpl_nml(F_namelist, unout)
-      if (.not.RMN_IS_OK(err)) then
-         call msg(MSG_ERROR, '(phy_nml) Problem reading COUPLING namelist')
-         return
-      endif
-#endif
 
       !# Read convection namelist
       err = cnv_nml2(F_namelist)
@@ -223,6 +211,8 @@ contains
       if (priv_stropt(rad_part_nomp,   'rad_part_nomp',   RAD_PART_NOMP_OPT) == RMN_ERR) return
       if (priv_stropt(rad_cond_rei,    'rad_cond_rei',    RAD_COND_REI_OPT, rei_const) == RMN_ERR) return
       if (priv_stropt(rad_cond_rew,    'rad_cond_rew',    RAD_COND_REW_OPT, rew_const) == RMN_ERR) return
+      if (priv_stropt(rad_exp_rei,     'rad_exp_rei',     RAD_EXP_REI_OPT, reix_const) == RMN_ERR) return
+      if (priv_stropt(rad_exp_rew,     'rad_exp_rew',     RAD_EXP_REW_OPT, rewx_const) == RMN_ERR) return
       if (priv_stropt(rad_conserve,    'rad_conserve',    RAD_CONSERVE_OPT) == RMN_ERR) return
       if (priv_stropt(linoz_chm,       'linoz_chm',       LINOZ_CHM_OPT) == RMN_ERR) return
       if (priv_stropt(iuv_method,      'iuv_method',      IUV_METHOD_OPT) == RMN_ERR) return
@@ -230,6 +220,7 @@ contains
       if (priv_stropt(stcond,          'stcond',          STCOND_OPT) == RMN_ERR) return
       if (priv_stropt(tofd,            'tofd',            TOFD_OPT) == RMN_ERR) return
       if (priv_stropt(lhn,             'lhn',             LHN_OPT) == RMN_ERR) return
+      if (priv_stropt(p3_autoAccr,     'p3_autoAccr',     P3_AUTOACCR_OPT) == RMN_ERR) return
       istat = clib_toupper(lhn_start_S)
       istat = clib_toupper(lhn_stop_S)
       istat = clib_toupper(lhn_ramp_S)

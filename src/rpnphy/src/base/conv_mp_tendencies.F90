@@ -87,7 +87,7 @@ contains
 
             !cloud droplets (number):
             ! note:  In the P3v3, cloud droplet number is prescribed (there is no 'ncp').
-            is_p3v5 = (stcond == 'MP_P3')
+            is_p3v5 = (stcond == 'MP_P3' .or. stcond == 'MP_P3X')
             if (is_p3v5) then  !#Note: Only for P3v5 (not P3v3)
                do k = 1,nkm1
                   do i = 1,ni

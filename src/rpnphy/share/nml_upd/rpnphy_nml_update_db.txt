@@ -774,3 +774,23 @@ rm:  surface_cfgs/mp_beta
 fileVersion: 6.3.0-a17 > 6.3.0-a18
 #------
 
+#------
+fileVersion: 6.3.0-a18 > 6.3.0-a20
+#New:  convection_cfgs/bkf_fnfacs
+#New:  convection_cfgs/deep_wavg
+#New:  convection_cfgs/mid_wavg
+#New:  convection_cfgs/trigtauw
+#New:  physics_cfgs/p3_autoaccr
+rm:  physics_cfgs/p3_iparam
+#New:  physics_cfgs/p3_freq3ddiag
+#New:  physics_cfgs/rad_exp_rei
+#New:  physics_cfgs/rad_exp_rew
+#New:  surface_cfgs/lforlit
+#New:  surface_cfgs/lwfcliq_svs1
+#New:  surface_cfgs/sfc_poids
+#New:  surface_cfgs/svs_cg_depth
+#New:  surface_cfgs/svs_cg_ice
+#New:  surface_cfgs/svs_hydro_nummethod
+#New:  surface_cfgs/teb_snow
+#New:  surface_cfgs/teb_snroad
+#New:  surface_cfgs/teb_snroof

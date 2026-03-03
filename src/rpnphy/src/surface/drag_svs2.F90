@@ -14,17 +14,17 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-      SUBROUTINE DRAG_SVS2 ( TGRS, TGRVS, TVGLS, TVGHS, TSV,TS,  WD1, &
-                              WR_VL, WR_VH,  THETAA, VMOD, VDIR, HU, RHOA, &
+      SUBROUTINE DRAG_SVS2 ( TGRS, TGRVS, TVGLS, TVGHS, TFL, TSV,TS,  WD1, &
+                              WR_VL, WR_VH, WFL, THETAA, VMOD, VDIR, HU, RHOA, &
                               PS, RS, Z0, Z0LOC, Z0VG, WFC, WSAT, CLAY1,  &
-                              SAND1, LAI_VL, LAI_VH, WRMAX_VL,WRMAX_VH,&
+                              SAND1, LAI_VL, LAI_VH, WRMAX_VL,WRMAX_VH, WRMAX_FL, &
                               ZUSL, ZTSL, LAT, PSNVH, &
                               FCOR, Z0HA, WTG, &
                               VGH_DENS, Z0MVH,Z0MVL, Z0SNOW, Z0HSN,VGH_HEIGHT,  &
                               LAIVH, ZVCAN, FCANS,SNCMA, &
                               RESAGR,RESAGRV, RESA_VL, RESA_VH, RES_SNCA, RESA_SN, RESA_SV, &
-                              HUSURF,HUSURFGV, &
-                              HRSURF,HRSURFGV, &
+                              HUSURF,HUSURFGV, HUSURFFL, &
+                              HRSURF,HRSURFGV, HRSURFFL, &
                               HV_VL, HV_VH, HVSN_VH, DEL_VL, DEL_VH,  &
                               Z0HBG, Z0HVL, Z0HVH,Z0HGV,  N)
       use tdpack
@@ -49,13 +49,13 @@
       REAL RESAGR(N),RESAGRV(N), RESA_VL(N), RESA_VH(N), RES_SNCA(N), RESA_SN(N), RESA_SV(N)
       REAL HUSURF(N),HUSURFGV(N), HV_VL(N), HV_VH(N), HVSN_VH(N), DEL_VL(N), DEL_VH(N)
       REAL HRSURF(N),HRSURFGV(N), WD1(N), Z0SNOW(N), Z0HSN(N), PSNVH(N)
-      REAL WTG(N,svs2_tilesp1), TGRVS(N), SNCMA(N), RHOA(N)
-      REAL TSV(N,NSL),TS(N,NSL)
+      REAL WTG(N,svs2_tilesp1), TGRVS(N), SNCMA(N), RHOA(N), WRMAX_FL(N)
+      REAL TSV(N,NSL),TS(N,NSL), HUSURFFL(N),HRSURFFL(N), WFL(N), TFL(N)
 !
 !Author
-!          S. Belair, M.Abrahamowicz, S.Z.Husain, N.Alavi, S.Zhang (June 2015) 
+!          Vionnet et al. (2017-2024) 
 !Revisions
-! 001      Name (date) - Comment
+! 001      Includes forest litter layer - N.Leroux Dec 2025
 !
 !
 !Object
@@ -84,9 +84,10 @@
 !
 !          - Input -
 ! TGRS      skin (surface) temperature of bare ground
-! TGRVS      skin (surface) temperature of ground below high veg.
-! TVGLS      skin (surface) temperature of low vegetation
-! TVGHS      skin (surface) temperature of high vegetation
+! TGRVS     skin (surface) temperature of ground below high veg.
+! TVGLS     skin (surface) temperature of low vegetation
+! TVGHS     skin (surface) temperature of high vegetation
+! TFL       Temperature of the forest litter layer
 ! TSV       Temperature of the snow layers in the high vegetation
 ! WD1       Soil volumetric water content (first level)
 ! WR_VL     water content retained by the low vegetation canopy
@@ -105,9 +106,10 @@
 ! CLAY1     percentage of clay in first soil layer
 ! SAND1     percentage of sand in first soil layer
 ! LAI_VL    leaf Area Index of low vegetation
-! LAI_VH    leaf Area Index of high vegetation
-! WRMAX_VL  max volumetric water content retained on low vegetation
-! WRMAX_VH  max volumetric water content retained on high vegetation
+! LAI_VH    leaf Area Index of high vegetation 
+! WRMAX_VL  max volumetric water content retained on low vegetation (kg/m2)
+! WRMAX_VH  max volumetric water content retained on high vegetation (kg/m2)
+! WRMAX_FL   max volumetric water content retained in forest litter layer (kg/m2)
 ! ZTSL      reference height for temperature and humidity input
 ! ZUSL      reference height for wind input
 ! LAT       latitude
@@ -128,8 +130,10 @@
 !           - Output -
 ! HRSURF   relative humidity of the bare ground surface (1st layer)
 ! HUSURF    specific humidity of the bare ground surface
-! HRSURFGV   relative humidity of the the snow-free ground below high veg (1st layer)
+! HRSURFGV   relative humidity of the snow-free ground below high veg (1st layer)
 ! HUSURFGV   specific humidity of the snow-free ground below high veg
+! HRSURFFL   relative humidity of the forest litter 
+! HUSURFFL   specific humidity of the forest litter
 ! HV_VL        Halstead coefficient of low vegetation canopy
 ! HV_VH        Halstead coefficient of the high vegetation canopy
 ! HVSN_VH   Coefficient for the evapotranspiration of the high vegetation canopy accounting for intercepted snow
@@ -152,7 +156,7 @@
 
       real, dimension(n) :: temp, coef_vh, qsatgr, qsat_vl, qsat_vh, qsat_sv, qsat_sn,&
            zqs_vl, zqs_vh, zqs_sn, ctugr, ctugrv, ctuvh, ctuvl, ctusn, ctusv, wcrit_hrsurf, z0bg_n,ra,&
-           z0gv_n, qsatgrv,wcrit_hrsurfgv, z0hg, zz0hgv, ZZ0HVH, ZZ0HVL, TSV_CORR, TS_CORR
+           z0gv_n, qsatgrv, qsafl, wcrit_hrsurfgv, z0hg, zz0hgv, ZZ0HVH, ZZ0HVL, TSV_CORR, TS_CORR
      real, dimension(n) :: ZUGV, ZTGV, ZZ0MGV, ZDH, QSATI_VH, VSUBL, Z0MVH_EFF, &
                            ZDISPLCAN, ZBELOW, ZUREF_VH,ZTREF_VH,ZDIAG_TOP,ZZ0_TOP, &
                            STABM_VH, ZUSTAR_VH,LZZ0M_VH, & ! Related to VGH
@@ -209,8 +213,8 @@
 !
 !
 !
-!*       1.A     RELATIVE HYMIDITY OF THE EXPOSED BARE GROUND AND OF THE
-!                GROUND BELOW HIGH VEG
+!*       1.A     HUMIDITY FACTORS OF THE EXPOSED BARE GROUND, OF THE
+!                GROUND BELOW HIGH VEG, AND OF THE FOREST LITTER LAYER
 !               -------------------------------------------------
 !
 !                        This relative humidity is related to
@@ -229,6 +233,13 @@
          wcrit_hrsurf(i) = wfc(i,1)
          HRSURFGV(I) = HRSURF(I)
          WCRIT_HRSURFGV(I) = WCRIT_HRSURF(I)
+
+         IF (LFORLIT .AND. WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN ! Forest litter activated
+            HRSURFFL(I) = 0.5 * ( 1.-COS(PI*WFL(I)/WRMAX_FL(I)) )  
+         ELSE
+            HRSURFFL(I) = 0.
+         ENDIF
+
       END DO
       
 !
@@ -283,6 +294,7 @@
       END DO
 !
 !
+      IF (.NOT. LFORLIT) THEN
 !
 !*       1.C   SPECIFIC HUMIDITY OF THE GROUND BELOW HIGH VEGETATION (HU)
 !               -------------------------------------------------
@@ -334,6 +346,51 @@
 !
           END DO
 
+      ELSE ! FOREST LITTER LAYER
+!
+!*       1.C   SPECIFIC HUMIDITY OF FOREST LITTER BELOW HIGH VEGETATION (HU)
+!               -------------------------------------------------
+!
+!                         there is a specific treatment for dew
+!                         (see Mahfouf and Noilhan, jam, 1991)
+!
+          DO I=1,N
+!
+              IF(WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN ! High vegetation is present
+
+!                         first calculate the saturation vapor
+!                         pressure and specific humidity
+                          QSAFL(I) = FOQST( TFL(I), PS(I) )
+
+!                         when hu*qsat < qa, there are two
+!                         possibilities
+!
+!                         low-level air is dry, i.e.,
+!                         qa < qsat
+!
+                  IF ( HRSURFFL(I)*QSAFL(I).LT.HU(I).AND.QSAFL(I).GT.HU(I) )&
+                       HRSURFFL(I) = HU(I) / QSAFL(I)
+!
+!                          b) low-level air is humid, i.e.,
+!                          qa >= qsat
+!
+                  IF ( HRSURFFL(I)*QSAFL(I).LT.HU(I).AND.QSAFL(I).LE.HU(I) )&
+                      HRSURFFL(I) = 1.0
+!
+!                           Calculate specific humidity over ground
+                  HUSURFFL(I) = HRSURFFL(I) * QSAFL(I)
+!
+            ELSE      ! No high vegetation
+!
+!               ! Use value from bare ground to avoid empty arrays
+!
+                   HUSURFFL(I) = HUSURF(I)
+!
+            ENDIF
+!
+          END DO
+
+      ENDIF
 !
 !
 !
@@ -744,67 +801,130 @@
 !                      REMPLACER PAR UN Z0H_LOCAL JUSTE POUR LE SOL NU
 !                      *************************************
 !
+      if (.not. lforlit) then
+         if ( svs_dynamic_z0h ) then
+            zopt=9
+            ! TO_DO NL: check the roughness lengths used
+            i = sl_sfclayer( THETAA, HU, ZVCAN, VDIR, ZUSL, ZTSL, &
+               TGRVS, HUSURFGV, Z0LOC, ZZ0HGV, LAT, FCOR, optz0=zopt ,&
+               z0mloc=z0loc, L_min=sl_Lmin_soil, &
+               coeft=CTUGRV, z0t_optz0=Z0HGV )
 
-      if ( svs_dynamic_z0h ) then
-         zopt=9
-         ! TO_DO NL: check the roughness lengths used
-         i = sl_sfclayer( THETAA, HU, ZVCAN, VDIR, ZUSL, ZTSL, &
-              TGRVS, HUSURFGV, Z0LOC, ZZ0HGV, LAT, FCOR, optz0=zopt ,&
-              z0mloc=z0loc, L_min=sl_Lmin_soil, &
-              coeft=CTUGRV, z0t_optz0=Z0HGV )
+            if (i /= SL_OK) then
+               call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+               return
+            endif
 
-         if (i /= SL_OK) then
-            call physeterror('drag_svs', 'error returned by sl_sfclayer()')
-            return
+         else
+
+            IF (CANO_REF_FORCING == 'ABV') THEN ! Reference height above the canopy. In this case, z0 should be the canopy roughness lengths and the heights above canopy
+
+               DO I=1,N
+                  IF (WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN
+
+                     ! Compute the below-canopy aerodynamic resistance with two components: 
+                     !   -  exponential wind profile in the canopy (from HSUBCANO to ZDISPLCAN) ZRLOWER_CAN (no stability included )
+                     !   - logarithmic wind profile below the canopy (below HSUBCANO) (no stability included) 
+                     ZRSURF(I) = ZRLOWER_CAN(I)     &
+                              + 1./(KARMAN**2. * VMOD_BELOW(I))   &
+                              * LOG(HSUBCANO/Z0GV_N(I))*LOG(HSUBCANO/ZZ0HGV(I))
+
+                  ELSE !  This is placed to fill the values if there is no vegetation to run sl_sfclayer
+                     ZRSURF(I) = 1.
+                     VMOD_DISPL(I) = VMOD(I)
+                     ZDISPLCAN(I) = ZUSL(I)
+                  ENDIF
+
+
+               ENDDO
+
+               DO I=1,N
+                  ! Compute final resistance between the ground below the canopy and the atmospheric forcing level
+                  CTUGRV(I) = 1. / (RESA_VH(I) + ZRSURF(I))
+                  Z0HGV(I) = ZZ0HGV(I)
+               ENDDO
+
+            ELSE ! O2F or FOREST
+
+               i = sl_sfclayer( THETAA, HU, ZVCAN, VDIR, ZUSL, ZTSL, &
+                     TGRVS, HUSURFGV, Z0GV_N, ZZ0HGV, LAT, FCOR, &
+                     L_min=sl_Lmin_soil, &
+                     coeft=CTUGRV )
+
+               if (i /= SL_OK) then
+                  call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+                  return
+               endif
+
+
+               do i=1,N
+                  Z0HGV(i) = ZZ0HGV(i)
+               enddo
+            ENDIF
+
          endif
-
       else
+         if ( svs_dynamic_z0h ) then
+            zopt=9
+            ! TO_DO NL: check the roughness lengths used
+            i = sl_sfclayer( THETAA, HU, ZVCAN, VDIR, ZUSL, ZTSL, &
+               TFL, HUSURFFL, Z0LOC, ZZ0HGV, LAT, FCOR, optz0=zopt ,&
+               z0mloc=z0loc, L_min=sl_Lmin_soil, &
+               coeft=CTUGRV, z0t_optz0=Z0HGV )
 
-         IF (CANO_REF_FORCING == 'ABV') THEN ! Reference height above the canopy. In this case, z0 should be the canopy roughness lengths and the heights above canopy
+            if (i /= SL_OK) then
+               call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+               return
+            endif
 
-             DO I=1,N
-                IF (WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN
+         else
 
-                   ! Compute the below-canopy aerodynamic resistance with two components: 
-                   !   -  exponential wind profile in the canopy (from HSUBCANO to ZDISPLCAN) ZRLOWER_CAN (no stability included )
-                   !   - logarithmic wind profile below the canopy (below HSUBCANO) (no stability included) 
-                   ZRSURF(I) = ZRLOWER_CAN(I)     &
-                             + 1./(KARMAN**2. * VMOD_BELOW(I))   &
-                             * LOG(HSUBCANO/Z0GV_N(I))*LOG(HSUBCANO/ZZ0HGV(I))
+            IF (CANO_REF_FORCING == 'ABV') THEN ! Reference height above the canopy. In this case, z0 should be the canopy roughness lengths and the heights above canopy
 
-                ELSE !  This is placed to fill the values if there is no vegetation to run sl_sfclayer
-                    ZRSURF(I) = 1.
-                    VMOD_DISPL(I) = VMOD(I)
-                    ZDISPLCAN(I) = ZUSL(I)
-                ENDIF
+               DO I=1,N
+                  IF (WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN
 
+                     ! Compute the below-canopy aerodynamic resistance with two components: 
+                     !   -  exponential wind profile in the canopy (from HSUBCANO to ZDISPLCAN) ZRLOWER_CAN (no stability included )
+                     !   - logarithmic wind profile below the canopy (below HSUBCANO) (no stability included) 
+                     ZRSURF(I) = ZRLOWER_CAN(I)     &
+                              + 1./(KARMAN**2. * VMOD_BELOW(I))   &
+                              * LOG(HSUBCANO/Z0GV_N(I))*LOG(HSUBCANO/ZZ0HGV(I))
 
-             ENDDO
-
-             DO I=1,N
-                 ! Compute final resistance between the ground below the canopy and the atmospheric forcing level
-                 CTUGRV(I) = 1. / (RESA_VH(I) + ZRSURF(I))
-                 Z0HGV(I) = ZZ0HGV(I)
-             ENDDO
-
-         ELSE ! O2F or FOREST
-
-             i = sl_sfclayer( THETAA, HU, ZVCAN, VDIR, ZUSL, ZTSL, &
-                  TGRVS, HUSURFGV, Z0GV_N, ZZ0HGV, LAT, FCOR, &
-                  L_min=sl_Lmin_soil, &
-                  coeft=CTUGRV )
-
-             if (i /= SL_OK) then
-                call physeterror('drag_svs', 'error returned by sl_sfclayer()')
-                return
-             endif
+                  ELSE !  This is placed to fill the values if there is no vegetation to run sl_sfclayer
+                     ZRSURF(I) = 1.
+                     VMOD_DISPL(I) = VMOD(I)
+                     ZDISPLCAN(I) = ZUSL(I)
+                  ENDIF
 
 
-             do i=1,N
-                Z0HGV(i) = ZZ0HGV(i)
-             enddo
-         ENDIF
+               ENDDO
 
+               DO I=1,N
+                  ! Compute final resistance between the ground below the canopy and the atmospheric forcing level
+                  CTUGRV(I) = 1. / (RESA_VH(I) + ZRSURF(I))
+                  Z0HGV(I) = ZZ0HGV(I)
+               ENDDO
+
+            ELSE ! O2F or FOREST
+
+               i = sl_sfclayer( THETAA, HU, ZVCAN, VDIR, ZUSL, ZTSL, &
+                     TFL, HUSURFFL, Z0GV_N, ZZ0HGV, LAT, FCOR, &
+                     L_min=sl_Lmin_soil, &
+                     coeft=CTUGRV )
+
+               if (i /= SL_OK) then
+                  call physeterror('drag_svs', 'error returned by sl_sfclayer()')
+                  return
+               endif
+
+
+               do i=1,N
+                  Z0HGV(i) = ZZ0HGV(i)
+               enddo
+            ENDIF
+
+         endif
       endif
 
 

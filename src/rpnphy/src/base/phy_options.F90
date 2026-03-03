@@ -274,14 +274,20 @@ module phy_options
    namelist /physics_cfgs/ moyhr
    namelist /physics_cfgs_p/ moyhr
 
-   !# Switch for p3 parameterization of autoconversion/accretion/self-collection in microphysics (P3) scheme
-   !# 1: Seifert & Beheng 2000 (recommanded)
-   !# 2: Beheng, 1994
-   !# 3: Khairoutdinov & Kogan, 2000 (default)
-   !# 4: Kogan 2013
-   integer           :: p3_iparam = 3
-   namelist /physics_cfgs/ p3_iparam
-   namelist /physics_cfgs_p/ p3_iparam
+   !# Switch for parameterization of autoconversion/accretion/self-collection in P3 microphysics
+   !# * 'SEIFERT2001 ': Seifert & Beheng 2001 (recommanded)
+   !# * 'BEHENG1994  ': Beheng, 1994
+   !# * 'KHAIROUT2000': Khairoutdinov & Kogan, 2000 (default)
+   !# * 'KOGAN2013   ': Kogan 2013
+   character(len=16) :: p3_autoAccr = 'KHAIROUT2000'
+   namelist /physics_cfgs/ p3_autoAccr
+   namelist /physics_cfgs_p/ p3_autoAccr
+   character(len=*), parameter :: P3_AUTOACCR_OPT(4) = (/ &
+        'SEIFERT2001 ', &
+        'BEHENG1994  ', &
+        'KHAIROUT2000', &
+        'KOGAN2013   '  &
+        /)
 
    !# Number of ice-phase hydrometeor categories to use in the P3 microphysics
    !# scheme (currently limited to <5)
@@ -289,7 +295,7 @@ module phy_options
    namelist /physics_cfgs/ p3_ncat
    namelist /physics_cfgs_p/ p3_ncat
 
-   !# Maximum time step (s) to be taken by the microphysics (P3) scheme, with time-splitting
+   !# Maximum time step (s) to be taken by the microphysics (P3), with time-splitting
    !# used to reduce step to below this value if necessary
    real           :: p3_dtmax = 60.
    namelist /physics_cfgs/ p3_dtmax
@@ -305,8 +311,8 @@ module phy_options
    namelist /physics_cfgs/ p3_subfact
    namelist /physics_cfgs_p/ p3_subfact
 
-   !# Ice supersaturation threshold for deposition ice nucleation(P3)
-   real           :: p3_supid = .05
+   !# Ice supersaturation threshold for deposition ice nucleation (P3)
+   real           :: p3_supid = 0.05
    namelist /physics_cfgs/ p3_supid
    namelist /physics_cfgs_p/ p3_supid
 
@@ -334,6 +340,11 @@ module phy_options
    real           :: p3_pfrac = 1.0
    namelist /physics_cfgs/ p3_pfrac
    namelist /physics_cfgs_p/ p3_pfrac
+
+   !#  frequency (min) for calculating 3D diagnostic output in microphysics (P3)
+   real           :: p3_freq3Ddiag = 60.
+   namelist /physics_cfgs/ p3_freq3Ddiag
+   namelist /physics_cfgs_p/ p3_freq3Ddiag
 
    !# model resolution factor used by SCPF in microphysics (P3)
    real           :: p3_resfact = 1.0
@@ -756,7 +767,7 @@ module phy_options
         'ROCKEL  '  &
         /)
 
-   !# Optical properties of ice cloud from condensation scheme for radiation
+   !#   Choice of effective radius for IMPLICIT ICE clouds
    !# * 'CCCMA'      : Radius estimate from CCCMA
    !# * 'SIGMA'      : Altitude-dependent ice radius
    !# * 'ECMWF'      : Radius estimate from ecmwf
@@ -770,7 +781,7 @@ module phy_options
         'ECMWF'  &
         /)
 
-   !# Optical properties of liquid cloud from condensation scheme for radiation
+   !#  Choice of effective radius for IMPLICIT WATER clouds
    !# * 'BARKER'     : Radii based on aircraft data (Slingo), range 4-17 microns
    !# * 'NEWRAD'     : The "new" optical properties used in the "newrad" scheme
    !# * 'ROTSTAYN03' : Radii based on Rotstayn and Liu (2003)
@@ -782,6 +793,38 @@ module phy_options
         'BARKER    ', &
         'NEWRAD    ', &
         'ROTSTAYN03'  &
+        /)
+
+   !# Choice of effective radius for EXPLICT ICE clouds
+   !# * 'CCCMA'      : Radius estimate from CCCMA
+   !# * 'SIGMA'      : Altitude-dependent ice radius
+   !# * 'ECMWF'      : Radius estimate from ecmwf
+   !# * 'MP   '      : Use what the microphysics scheme provides 
+   character(len=16) :: rad_exp_rei = 'MP'
+   real              :: reix_const    = -1.
+   namelist /physics_cfgs/ rad_exp_rei
+   namelist /physics_cfgs_p/ rad_exp_rei
+   character(len=*), parameter :: RAD_EXP_REI_OPT(4) = (/ &
+        'CCCMA', &
+        'SIGMA',  &
+        'ECMWF',  &
+        'MP   '  &
+        /)
+
+   !#  Choice of effective radius for EXPLICT WATER clouds
+   !# * 'BARKER'     : Radii based on aircraft data (Slingo), range 4-17 microns
+   !# * 'NEWRAD'     : The "new" optical properties used in the "newrad" scheme
+   !# * 'ROTSTAYN03' : Radii based on Rotstayn and Liu (2003)
+   !# * 'MP    '     : Use what the microphysics scheme provides 
+   character(len=16) :: rad_exp_rew = 'MP'
+   real              :: rewx_const    = -1.
+   namelist /physics_cfgs/ rad_exp_rew
+   namelist /physics_cfgs_p/ rad_exp_rew
+   character(len=*), parameter :: RAD_EXP_REW_OPT(4) = (/ &
+        'BARKER    ', &
+        'NEWRAD    ', &
+        'ROTSTAYN03',  &
+        'MP        '  &
         /)
 
    !# Conservation corrections for radiation scheme
@@ -980,12 +1023,13 @@ module phy_options
    character(len=16) :: stcond       = 'NIL'
    namelist /physics_cfgs/ stcond
    namelist /physics_cfgs_p/ stcond
-   character(len=*), parameter :: STCOND_OPT(8) = (/ &
+   character(len=*), parameter :: STCOND_OPT(9) = (/ &
         'NIL       ', &
         'CONSUN    ', &
         'MP_MY2    ', &
         'MP_P3     ', &
         'MP_P3V3   ', &
+        'MP_P3X    ', &
         'KESSLER   ', &
         'S2        ', &
         'THOMPSON  ' &

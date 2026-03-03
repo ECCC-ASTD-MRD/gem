@@ -86,7 +86,8 @@ subroutine BKF_SHALLOW6(KLON, KLEV, PDTCONV, &
    use YOMCST
    use YOE_CONVPAR_SHAL
    use YOE_CONVPAREXT
-   use cnv_options, only: bkf_tperts, bkf_rads, bkf_kice, bkf_lshalm, bkf_lch1conv, bkf_kch
+   use cnv_options, only: bkf_tperts, bkf_rads, bkf_kice, bkf_lshalm, bkf_lch1conv, bkf_kch, &
+        bkf_fnfacs
    use convect_shallow_mod, only: convect_shallow6
    use sucst_mod, only: sucst
    use ens_perturb, only: ens_nc2d
@@ -446,7 +447,7 @@ subroutine BKF_SHALLOW6(KLON, KLEV, PDTCONV, &
          PUTENS(JI,JK) = ZUTENS(JI,JKP)
          PVTENS(JI,JK) = ZVTENS(JI,JKP)
          UMFS(JI,JK) = ZUMFS(JI,JKP)
-         PCLOUD(JI,JK) = ZCLOUD(JI,JKP)
+         PCLOUD(JI,JK) = min(1., bkf_fnfacs * ZCLOUD(JI,JKP))
          PURC(JI,JK) = ZURC(JI,JKP)
          PURI(JI,JK) = ZURI(JI,JKP)
       end do
