@@ -3,18 +3,30 @@
 # For internal use at ECCC
 
 # Source this file to:
-# - Load profile and code-tools for gnu
+# - Load profile and code-tools for gnu, depending on compiler version
 # - Load RPN-SI libraries and utilities, and RPNPY
 # - Load a script for common setup to all compilers
+
+# Check name of the script called, to load the proper code-tools
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 DOMAIN=`hostname -d`
 
 # Load code-tools 
-if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/20250925/env/gnu-9.3.0
-else
-    . r.load.dot rpn/code-tools/20250925/env/gnu
-fi
+case ${SETUP_SCRIPT_NAME} in
+    .eccc_setup_gnu)
+        if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
+            . r.load.dot rpn/code-tools/20250925/env/gnu-9.3.0
+        else
+            . r.load.dot rpn/code-tools/20250925/env/gnu
+        fi
+        ;;
+    .eccc_setup_gnu_14.2.0)
+        # to avoid linking with libgfortran.so in /lib64
+        unset SSMUSE_LD_PREPEND
+        . r.load.dot rpn/code-tools/20250925/env/exp/rhel-8-amd64-64@gnu-14.2.0
+        ;;
+esac
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot mrd/rpn/libs/20251009-beta
@@ -39,3 +51,4 @@ export COMPILER_VERSION
 
 # Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
 export WITH_SYSTEM_RPN=TRUE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}

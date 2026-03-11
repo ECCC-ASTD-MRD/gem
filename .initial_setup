@@ -19,15 +19,7 @@ if [ -n "${GEM_STORAGE_DIR}" -a -n "${GEM_ARCH}" -a -n "${GEM_WORK}" ] ; then
     fi
 
     if [ -n "${EC_ARCH}" ]; then
-        if [ "$COMPILER_SUITE" == "intel" ] ; then
-            if [ "$COMPILER_VERSION" == "2025.1.0" ] ; then
-                SETUP_FILE=.eccc_setup_intel_2025.1.0
-            else
-                SETUP_FILE=.eccc_setup_intel_2022.1.2
-            fi
-        else
-            SETUP_FILE=.eccc_setup_gnu
-        fi
+        SETUP_FILE=${GEM_SETUP_SCRIPT_NAME}
 
 cat > ${PWD}/${GEM_WORK}/.eccc_setup <<EOF
 ici=\$PWD

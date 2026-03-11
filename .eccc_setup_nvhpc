@@ -3,14 +3,28 @@
 # For internal use at ECCC
 
 # Source this file to:
-# - Load profile and code-tools for nvhpc 23.7.0
+# - Load profile and code-tools for nvhpc, depending on compiler version
 # - Load RPN-SI libraries and utilities, and RPNPY
 # - Load a script for common setup to all compilers
 
 unset SSMUSE_LD_PREPEND
 
+# Check name of the script called, to export corresponding nvhpc compiler version
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
+
+case ${SETUP_SCRIPT_NAME} in
+    .eccc_setup_nvhpc)
+        export COMPILER_VERSION=23.7.0
+        ;;
+    .eccc_setup_nvhpc_23.7.0)
+        export COMPILER_VERSION=23.7.0
+        ;;
+    .eccc_setup_nvhpc_25.3.0)
+        export COMPILER_VERSION=25.3.0
+        ;;
+esac
 # Load code-tools 
-. r.load.dot rpn/code-tools/20250925/env/exp/rhel-8-amd64-64@nvhpc-23.7.0
+. r.load.dot rpn/code-tools/20250925/env/exp/rhel-8-amd64-64@nvhpc-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot mrd/rpn/libs/20251009-beta
@@ -26,11 +40,10 @@ else
     echo "Maestro ${MAESTRO_VERSION} scripts will be used"
 fi
 
-export COMPILER_SUITE=nvhpc
-export COMPILER_VERSION=23.7.0
-
 # Call common setup file
+export COMPILER_SUITE=nvhpc
 . ./.common_setup ${COMPILER_SUITE}
 
 # Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
 export WITH_SYSTEM_RPN=TRUE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}
