@@ -33,6 +33,8 @@ module outc
 !                    | the Grid set to use for Outc_var(*,j)           |
 ! Outc_step          | Outc_step(i) contains the index that indicates  |
 !                    | the Step set to use for Outc_var(*,j)           |
+! Outc_usrdir        | Outc_usrdir(i) contains the index that indicates|
+!                    | the Usrdir set to use for Outc_var(*,j)         |
 !----------------------------------------------------------------------
 !
 
@@ -44,7 +46,7 @@ module outc
    real    Outc_filtcoef(MAXELEM,MAXSET)
    real    Outc_convmult(MAXELEM,MAXSET)
    real    Outc_convadd (MAXELEM,MAXSET)
-   integer, dimension(MAXSET), target :: Outc_lev,Outc_grid,Outc_step
+   integer, dimension(MAXSET), target :: Outc_lev,Outc_grid,Outc_step,Outc_usrdir
    integer Outc_var_max(MAXSET)
    integer Outc_sets
 

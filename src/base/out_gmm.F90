@@ -18,7 +18,9 @@
       subroutine out_gmm (levset, set)
       use dyn_fisl_options
       use glb_ld
+      use out_meta
       use out3
+      use svro_mod
       use levels
       use outd
       use ver
@@ -47,31 +49,40 @@
 !     Setup the indexing for output
       call out_slev ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
       indo(nko+1)= G_nk+1
-
+      Out_stag_S(3:3)= ' '
+      
       do ii= 1, Outd_var_max(set)
       do  i= 1, gmm_cnt
 
          if ( trim(Outd_varnm_S(ii,set)) == trim(GMM_tbl%vname(i)) ) then
             gridset = Outd_grid(set)
+            Out_stag_S(2:2)= 'T'
             level_type => Ver_hyb%t
-            if (GMM_tbl%cn(i)(1:1) == 'M') level_type => Ver_hyb%m
+            if (GMM_tbl%cn(i)(1:1) == 'M') then
+               level_type => Ver_hyb%m
+               Out_stag_S(2:2)= 'M'
+            endif
 
             select case (GMM_tbl%ara(i))
             case('UU')
-               call out_href ( 'U_point', &
+               Out_stag_S(1:1)= 'U'
+               if ( .not. OUTs_server_L) call out_href ( 'U_point'  , &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case('VV')
-               call out_href ( 'V_point', &
+               Out_stag_S(1:1)= 'V'
+               if ( .not. OUTs_server_L) call out_href ( 'V_point'  , &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case('FF')
-               call out_href ( 'F_point', &
+               Out_stag_S(1:1)= 'F'
+               if ( .not. OUTs_server_L) call out_href ( 'F_point'  , &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             case default
-               call out_href ( 'Mass_point', &
-                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
+               Out_stag_S(1:1)= 'M'
+               if ( .not. OUTs_server_L) call out_href ( 'Mass_point', &
+                    OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1 , &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
             end select
 

@@ -67,7 +67,8 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
    
    integer, parameter :: STATS_PRECISION = 8
    character(len=2), parameter :: NUDG_PREFIX='N_'
-   character(len=6), parameter :: NUDG_FILE = 'NUDGE '
+   character(len=16) :: NUDG_FILE
+!   character(len=6), parameter :: NUDG_FILE = 'NUDGE '
    character(len=32), parameter  :: NUDG_VGRID_M_S = 'nudg-m'
    character(len=32), parameter  :: NUDG_VGRID_T_S = 'nudg-t'
    character(len=32), parameter  :: NUDG_RFLD_S = 'NUDGRFLD:P'
@@ -105,10 +106,11 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
 !!$   * le step number a partir de 0z = lctl_step
 !!$   * le step number a partir du debut (-3h) = step_kount
 !!$   * Cstv_dt_8 = dble(Step_dt)
-!!$   * la date de validite?  - voir au dÃ©but de gem_run.F90     
+!!$   * la date de validite?  - voir au début de gem_run.F90     
 !!$      dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
 !!$      call incdatsd (datev,Step_runstrt_S,dayfrac)
 
+   NUDG_FILE = 'NUDGE/'//Step_runstrt_S(1:8)//Step_runstrt_S(10:11)
    if (.not. Grd_yinyang_L .or. spn_freq < 0 ) return
 
    if (.not.is_converted) then

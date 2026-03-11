@@ -6,6 +6,7 @@
       use inp_mod
       use ptopo
       use glb_ld
+      use lun
       implicit none
       
       integer, intent (IN) :: lminx,lmaxx,lminy,lmaxy,nka,&
@@ -34,6 +35,7 @@
       cnt= 0
 
       do dst_level= 1, nz
+      !call gemtime ( Lun_out, 'FIRST FENCE', .false. )
          call MPI_Win_fence(0, Inp_window, err)
          if (zlist(dst_level) > -1) then
             k= zlist(dst_level) ; cnt=cnt+1
@@ -58,6 +60,7 @@
                              TARGET_DATATYPE, Inp_window, err)
             end do
          endif
+      !   call gemtime ( Lun_out, 'SECOND FENCE', .false. )
          call MPI_Win_fence(0, Inp_window, err)
       end do
       if (mem_L) deallocate(buf)
@@ -71,6 +74,7 @@
             end do
          end do
       end do
+     ! call gemtime ( Lun_out, 'DONE ... glbdist_os', .false. )
 !     
 !---------------------------------------------------------------------
 !

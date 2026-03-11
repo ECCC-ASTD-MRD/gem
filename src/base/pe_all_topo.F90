@@ -41,7 +41,7 @@
 !
 !-------------------------------------------------------------------
 !
-      call gemtime ( Lun_out, 'STARTING GEMDM', .false. )
+      call gemtime ( Lun_out, 'STARTING MY GEMDM DOMAIN', .false. )
       call gtmg_start ( 2, 'INIT_GEM', 1)
 
       colrow = 0

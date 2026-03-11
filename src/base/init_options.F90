@@ -64,7 +64,11 @@ module init_options
    logical :: Iau_stats_L = .false.
    namelist /init/ Iau_stats_L
    namelist /init_p/ Iau_stats_L
-
+      
+   !# IAU Input in dynamics
+   logical :: Iau_indyn_L = .false.
+   namelist /init/ Iau_indyn_L
+   namelist /init_p/ Iau_indyn_L
 !Init
 
    !# true -> Digital filter initialization is performed
@@ -158,17 +162,17 @@ contains
 !
       return
       end function init_nml
-   function init_options_init() result(F_istat)
-      use, intrinsic :: iso_fortran_env
-      implicit none
-      integer :: F_istat
-#include <rmnlib_basics.hf>
-      logical, save :: init_L = .false.
-      F_istat = RMN_OK
-      if (init_L) return
-      init_L = .true.
-
-      return
-   end function init_options_init
+!!$   function init_options_init() result(F_istat)
+!!$      use, intrinsic :: iso_fortran_env
+!!$      implicit none
+!!$      integer :: F_istat
+!!$#include <rmnlib_basics.hf>
+!!$      logical, save :: init_L = .false.
+!!$      F_istat = RMN_OK
+!!$      if (init_L) return
+!!$      init_L = .true.
+!!$
+!!$      return
+!!$   end function init_options_init
 
 end module init_options

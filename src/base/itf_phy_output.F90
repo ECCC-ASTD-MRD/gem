@@ -16,55 +16,59 @@
 !**s/r itf_phy_output
 
       subroutine itf_phy_output (stepno)
-      use vertical_interpolation, only: vertint2
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_free,VGD_OK,VGD_ERROR
-      use vgrid_wb, only: vgrid_wb_get
-      use out_vref, only: out_vref_itf
-      use phy_itf, only: phy_get,phymeta,phy_getmeta,phy_put
+      use vertical_interpolation
+      use vGrid_Descriptors
+      use vgrid_wb
+      use out_vref
+      use phy_itf
       use step_options
       use gmm_pw
       use HORgrid_options
       use gem_options
       use out_options
       use glb_ld
+      use svro_mod
       use lun
       use levels
       use out3
       use outgrid
       use outp
+      use outusrdir
       use out_listes
       use out_mod
+      use out_meta
       use rmn_gmm
-      use, intrinsic :: iso_fortran_env
+      use set_level_mod, only: set_level_usr_val,set_level_ERROR
+      use, intrinsic :: iso_fortran_env     
       implicit none
-#include <arch_specific.hf>
 
-      integer stepno
+      integer, intent(IN) :: stepno
 
 #include <rmnlib_basics.hf>
 
       type(phymeta) :: pmeta
       type(vgrid_descriptor) :: vcoord
-      character(len=15) prefix
-      integer i,ii,jj,kk,levset,nko,nko_pres,cnt,istat,&
-              gridset,mult, knd ,&
+      character(len=15) prefix, model_var_stag_S
+      integer i,ii,jj,kk,levset,usrdirset,nko,nko_pres,cnt,istat,&
+              gridset,mult, knd , kind,&
               p_li0,p_li1,p_lj0,p_lj1,last_timestep
       integer grille_x0,grille_x1,grille_y0,grille_y1
-      integer, dimension(:), allocatable :: indo_pres,indo,irff
-      integer, dimension(:), pointer     :: ip1m
+      integer, dimension(:), allocatable :: indo,irff
+      integer, dimension(:), pointer     :: ip1m,indo_pres
       logical flag_clos, write_diag_lev, accum_L
       real(kind=REAL64) avgfact
       real, dimension (l_ni,l_nj,G_nk+1), target :: wlnpi_m,wlnpi_t
-      real, dimension(:), pointer    :: hybm,hybt
-      real, dimension(:), allocatable:: prprlvl,rff
-      real, dimension(:,:,:), pointer :: lnpres,ptr3d
-      real, dimension(:,:,:), allocatable         :: buso_pres,cible
+      real, dimension(:), pointer    :: hybm,hybt,rf
+      real, dimension(:), allocatable:: rff
+      real, dimension(:,:,:), pointer :: lnpres,ptr3d,cible,usr_src,cible_dyn,usr_src_dyn
+      real, dimension(:,:,:), allocatable         :: buso_pres
       real, dimension(:,:,:), allocatable, target :: data3d, zero
       real hybt_gnk2(1),hybm_gnk2(1)
       integer ind0(1)
 !
 !----------------------------------------------------------------------
 !
+      nullify(cible,usr_src,cible_dyn,usr_src_dyn,indo_pres,rf)
       if (outp_sorties(0,stepno) <= 0) then
          return
       else
@@ -72,6 +76,7 @@
             write(Lun_out,7001) stepno,trim(Out_laststep_S)
          end if
       end if
+      call gtmg_start ( 48, 'PHY_output', 40 )
 
       istat = fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
       out_type_S   = 'REGPHY'
@@ -101,10 +106,12 @@
       ind0(1) = 1
 
       do jj=1, outp_sorties(0,stepno)
-
+         
+         Out_nfstecr= 0
          kk       = outp_sorties(jj,stepno)
          gridset  = Outp_grid(kk)
          levset   = Outp_lev(kk)
+         usrdirset= Outp_usrdir(kk)
          accum_L  = (Outp_avg_L(kk).or.Outp_accum_L(kk))
          avgfact  = 1.d0/dble(max(1,lctl_step-Outp_lasstep(kk,stepno)))
          last_timestep= -1
@@ -118,45 +125,58 @@
 
          if (Level_typ_S(levset) == 'P') then
             nko_pres = Level_max(levset)
-            allocate ( indo_pres(nko_pres),buso_pres(l_ni,l_nj,nko_pres),&
-                       prprlvl(nko_pres),cible(l_ni,l_nj,nko_pres) )
-            buso_pres= 0.
-            do i = 1, nko_pres
-               indo_pres(i)= i
-               prprlvl(i)   = level(i,levset) * 100.0
-               cible(:,:,i) = log(prprlvl(i))
-            end do
          end if
-
-         Out_prefix_S(1:1) = 'p'
-         Out_prefix_S(2:2) = Level_typ_S(levset)
-         call up2low (Out_prefix_S ,prefix)
+         
+         if(OutGrid_hgrid_usr(gridset)%usr_grid_L .or. Level_vgrid_usr(levset)%usr_grid_L )then
+            Out_prefix_S(1:2) = 'u'//OutUsrdir_name_S(usrdirset)(4:4)
+            Out_prefix_S(3:4) = '  '
+         else
+            Out_prefix_S(1:1) = 'p'
+            Out_prefix_S(2:2) = Level_typ_S(levset)
+            Out_prefix_S(3:3) = ' '
+            Out_prefix_S(4:4) = OutGrid_hgrid_usr(gridset)%usr_grid_index_S
+         endif
+         call up2low (Out_prefix_S(1:2),prefix)
          Out_reduc_l       = OutGrid_reduc(gridset)
-
-         call out_open_file (trim(prefix))
 
          grille_x0 = max( 1   +Grd_bsc_ext1, OutGrid_x0(gridset) )
          grille_x1 = min( G_ni-Grd_bsc_ext1, OutGrid_x1(gridset) )
          grille_y0 = max( 1   +Grd_bsc_ext1, OutGrid_y0(gridset) )
          grille_y1 = min( G_nj-Grd_bsc_ext1, OutGrid_y1(gridset) )
 
-         call out_href ( 'Mass_point',grille_x0,grille_x1,1,&
+         Out_stride = 1         ! can only be one for now
+         Out_gridi0 = max( 1   , grille_x0)
+         Out_gridin = min( G_ni, grille_x1)
+         Out_gridj0 = max( 1   , grille_y0)
+         Out_gridjn = min( G_nj, grille_y1)
+
+         if ( .not. OUTs_server_L) then
+
+            call out_open_file (trim(prefix))
+
+            call out_href ( 'Mass_point',grille_x0,grille_x1,1,&
                                        grille_y0,grille_y1,1 )
 
-         if (Level_typ_S(levset) == 'M') then
-            call out_vref_itf (etiket=Out_etik_S)
-         elseif (Level_typ_S(levset) == 'P') then
-            call out_vref_itf (Level_allpres(1:Level_npres),&
+            if (Level_typ_S(levset) == 'M') then
+               call out_vref_itf (etiket=Out_etik_S)
+            elseif (Level_typ_S(levset) == 'P') then
+               call out_vref_itf (Level_allpres(1:Level_npres),&
                                etiket=Out_etik_S)
-         end if
-
+            elseif (Level_typ_S(levset) == 'H') then
+               call out_vref_itf (Level_allheights(1:Level_nheights),&
+                               etiket=Out_etik_S,agl_L=.true.)
+            end if
+         endif
+         
+         call OUTs_metaS ()
+         
          PHYSICS_VARS: do ii=1, Outp_var_max(kk)
 
             WRITE_FIELD: if (phy_getmeta (pmeta, Outp_var_S(ii,kk), &
                              F_npath='O',F_bpath='PVED', F_quiet=.true.)&
                              > 0 ) then
                FIELD_SHAPE: if (pmeta%nk == 1) then ! 2D field
-
+                  Out_stag_S= 'MS '//OutGrid_hgrid_usr(gridset)%usr_grid_index_S
                   rff(1)= 0. ; irff(1)= 1 ; knd= 2
                   if ( pmeta%fmul > 1 ) then
                      do mult=1,pmeta%fmul
@@ -190,14 +210,15 @@
                   if (Outp_avg_L(kk)) data3d = data3d*avgfact
 
                   if (Level_typ_S(levset) == 'M') then
-
                      if (pmeta%stag > 0) then ! thermo
+                        Out_stag_S= 'MT '//OutGrid_hgrid_usr(gridset)%usr_grid_index_S
                         call out_fstecr (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybt                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
+                           Out_stag_S(3:3)= 'D '//OutGrid_hgrid_usr(gridset)%usr_grid_index_S
                            call out_fstecr (data3d(1,1,G_nk+1)        ,&
                                  1,l_ni, 1,l_nj, hybt_gnk2             ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
@@ -205,12 +226,14 @@
                                  1,ind0,1,Outp_nbit(ii,kk),.false. )
                         end if
                      else  ! momentum
+                        Out_stag_S= 'MM '//OutGrid_hgrid_usr(gridset)%usr_grid_index_S
                         call out_fstecr (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybm                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
                                  Outp_convadd(ii,kk),Level_kind_ip1,last_timestep,&
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
+                           Out_stag_S(3:3)= 'D '//OutGrid_hgrid_usr(gridset)%usr_grid_index_S
                            call out_fstecr (data3d(1,1,G_nk+1)        ,&
                                  1,l_ni, 1,l_nj, hybm_gnk2             ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
@@ -219,21 +242,51 @@
                         end if
                      end if
 
-                  elseif (Level_typ_S(levset) == 'P') then
+                  else
+                     ! Output on pressure, heights AGL or user levels
+                     
+                     ! Note: The pointers cible_dyn, usr_src_dyn, indo_pres, and rf
+                     ! will point to memory allocated within set_level_usr_val.
+                     ! This "internal" memory allocation will persist 
+                     ! throughout the model integration and will be expanded if necessary. 
+                     ! Therefore, cible_dyn, usr_src_dyn, indo_pres, and rf must not
+                     ! be deallocated, but they can be nullified if needed.
+                     model_var_stag_S='MOMENTUM'
+                     if ( pmeta%stag > 0 )model_var_stag_S='THERMO'
+                     Out_stag_S='M???'
 
-                     lnpres => wlnpi_m
-                     if ( pmeta%stag > 0 ) lnpres => wlnpi_t
+                     if( set_level_usr_val(cible_dyn, indo_pres, rf, kind, nko_pres, usr_src_dyn, &
+                          levset,Level,Level_max, model_var_stag_S,&
+                          l_minx,l_maxx,l_miny,l_maxy, G_nk, &
+                          Out_stag_S, Level_typ_S(levset), Outp_grid(kk)) &
+                          == set_level_ERROR )then
+                        print*,'TODO out_uv handle error gracefully 1'
+                        stop
+                        return
+                     end if
+
+                     ! 3D Arrays returned by function set_level_usr_val
+                     ! have the following scope, l_minx,l_maxx,l_miny,l_maxy
+                     ! We take on the 1:l_ni,1:l_nj part.
+                     cible   =>   cible_dyn(1:l_ni,1:l_nj,1:nko_pres)
+                     usr_src => usr_src_dyn(1:l_ni,1:l_nj,1:G_nk)
+                     
+                     allocate(buso_pres(l_ni,l_nj,nko_pres))
 
                      call vertint2 ( buso_pres, cible, nko_pres, data3d,&
-                                     lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
-                             1,l_ni, 1,l_nj, inttype=Out3_vinterp_type_S)
-
+                                     usr_src, G_nk, 1,l_ni, 1,l_nj      ,&
+                                     1,l_ni, 1,l_nj, inttype=Out3_vinterp_type_S,&
+                                     levtype=Level_vgrid_usr(levset)%class_S)
+                     
                      call out_fstecr ( buso_pres, 1,l_ni, 1,l_nj      ,&
-                           level(1,levset),Outp_var_S(ii,kk)           ,&
-                           Outp_convmult(ii,kk),Outp_convadd(ii,kk),2,last_timestep,&
+                           rf,Outp_var_S(ii,kk)           ,&
+                           Outp_convmult(ii,kk),Outp_convadd(ii,kk),kind,last_timestep,&
                            nko_pres,indo_pres,nko_pres,Outp_nbit(ii,kk),&
                            .false. )
 
+                     nullify(cible_dyn, cible, usr_src_dyn, usr_src, indo_pres, rf)
+                     deallocate(buso_pres)
+                     
                   end if
                   if (accum_L) then
                       ptr3d => zero
@@ -245,20 +298,23 @@
          end do PHYSICS_VARS
 
          deallocate (indo)
-         if (Level_typ_S(levset) == 'P') deallocate (buso_pres, indo_pres, prprlvl, cible)
 
-         flag_clos= .true.
-         if (jj < outp_sorties(0,stepno)) then
-            flag_clos= .not.( (gridset == Outp_grid(outp_sorties(jj+1,stepno))).and. &
+         if ( .not. OUTs_server_L) then
+            flag_clos= .true.
+            if (jj < outp_sorties(0,stepno)) then
+               flag_clos= .not.( (gridset == Outp_grid(outp_sorties(jj+1,stepno))).and. &
                  (Level_typ_S(levset) == Level_typ_S(Outp_lev(outp_sorties(jj+1,stepno)))))
-         end if
+            end if
+            if (flag_clos) call out_cfile ()
+         endif
 
-         if (flag_clos) call out_cfile ()
+         call OUTs_metaF (Out_nfstecr, OUTs_nvar_indx)
 
       end do
 
       deallocate(rff,irff,data3d,zero)
       deallocate(hybm,hybt); nullify(hybm,hybt)
+      call gtmg_stop  ( 48 )
 
       istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
 

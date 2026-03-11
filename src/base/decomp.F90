@@ -16,15 +16,34 @@
       logical function decomp ( F_npts, F_min, F_max, F_lni, F_npartiel, F_halo, F_start,  &
                                 F_alongx_L, F_fill_L, F_npe, F_lowestsize, F_checkparti_L, &
                                 F_relax)
+      !! Defines grid decomposition parameters, dividing a dimension of global size F_npts over
+      !! the X or Y axis of the processor grid.  The resulting grid distribution optionally
+      !! includes a halo region, specified by the F_halo parameter.
+
+      !! After calling decomp, this process should define a decomposed array as
+      !! arr(F_min:F_max) (supposing a single dimension).  arr(1:F_lni) contains the valid
+      !! interior data for the decomposed array, with F_halo points 
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
-      logical, intent(in) :: F_alongx_L, F_fill_L, F_checkparti_L
-      integer, intent(inout) :: F_min, F_max, F_Npartiel, F_start
-      integer, intent(in) :: F_npts, F_halo, F_npe
-      integer, intent(inout):: F_lni(F_npe)
-      integer, intent(in) :: F_lowestsize, F_relax
+      logical, intent(in) :: F_alongx_L, & !! 1 (true) if the process distribution is along X, otherwise along Y
+                             F_fill_L, & !! 1 (true) if the allocated array should be padded and "optimized for current machine"
+                             F_checkparti_L !! 1 (true) if the decomposition should be checked for validity, but not computed
+      integer, intent(inout) :: F_min, F_max, & !! Minimum and maximum bounds on the allocation of the decomposed array
+                                F_Npartiel, & !! Extent of the largest chunk given to any process
+                                F_start  !! Index in the global array corresponding to arr(1)
+      integer, intent(in) :: F_npts, & !! Global extent of the dimension to be split
+                             F_halo, & !! Size of the halo region along the split dimension
+                             F_npe     !! Number of processes along the dimension to split
+      integer, intent(inout):: F_lni(F_npe) !! Number of points owned by each process along the decomposition
+      integer, intent(in) :: F_lowestsize, & !! Minimum number of points per process for a valid decomposition
+                             F_relax !! Relaxation parameter per RPN_COMM_limit_2:
+                                     !! 0 -- constant points per process, except for the last process (invalid if last process gets 0 points)
+                                     !! 1 -- F_lni(1) or F_lni(1)-1 points per process, with larger arrays at the beginning.  Must have more than 0 points per process.
+                                     !! 2 -- As 1, but allows 0 points per process
+                                     !! 3 -- F_lni(1) points for N processes, <F_lni(1) points for 1 process, then 0 points for remainder
+                                     !! 4 -- Even point distribution; might have 0-point processes distributed throughout
 
       logical  :: check_parti
       integer  :: RPN_COMM_limit_2,rpn_comm_topo_2

@@ -81,9 +81,9 @@ contains
   end subroutine out_vrefel
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine out_vref_pres(F_rf,ig1,ig2,etiket)
+  subroutine out_vref_pres(F_rf,ig1,ig2,etiket,agl_L)
     use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,vgd_free,VGD_OK
-    ! Write the vertical coordinate descriptor (pressure levels)
+    ! Write the vertical coordinate descriptor (pressure[defaul] or height[if alg=.true.] levels)
 
     use lun
     use out_mod
@@ -92,12 +92,14 @@ contains
 
     real, dimension(:), intent(in) :: F_rf              !List of pressure levels to output
     integer, intent(in), optional :: ig1,ig2            !override 'out.cdk' values of ig1,ig2
-    character(len=*), optional :: etiket               !override etiket value
+    character(len=*), optional :: etiket                !override etiket value
+    logical, optional :: agl_L                          !write height above surface vcode 4001
 
     ! Local variables
-    integer :: k,err,my_ig1,my_ig2
+    integer :: k,err,my_ig1,my_ig2,kind
     integer, dimension(size(F_rf)) :: ip1s
     real(kind=REAL64), dimension(size(F_rf)) :: zero
+    logical :: my_agl_L
     type(vgrid_descriptor) :: vgd
 
     ! Set default values
@@ -105,18 +107,23 @@ contains
     if (present(ig1)) my_ig1 = ig1
     my_ig2 = Out_ig2
     if (present(ig2)) my_ig2 = ig2
+    my_agl_L=.false.
+    if(present(agl_L))my_agl_L=.true.
+
+    kind=2
+    if(my_agl_L)kind=4
 
     ! Set initializing values
     zero = 0.d0
     do k=1,size(F_rf)
-       call convip(ip1s(k),F_rf(k),2,1,'',.false.)
+       call convip(ip1s(k),F_rf(k),kind,1,'',.false.)
     end do
 
     ! Write coordinate descriptor
     if (writeDescriptor()) then
 
        err = vgd_new(vgd,               &
-            kind     = 2,               &
+            kind     = kind,            &
             version  = 1,               &
             nk       = size(F_rf),      &
             ip1      = my_ig1,          &

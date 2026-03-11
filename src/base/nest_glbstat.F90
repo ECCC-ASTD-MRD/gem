@@ -35,7 +35,6 @@
       end do
       
       do n=1, nf
-         print*, n,F_lframe_S(n)
       if (F_lframe_S(n) == 'DEB') then
       call glbstat (nest_u_deb,'NUD','', l_minx,l_maxx,l_miny,l_maxy,1,l_nk,&
                     1,G_ni,1,G_nj,1,l_nk)

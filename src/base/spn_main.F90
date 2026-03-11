@@ -23,22 +23,26 @@
       use gmm_vt1
       use mem_nest
       use tdpack
+      use gem_options
       use HORgrid_options
       use rmn_gmm
       use var_gmm
+      use gmm_pw
       use tr3d
       use mem_tracers
+      use vertical_interpolation
       use omp_timing
       use cstv
       implicit none
+
+      real, pointer, dimension(:,:,:) :: nudge_t, nudge_u, nudge_v, nudge_hu, nudge
+      real(kind=REAL64):: time_now
+      integer:: istat, ib
+      logical:: spn_end_L
 !
 !----------------------------------------------------------------------
 !
-
-      real, pointer, dimension(:,:,:) :: nudge_t, nudge_u, nudge_v, nudge_hu
-      real(kind=REAL64):: time_now
-      integer:: istat, ib, ie
-      logical:: spn_end_L
+      if (.not.Grd_yinyang_L .or. .not.Spn_ON_L) return
 
       time_now = float(Lctl_step) * Cstv_dt_8 /3600.
       Spn_end_L=.false.
@@ -46,7 +50,7 @@
           if (time_now>=Spn_end_hour) Spn_end_L=.true.
       end if
 
-      if ((.not. Spn_ON_L) .or. Spn_end_L) return
+      if (Spn_end_L) return
 
       call gtmg_start ( 59, 'SPN_main', 1 )
 
@@ -79,22 +83,46 @@
          else
             if (Lun_out > 0) write(Lun_out,1001) Lctl_step
 
-            if (.not. Grd_yinyang_L) then
+            if ((.not. Grd_yinyang_L).or.(Spn_indyn_L)) then
 
+               allocate (nudge(l_minx:l_maxx,l_miny:l_maxy,G_nk))
                if (Spn_nudge_UV_L) then
-                  call spn_apply (ut1, nest_u, l_minx,l_maxx,l_miny,l_maxy, l_nk)
-                  call spn_apply (vt1, nest_v, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+                  call vertint2 ( nudge,pw_log_pm,G_nk, nest_u,Spn_pres,Spn_nka,&
+                                       l_minx,l_maxx,l_miny,l_maxy             ,&
+                                 1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
+                                 varname='',inttype= 'cubic',levtype='P' )
+                  if (Spn_yy_nudge_data_stats_L) &
+                  call glbstat (nudge ,'uu','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  call spn_apply (ut1, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+                  call vertint2 ( nudge,pw_log_pm,G_nk, nest_v,Spn_pres,Spn_nka,&
+                                       l_minx,l_maxx,l_miny,l_maxy             ,&
+                                 1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
+                                 varname='',inttype= 'cubic',levtype='P' )
+                  if (Spn_yy_nudge_data_stats_L) &
+                  call glbstat (nudge ,'vv','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  call spn_apply (vt1, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                end if
                if (Spn_nudge_TT_L) then
-                  call spn_apply (tt1, nest_t, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+                  call vertint2 ( nudge,pw_log_pt,G_nk, nest_t,Spn_pres,Spn_nka,&
+                                  l_minx,l_maxx,l_miny,l_maxy             ,&
+                            1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
+                            varname='', inttype= 'cubic', levtype='P' )
+                  if (Spn_yy_nudge_data_stats_L) &
+                  call glbstat (nudge ,'tt','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  call spn_apply (tt1, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                end if              
                if (Spn_nudge_HU_L) then
                   ib=(Tr3d_hu-1)*G_nk+1
-                  ie=ib+G_nk-1
-                  istat=gmm_get('N_hu',nudge_hu)
-                  call spn_apply (tracers_P(Tr3d_hu)%pntr, nest_tr(:,:,ib:ie), l_minx,l_maxx,l_miny,l_maxy, l_nk)
+                  call vertint2 ( nudge,pw_log_pt,G_nk, nest_tr(:,:,ib),Spn_pres,Spn_nka,&
+                                  l_minx,l_maxx,l_miny,l_maxy             ,&
+                            1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
+                            varname='', inttype= 'cubic', levtype='P' )
+                  if (Spn_yy_nudge_data_stats_L) &
+                  call glbstat (nudge ,'hu','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  call spn_apply (tracers_P(Tr3d_hu)%pntr, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                end if
-
+               deallocate (nudge)
+               
             else
                if (Spn_nudge_UV_L) then
                   istat=gmm_get('N_uu',nudge_u)
@@ -114,12 +142,10 @@
          end if
       
       end if
-      
 
       call gtmg_stop ( 59 )
  1001 format(/' SPN_MAIN: Applying spectral nudging at STEP NO ',I10/)
  1002 format(/' SPN_MAIN: Not applying spectral nudging at STEP NO ',I10/)
-      
 !
 !----------------------------------------------------------------------
 !

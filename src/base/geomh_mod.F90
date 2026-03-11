@@ -103,6 +103,8 @@ module geomh
    real, dimension(:), pointer, contiguous :: geomh_lonF
    real, dimension(:), pointer, contiguous :: geomh_latF
 
+   real, dimension(:), pointer, contiguous :: geomh_4output
+ 
    !> Phi latitudes in degrees for model output
    real, dimension(:), pointer, contiguous :: geomh_latgs
    !> Phi longitudes in degrees for model output

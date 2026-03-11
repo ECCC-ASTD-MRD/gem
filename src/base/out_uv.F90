@@ -23,34 +23,36 @@
       use gmm_pw
       use out_options
       use glb_ld
+      use out_meta
       use out_mod
       use out3
       use levels
       use outp
       use outd
+      use outgrid
       use rmn_gmm
+      use set_level_mod, only: set_level_usr_val,set_level_ERROR
       implicit none
-#include <arch_specific.hf>
 
       integer levset, set
-
-
       type(vgrid_descriptor) :: vcoord
       logical :: write_diag_lev,near_sfc_L
       integer ii,i,j,k,istat,kind,nko
       integer i0,in,j0,jn,pnuu,pnvv,pnuv,psum
-      integer, dimension(:), allocatable :: indo
-      integer, dimension(:), pointer     :: ip1m
+      integer, dimension(:), pointer :: indo, ip1m
       real uu(l_minx:l_maxx,l_miny:l_maxy,G_nk+1),&
            vv(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
-      real, dimension(:    ), allocatable::prprlvl,rf
+      real, dimension(:    ), pointer :: rf
       real, dimension(:    ), pointer, save :: hybm  => null()
-      real, dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres,cible
+      real, dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres
+      real, dimension(:,:,:), pointer :: cible, usr_src
       real hybm_gnk2(1)
       integer ind0(1)
 !
 !-------------------------------------------------------------------
 !
+      nullify(indo, rf, cible, usr_src)
+
       pnuu=0 ; pnvv=0 ; pnuv=0
 
       do ii=1,Outd_var_max(set)
@@ -77,6 +79,7 @@
 
       if (Level_typ_S(levset) == 'M') then  ! Output on model levels
 
+         Out_stag_S= 'MM '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
          kind=Level_kind_ip1
 !        Setup the indexing for output
          allocate (indo(G_nk+1))
@@ -104,12 +107,13 @@
                    'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set),&
                    kind,-1,G_nk, indo, nko,Outd_nbit(pnvv,set),.false. )
             if (write_diag_lev) then
+               Out_stag_S(3:3)= 'D'
                call out_fstecr(udiag, l_minx,l_maxx,l_miny,l_maxy,&
-                                hybm_gnk2, 'UU', Outd_convmult(pnuu,set),&
+                                hybm_gnk2, 'UU  ', Outd_convmult(pnuu,set),&
                                 Outd_convadd(pnuu,set),Level_kind_diag,-1,1,&
                                 ind0,1,Outd_nbit(pnuu,set),.false. )
                call out_fstecr(vdiag, l_minx,l_maxx,l_miny,l_maxy,&
-                                hybm_gnk2, 'VV', Outd_convmult(pnuu,set),&
+                                hybm_gnk2, 'VV  ', Outd_convmult(pnuu,set),&
                                 Outd_convadd(pnuu,set),Level_kind_diag,-1,1,&
                                 ind0,1,Outd_nbit(pnuu,set),.false. )
             end if
@@ -128,6 +132,7 @@
                  'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
                  kind,-1,G_nk, indo, nko, Outd_nbit(pnuv,set),.false. )
             if (write_diag_lev) then
+               Out_stag_S(3:3)= 'D'
                do j = j0, jn
                do i = i0, in
                   uu(i,j,1) = sqrt(udiag(i,j)*udiag(i,j)+ &
@@ -141,23 +146,25 @@
          end if
          deallocate(indo)
 
-      else   ! Output on pressure levels
+      else ! Output on pressure, heights AGL or user levels
 
-         nullify (pw_log_pm)
-         istat= gmm_get(gmmk_pw_log_pm_s, pw_log_pm)
+         ! Note: The pointers cible, usr_src, indo, and rf
+         ! will point to memory allocated within set_level_usr_val.
+         ! This "internal" memory allocation will persist 
+         ! throughout the model integration and will be expanded if necessary. 
+         ! Therefore, cible, usr_src, indo, and rf must not
+         ! be deallocated, but they can be nullified if needed.
+         Out_stag_S='M???'
 
-!        Set kind to 2 for pressure output
-         kind=2
-!        Setup the indexing for output
-         nko=Level_max(levset)
-         allocate ( indo(nko), rf(nko) , prprlvl(nko), &
-                    cible(l_minx:l_maxx,l_miny:l_maxy,nko) )
-         do i = 1, nko
-            indo(i)=i
-            rf(i)= Level(i,levset)
-            prprlvl(i) = rf(i) * 100.0
-            cible(:,:,i) = log(prprlvl(i))
-         end do
+         if( set_level_usr_val(cible, indo, rf, kind, nko, usr_src, &
+              levset,Level,Level_max, 'MOMENTUM',&
+              l_minx,l_maxx,l_miny,l_maxy, G_nk, &
+              Out_stag_S, Level_typ_S(levset), Outd_grid(set)) &
+              == set_level_ERROR )then
+            print*,'TODO out_uv handle error gracefully 1'
+            stop
+            return
+         end if
 
          allocate(uu_pres(l_minx:l_maxx,l_miny:l_maxy,nko   ))
          allocate(vv_pres(l_minx:l_maxx,l_miny:l_maxy,nko   ))
@@ -173,12 +180,14 @@
 
 !        Vertical interpolation
 
-         call vertint2 ( uu_pres, cible, nko, uu, pw_log_pm, G_nk+1,&
+         call vertint2 ( uu_pres, cible, nko, uu, usr_src, G_nk+1,&
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                         inttype=Out3_vinterp_type_S )
-         call vertint2 ( vv_pres, cible, nko, vv, pw_log_pm, G_nk+1,&
+                         inttype=Out3_vinterp_type_S,&
+                         levtype=Level_vgrid_usr(levset)%class_S)
+         call vertint2 ( vv_pres, cible, nko, vv, usr_src, G_nk+1,&
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                         inttype=Out3_vinterp_type_S )
+                         inttype=Out3_vinterp_type_S,&
+                         levtype=Level_vgrid_usr(levset)%class_S)
 
          if (pnuv /= 0) then
             allocate(uv_pres(l_minx:l_maxx,l_miny:l_maxy,nko   ))
@@ -216,9 +225,9 @@
                  'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set),&
                  kind,-1,nko, indo, nko, Outd_nbit(pnvv,set),.false. )
          end if
-
-         deallocate(indo,rf,prprlvl,uu_pres,vv_pres,cible)
-
+         
+         deallocate(uu_pres,vv_pres)
+         
       end if
 !
 !-------------------------------------------------------------------

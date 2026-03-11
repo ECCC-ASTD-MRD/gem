@@ -15,15 +15,18 @@
 
 !**s/r init_component
 
-      subroutine init_component()
+      subroutine init_component (F_COMMs, F_nc)
       use iso_c_binding
       use App
       use clib_itf_mod
-      use app!, only: Lib_LogLevelNo,APP_LIBVGRID,APP_ERROR
+      use app
+      use gempi
       use dcst
       use glb_ld
       use domains
       use HORgrid_options
+      use svri_mod
+      use svro_mod
       use path
       use ptopo
       use step_options
@@ -31,7 +34,11 @@
       use numa
       use wb_itf_mod
       use omp_timing
+      use version
       implicit none
+
+      integer, intent(IN) :: F_nc
+      integer, intent(IN) :: F_COMMs(F_nc)
 
       include 'rpn_comm.inc'
 #include <rmnlib_basics.hf>
@@ -40,14 +47,17 @@
 
       character(len=256) :: my_dir
       logical :: alongY_L
-      integer :: ierr, mydomain
+      integer :: ierr, mydomain, myproc,gnumproc,gmyproc,key, info
       integer, parameter :: nargs=11, npos=0
       character(len=16) listec(nargs)
       character(len=2048) def(nargs), val(nargs)
-!
+!     
 !--------------------------------------------------------------------
 !
-      call gemtime ( 6, '', .false. )
+      COMM_world= F_COMMs(1) ; 
+      call RPN_COMM_world_set (COMM_world)
+      OUTs_COMM=F_COMMs(2) ; INs_COMM=F_COMMs(3)
+
       ierr = model_timeout_alarm (Step_alarm)
 
       ! List of non-positional optional arguments to the binary maingem
@@ -115,12 +125,18 @@
                      Ptopo_npex,Ptopo_npey,Domains_num,Domains_ngrids )
       ierr = RPN_COMM_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
 
-      COMM_world     = MPI_COMM_WORLD
       COMM_grid      = RPN_COMM_comm ('GRID')
       COMM_multigrid = RPN_COMM_comm ('MULTIGRID')
       COMM_gridpeers = RPN_COMM_comm ('GRIDPEERS')
       COMM_ew        = RPN_COMM_comm ('EW')
       COMM_ns        = RPN_COMM_comm ('NS')
+
+      call MPI_Comm_split (COMM_grid, Ptopo_myrow, gMPI_Wmyproc, COMM_row, ierr)
+      call MPI_Comm_split (COMM_grid, Ptopo_mycol, gMPI_Wmyproc, COMM_col, ierr)
+      call MPI_COMM_size (COMM_row,num_in_row,ierr)
+      call MPI_COMM_rank (COMM_row,me_in_row ,ierr)
+      call MPI_COMM_size (COMM_col,num_in_col,ierr)
+      call MPI_COMM_rank (COMM_col,me_in_col ,ierr)
 
       call app_setmpicomm(COMM_grid)
 
@@ -135,7 +151,7 @@
          call write_status_file3 ('_status=ABORT' )
       endif
 
-      call gtmg_init ( Ptopo_myproc, 'MOD' )
+      call gtmg_init ( Ptopo_myproc, COMM_grid, 'MOD' )
       call gtmg_start ( 1, 'GEMDM', 0)
 
       ! Some MPI cummunicators + init colors
@@ -158,7 +174,7 @@
          Ptopo_world_myproc  = Ptopo_myproc
       end if
 
-      call numa_init ()
+   !  call numa_init () ! incompatible with mimd code
       
       ! Initialize OpenMP
       Ptopo_npeOpenMP = OMP_get_max_threads()

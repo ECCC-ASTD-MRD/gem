@@ -100,7 +100,11 @@
 
       call t02t1()
 
+!$omp parallel
       call HOR_bndry ()
+!$omp end parallel
+
+      call spn_main ()
 
       call canonical_cases ("VRD")
 

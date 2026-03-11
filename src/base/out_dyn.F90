@@ -20,33 +20,31 @@
       use gem_options
       use init_options
       use grdc_options
+      use glb_ld
+      use svro_mod
       use levels
       use lun
       use outd
       use outgrid
       use out_listes
       use out_mod
-      use out_vref, only: out_vref_itf
+      use out_vref
+      use outusrdir
       use step_options
       use omp_timing
-    !  use glb_ld
-    !  use tr3d
-    !  use mem_tracers
       implicit none
 
       logical F_reg_out, F_casc_L
 
 #include <rmnlib_basics.hf>
 
-      character(len=15) prefix,vname
-      logical ontimec,flag_clos
-      integer kk,jj,levset,gridset,istat,n,deb
-      real, dimension(:,:,:),pointer :: tracers
+      character(len=15) prefix
+      logical ontimec,flag_clos,near_sfc_L
+      integer kk,jj,levset,gridset,usrdirset,istat
+      integer :: nko,indo(10000)
 !
 !----------------------------------------------------------------------
 !
-      call gtmg_start ( 80, 'OUT_DYN', 1)
-      
       if (.not.Lun_debug_L) istat= fstopc('MSGLVL','SYSTEM',RMN_OPT_SET)
 
       Out_type_S   = 'REGDYN'
@@ -61,33 +59,54 @@
             write(Lun_out,7001) Lctl_step,trim(Out_laststep_S)
          end if
 
+         call gtmg_start ( 80, 'OUT_DYN', 1)
+
          call canonical_cases ("OUT")
-
-         ! Precompute diagnostic level values
-
+         
          do jj=1, outd_sorties(0,Lctl_step)
-
+            Out_nfstecr= 0
             kk       = outd_sorties(jj,Lctl_step)
             gridset  = Outd_grid(kk)
             levset   = Outd_lev(kk)
-
-            Out_prefix_S(1:1) = 'd'
-            Out_prefix_S(2:2) = Level_typ_S(levset)
+            usrdirset= Outd_usrdir(kk)
+            if(OutGrid_hgrid_usr(gridset)%usr_grid_L .or. Level_vgrid_usr(levset)%usr_grid_L )then
+               Out_prefix_S(1:2) = 'u'//OutUsrdir_name_S(usrdirset)(4:4)
+            else
+               Out_prefix_S(1:1) = 'd'
+               Out_prefix_S(2:2) = Level_typ_S(levset)
+            endif
+            Out_prefix_S(3:4) = '  '
             call up2low (Out_prefix_S ,prefix)
+            Out_prefix_S = prefix
             Out_reduc_l       = OutGrid_reduc(gridset)
 
-            call out_open_file (trim(prefix))
+            Out_stride = 1      ! can only be one for now
+            Out_gridi0 = max( 1   , OutGrid_x0 (gridset))
+            Out_gridin = min( G_ni, OutGrid_x1 (gridset))
+            Out_gridj0 = max( 1   , OutGrid_y0 (gridset))
+            Out_gridjn = min( G_nj, OutGrid_y1 (gridset))
 
-            call out_href ( 'Mass_point'                , &
+            if ( .not. OUTs_server_L) then
+               call out_open_file (trim(prefix))
+
+               call out_href ( 'Mass_point'                , &
                   OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                   OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
 
-            if (Level_typ_S(levset) == 'M') then
-               call out_vref_itf (etiket=Out_etik_S)
-            else if (Level_typ_S(levset) == 'P') then
-               call out_vref_itf (Level_allpres(1:Level_npres),etiket=Out_etik_S)
-            end if
+            
+               if (Level_typ_S(levset) == 'M') then
+                  call out_vref_itf (etiket=Out_etik_S)
+                  call out_slev (Level(1,levset), Level_max(levset), &
+                              G_nk,indo,nko,near_sfc_L)
+               else if (Level_typ_S(levset) == 'P') then
+                  call out_vref_itf (Level_allpres(1:Level_npres),etiket=Out_etik_S)
+               else if (Level_typ_S(levset) == 'H') then
+                  call out_vref_itf (Level_allheights(1:Level_nheights),etiket=Out_etik_S,agl_L=.true.)
+               end if
+            endif
 
+            call OUTs_metaS ()
+            
             call out_tracer (levset, kk)
 
             if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
@@ -102,16 +121,20 @@
 
             call out_gmm    (levset, kk)
 
-            flag_clos= .true.
-            if (jj < outd_sorties(0,Lctl_step)) then
-              flag_clos= .not.( (gridset == Outd_grid(outd_sorties(jj+1,Lctl_step))).and. &
-              (Level_typ_S(levset) == Level_typ_S(Outd_lev(outd_sorties(jj+1,Lctl_step)))))
-            end if
+            if ( .not. OUTs_server_L) then
+               flag_clos= .true.
+               if (jj < outd_sorties(0,Lctl_step)) then
+                  flag_clos= .not.( (gridset == Outd_grid(outd_sorties(jj+1,Lctl_step))).and. &
+                  (Level_typ_S(levset) == Level_typ_S(Outd_lev(outd_sorties(jj+1,Lctl_step)))))
+               end if
+               if (flag_clos) call out_cfile ()
+            endif
 
-            if (flag_clos) call out_cfile ()
+            call OUTs_metaF (Out_nfstecr, OUTs_nvar_indx)
 
+            !if (Lun_out > 0) write (6,'(a,3i5,(" ",a4))')  'TREATING: ',jj,Out_nfstecr,Out_nplans,Outd_varnm_S(1:Outd_var_max(kk),kk),Out_prefix_S
          end do
-
+         call gtmg_stop ( 80 )
       end if
 
 !#################################################################
@@ -133,10 +156,12 @@
 
          if ( ontimec ) then
 
-            call out_open_file ('casc')
+            call gtmg_start ( 80, 'OUT_DYN', 1)
+            if ( .not. OUTs_server_L) call out_open_file ('casc')
             call out_dyn_casc()
-            call out_cfile()
-
+            if ( .not. OUTs_server_L) call out_cfile()
+            call gtmg_stop ( 80 )
+            
          end if
 
          ontimec = .false.
@@ -144,7 +169,6 @@
       end if
 
       istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
-      call gtmg_stop ( 80 )
 
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)
 !

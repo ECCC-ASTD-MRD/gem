@@ -27,7 +27,9 @@
       use outd
       use outc
       use outgrid
+      use outusrdir
       use timestep
+      use svro_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -71,7 +73,7 @@
 !          sortie_p([AFSI],grid, 1, levels, 1, steps, 3,average)
 !          sortie_p([AFSV],grid, 1, levels, 1, steps, 3,accum)
 !
-! sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],steps,[stepset])
+! sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],steps,[stepset],usrdir,[usrdirset])
 !
 !  vr1,vr2,vr3... - set of variable names to output (max of 60)
 !  levelset - levelset number to use for this set of variables
@@ -86,7 +88,7 @@
       character(len=5) :: stuff_S
       character(len=4) :: string4
       character(len=16):: string16
-      integer :: levset,stepset,gridset,varmax
+      integer :: levset,stepset,gridset,usrdirset,varmax
       integer :: i, j, ii, jj
       logical :: accum_L,avg_L
 !
@@ -114,11 +116,12 @@
          return
       end if
 !
-!     Check if chosen levels,grid and timestep sets are valid
+!     Check if chosen levels,grid,timestep and usrdir sets are valid
 !
       levset=-1
       gridset=-1
       stepset=-1
+      usrdirset=-1
       accum_L=.false.
       avg_L=.false.
       do i=varmax+2, F_argc
@@ -128,6 +131,8 @@
             read(F_argv_S(i+1),*) gridset
          else if (F_argv_S(i) == 'steps') then
             read(F_argv_S(i+1),*) stepset
+         else if (F_argv_S(i) == 'usrdir') then
+            read(F_argv_S(i+1),*) usrdirset
          else if (F_argv_S(i) == 'accum') then
             accum_L=.true.
          else if (F_argv_S(i) == 'average') then
@@ -198,6 +203,46 @@
             return
          end if
       end if
+      
+      if (usrdirset > 0) then
+         do i=1,OutUsrdir_sets
+            if (usrdirset == OutUsrdir_id(i)) then
+                usrdirset=i
+                exit
+            end if
+         end do
+         if (i > OutUsrdir_sets) then
+            if (Lun_out > 0) then
+               write(Lun_out,*) 'SET_VAR WARNING: invalid usrdir set ID#'
+            end if
+            set_var=1
+            return
+         end if
+      end if
+      if( ( OutGrid_hgrid_usr(gridset)%usr_grid_L .or. Level_vgrid_usr(levset)%usr_grid_L ) )then
+         if( usrdirset == -1 )then
+            if (Lun_out > 0) then
+               write(Lun_out,*) "SET_VAR WARNING: this set is on a user grid therefore it must have a defined usrdir id"
+            end if
+            set_var=1
+            return
+         endif
+         if(.not. OUTs_server_L)then
+            if (Lun_out > 0) then
+               write(Lun_out,*) "SET_VAR WARNING: This set is on a user grid, but the output server is not being used, so the operation cannot be performed and has been skipped."
+            end if
+            set_var=1
+            return
+         endif
+      else
+         if ( usrdirset /= -1 )then
+            if (Lun_out > 0) then
+               write(Lun_out,*) "SET_VAR WARNING: this set is on native grids, therefore usrdir connot be defined"
+            end if
+            set_var=1
+            return
+         endif
+      endif
 !
 !     Store variables in variable sets
 !
@@ -248,6 +293,7 @@
              Outd_grid(j)    = gridset
              Outd_lev(j)     = levset
              Outd_step(j)    = stepset
+             Outd_usrdir(j)  = usrdirset
          else
              if (Lun_out > 0) write(Lun_out,1400)
          end if
@@ -289,6 +335,7 @@
              Outp_grid(j)      = gridset
              Outp_lev(j)       = levset
              Outp_step(j)      = stepset
+             Outp_usrdir(j)    = usrdirset
              Outp_accum_L(j)   = accum_L
              Outp_avg_L  (j)   = avg_L
              if (Lun_out > 0) then
@@ -299,6 +346,7 @@
                 write(Lun_out,*) 'Outp_grid=',Outp_grid(j)
                 write(Lun_out,*) 'Outp_lev=',Outp_lev(j)
                 write(Lun_out,*) 'Outp_step=',Outp_step(j)
+                write(Lun_out,*) 'Outp_Usrdir=',Outp_Usrdir(j)
                 if (Outp_accum_L(j))write(Lun_out,*)'Outp_accum_L=',Outp_accum_L(j)
                 if (Outp_avg_L  (j))write(Lun_out,*)'Outp_avg_L='  ,Outp_avg_L  (j)
              end if
@@ -331,6 +379,7 @@
              Outc_grid(j)    = gridset
              Outc_lev(j)     = levset
              Outc_step(j)    = stepset
+             Outc_usrdir(j)  = usrdirset
              if (Lun_out > 0) then
                 write(Lun_out,*) '***CHM***Outc_sets=',Outc_sets
                 write(Lun_out,*) 'Outc_var_max=',Outc_var_max(j)
@@ -338,6 +387,7 @@
                 write(Lun_out,*) 'Outc_grid=',Outc_grid(j)
                 write(Lun_out,*) 'Outc_lev=',Outc_lev(j)
                 write(Lun_out,*) 'Outc_step=',Outc_step(j)
+                write(Lun_out,*) 'Outc_usrdir=',Outc_usrdir(j)
              end if
          else
              if (Lun_out > 0) write(Lun_out,1400)
