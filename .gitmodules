@@ -21,4 +21,4 @@
 [submodule "src/rpn-si/fst-tools"]
 	path = src/rpn-si/fst-tools
 	url = ../fst-tools.git
-	branch = master
+	branch = alpha
