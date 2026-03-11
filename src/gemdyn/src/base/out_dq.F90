@@ -24,24 +24,27 @@
       use glb_ld
       use out3
       use levels
+      use svro_mod
+      use out_meta
       use outd
       use ver
       use rmn_gmm
       use outgrid
+      use set_level_mod, only: set_level_usr_val,set_level_ERROR
       implicit none
-#include <arch_specific.hf>
 
       integer levset,set
 
       logical write_diag_lev
       integer i,istat,kind,nko,pndd,pnqq,pnqr,pnxx,gridset
-      integer, dimension(:), allocatable :: indo
-      real, dimension(:    ), allocatable:: rf
-      real, dimension(:,:,:), allocatable:: uu_pres,vv_pres,cible, &
-                                            div,vor,qr
+      integer, dimension(:), pointer :: indo
+      real, dimension(:    ), pointer :: rf
+      real, dimension(:,:,:), pointer :: cible, usr_src
+      real, dimension(:,:,:), allocatable:: uu_pres,vv_pres, div,vor,qr
 !
 !----------------------------------------------------------------------
 !
+      nullify(indo,rf,cible,usr_src)
       pndd=0 ; pnqq=0 ; pnqr=0 ; write_diag_lev = .false.
 
       do i=1,Outd_var_max(set)
@@ -52,11 +55,9 @@
 
       if (pndd+pnqq+pnqr == 0) return
 
-      istat = gmm_get(gmmk_ut1_s,ut1)
-      istat = gmm_get(gmmk_vt1_s,vt1)
-
       if (Level_typ_S(levset) == 'M') then
 
+         Out_stag_S= 'MM '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
          kind= Level_kind_ip1
          allocate (indo( min(Level_max(levset),Level_momentum) ))
          call out_slev ( Level(1,levset), Level_max(levset), &
@@ -72,10 +73,12 @@
             call cal_div ( div, ut1, vt1 , Outd_filtpass(pndd,set),&
                            Outd_filtcoef(pndd,set)                ,&
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
+            if ( .not. OUTs_server_L) then
             gridset = Outd_grid(set)
             call out_href ( 'Mass_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
+            endif
             call out_fstecr( div, l_minx,l_maxx,l_miny,l_maxy        ,&
                               Ver_hyb%m,'DD  ',Outd_convmult(pndd,set),&
                               Outd_convadd(pndd,set),kind,-1          ,&
@@ -85,6 +88,7 @@
 
          if ((pnqq > 0).or.(pnqr > 0)) then
 
+            Out_stag_S= 'FM '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
             allocate ( vor(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
                         qr(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
             if(pnqq > 0)then
@@ -95,11 +99,12 @@
             call cal_vor ( qr, vor, ut1, vt1 , Outd_filtpass(pnxx,set),&
                            Outd_filtcoef(pnxx,set),(pnqq > 0)        ,&
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
+            if ( .not. OUTs_server_L) then
             gridset = Outd_grid(set)
             call out_href ( 'F_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
-
+            endif
             if (pnqq > 0) &
             call out_fstecr( vor, l_minx,l_maxx,l_miny,l_maxy        ,&
                               Ver_hyb%m,'QQ  ',Outd_convmult(pnqq,set),&
@@ -114,25 +119,34 @@
 
           endif
 
-      else
+          deallocate(indo)
+          
+      else ! Output on pressure, heights AGL or user levels
 
-         istat= gmm_get(gmmk_pw_log_pm_s, pw_log_pm)
-         kind= 2
-         nko = Level_max(levset)
-         allocate ( indo(nko), rf(nko)                    ,&
-                    cible(l_minx:l_maxx,l_miny:l_maxy,nko),&
-                  uu_pres(l_minx:l_maxx,l_miny:l_maxy,nko),&
+         ! Note: The pointers cible, usr_src, indo, and rf
+         ! will point to memory allocated within set_level_usr_val.
+         ! This "internal" memory allocation will persist 
+         ! throughout the model integration and will be expanded if necessary. 
+         ! Therefore, cible, usr_src, indo, and rf must not
+         ! be deallocated, but they can be nullified if needed.
+
+         Out_stag_S='M???'
+         if( set_level_usr_val(cible, indo, rf, kind, nko, usr_src, &
+              levset,Level,Level_max, 'MOMENTUM',&
+              l_minx,l_maxx,l_miny,l_maxy, G_nk, &
+              Out_stag_S, Level_typ_S(levset), Outd_grid(set)) &
+              == set_level_ERROR )then
+            print*,'TODO in out_qd handle error gracefully 1'
+            return
+         end if
+
+         allocate (uu_pres(l_minx:l_maxx,l_miny:l_maxy,nko),&
                   vv_pres(l_minx:l_maxx,l_miny:l_maxy,nko) )
-         do i = 1, nko
-            indo(i)= i
-            rf  (i)= Level(i,levset)
-            cible(:,:,i)= log(rf(i) * 100.0)
-         enddo
 
-         call vertint2 ( uu_pres,cible,nko, ut1,pw_log_pm,G_nk      ,&
+         call vertint2 ( uu_pres,cible,nko, ut1,usr_src,G_nk      ,&
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_niu,1,l_nj,&
                          inttype=Out3_vinterp_type_S )
-         call vertint2 ( vv_pres,cible,nko, vt1,pw_log_pm,G_nk      ,&
+         call vertint2 ( vv_pres,cible,nko, vt1,usr_src,G_nk      ,&
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_njv,&
                          inttype=Out3_vinterp_type_S )
 
@@ -147,10 +161,12 @@
                            Outd_filtpass(pndd,set),&
                            Outd_filtcoef(pndd,set),&
                            l_minx,l_maxx,l_miny,l_maxy, nko )
+            if ( .not. OUTs_server_L) then
             gridset = Outd_grid(set)
             call out_href ( 'Mass_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
+            endif
             call out_fstecr( div, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'DD  ',Outd_convmult(pndd,set),&
                               Outd_convadd(pndd,set), kind,-1  ,&
@@ -171,11 +187,13 @@
                            Outd_filtpass(pnxx,set)            ,&
                            Outd_filtcoef(pnxx,set),(pnqq > 0),&
                            l_minx,l_maxx,l_miny,l_maxy, nko )
+            Out_stag_S(1:1)= 'F'
+            if ( .not. OUTs_server_L) then
             gridset = Outd_grid(set)
             call out_href ( 'F_point', &
                     OutGrid_x0 (gridset), OutGrid_x1 (gridset), 1, &
                     OutGrid_y0 (gridset), OutGrid_y1 (gridset), 1 )
-
+            endif
             if (pnqq > 0) &
             call out_fstecr( vor, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'QQ  ',Outd_convmult(pnqq,set),&
@@ -188,12 +206,10 @@
                               nko, indo, nko, Outd_nbit(pnqr,set),.false.)
             deallocate (vor, qr)
           endif
-
-          deallocate (rf,cible,uu_pres,vv_pres)
+          
+          deallocate (uu_pres,vv_pres)
 
       endif
-
-      deallocate (indo)
 !
 !----------------------------------------------------------------------
 !

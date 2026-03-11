@@ -12,7 +12,7 @@
 
       integer, external :: get_max_rss
 
-      character date_S*8, time_S*10, jour_S*11, heure_S*10
+      character date_S*8, time_S*10, jour_S*11
       logical, save :: timini_L = .false.
       real          users, systs
       real, save :: user0 = 0.0, syst0 = 0.0
@@ -28,7 +28,6 @@
 
       call date_and_time( date_S,time_S )
       jour_S  = date_S(1:4)//'/'//date_S(5:6)//'/'//date_S(7:8)//' '
-      heure_S = time_S(1:2)//'h'//time_S(3:4)//'m'//time_S(5:6)//'s,'
 
       call cpu_time( users )
 
@@ -42,7 +41,7 @@
             avgtime(10)  = END-START
             Step_maxwall = sum(avgtime) / 10.d0
          endif
-         write(unf,1000) 'TIME: '//jour_S//heure_S, END-START, users-user0, &
+         write(unf,1000) 'TIME: '//jour_S//time_S, END-START, users-user0, &
                           systs-syst0, get_max_rss(), from
          ACCUM_w = ACCUM_w + END - START
          ACCUM_u = ACCUM_u + users - user0

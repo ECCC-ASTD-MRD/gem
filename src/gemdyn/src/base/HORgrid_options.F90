@@ -86,11 +86,13 @@ module HORgrid_options
 
    character(len=12) :: Grd_yinyang_S
    logical Grd_roule, Grd_yinyang_L
+   integer Grd_rot_ig(4,2)
    integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
    integer Grd_local_gid, Grd_lclcore_gid, Grd_global_gid, &
-            Grd_lphy_gid, Grd_glbcore_gid
+           Grd_lphy_gid, Grd_glbcore_gid
    integer Grd_lphy_i0, Grd_lphy_in, Grd_lphy_j0, Grd_lphy_jn, &
            Grd_lphy_ni, Grd_lphy_nj
+   real Grd_rot_xg(4,2)
    real(kind=REAL64) Grd_rot_8(3,3), Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
 
 contains
@@ -162,15 +164,17 @@ contains
       use glb_ld
       use glb_pil
       use hgc
+      use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
+      include 'mpif.h'
       integer, intent(in) :: F_adv_maxcfl_fact
 
       character(len=120) :: dumc
-      logical :: almost_zero
       integer err
+      integer, dimension (4,2) :: ixg
+      real   , dimension (4,2) :: rot
       real(kind=REAL64) :: a_8, b_8, c_8, d_8
       real(kind=REAL64), dimension(3) :: xyz1_8, xyz2_8
       real(kind=REAL64) :: yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
@@ -179,11 +183,9 @@ contains
 !-------------------------------------------------------------------
 !
       HORgrid_config = -1
-
+      
       call low2up (Grd_typ_S,dumc)
       Grd_typ_S = dumc(1:2)
-
-      Glb_pilotcirc_L = .false.
 
       if (Grd_typ_S(1:2) == 'GY') then
 
@@ -212,7 +214,7 @@ contains
 
       else
 
-         if ( almost_zero(Grd_dx*Grd_dy) ) then
+         if  ( Grd_dx*Grd_dy <=0 ) then
             if (Lun_out > 0) then
                write(Lun_out,*) 'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
             end if
@@ -267,6 +269,26 @@ contains
                               Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
       call cigaxg ( Hgc_gxtyp_S,Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2,&
                               Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro )
+
+      ixg = 0 ; rot = 0.
+      if (Ptopo_myproc == 0) then
+         ixg(1,Ptopo_couleur+1)= Hgc_ig1ro
+         ixg(2,Ptopo_couleur+1)= Hgc_ig2ro
+         ixg(3,Ptopo_couleur+1)= Hgc_ig3ro
+         ixg(4,Ptopo_couleur+1)= Hgc_ig4ro
+         rot(1,Ptopo_couleur+1)= Grd_xlat1
+         rot(2,Ptopo_couleur+1)= Grd_xlon1
+         rot(3,Ptopo_couleur+1)= Grd_xlat2
+         rot(4,Ptopo_couleur+1)= Grd_xlon2
+      end if
+
+      call MPI_allreduce ( ixg  , Grd_rot_ig  , 8,&
+           MPI_INTEGER,MPI_SUM,COMM_MULTIGRID,err )
+      call MPI_allreduce ( rot  , Grd_rot_xg  , 8,&
+           MPI_REAL   ,MPI_SUM,COMM_MULTIGRID,err )
+      if (Grd_typ_S(1:2) /= 'GY') then
+         Grd_rot_ig(:,2)= -9999 ; Grd_rot_xg(:,2)= -9999.
+      endif
 
       if (Lun_out > 0) then
          write(Lun_out,1100) trim(Grd_yinyang_S), &

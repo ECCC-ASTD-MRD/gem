@@ -23,6 +23,7 @@
       use gem_options
       use glb_ld
       use out_mod
+      use svro_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -70,6 +71,7 @@ End Interface
       end if
 
       if (F_empty_stk_L) then
+         if (OUTs_server_L) return
          if ( istk > 0) then
             call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
                                metaf,istk, Out_gridi0,Out_gridin,&
@@ -80,6 +82,12 @@ End Interface
          deallocate (metaf, f2c) ; nullify (metaf, f2c)
          return
       end if
+
+      if (OUTs_server_L) then
+         call itf_svro_fstecr ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,&
+                                mul,add,kind,lstep,nkfa,ind_o,nk_o,nbit)
+         return
+      endif
 
       modeip1= 1
       if (kind == 2) modeip1= 3 !old ip1 style for pressure lvls output

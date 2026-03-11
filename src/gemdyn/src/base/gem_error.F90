@@ -1,6 +1,7 @@
       subroutine gem_error (F_errorCode, F_FromSubName, F_Message)
       use iso_c_binding
       use app
+      use inp_mod
       implicit none
 
       integer :: F_errorCode
@@ -19,8 +20,9 @@
       if (errcode < 0) then
          call app_log(APP_FATAL,F_FromSubName//': '//F_Message)
          app_status=app_end(errcode)
+         if (associated(Inp_recv)) call MPI_Win_free  (Inp_window,err)
          call rpn_comm_FINALIZE(err)
-         stop app_status
+         stop! app_status
       end if
 
    !---------------------------------------------------------------------

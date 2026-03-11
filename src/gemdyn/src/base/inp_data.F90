@@ -153,37 +153,37 @@
 
       ut1_L= .false. ; urt1_L= .false. ; err = -1
 
-      if (F_stag_L) then
-         err = inp_get ( 'URT1', 'U', Ver_ip1%m               ,&
-                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-         if ( err == 0 ) then
-            err = inp_get ( 'VRT1', 'V', Ver_ip1%m            ,&
-                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-         end if
-         urt1_L= ( err == 0 )
-
-         if (.not. urt1_L) then
-            err = inp_get ( 'UT1', 'U', Ver_ip1%m              ,&
-                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-            if ( err == 0 ) then
-               err = inp_get ( 'VT1', 'V', Ver_ip1%m           ,&
-                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-            end if
-            ut1_L= ( err == 0 )
-         end if
-      end if
-
-      if ((.not. urt1_L) .and. (.not. ut1_L)) then
+!!$      if (F_stag_L) then
+!!$         err = inp_get ( 'URT1', 'U', Ver_ip1%m               ,&
+!!$                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$         if ( err == 0 ) then
+!!$            err = inp_get ( 'VRT1', 'V', Ver_ip1%m            ,&
+!!$                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$         end if
+!!$         urt1_L= ( err == 0 )
+!!$
+!!$         if (.not. urt1_L) then
+!!$            err = inp_get ( 'UT1', 'U', Ver_ip1%m              ,&
+!!$                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$            if ( err == 0 ) then
+!!$               err = inp_get ( 'VT1', 'V', Ver_ip1%m           ,&
+!!$                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$            end if
+!!$            ut1_L= ( err == 0 )
+!!$         end if
+!!$      end if
+!!$
+!!$      if ((.not. urt1_L) .and. (.not. ut1_L)) then
          call inp_hwnd ( F_u,F_v, F_stag_L, &
                          Sp0_q,Sp0_u,Sp0_v,Slsp0_q,Slsp0_u,Slsp0_v,&
                          Dp0_q,Dp0_u,Dp0_v,Dlsp0_q,Dlsp0_u,Dlsp0_v,&
-                         GZ3d%valq,GZ3d%valu,GZ3d%valv,GZ3d%ip1            ,&
+                         GZ3d%valq,GZ3d%valu,GZ3d%valv,GZ3d%ip1   ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      end if
+ !     end if
 
       deallocate (Sp0_q)
       if (associated(Sp0_u)) deallocate (Sp0_u)

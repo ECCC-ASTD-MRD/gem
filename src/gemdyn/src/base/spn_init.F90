@@ -29,7 +29,6 @@
       use tdpack
       use ptopo
       implicit none
-#include <arch_specific.hf>
 
       logical, external :: decomp
       integer, parameter :: lowest = 2
@@ -41,7 +40,7 @@
 !
 !----------------------------------------------------------------------
 !
-      if ( (Spn_freq<=0) ) return
+      if ( .not.Spn_ON_L .or.(Spn_freq<=0) ) return
 
       err1= 0 ; err2= 0
 
@@ -221,8 +220,6 @@
       !do k=1,G_nk
       !   prof(k) = prof(k) * Cstv_dt_8/(Spn_relax_hours*3600.)
       !end do
-
-      Spn_ON_L= .true.
 
  1000 format (/' SPN_INIT: Initialization of spectral nudging'/)
  1002 format (a/a45,i6,' /',i5)

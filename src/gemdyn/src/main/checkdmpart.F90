@@ -24,10 +24,12 @@
       integer, external :: domain_decomp, sol_transpose, gemdm_config
 
       character(len=16) npex_S,npey_S
+      character(len=256) :: component_S
       character(len=2048) cdm_eigen_S,fn
       integer cdm_npex(2), cdm_npey(2), unf, cnt
       integer, dimension(:), allocatable ::  pe_xcoord, pe_ycoord
       integer err,ierr(4),npex,npey,i,max_io_pes
+      integer :: colors(3), COMMs(3), wnum, wme, cnum, cme, un_out
 
       namelist /cdm_cfgs/ cdm_npex,cdm_npey,cdm_eigen_S
 !
@@ -138,7 +140,6 @@
          err = sol_transpose ( 1, 1, .true. )
          call glbpos ()
          call set_geomh ()
-         call canonical_cases ("SET_GEOM")
          if (cdm_eigen_S /= 'NONE@#$%') then
             call set_opr () !compute and store eigen values
          endif

@@ -1,5 +1,7 @@
 module levels
    use dimout, only: MAXELEM, MAXSET
+   use vGrid_Descriptors, only: vgrid_descriptor
+   use, intrinsic :: iso_fortran_env
    implicit none
    public
    save
@@ -24,17 +26,28 @@ module levels
 ! Level_momentum     | # of levels in momentum including the surface   |
 ! Level_thermo       | # of levels in momentum including the surface   |
 ! Level_allpres      | all pressure levels requested across all sets   |
+! Level_allheights   | all height alg levels requested across all sets |
 ! Level_npres        | number of Level_allpres levels                  |
+! Level_nheights     | number of Level_allheights levels               |
 ! Level_version      | Level version 2 is Staggered CP Girard V4       |
+! Level_vgrid_usr    | Vertical grid descriptor of levels              |
 !----------------------------------------------------------------------
 !
 !
+      type :: vgrid_user
+         character(len=1) :: stag_S,class_S
+         type(vgrid_descriptor) :: vgd
+         integer :: vcode
+         logical :: usr_grid_L
+      end type vgrid_user
 
-      integer, parameter :: MAXLEV = 201
-      real Level(MAXLEV,MAXSET),Level_allpres(MAXSET*MAXLEV)
+      integer, parameter :: MAXLEV = 1000, MAXLEV_USR = 9
+      real Level(MAXLEV,MAXSET),Level_allpres(MAXSET*MAXLEV),&
+           Level_allheights(MAXSET*MAXLEV)
       integer Level_id(MAXSET),Level_sets,Level_thermo,Level_momentum
       integer Level_max(MAXSET),Level_kind_ip1,Level_kind_diag
-      integer :: Level_version,Level_npres
+      integer :: Level_version,Level_npres,Level_nheights
       character(len=1) Level_typ_S(MAXSET)
-
+      type(vgrid_user), dimension(MAXLEV) :: Level_vgrid_usr
+      
 end module levels

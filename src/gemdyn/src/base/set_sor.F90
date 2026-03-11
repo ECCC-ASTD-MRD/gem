@@ -20,6 +20,7 @@
       use timestr_mod
       use step_options
       use HORgrid_options
+      use glb_ld
       use ctrl
       use gem_options
       use out_options
@@ -38,11 +39,8 @@
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
-#include <arch_specific.hf>
 
       include 'mpif.h'
-      include "rpn_comm.inc"
-
       integer,external :: srequet
       real(kind=REAL64), external :: dcmip_mult_X
 
@@ -173,10 +171,10 @@
          rot(4,Ptopo_couleur+1)= Grd_xlon2
       end if
 
-      call RPN_COMM_allreduce ( ixg  , ixgall  ,       8,&
-           RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
-      call RPN_COMM_allreduce ( rot  , rotall  ,       8,&
-           RPN_COMM_REAL   ,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
+      call MPI_allreduce ( ixg  , ixgall  ,       8,&
+           MPI_INTEGER,MPI_SUM,COMM_MULTIGRID,ierr )
+      call MPI_allreduce ( rot  , rotall  ,       8,&
+           MPI_REAL   ,MPI_SUM,COMM_MULTIGRID,ierr )
 
       if ( Fcst_rstrt_S /= 'NIL' ) then
            ierr = timestr2step(rsti,Fcst_rstrt_S,Cstv_dt_8)
@@ -196,6 +194,8 @@
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
       istat= wb_put('model/Output/etik', Out3_etik_S, options)
+
+      Out_Hmaxdim = G_lnimax * G_lnjmax
 
   900 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
   901 format('|',1x,'OUTPUT',1x,'|',2x,'   OUTCFG   ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')

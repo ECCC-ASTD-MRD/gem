@@ -107,7 +107,7 @@
          Lctl_step = Lctl_step  - Init_halfspan
          Step_kount= Step_kount - Init_halfspan
          if ( .not. Grd_yinyang_L .and. .not. Lam_ctebcs_L) then
-            call nest_intt
+            call nest_intt ('LU')
          endif
          if (Vtopo_start >= 0 .and. Lctl_step-Vtopo_start+1 <= Vtopo_ndt) Vtopo_L = .true.
          call oro_adj ()
