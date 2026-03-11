@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 subroutine SOIL_FLUXES(DT, &
-         WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, &
+         WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, WD_RK, &
          F, WDT, DWD, OVRSHT, KHC, PSI, N)
 
         use sfc_options
@@ -30,7 +30,7 @@ subroutine SOIL_FLUXES(DT, &
 
       ! input
       real :: dt
-      real, dimension(n,nl_svs) :: wsatc, ksatc, psisat, bcoef, etr_grid, wd
+      real, dimension(n,nl_svs) :: wsatc, ksatc, psisat, bcoef, etr_grid, wd, wd_rk
       ! input/output
       real, dimension(n,nl_svs+1) :: f
       ! output
@@ -68,7 +68,9 @@ subroutine SOIL_FLUXES(DT, &
 
 !          --- Current water content for each layer ---
 
-! WD (NL_SVS)       soil volumetric water content (per layer) [m3/m3]
+! WD (NL_SVS)       soil volumetric water content at start of time step (per layer) [m3/m3]
+! WD_RK (NL_SVS)    soil volumetric water content at some point during the time step (per layer) [m3/m3]
+!                   (when using Runge-Kutta method, otherwise it is equal to WD)
 
 !          -  INPUT/OUTPUT  -
 
@@ -115,10 +117,10 @@ subroutine SOIL_FLUXES(DT, &
            !wsat at soil boundaries
             WSATBND(I,K)=(WSATC(I,K)+WSATC(I,K+1))/2.
            !WD at soil boundaries
-            WDBND(I,K)= max((WD(I,K)+WD(I,K+1))/2.0,CRITWATER)
+            WDBND(I,K)= max((WD_RK(I,K)+WD_RK(I,K+1))/2.0,CRITWATER)
            !gradient of soil water content divided by water content
-            DWDDZ_WDBND(I,K)=(WD(I,K+1)/WDBND(I,K)-1.)/DELZ(K+1)+ &
-                 (1.-WD(I,K)/WDBND(I,K))/DELZ(K)
+            DWDDZ_WDBND(I,K)=(WD_RK(I,K+1)/WDBND(I,K)-1.)/DELZ(K+1)+ &
+                 (1.-WD_RK(I,K)/WDBND(I,K))/DELZ(K)
            !b-coefficient at the boundaries
             BBND(I,K)=(BCOEF(I,K)+BCOEF(I,K+1))/2.
            !ksat at soil boundaries

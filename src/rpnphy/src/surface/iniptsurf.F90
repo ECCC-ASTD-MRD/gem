@@ -47,7 +47,7 @@ function iniptsurf5() result(F_istat)
    integer, parameter :: nb_glaciers = 1
    integer, parameter :: nb_water = 4
    integer, parameter :: nb_ice = 2
-   integer, parameter :: nb_urb = 95
+   integer, parameter :: nb_urb = 99
    integer, parameter :: nb_lake = 26
    integer, parameter :: nb_river = 4
 
@@ -120,7 +120,8 @@ function iniptsurf5() result(F_istat)
         ,'YUTCIRFSHADE', 'YUTCICIN','YWBGTRFSUN','YWBGTRFSHADE'         &
         ,'YUTCICSUN','YUTCICSHADE', 'YUTCICRFSUN','YUTCICRFSHADE'       &
         ,'YTGLBRFSUN','YTGLBRFSHADE','YTWETBRF', 'YTRFZT', 'YTRDZT',    &
-        'YURDZU' , 'YQ8', 'YQ9', 'YQ10','YQ11' ,'YQ12' , 'YQ13'         &
+        'YURDZU' , 'YQ8', 'YQ9', 'YQ10','YQ11' ,'YQ12' , 'YQ13',        &
+        'SROOF_DEPTH', 'SROOF_PSN', 'SROAD_DEPTH', 'SROAD_PSN'          &
         /
 
    ! liste des variables de sortie du modules "lake"

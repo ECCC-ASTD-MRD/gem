@@ -15,15 +15,17 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P PHASE_CHANGES
 !
-      SUBROUTINE PHASE_CHANGES ( DT, LAI, &
+      SUBROUTINE PHASE_CHANGES ( DT, WTG, LAI, &
            CAP, WSAT, PSISAT, BCOEF, &
-           TG, WF, WDT,WFT, WDTT, DELWATER, DELICE, &
+           TG, WF, WFL_ICE, WFLT,WRMAX_FL, TFL, PFLHCAP, WDT,WFT, WDTT, DELWATER, DELICE, &
            FCD, N, PHASEF, PHASEM, DELTAT, APPHEATCAP, TMAX  )
 !    -----------------------------------------------------------------------
 !
       use sfc_options
       use svs_configs
       use tdpack
+      use svs2_tile_configs
+
       implicit none
 ! #include <arch_specific.hf>
 !
@@ -31,8 +33,9 @@
       INTEGER N,TRNCH
       REAL DT, LAI(N), FCD(N,NL_SVS), BCOEF(N,NL_SVS), PSISAT(N,NL_SVS), WSAT(N,NL_SVS)
       REAL TG(N,NL_SVS), WDT(N,NL_SVS), WDTT(N,NL_SVS), WF(N,NL_SVS), WFT(N,NL_SVS), CAP(N,NL_SVS)
-      REAL DELWATER(N,NL_SVS), DELICE(N,NL_SVS)
+      REAL DELWATER(N,NL_SVS), DELICE(N,NL_SVS), TFL(N), WFL_ICE(N), WFLT(N), PFLHCAP(N), WRMAX_FL(N)
       REAL PHASEF(N,NL_SVS), PHASEM(N,NL_SVS),DELTAT(N,NL_SVS), APPHEATCAP(N,NL_SVS), TMAX(N,NL_SVS)
+      REAL WTG(N,svs2_tilesp1)
 !
 !    ------------------------------------------------------------------------
 !Author
@@ -40,7 +43,9 @@
 !                       ice_soildif.F90 subroutine of SURFEX
 !
 !          Adapted by N. Gauthier for SVS code
-
+!Revisions
+! 001      Include refreezing/melting in forest litter layer (N.Leroux)
+!
 !Object
 !     This subroutine calculates soil water phase changes using the
 !     available/excess energy approach. Soil temperature and volumetric
@@ -57,6 +62,7 @@
 !
 !          - Input 
 ! DT           timestep
+! WTG       Weights for SVS2 surface types as seen from GROUND
 ! FCD(NL_SVS)  root fraction within soil layer (NL_SVS soil layers) bus(x(frootd ,1,1)
 ! LAI          leaf area index
 ! NL_SVS       number of soil layers
@@ -68,6 +74,11 @@
 ! PSISAT       matric potential at saturation (m)
 ! TG(N)        soil temperature (K)
 ! WF(NL_SVS)   soil volumetric ice content (m3/m3)
+! WFL_ICE      Ice retained in the forest litter layer (kg/m2)
+! WFLT         Liquid water retained in the forest litter layer (kg/m2)
+! WRMAX_FL         Max water holding capacity in the forest litter layer (kg/m2)
+! TFL          Temperature of the forest litter layer (K)
+! PFLHCAP   Heat mass for the forest litter layer (J K-1 m-2)
 ! 
 !           - Output -
 ! TG          soil temperature (K)
@@ -89,6 +100,8 @@
       real WORK, WORKLOG, WLMAX, PSIMAX, PSI, ZK, WGM, WGIM, TGM
 !      real PHASEM, PHASEF, PHASE, DELTAT, APPHEATCAP, PSISATZ
       real PSISATZ
+      real, DIMENSION(N) :: PHI_FL, & ! The phase change rate for forest litter (kg m−2 s−1)
+                            EXCESS_FL ! Variable to adjust mass balance due to refreezing/melting of forest litter
 !
       REAL, DIMENSION(N,NL_SVS) :: EXCES
 !
@@ -96,6 +109,7 @@
 ! Initialization:
 ! ---------------
       EXCES(:,:)=0.0
+      EXCESS_FL(:)=0.0
 
 !     1.  SURFACE LAYER VEGETATION INSULATION COEFFICIENT
 !         -----------------------------------------------
@@ -200,6 +214,58 @@
             TG (I,K) = TG(I,K) - EXCES(I,K)*CHLF*RHOW/CAP(I,K) 
          ENDDO
       ENDDO
+!
+
+! Refreezing and melting in the forest litter layer
+!
+      IF (LFORLIT ) THEN
+            DO I=1,N
+                  IF (WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN
+                        IF (TFL(I) .gt. TRPL) THEN  ! Melting
+
+                              PHI_FL(I) = MIN(WFL_ICE(I), (RHOI*CICE * DZ_FL / CHLF * (TFL(I) - TRPL))) / TAUICE
+
+                              WFLT(I) = WFLT(I) + DT * PHI_FL(I)
+                              WFL_ICE(I) = WFL_ICE(I) - DT * PHI_FL(I)
+                              TFL(I) = TFL(I) - DT / PFLHCAP(I) * CHLF * PHI_FL(I)
+
+                              ! Liquid water in forest litter should not exceed maximum holding capacity
+                              IF(WFLT(I) .gt. WRMAX_FL(I))THEN
+                                    EXCESS_FL(I) = (WRMAX_FL(I) - WFLT(I)) / DT
+                                    WFLT(I) = WFLT(I) - DT * EXCESS_FL(I)
+                                    WFL_ICE(I) = WFL_ICE(I) + DT * EXCESS_FL(I)
+                                    TFL(I) = TFL(I) + DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)
+                              ENDIF
+
+                              ! Prevent keeping track of very small numbers for ice content: (melt it)
+                              ! and conserve energy:
+                              !
+                              IF(WFLT(I) > 0. .AND. WFL_ICE(I) < 1.0E-4)THEN
+                                    WFLT(I) = WFLT(I) + WFL_ICE(I) 
+                                    EXCESS_FL(I) = WFL_ICE(I) / DT
+                                    WFL_ICE(I) = 0.
+                                    TFL(I) = TFL(I) - DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)
+                              ENDIF
+
+                        ELSE ! Freezing
+
+                              PHI_FL(I) =  MIN(WFLT(I), (RHOI*CICE * DZ_FL / CHLF * (TRPL - TFL(I)))) / TAUICE
+
+                              WFLT(I) = WFLT(I) - DT * PHI_FL(I)
+                              WFL_ICE(I) = WFL_ICE(I) + DT * PHI_FL(I)
+                              TFL(I) = TFL(I) + DT / PFLHCAP(I) * CHLF * PHI_FL(I)
+
+                              ! Liquid water in forest litter should not be below a chosen threshol of 0.01 mm
+                              IF(WFLT(I) < 0.01)THEN
+                                    EXCESS_FL(I) = (0.01 - WFLT(I)) / DT
+                                    WFLT(I) = 0.01
+                                    WFL_ICE(I) = WFL_ICE(I) - DT * EXCESS_FL(I)
+                                    TFL(I) = TFL(I) - DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)
+                              ENDIF
+                        ENDIF
+                  ENDIF
+            ENDDO
+      ENDIF
 !
 
 RETURN

@@ -15,16 +15,13 @@
 !-------------------------------------- LICENCE END --------------------------------------
       SUBROUTINE PHTSYN_SVS ( LAI_NCLASS, VEGFRAC, &
                TCAN,  PRESSG,  RESAVG,  QA, QSWV1,  WD, &
-               FCD, COSZS, WFC, WWILT, MASKLAT, &
+               FCD, COSZS, WFC, WWILT, MASKLAT, BETA_WSOL, G_WSOL, &
 !--------------------------INPUTS ABOVE AND OUTPUTS BELOW --------------
                FCANC, AILCG,  RC,CO2I1,  AVG_GWSOL, NCLASS, N)
 !
 !
         use svs_configs
         use sfc_options, only: svs_gexp
-        use sfc_options, only: svs_etr_avg_beta
-        use sfc_options, only: svs_etr_fcd_dyn
-        use sfc_options, only: svs_etr_max_roots_ignored
         use sfc_options, only: vf_type, svs_read_vf2ctemdat, svs_vf2ctemdat 
       implicit none
 !!!#include <arch_specific.hf>
@@ -32,6 +29,7 @@
       INTEGER N, NCLASS
       REAL LAI_NCLASS(N,NCLASS),VEGFRAC(N,NCLASS)
       REAL WD(N,NL_SVS),FCD(N,NL_SVS),WFC(N,NL_SVS), WWILT(N,NL_SVS)
+      REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS)
    
       INTEGER KK,ICC,IG, IC, L2MAX, NN, MASKLAT(N)
       PARAMETER (KK=12)  ! PRODUCT OF CLASS PFTs AND L2MAX (4 x 3 = 12)
@@ -45,8 +43,7 @@
       REAL FC_SUM(N), SIGMA(N),  TGAMMA(N), KC(N), KO(N), IPAR(N), GB(N)
       REAL RH(N), VPD(N), O2_CONC(N), CO2A(N), USEBB(ICC)
 !
-      REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS), FCD_DYN(N,NL_SVS)
-      REAL AVG_GWSOL(N), AVG_BETA(N), FRAC_WILTED_ROOTS(N), VMAXC(N,ICC)
+      REAL AVG_GWSOL(N), VMAXC(N,ICC)
       REAL VMUNS1(N,ICC), VMUNS2(N,ICC), VMUNS3(N,ICC), VMUNS(N,ICC), VM(N,ICC)
       REAL CO2I(N,ICC), PREV_CO2I(N,ICC), FPAR(N,ICC), JC(N,ICC),  JC1(N,ICC)
       REAL JC2(N,ICC), JC3(N,ICC), JE(N,ICC), JE1(N,ICC), JE2(N,ICC), JS(N,ICC)
@@ -70,7 +67,7 @@
       REAL   TEMP_B, TEMP_C, TEMP_R, TEMP_Q1, TEMP_Q2,  TEMP_JP
       REAL   BETA1,  BETA2,   GAMMA_W, GAMMA_M, CO2IMAX
 !
-      REAL VPD0(KK), OMEGA_PHT(KK),VMAX(KK)
+      REAL VPD0(KK), OMEGA(KK),VMAX(KK)
       REAL TUP(KK), TLOW(KK), KN(KK)
       REAL INICO2I(KK), ALPHA(KK), RMLCOEFF(KK), BB(KK), MM(KK)
       REAL CO2CC, DELTA_CO2, N_EFFECT
@@ -175,8 +172,8 @@
 !       13        short grass and forbs                   8    C3
 !       14        long grass                              9    C4
 !       15        crops                                   6    C3
-!       16        rice                                    6    C3
-!       17        sugar                                   7    C4
+!       16        crops east                              6    C3
+!       17        grassland east                          8    C3
 !       18        maize                                   7    C4
 !       19        cotton                                  6    C3
 !       20        irrigated crops                         6    C3
@@ -260,7 +257,7 @@
 !!
 !     LEAF SCATERRING COEFFICIENTS, VALUES OF 0.15 & 0.17 ARE USED
 !     FOR C3 AND C4 PLANTS, RESPECTIVELY
-      DATA  OMEGA_PHT/0.15, 0.15, 0.00,   &
+      DATA  OMEGA/0.15, 0.15, 0.00,   &
                       0.15, 0.15, 0.15,   &
                       0.15, 0.17, 0.00,   &
                       0.15, 0.17, 0.00/
@@ -705,58 +702,28 @@
 !     IN ORIGINAL CODE, ONE ROOT PROFILE FOR EACH PFT CLASS. HERE ALL CLASSES SHARE THE SAME
 !     ROOT PROFILE
 
+      ! For backward compatibility - computation of BETA_WSOL, G_WSOL and AVG_GWSOL
+      ! is now done in vegi_svs. This code should eventually be removed.
+      if (svs_gexp .le. 0) then
       DO I=1,N
          DO K=1,NL_SVS
             BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
             ! soil moisture stress term per layer, with beta bounded between 0 and 1
             G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP
          ENDDO
-         ! dynamic root fraction that takes into account soil moisture stress
-         fcd_dyn(i,1) = fcd(i,1) * (1. + (G_WSOL(i,1) - 1.) * svs_etr_fcd_dyn)
-         DO K=2,NL_SVS
-            fcd_dyn(i,k) = (fcd(i,k) - fcd(i,k-1)) * (1. + (G_WSOL(i,k) - 1.) * svs_etr_fcd_dyn) + fcd_dyn(i,k-1)
-         ENDDO
-         ! normalize dynamic root fraction
-         IF ((svs_etr_fcd_dyn .gt. 0.) .and. (fcd_dyn(i,NL_SVS) .GE. ZERO)) THEN
-            DO K=1,NL_SVS
-               fcd_dyn(i,k) = fcd_dyn(i,k) / fcd_dyn(i,NL_SVS)
-            ENDDO
-         ELSE
-            DO K=1,NL_SVS
-               fcd_dyn(i,k) = fcd(i,k)
-            ENDDO
-         END IF
          ! average soil moisture term ... weighted by root fractions 
          ! Total roots = 1.0 if vegetation present ... set the term=0.0 if no vegetation
-         frac_wilted_roots(i) = 0.0
          if (FCD(I,NL_SVS).gt.0.999) then
-             avg_gwsol(i) = g_wsol(i,1) * fcd_dyn(i,1)
-             avg_beta(i) = beta_wsol(i,1) * fcd_dyn(i,1)
-             if (wd(i,1) .lt. wwilt(i,1)) then
-               frac_wilted_roots(i) = fcd_dyn(i,1)
-             endif
+               avg_gwsol(i) = g_wsol(i,1) * fcd(i,1)
              do k=2,NL_SVS
-                avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
-                avg_beta(i) = avg_beta(i)  + beta_wsol(i,k) * ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
-                if (wd(i,k) .lt. wwilt(i,k)) then
-                  frac_wilted_roots(i) = frac_wilted_roots(i) + ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
-                endif
+                  avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd(i,k) - fcd(i,k-1) )
              enddo
-             if (svs_etr_avg_beta) then
-               if (svs_etr_max_roots_ignored > 0.0) then
-                 avg_beta(i) = avg_beta(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i)))
-               endif
-               avg_gwsol(i) = 1.0 - ( 1.0 - min(avg_beta(i), 1.0) ) ** GEXP
-             elseif (svs_etr_max_roots_ignored > 0.0) then
-               avg_gwsol(i) = min(avg_gwsol(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i))), 1.0)
-             endif
          else
             ! no vegetation
             avg_gwsol(i) = 0.0
-            avg_beta(i) = 0.0
-         endif
-         
+         endif         
       ENDDO
+      endif
 
 
 
@@ -846,7 +813,7 @@
             DO  I = 1, N
                IF((FCANC(I,J).GT.ZERO).AND.(COSZS(I).GT.0.0)) THEN
                   
-                  JE1(I,J)= FPAR(I,J)*ALPHA(KK_TO_ICC(J))*(1.0-OMEGA_PHT(KK_TO_ICC(J)))
+                  JE1(I,J)= FPAR(I,J)*ALPHA(KK_TO_ICC(J))*(1.0-OMEGA(KK_TO_ICC(J)))
                   JE2(I,J)=( CO2I(I,J)-TGAMMA(I) ) /              &
                        ( CO2I(I,J)+ (2.0*TGAMMA(I)) )
 !

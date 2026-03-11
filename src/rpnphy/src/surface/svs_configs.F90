@@ -10,6 +10,7 @@ module svs_configs
   !----------------------------------------------------------------------------------  !!!!!
 
   use tdpack_const, only: PI
+  use sfc_options, only: svs_cg_depth
   
   ! MODULE to SAVE SVS INFORMATION SPECIFIED in NML, to initialize SVS variables that are NML dependent 
   ! ALSO contains 2 function used in SVS to aggregate the SVS surface tiles (bare ground, vegetation and 2 snowpacks)
@@ -39,11 +40,16 @@ module svs_configs
   ! Thicknesses of layers in METERS
   real,  allocatable, save :: delz(:) !nl_svs
 
+  ! Exponentially decreasing weight associated with each layer used when computing Cg
+  real,  allocatable, save :: weight_cg(:) !nl_svs
+
+
   !---------------------------------------------------------------
   ! SOIL TEXTURE OPTIONS: 
   !  1:   "GSDE"      --  8 layers of soil texture from CHINESE DATASET !!!
   !  2:   "SLC"       --  5 layers of soil texture:  SOIL LANDSCAPE of CANADA
   !  3:   "SOILGRIDS" --  7  layers of soil texture:  ISRIC ? World Soil Information
+  !  4:   "SOILGRIDSV2" --  6  layers of soil texture:  ISRIC ? World Soil Information
   ! ENTRY  bus number of levels for clay & sand variables
   integer,  save :: nl_ste
   ! PERMANENT PHYSICS bus number of levels for clay & sand variables
@@ -65,6 +71,10 @@ module svs_configs
   ! SOILGRIDS SOIL DEPTH in METERS... 
   real, parameter , dimension(nl_soilgrids):: dl_soilgrids =  (/ 0.05, 0.15, 0.3, 0.6, 1.0, 2.0, 2.0 /)
 
+  ! SOILGRIDS NUMBER OF LAYERS 
+  integer,  parameter :: nl_soilgridsv2 = 6
+  ! SLC SOIL DEPTH in METERS... ( 0-5cm, 15-30cm, 30-60cm, 60-100cm, 100-200cm ) 
+  real, parameter , dimension(nl_soilgridsv2):: dl_soilgridsv2 =  (/ 0.05, 0.15, 0.3, 0.6, 1.0, 2.0/)
 
   !  WEIGHTS TO MAP soil parameters calculated on SOIL TEXTURE LAYERS  layers unto MODEL SOIL LAYERS 
   real, allocatable, save :: weights(:,:)       !(max_nl_svs,nl_soil_texture)
@@ -72,7 +82,7 @@ module svs_configs
 
   !------------------------------------------------------------------
   ! NUMERICAL METHOD HYDRO
-  ! Numerical method used to solve Richards' equations in hydro_svs
+  ! Numerical method used to solve Richards' equations in hydro_svs2
   ! hydro_svs_method=0: Euler, forward, 1st order
   ! hydro_svs_method=1: Runge-Kutta 4th order (RK4)
   integer, parameter :: hydro_svs_method = 1
@@ -282,6 +292,22 @@ module svs_configs
 !
 !
 !
+
+!---------------------------------------------------------
+! Constants related to SVS2 forest litter
+!---------------------------------------------------------
+
+  REAL, PARAMETER   :: DZ_FL = 0.03        ! Thichness of forest litter [m] (Napoly et al., 2017)
+  REAL, PARAMETER   :: CFL_dry = 1.926E3   ! Specific heat of forest litter [J/kg/K] (Napoly et al., 2017)
+  REAL, PARAMETER   :: RHO_FL = 45         ! Density of forest litter [kg/m3]  (Napoly et al., 2017)
+  REAL, PARAMETER   :: EMFL = 0.9          ! Density of forest litter [kg/m3]  (Napoly et al., 2017)
+  REAL, PARAMETER   :: EMVH_FL = 0.95      ! Emissivity of forest litter []
+  REAL, PARAMETER   :: ALFL = 0.3          ! Albedo of forest litter []
+
+!
+!
+!
+
   private :: weights_soil_texture
 
 
@@ -325,7 +351,16 @@ contains
        nl_stp = nl_soilgrids
        call weights_soil_texture()
 
+    else if ( soiltext == "SOILGRIDSV2" ) then
+
+       ! ENTRY  bus number of levels for clay & sand variables
+       nl_ste = nl_soilgridsv2
+       ! PERMANENT PHYSICS bus number of levels for clay & sand variables
+       nl_stp = nl_soilgridsv2
+       call weights_soil_texture()
+
     endif
+
     ! Calculate SVS soil layer thickness from layer Depths specified by sfc nml
     call layer_thickness()
     
@@ -372,6 +407,7 @@ contains
        ! last depth of soil texture database set to max depth of SVS 
        ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
        d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_slc(nl_stp) )
+
     else if ( soiltext == "SOILGRIDS" ) then
      
        do k=2,nl_stp
@@ -380,6 +416,15 @@ contains
        ! last depth of soil texture database set to max depth of SVS 
        ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
        d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_soilgrids(nl_stp) )    
+
+    else if (soiltext == "SOILGRIDSV2") then
+     
+       do k=2,nl_stp
+          d_soil_texture(k)=dl_soilgridsv2(k-1)
+       enddo
+       ! last depth of soil texture database set to max depth of SVS 
+       ! i.e, deepest soil texture measured extends to the bottom of last SVS layer
+       d_soil_texture(nl_stp+1)=max( dl_svs(nl_svs) , dl_soilgridsv2(nl_stp) )    
 
 
     endif
@@ -406,6 +451,8 @@ contains
           write(unout, *) ' ****** SLC SOIL TEXTURE ******* '
        else if (soiltext == "SOILGRIDS" ) then
           write(unout, *) ' ****** SOILGRIDS SOIL TEXTURE ******* '
+       else if ( soiltext == "SOILGRIDSV2") then
+          write(unout, *) ' ****** SOILGRIDSV2 SOIL TEXTURE ******* '
        endif
           
        write(unout, *) ' ****** SOIL MAPPING WEIGHTS [METERS] ******* '
@@ -425,6 +472,10 @@ contains
              do kk = 1, nl_stp ! database layers
                 write(unout, *) 'for SOILGRIDS layer kk=', kk,' depth=', dl_soilgrids(kk),' weight=', weights(k,kk)
              enddo
+          else if (soiltext == "SOILGRIDSV2") then
+             do kk = 1, nl_stp ! database layers
+                write(unout, *) 'for SOILGRIDS2 layer kk=', kk,' depth=', dl_soilgridsv2(kk),' weight=', weights(k,kk)
+             enddo
           endif
        enddo
     endif
@@ -436,11 +487,26 @@ contains
     implicit none
 
     integer k
+    real ezd1, ezd2
     if ( .not. allocated(delz) ) allocate( delz(nl_svs) )
     DELZ(1)=DL_SVS(1)            
     DO K=2,NL_SVS        
        DELZ(K)=DL_SVS(K)-DL_SVS(K-1)
     ENDDO
+
+    ! Associated with the layer thickness, we compute a weight
+    ! used to compute a weighted average of Cg for each layer
+    ! in soili_svs
+    IF (svs_cg_depth.GT.0.) THEN
+      if ( .not. allocated(weight_cg) ) allocate( weight_cg(nl_svs) )
+      WEIGHT_CG(1)=1.
+      EZD1=EXP(-DL_SVS(1)/svs_cg_depth)
+      DO K=2,NL_SVS
+        EZD2=EXP(-DL_SVS(K)/svs_cg_depth)
+        WEIGHT_CG(K)=(EZD1-EZD2)/(1-EZD2)
+        EZD1=EZD2
+      ENDDO
+    END IF
 
   end subroutine layer_thickness
 

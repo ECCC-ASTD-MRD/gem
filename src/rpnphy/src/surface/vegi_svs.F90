@@ -16,7 +16,7 @@
       SUBROUTINE VEGI_SVS ( RG, T, TVEG, HU, PS, &
            WD , RGL, LAI, LAIH, RSMIN, GAMMA, WWILT, WFC, &   
            SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, RS, SKYVIEW, VTR, &    
-           FCD, FCD_DYN, ACROOT, WRMAX, N  )
+           FCD, FCD_DYN, BETA_WSOL, G_WSOL, AVG_GWSOL, ACROOT, WRMAX, N  )
 !
         use tdpack
         use svs_configs
@@ -26,6 +26,7 @@
 !
       INTEGER N 
       REAL WD(N,NL_SVS), FCD(N, NL_SVS), FCD_DYN(N,NL_SVS)
+      REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS), AVG_GWSOL(N)
       REAL RG(N), T(N), HU(N), PS(N), TVEG(N)
       REAL SUNCOS(N), LAIH(N), PSNGRVL(N), VEGH(N), VEGL(N)
       REAL RGL(N), LAI(N), RSMIN(N), GAMMA(N), WWILT(N,NL_SVS)
@@ -78,7 +79,8 @@
 !
 !
       INTEGER I, K
-      REAL CSHAPE, f2_k(nl_svs)
+      REAL CSHAPE, f2_k(nl_svs), frac_wilted_roots(n), avg_beta(n)
+      REAL GEXP
      
       real, dimension(n) :: extinct, f, f1, f2, f3, f4, qsat
 
@@ -119,11 +121,24 @@
 !                      freezes (W2 --> 0), ZF2 becomes small and the
 !                      surface increases increases (no transpiration when
 !                      soils are frozen).
-!
-!           Calculation of root-zone soil moisture
+! 
+!            Calculation of root-zone soil moisture
 !            
 !
-            ! Shape parameter CSHAPE
+
+!            EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
+!            DECREASES LINEARLY WITH SOIL MOISTURE, AND OF COURSE NON-LINEARLY
+!            FOR VALUES HIGHER THAN 1. WHEN GEXP IS ABOUT 10, PHOTOSYNTHESIS DOES
+!            NOT START DECREASING UNTIL ABOUT SOIL MOISTURE IS HALF WAY BETWEEN
+!            WILTING POINT AND FIELD CAPACITY.
+             if ( svs_gexp .GT. 0. ) then
+                GEXP = svs_gexp
+             else
+                ! Default value used for backward compatibility
+                GEXP = 2.
+             end if
+
+             ! Shape parameter CSHAPE
              CSHAPE=LOG10(0.05/0.95)/LOG10(D95(I)/D50(I))       
 !        
 !                 Root fractions at different depths
@@ -142,59 +157,100 @@
              
              ! f2 for each layer           
              DO K=1,NL_SVS
+                ! if svs_gexp > 0, use f2 formulation that is consistent with photosynthesis code
+                ! this is a bugfix - the if statement should be eventually removed - kept for now for backward compatibility
+                if (svs_gexp .GT. 0.) then
+                  ! computation of BETA_GWSOL and G_WSOL now made here instead of in photosynthesis code to avoid code duplication
                 ! calculate moisture stress on roots
+                  BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
+                  ! soil moisture stress term per layer, with beta bounded between 0 and 1
+                  G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP
+                  f2_k(k) = max( 1.E-5, G_WSOL(i,k) )
+                else
+                  ! original computation of f2 kept for backward compatibility with first OPS version of NSRPS
+                  ! should eventually be removed (inconsistent with photosynthesis code because it ignores GEXP)
                 f2_k(k) =  min( 1.0,  max( 1.E-5  ,  &
                      max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) ) )
-             ENDDO
-
-             ! if svs_gexp > 0, use f2 formulation that is consistent with photosynthesis code
-             ! this is a bugfix - the if statement should be eventually removed
-             if ( svs_gexp .GT. 0. ) then
-                DO K=1,NL_SVS
-                  f2_k(k) = 1.0 - ( 1.0 - f2_k(k) ) ** svs_gexp
-                ENDDO
              end if
-
-             ! dynamic root fraction that takes into account soil moisture stress
-
-             fcd_dyn(i,1) = fcd(i,1) * (1. + (f2_k(1) - 1.) * svs_etr_fcd_dyn)
-             DO K=2,NL_SVS
-                fcd_dyn(i,k) = (fcd(i,k) - fcd(i,k-1)) * (1. + (f2_k(k) - 1.) * svs_etr_fcd_dyn) + fcd_dyn(i,k-1)
              ENDDO
-             ! normalize dynamic root fraction
-             IF ((svs_etr_fcd_dyn .gt. 0.) .and. (fcd_dyn(i,NL_SVS) .GE. 1.E-5)) THEN
-                DO K=1,NL_SVS
-                   fcd_dyn(i,k) = fcd_dyn(i,k) / fcd_dyn(i,NL_SVS)
-                ENDDO
-             ELSE
-                DO K=1,NL_SVS
-                   fcd_dyn(i,k) = fcd(i,k)
-                ENDDO
-             END IF
 
-             ! root fraction weighted mean based on dynamic root distribution for use in Jarvis model
-             ! k=1
+             ! root fraction weighted mean based on static root distribution
              f2(i) = f2_k(1) * FCD(I,1)
              DO K=2,NL_SVS
                 f2(i) = f2(i) +   f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) )
              ENDDO
 
-             ! Active fraction of roots based on initial root distribution - DO NOT USE dynamic root distribution.
-             ! This becomes obvious when you consider limiting case where svs_etr_fcd_dyn=1,
-             ! in which case root distribution is already optimized so can readily be used to distribute
-             ! the transpiration term among the layers.
+             ! active fraction of roots based on static root distribution
+             ! used to separate transpiration between soil layers in hydro_svs
+             ! but also constitutes a more "optimal" root distribution
              acroot(i,1)=f2_k(1)*FCD(I,1)/f2(i)
              DO K=2,NL_SVS
                 acroot(i,k)= f2_k(k) *  ( FCD(I,K) - FCD(I,K-1) ) /f2(i)
              ENDDO
 
-             ! root fraction weighted mean based on dynamic root distribution for use in Jarvis model
-             ! k=1
+             ! adapt root distribution based on water stress if svs_etr_fcd_dyn > 0
+             ! (otherwise if svs_etr_fcd_dyn = 0 this code ends up assigning fcd_dyn = fcd)
+             ! fcd_dyn is a weighted mean between static root distribution and "optimal" root distribution
+             fcd_dyn(i,1)=acroot(i,1)
+             DO K=2,NL_SVS
+                fcd_dyn(i,k) = fcd_dyn(i,k-1) + acroot(i,k)
+             ENDDO
+             DO K=1,NL_SVS-1
+                fcd_dyn(i,k) = fcd(i,k) * (1. - svs_etr_fcd_dyn) + fcd_dyn(i,k) * svs_etr_fcd_dyn
+             ENDDO
+             fcd_dyn(i,NL_SVS) = 1.
+
+             ! ***Patch***
+             ! This code allows to reproduce the behaviour of a previous version of the parameterization for active roots
+             ! that was used as part of the MOSA project (specifically for the 6xx set of experiments)
+             ! To reproduce the behaviour (but not the bit pattern due to changes elsewhere in the code)
+             ! you have to specify a *negative* value for svs_etr_fcd_dyn
+             ! This tells the code to use this older version of the parameterization, but will apply the absolute value
+             ! of the key as the weight given to the dynamic root profile vs the static root profile
+             ! This code could be removed in a later alpha version of RPNPHY 6.3.0
+             IF (svs_etr_fcd_dyn .LT. 0) THEN
+                fcd_dyn(i,1) = fcd(i,1) * (1. + (f2_k(1) - 1.) * -svs_etr_fcd_dyn)
+                DO K=2,NL_SVS
+                  fcd_dyn(i,k) = (fcd(i,k) - fcd(i,k-1)) * (1. + (f2_k(k) - 1.) * -svs_etr_fcd_dyn) + fcd_dyn(i,k-1)               
+                ENDDO
+                ! normalize dynamic root fraction
+                IF (fcd_dyn(i,NL_SVS) .GE. 1.E-5) THEN
+                   DO K=1,NL_SVS
+                      fcd_dyn(i,k) = fcd_dyn(i,k) / fcd_dyn(i,NL_SVS)
+                   ENDDO
+                END IF
+             END IF
+
+             ! recompute root fraction weighted mean based on dynamic root distribution
+             ! only necessary for Jarvis parameterization, not used by CTEM
              f2(i) = f2_k(1) * FCD_DYN(I,1)
              DO K=2,NL_SVS
                 f2(i) = f2(i) +   f2_k(k) *  ( FCD_DYN(I,K) - FCD_DYN(I,K-1) )
              ENDDO
 
+             ! average soil moisture term ... weighted by root fractions
+             ! only necessary when photosynthesis is activated
+             frac_wilted_roots(i) = 0.0
+             avg_gwsol(i) = g_wsol(i,1) * fcd_dyn(i,1)
+             avg_beta(i) = beta_wsol(i,1) * fcd_dyn(i,1)
+             if (wd(i,1) .lt. wwilt(i,1)) then
+               frac_wilted_roots(i) = fcd_dyn(i,1)
+             endif
+             do k=2,NL_SVS
+                avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
+                avg_beta(i) = avg_beta(i)  + beta_wsol(i,k) * ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
+                if (wd(i,k) .lt. wwilt(i,k)) then
+                  frac_wilted_roots(i) = frac_wilted_roots(i) + ( fcd_dyn(i,k) - fcd_dyn(i,k-1) )
+                endif
+             enddo
+             if (svs_etr_avg_beta) then
+               if (svs_etr_max_roots_ignored > 0.0) then
+                 avg_beta(i) = avg_beta(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i)))
+               endif
+               avg_gwsol(i) = 1.0 - ( 1.0 - min(avg_beta(i), 1.0) ) ** GEXP
+             elseif (svs_etr_max_roots_ignored > 0.0) then
+               avg_gwsol(i) = min(avg_gwsol(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i))), 1.0)
+             endif
 !
 !
 !

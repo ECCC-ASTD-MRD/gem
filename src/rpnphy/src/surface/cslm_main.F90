@@ -153,6 +153,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! ----* Solar Rad variables for COS(ZenithAngle) *----------------------------------------------
 !
       integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200
+      integer(INT64) :: delti64
       integer yy, mo, dd, hh, mn, sec
       REAL HZ, HZ0, JULIEN
 
@@ -480,7 +481,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       hz = amod(hz0+ (kount*DELT)/3600., 24.)
       
       !Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(DELT) + MU_JDATE_HALFDAY))
+      delti64 = int(delt)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
       !Get local solar angle
       call suncos2(CSZ,sunother1,sunother2,sunother3,sunother4,n, &
                    bus(x(dlat,1,1)),bus(x(dlon,1,1)),hz,julien,.false.)

@@ -16,10 +16,10 @@
       SUBROUTINE VEGI_SVS2 ( RG, T, TVEG, HU, PS, &
            WD , RGL, LAI, LAI_VH, LAI_VL, HVEGLPOL, RSMIN, GAMMA, WWILT, WFC, &
            SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, Z0MVH,  &
-           VGH_HEIGHT,VGH_DENS, SNCMA, WR_VH,  &
+           VGH_HEIGHT,VGH_DENS, SNCMA, WR_VH, WFL_ICE, &
            RS, SKYVIEW,  &
            SKYVIEWA, VTR, VTRA, &
-           FCD, ACROOT, WRMAX_VL, WRMAX_VH, PHM_CAN, HVEGAPOL, SCAP, N  )
+           FCD, ACROOT, WRMAX_VL, WRMAX_VH, WRMAX_FL, PHM_CAN, HVEGAPOL, SCAP, N  )
 !
         use tdpack
         use svs_configs
@@ -39,12 +39,12 @@
       REAL D50(N), D95(N), ACROOT(N,NL_SVS) , WRMAX_VL(N),  WRMAX_VH(N)
       REAL HVEGLPOL(N), HVEGAPOL(N), SNCMA(N)
       REAL Z0MVH(N),  VGH_HEIGHT(N), VGH_DENS(N), PHM_CAN(N)
-      REAL SCAP(N), WR_VH(N)
+      REAL SCAP(N), WR_VH(N), WRMAX_FL(N), WFL_ICE(N)
 !
 !Author
-!          S. Belair, M.Abrahamowicz,S.Z.Husain (June 2015)
+!          Vionnet al. (2017-2024)
 !Revisions
-! 001      V. Fortin (2016) - Active roots !
+! 001      Include max holding capacity of forest litter - N.Leroux (Dec 2025)
 !
 !Object
 !
@@ -63,8 +63,8 @@
 ! PS       surface pressure
 ! RGL      AVERAGE constant for the calculation of the stomatal resistance
 ! LAI      AVERAGE Leaf area index
-! LAI_VH     Leaf area index for high vegetation only
-! LAI_VL     Leaf area index for low vegetation only
+! LAI_VH   Leaf area index for high vegetation only
+! LAI_VL   Leaf area index for low vegetation only
 ! RSMIN    AVERAGE minimum stomatal resistance
 ! GAMMA    other constant for RS (AVERAGED)
 ! WWILT    volumetric water content at the wilting point
@@ -80,9 +80,10 @@
 ! Z0MVH    Local roughness associated with HIGH vegetation only (no
 !            orography)
 ! HVEGLPOL Polar low vegetation height
-! CLUMPING   coefficient to convert LAI to effective LAI
-! SNCMA       mass of intercepted snow in the canopy [kg/m2]
-! WR_VH    Water retained by high vegetation
+! CLUMPING coefficient to convert LAI to effective LAI
+! SNCMA    mass of intercepted snow in the canopy [kg/m2]
+! WR_VH    Water retained by high vegetation [kg/m2]
+! WFL_ICE  Frozen water in the forest litter layer [kg/m2]
 !
 !          - Input/Output -
 ! VGH_DENS  Density of trees in areas of high vegeation (m)
@@ -95,8 +96,9 @@
 ! VTRA      Average Vegetation transmissivity
 ! FCD(NL_SVS)  Root fraction within soil layer (NL_SVS soil layers)
 ! ACROOT(NL_SVS) Active fraction of roots (0-1) in the soil layer
-! WRMAX_VL    Max volumetric water content retained on low vegetation
-! WRMAX_VH    Max volumetric water content retained on high vegetation
+! WRMAX_VL    Max volumetric water content retained on low vegetation  (kg/m2)
+! WRMAX_VH    Max volumetric water content retained on high vegetation (kg/m2)
+! WRMAX_FL     Max volumetric water content retained in forest litter layer (kg/m2)
 ! VGH_HEIGHT Height of trees in areas of high vegeation (m)
 ! HVEGAPOL   Polar mean vegetation height (including bare soil)
 ! PHM_CAN    Heat mass for the high vegetation layer (J K-1 m-2)
@@ -232,7 +234,7 @@
 !
 !                 Adjust density of tree in high vegetation
 
-             IF(VEGH(I)>0) THEN
+             IF(VEGH(I) .GT. EPSILON_SVS) THEN
                 VGH_DENS(I) = MIN(1., MAX(0.2, VGH_DENS(I))) ! Impose of minimum tree cover density of 0.2
              ELSE
                 VGH_DENS(I) = 0.
@@ -278,6 +280,13 @@
 
             ! For high vegetation
              WRMAX_VH(I) = 0.2 * LAI_VH(I) * VGH_DENS(I)
+
+
+            ! For forest litter layer
+             IF (LFORLIT) THEN
+               WRMAX_FL(I) = 0.12 * DZ_FL * RHOW - WFL_ICE(I)
+             ENDIF
+
 !
 !
 !*       8.2     MAXIMUM SOLID WATER CONTENT RETAINED ON VEGETATION (kg m-2)
@@ -300,7 +309,7 @@
 !*       9.     HEIGHT OF TREES in HIGH VEGETATION
 !               ------------------------------
 !
-             IF( VEGH(I)>0)  THEN
+             IF( VEGH(I) .GT. EPSILON_SVS)  THEN
                  VGH_HEIGHT(I) =  10. *  Z0MVH(I) ! Derived from the roughness
                                             ! lenght for high veg. Z0MVH is computed in GenPhySx using a
                                             ! database that contains information about the vegetation height
@@ -365,8 +374,8 @@
 !
        IF( .NOT. READ_HVEGLPOL) THEN
          DO I=1,N
-            IF((1 - VEGH(I))>EPSILON_SVS) THEN ! Low vegetation/bare ground is present
-                HVEGAPOL(I) = VEGL(I)*HVEGLPOL(I)/(1 - VEGH(I))
+            IF((1. - VEGH(I))>EPSILON_SVS) THEN ! Low vegetation/bare ground is present
+                HVEGAPOL(I) = VEGL(I)*HVEGLPOL(I)/(1. - VEGH(I))
                 IF(HVEGAPOL(I)<0.05) THEN
                         HVEGAPOL(I) = 0.  ! Remove polar vegetation where contribution is non significant
                 ENDIF

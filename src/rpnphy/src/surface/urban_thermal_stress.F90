@@ -38,12 +38,26 @@ subroutine URBAN_THERMAL_STRESS(PT_CAN, PQ_CAN, PTI_BLD, PQI_BLD,        &
 !    AUTHOR        :  S. Leroyer   (Original  10/2016),  based on CNRM/G. Pigeon  UTCI code
 !    REFERENCE     :  Leroyer et al. (2018), urban climate
 !    MODIFICATIONS :  S. Leroyer (2020): wetbulb in C instead of K
-!    METHOD        :
+!    MODIFICATIONS :  S. Leroyer (2026): Modularity for computation
+!    METHOD        :  For each case,
+! (1) COMPUTE THE ENERGY BUDGETS RECEIVED BY A BODY
+!           -- for UTCI  (standard clothed standing human) ZOPT_BODY=1
+!           -- for WBGT  (globe sensor)  ZOPT_BODY=2
+! (3) COMPUTE THE MEAN RADIANT TEMPERATURES
+!           -- reference MRT and var. used for UTCI  comp. (standard clothed standing human)
+!                * MRT that will be in the output as it  corresponds to standards
+!           -- for WBGT  (globe sensor)
+! (4) COMPUTE THE GLOBE TEMPERATURE - for a black globe sensor
+! (5) compute the (psychometric) wet-bulb temperatures
+! (6) compute the wet bulb globe temperature indices  (WBGT)
+! (7) compute the Universal Thermal and Climate Index UTCI
+
 !-------------------------------------------------------------------------------
 
 !*       0.     DECLARATIONS
 !               ------------
 
+use sfc_options,   only : thermal_stress_roof, thermal_stress_utci, thermal_stress_shade
 use MODD_CSTS, only : XTT
 use MODI_UTCI_APPROX
 use MODI_MRT_BODY
@@ -170,22 +184,14 @@ integer :: ZOPT_BODY
 ! IF (LHOOK) CALL DR_HOOK('UTCI_TEB',0,ZHOOK_HANDLE)
 ZUNDEF(:)=0.0
 
+ ZOPT=2   ! street
 !========================================================
 ! COMPUTE THE ENERGY BUDGETS RECEIVED BY A BODY (standard clothed standing human)
 !========================================================
  ZOPT_BODY=1
 
- ZOPT=2   ! street
      call URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND, ZUNDEF,  &
                PEMIT_LW_FAC, PEMIT_LW_GRND, ZUNDEF, PLW_RAD,         &
-               PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,     &
-               PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H,            &
-               PQ8_H,PQ9_H,PQ10_H,PQ11_H,PQ12_H,PQ13_H,              &
-               ZOPT,ZOPT_BODY,ZEB_H,ZAB_H, ZHB_H  )
-
- ZOPT=3   ! roof
-     call URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, ZUNDEF, PREF_SW_ROOF,  &
-               PEMIT_LW_FAC, ZUNDEF, PEMIT_LW_ROOF, PLW_RAD,         &
                PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,     &
                PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H,            &
                PQ8_H,PQ9_H,PQ10_H,PQ11_H,PQ12_H,PQ13_H,              &
@@ -196,7 +202,6 @@ ZUNDEF(:)=0.0
 !========================================================
  ZOPT_BODY=2
 
- ZOPT=2   ! street
      call URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND, ZUNDEF,  &
                PEMIT_LW_FAC, PEMIT_LW_GRND, ZUNDEF, PLW_RAD,         &
                PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,     &
@@ -204,7 +209,111 @@ ZUNDEF(:)=0.0
                PQ8_G,PQ9_G,PQ10_G,PQ11_G,PQ12_G,PQ13_G,              &
                ZOPT,ZOPT_BODY, ZEB_G, ZAB_G, ZHB_G )
 
+!========================================================
+! COMPUTE THE MEAN RADIANT TEMPERATURES (MRT)
+!========================================================
+
+! Standards and MRT output
+PTRAD_HSUN     = MRT_BODY(ZEB_H,PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H)
+
+! MRT equivalent to the black globe sensor and used for WBGT comp.
+PTRAD_GSUN    =MRT_BODY(ZEB_G,PQ1_G,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,PQ7_G)
+
+!========================================================
+! COMPUTE THE GLOBE TEMPERATURE
+!========================================================
+
+PTGLOBE_SUN     = TGLOBE_BODY(PTRAD_GSUN, PT_CAN, PU_CAN, ZGD, ZEB_G)
+
+!========================================================
+! compute the (psychometric) wet-bulb temperatures
+!========================================================
+
+PTWETB       = WETBULBT(PPS, PT_CAN -XTT, PQ_CAN)
+
+!========================================================
+! compute the wet bulb globe temperature indices  (WBGT)
+!========================================================
+
+WBGT_SUN   = 0.2 * (PTGLOBE_SUN -XTT)     +   &
+             0.7 *  PTWETB            +   &
+             0.1 * (PT_CAN-XTT)
+
+!========================================================
+! COMPUTE VARS. IN THE SHADE
+!========================================================
+    IF_THERMAL_STRESS_SHADE: if ( thermal_stress_shade ) then
+
+! MRT ref and used for UTCI
+PTRAD_HSHADE   = MRT_BODY(ZEB_H,ZUNDEF,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H, &
+                                                                    PQ7_H)
+! MRT for WBGT
+PTRAD_GSHADE  =MRT_BODY(ZEB_G,ZUNDEF,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,  &
+                          PQ7_G)
+
+! Globe temperature
+PTGLOBE_SHADE   = TGLOBE_BODY(PTRAD_GSHADE, PT_CAN, PU_CAN, ZGD, ZEB_G)
+
+! WBGT - formula in the shade
+WBGT_SHADE = 0.3 * (PTGLOBE_SHADE -XTT)   +   &
+             0.7 *  PTWETB
+
+    endif IF_THERMAL_STRESS_SHADE
+
+!========================================================
+! compute the Universal Thermal and Climate Index UTCI
+!========================================================
+    IF_THERMAL_STRESS_UTCI: if ( thermal_stress_utci ) then
+
+! Inside buildings - UTCI_IN
+ZEHPA = PQI_BLD * PPS /(0.622 + 0.378 * PQI_BLD) / 100.
+ZUIN = 0.5
+PUTCI_IN = UTCI_APPROX(PTI_BLD - XTT, ZEHPA, PTRAD_IN - XTT, ZUIN)
+
+! 2-calculation of UTCI
+ ZEHPA = PQ_CAN * PPS / (0.622 + 0.378 * PQ_CAN) /100.
+
+PUTCI_OUTSUN = UTCI_APPROX(PT_CAN - XTT, ZEHPA, PTRAD_HSUN - XTT, PU10)
+
+! SAME IN SHADE
+    IF_THERMAL_STRESS_UTCI_SHADE: if ( thermal_stress_shade ) then
+
+PUTCI_OUTSHADE = UTCI_APPROX(PT_CAN - XTT, ZEHPA, PTRAD_HSHADE - XTT, PU10)
+
+    endif IF_THERMAL_STRESS_UTCI_SHADE
+
+! INSIDE BUILDING - UTCI_IN
+!    IF_THERMAL_STRESS_UTCI_IN: if ( thermal_stress_in ) then
+
+ZEHPA = PQI_BLD * PPS /(0.622 + 0.378 * PQI_BLD) / 100.
+ZUIN = 0.5
+PUTCI_IN = UTCI_APPROX(PTI_BLD - XTT, ZEHPA, PTRAD_IN - XTT, ZUIN)
+
+!    endif IF_THERMAL_STRESS_UTCI_IN
+
+    endif IF_THERMAL_STRESS_UTCI
+
+
+!========================================================
+! COMPUTE VAR. OVER THE ROOF
+!========================================================
+    IF_THERMAL_STRESS_ROOF: if ( thermal_stress_roof ) then
+
  ZOPT=3   ! roof
+
+! COMPUTE THE ENERGY BUDGETS RECEIVED BY A BODY (standard clothed standing human)
+ ZOPT_BODY=1
+
+     call URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, ZUNDEF, PREF_SW_ROOF,  &
+               PEMIT_LW_FAC, ZUNDEF, PEMIT_LW_ROOF, PLW_RAD,         &
+               PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,     &
+               PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H,            &
+               PQ8_H,PQ9_H,PQ10_H,PQ11_H,PQ12_H,PQ13_H,              &
+               ZOPT,ZOPT_BODY,ZEB_H,ZAB_H, ZHB_H  )
+
+! COMPUTE THE ENERGY BUDGETS RECEIVED BY A BODY (globe sensor)
+ ZOPT_BODY=2
+
      call URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, ZUNDEF, PREF_SW_ROOF,  &
                PEMIT_LW_FAC, ZUNDEF, PEMIT_LW_ROOF, PLW_RAD,         &
                PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,     &
@@ -212,85 +321,60 @@ ZUNDEF(:)=0.0
                PQ8_G,PQ9_G,PQ10_G,PQ11_G,PQ12_G,PQ13_G,              &
                ZOPT,ZOPT_BODY, ZEB_G, ZAB_G, ZHB_G )
 
-!========================================================
-! COMPUTE THE MEAN RADIANT TEMPERATURES
-!========================================================
-
-! 1-calculation of mean radiant temperature values for a standard clothed standing human (eg, for UTCI)
-
-PTRAD_HSUN     = MRT_BODY(ZEB_H,PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H)
-PTRAD_HSHADE   = MRT_BODY(ZEB_H,ZUNDEF,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H, &
-                                                                    PQ7_H)
+!  MRT - REF and for UTCI
 PTRAD_HRFSUN   = MRT_BODY(ZEB_H,PQ1_H,PQ8_H,PQ9_H,PQ10_H,PQ11_H,      &
                           PQ12_H,PQ13_H)
+
+!  MRT - for WBGT
+PTRAD_GRFSUN  =MRT_BODY(ZEB_G,PQ1_G,PQ8_G,PQ9_G,PQ10_G,PQ11_G,      &
+                          PQ12_G,PQ13_G)
+
+! GLOBE T.
+PTGLOBE_RFSUN   = TGLOBE_BODY(PTRAD_GRFSUN, PTA, PURF, ZGD, ZEB_G)
+
+! T wet-bulb
+PTWETB_ROOF  = WETBULBT(PPA, PTA -XTT, PQA)
+
+! WBGT
+WBGT_RFSUN = 0.2 * (PTGLOBE_RFSUN -XTT)   +   &
+             0.7 *  PTWETB_ROOF       +   &
+             0.1 * (PTA-XTT)
+
+    IF_THERMAL_STRESS_ROOF_SHADE: if ( thermal_stress_shade ) then
+
+! MRT - REF and for UTCI
 PTRAD_HRFSHADE = MRT_BODY(ZEB_H,ZUNDEF,PQ8_H,PQ9_H,PQ10_H,PQ11_H, &
                           PQ12_H,PQ13_H)
 
-! 2-calculation of mean radiant temperature values for a black globe sensor (eg, for WBGT)
-
-PTRAD_GSUN    =MRT_BODY(ZEB_G,PQ1_G,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,PQ7_G)
-PTRAD_GSHADE  =MRT_BODY(ZEB_G,ZUNDEF,PQ2_G,PQ3_G,PQ4_G,PQ5_G,PQ6_G,  &
-                          PQ7_G)
-PTRAD_GRFSUN  =MRT_BODY(ZEB_G,PQ1_G,PQ8_G,PQ9_G,PQ10_G,PQ11_G,      &
-                          PQ12_G,PQ13_G)
+! MRT - for a black globe sensor
 PTRAD_GRFSHADE=MRT_BODY(ZEB_G,ZUNDEF,PQ8_G,PQ9_G,PQ10_G,PQ11_G,  &
                           PQ12_G,PQ13_G)
 
-!========================================================
 ! COMPUTE THE GLOBE TEMPERATURE
-!========================================================
-! 1-calculation of Globe temperature values for a black globe sensor (eg, for WBGT)
-
-PTGLOBE_SUN     = TGLOBE_BODY(PTRAD_GSUN, PT_CAN, PU_CAN, ZGD, ZEB_G)
-PTGLOBE_SHADE   = TGLOBE_BODY(PTRAD_GSHADE, PT_CAN, PU_CAN, ZGD, ZEB_G)
-PTGLOBE_RFSUN   = TGLOBE_BODY(PTRAD_GRFSUN, PTA, PURF, ZGD, ZEB_G)
 PTGLOBE_RFSHADE = TGLOBE_BODY(PTRAD_GRFSHADE, PTA, PURF, ZGD, ZEB_G)
 
+! (WBGT) formula in the shade
+WBGT_RFSHADE = 0.3 * (PTGLOBE_RFSHADE -XTT) +   &
+               0.7 *  PTWETB_ROOF
+
+    endif IF_THERMAL_STRESS_ROOF_SHADE
+
 !========================================================
-! compute the (psychometric) wet-bulb temperatures
+! compute the Universal Thermal and Climate Index UTCI over ROOF
 !========================================================
-
-PTWETB       = WETBULBT(PPS, PT_CAN -XTT, PQ_CAN)
-PTWETB_ROOF  = WETBULBT(PPA, PTA -XTT, PQA)
-
-!========================================================
-! compute the Universal Thermal and Climate Index UTCI
-!========================================================
-! 1-calculation of UTCI_IN
-ZEHPA = PQI_BLD * PPS /(0.622 + 0.378 * PQI_BLD) / 100.
-ZUIN = 0.5
-PUTCI_IN = UTCI_APPROX(PTI_BLD - XTT, ZEHPA, PTRAD_IN - XTT, ZUIN)
-
-
-! 2-calculation of UTCI
- ZEHPA = PQ_CAN * PPS / (0.622 + 0.378 * PQ_CAN) /100.
-
-PUTCI_OUTSUN = UTCI_APPROX(PT_CAN - XTT, ZEHPA, PTRAD_HSUN - XTT, PU10)
-PUTCI_OUTSHADE = UTCI_APPROX(PT_CAN - XTT, ZEHPA, PTRAD_HSHADE - XTT, PU10)
+    IF_THERMAL_STRESS_UTCI_ROOF: if ( thermal_stress_utci ) then
 
 ! 4-calculation of UTCI_RFSUN
 ZEHPA = PQA * PPA / (0.622 + 0.378 * PQA) /100.
 
 PUTCI_RFSUN = UTCI_APPROX(PTA- XTT, ZEHPA, PTRAD_HRFSUN - XTT, PU10RF)
+
+    IF_THERMAL_STRESS_ROOF_SHADE_UTCI: if ( thermal_stress_shade ) then
 PUTCI_RFSHADE =UTCI_APPROX(PTA-XTT,ZEHPA,PTRAD_HRFSHADE- XTT, PU10RF)
+    endif IF_THERMAL_STRESS_ROOF_SHADE_UTCI
 
-!========================================================
-! compute the wet bulb globe temperature indices  (WBGT)
-!========================================================
-! street
-WBGT_SUN   = 0.2 * (PTGLOBE_SUN -XTT)     +   &
-             0.7 *  PTWETB            +   &
-             0.1 * (PT_CAN-XTT)
+    endif IF_THERMAL_STRESS_UTCI_ROOF
 
-WBGT_SHADE = 0.3 * (PTGLOBE_SHADE -XTT)   +   &
-             0.7 *  PTWETB
-! rooftop
-WBGT_RFSUN = 0.2 * (PTGLOBE_RFSUN -XTT)   +   &
-             0.7 *  PTWETB_ROOF       +   &
-             0.1 * (PTA-XTT)
-
-WBGT_RFSHADE = 0.3 * (PTGLOBE_RFSHADE -XTT) +   &
-               0.7 *  PTWETB_ROOF
+    endif IF_THERMAL_STRESS_ROOF
 
 end subroutine URBAN_THERMAL_STRESS
-

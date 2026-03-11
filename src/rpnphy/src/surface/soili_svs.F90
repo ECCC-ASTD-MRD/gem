@@ -30,7 +30,7 @@
          !
         use tdpack_const, only: PI
         use svs_configs
-        use sfc_options, only: read_emis, svs_urban_params, soil_cond, svs_snowfrac_ground
+        use sfc_options, only: read_emis, svs_urban_params, soil_cond, svs_snowfrac_ground, svs_cg_depth, svs_cg_ice
      implicit none
 !!!#include <arch_specific.hf>
 
@@ -40,7 +40,7 @@
 
       REAL SNM(N), RHOS(N)
       REAL RHOSV(N), Z0MVH(N), VEGH(N), VEGL(N), SVM(N)
-      REAL CGSAT(N), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
+      REAL CGSAT(N,NL_SVS), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
       REAL Z0(N)
       REAL CG(N), WTA(N,svs_tilesp1)
       REAL PSNGRVL(N)
@@ -145,9 +145,12 @@ include "isbapar.cdk"
       REAL LOG_CONDI, LOG_CONDW, XF, XU, WORK1, WORK2, WORK3, CONDSAT
       REAL LAM_ZERO, k_min, k_air, k_ice 
       REAL SATDEG, KERSTEN
+      REAL C_ICE
 !
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
            zcs, zcsv, z0_snow_low, sd_opn, sd_for
+
+      real, dimension(n,nl_svs) :: cgk
 
       REAL :: CVAMIN = 1.0E-5
 
@@ -172,11 +175,60 @@ include "isbapar.cdk"
 !                          result in great temperature variations
 !                          (for drier soils).
 !
-      DO I=1,N
-        CG(I) = CGSAT(I) * ( WSAT(I,1)/ MAX(WD(I,1)+WF(I,1),0.001))** &
-                      ( 0.5*BCOEF(I,1)/LOG(10.) )
-        CG(I) = MIN( CG(I), 2.0E-5 )      
 !
+      IF (svs_cg_ice .EQ. 'BELAIR2003') THEN
+        DO I=1,N
+          DO K=1,NL_SVS
+            CGK(I,K) = CGSAT(I,K) * ( WSAT(I,K)/ MAX(WD(I,K)+WF(I,K),0.001))** &
+                    ( 0.5*BCOEF(I,K)/LOG(10.) )
+            CGK(I,K) = MIN( CGK(I,K), 2.0E-5 )
+          END DO
+        END DO
+      ELSE IF (svs_cg_ice .EQ. 'BOONE2000') THEN
+        ! Boone et al. (2000), eq. B3
+        C_ICE = 2 * (PI / (LAMI*CICE*RHOI*DAY))**0.5
+        DO I=1,N
+          DO K=1,NL_SVS
+            ! Boone et al. (2000), eq. B2
+            CGK(I,K) = CGSAT(I,K) * ((WSAT(I,K)-WF(I,K)) / MAX(WD(I,K),0.001))** &
+                    ( 0.5*BCOEF(I,K)/LOG(10.) )
+            CGK(I,K) = MIN( CGK(I,K), 2.0E-5 )
+            CGK(I,K) = (1-WF(I,K)) * CGK(I,K) + WF(I,K) * C_ICE
+          END DO
+        END DO
+      ELSE IF (svs_cg_ice .EQ. 'FORTIN2026') THEN
+        ! Boone et al. (2000), eq. B3
+        C_ICE = 2 * (PI / (LAMI*CICE*RHOI*DAY))**0.5
+        DO I=1,N
+          DO K=1,NL_SVS
+            ! We assume that part of the layer is ice free and the rest
+            ! is pure ice.
+            ! Logic is as follow: if WD is total liquid content but concentrated
+            ! in (1-WF) fraction of layer, then liquid content in that portion of
+            ! the soil layer has to be equal to WD/(1-WF). We now proceed to compute
+            ! CG for non-frozen fraction of the layer using this new water content.
+            CGK(I,K) = CGSAT(I,K) * (WSAT(I,K)*(1-WF(I,K))) / MAX(WD(I,K),0.001)** &
+                    ( 0.5*BCOEF(I,K)/LOG(10.) )
+            CGK(I,K) = MIN( CGK(I,K), 2.0E-5 )
+            CGK(I,K) = (1-WF(I,K)) * CGK(I,K) + WF(I,K) * C_ICE
+          END DO
+        END DO
+      ELSE
+         ! Unknown option for svs_cg_ice
+         STOP
+      END IF
+!
+!     Average value of Cg computed using weights for each layer
+!     that decrease exponentially with a constant characteristic length
+!     defined by option svs_cg_depth. Weights are constant
+!     and computed in svs_configs.
+      DO I=1,n
+        CG(I) = CGK(I,1)
+        IF (svs_cg_depth.GT.0.) THEN
+          DO K=2,NL_SVS
+            CG(I) = CG(I)*(1.-WEIGHT_CG(K)) + CGK(I,K)*WEIGHT_CG(K)
+          END DO
+        END IF
       END DO
 !
 !

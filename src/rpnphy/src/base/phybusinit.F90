@@ -55,7 +55,7 @@ subroutine phybusinit(ni,nk)
    logical :: lmoyhr, lmoyhrkf, lmoykfsh, lmoymid
    logical :: lgwdsm, lgwd, ltofd
    logical :: lccc2
-   logical :: lghg, ltrigtau
+   logical :: lghg, ltrigtau, ltrigtauw
    logical :: liuv
    logical :: lmoyhroz, lmoyhrgh, llinozout, llinghout, llinozage
    logical :: lmoycons
@@ -155,6 +155,7 @@ subroutine phybusinit(ni,nk)
    lmoyhroz =(lmoyhr .and. llinoz .and. out_linoz)
    lmoyhrgh =(lmoyhr .and. llingh .and. out_linoz)
    ltrigtau = (kfctrigtau > 0.)
+   ltrigtauw = (deep_wavg .or. mid_wavg)
    liuv    = (any(radia == (/&
         'CCCMARAD ', &
         'CCCMARAD2'  &

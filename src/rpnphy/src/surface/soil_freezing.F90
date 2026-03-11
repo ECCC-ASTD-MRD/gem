@@ -415,9 +415,12 @@
            !Compute the efficiency factor for freezing and thawing
            IF (lphase_change_eff_svs1) THEN ! From surfex (Adjusted)
                IF (HNET .LT. 0.0) THEN
+                   !the phase change efficiency for freezing depends on the soil liquid water content
                    CHI = MIN(MAX((WSOIL(I,K)-RFS(I,K))/WSAT(I,K),CHI_MIN),1.0) 
                ELSE
-                   CHI = MIN(MAX(ISOIL(I,K)/(WSAT(I,K)-RFS(I,K)),CHI_MIN),1.0)
+                   !the phase change efficiency for thawing is 1.0
+                   CHI = 1.0
+                   !CHI = MIN(MAX(ISOIL(I,K)/(WSAT(I,K)-RFS(I,K)),CHI_MIN),1.0)
                ENDIF
            ELSE
                CHI = 1.0

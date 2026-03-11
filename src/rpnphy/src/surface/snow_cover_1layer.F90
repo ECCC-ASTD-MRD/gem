@@ -64,18 +64,22 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    08/09/98 
+!       S. Leroyer  jan 2026 : custom parameters with teb_snow options
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_CSTS,       ONLY : XTT, XCI, XRHOLI, XRHOLW, XCPD, XLSTT, XLMTT, XDAY, XCONDI
-USE MODD_SNOW_PAR_TEB,   ONLY : XEMISSN, SWE_CRIT
+USE MODD_SNOW_PAR_TEB,   ONLY : XEMISSN, SWE_CRIT, XANS_T, XANS_T_MA00, XANS_T_LE10, &
+                                XANS_T_JA14, XEMISSN_JA14, XEMISSN_SVS1
 !
 USE MODE_THERMOS
 !
 USE MODI_SURFACE_RI
 USE MODI_SURFACE_AERO_COND_TEB
+!
+use sfc_options, only: teb_snow,teb_snroof,teb_snroad
 !
 implicit none
 !!!#include <arch_specific.hf>
@@ -173,6 +177,9 @@ LOGICAL, DIMENSION(SIZE(PWSNOW)) :: GFLUXMASK ! where fluxes can
 REAL :: ZWSNOW_MIN = 0.1 ! minimum value of snow content (kg/m2) for prognostic
 !                        ! computations
 REAL :: MIN_TDIFF = 0.01 ! minimum temperature diff. for flux calculations
+!                        ! computations
+REAL :: PANS_T   ! Local assignment of timescale for albedo aging
+REAL :: PEMISSN  ! Local assignment of snow emissivity
 !
 !-------------------------------------------------------------------------------
 !
@@ -194,6 +201,27 @@ ZSNOW_D (:) = 0.
 ZSNOW_TC(:) = 0.
 ZSNOW_HC(:) = 0.
 !
+!-------------------------------------------------------------------------------
+! Assignemnt options
+ IF (TEB_SNOW .EQ. 'MA00') THEN
+  PANS_T  = XANS_T_MA00
+  PEMISSN = XEMISSN
+ ELSE IF  (TEB_SNOW .EQ. 'LE10' ) THEN
+  PANS_T   = XANS_T_LE10
+  PEMISSN  = XEMISSN
+ ELSE IF (TEB_SNOW .EQ. 'JA14') THEN
+  PANS_T  = XANS_T_JA14
+  PEMISSN = XEMISSN_JA14
+ ELSE IF (TEB_SNOW .EQ. 'SVS1') THEN
+  PANS_T  = XANS_T
+  PEMISSN = XEMISSN_SVS1
+ ELSE IF (TEB_SNOW .EQ. 'CUSTOM') THEN
+  PANS_T   = teb_snroof(9)
+  PEMISSN  = teb_snroof(8)
+ ELSE
+  PANS_T  = XANS_T
+  PEMISSN = XEMISSN
+ END IF
 !-------------------------------------------------------------------------------
 !
 !*      1.1    most useful masks
@@ -506,7 +534,9 @@ WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 WHERE ( GSNOWMASK(:) .AND. PMELT>0. )
 !
-  PASNOW(:) = (PASNOW(:)-PANSMIN)*EXP(-0.01*PTSTEP/3600.) + PANSMIN   &
+!!  PASNOW(:) = (PASNOW(:)-PANSMIN)*EXP(-0.01*PTSTEP/3600.) + PANSMIN   &
+!!              + PSR(:)*PTSTEP/PWCRN*PANSMAX
+  PASNOW(:) = (PASNOW(:)-PANSMIN)*EXP(-PANS_T*PTSTEP/3600.) + PANSMIN   &
               + PSR(:)*PTSTEP/PWCRN*PANSMAX
 !
 END WHERE
@@ -532,7 +562,7 @@ END WHERE
 !
 WHERE (  ZWSNOW(:)==0. .AND. PWSNOW(:)>0. )
   PASNOW(:) = PANSMAX
-  PESNOW(:) = XEMISSN
+  PESNOW(:) = PEMISSN
 END WHERE
 !-------------------------------------------------------------------------------
 !
