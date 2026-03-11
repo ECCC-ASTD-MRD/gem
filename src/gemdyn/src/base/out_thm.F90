@@ -66,7 +66,6 @@
       integer, dimension(:), pointer     :: ip1m,indo
 
       real  , parameter :: theta_p0 = 100000.
-      real  , parameter :: ES_MAX   = 30.
       real(kind=REAL64), parameter :: ZERO_8   = 0.0
       real(kind=REAL64) :: ptop_user_8
 
@@ -530,7 +529,6 @@
             call mhuaes3 (t8,hu,tt,px_ta,satues_l, &
                                   l_ninj,nk_src,l_ninj)
 
-            t8(1:l_ni,1:l_nj,1:nk_src) = min(t8(1:l_ni,1:l_nj,1:nk_src), ES_MAX)
             if (Out3_cliph_L) then
                t8(1:l_ni,1:l_nj,1:nk_src) = max(t8(1:l_ni,1:l_nj,1:nk_src), 0.)
             end if
@@ -812,7 +810,6 @@
             call out_padbuf(w6,l_minx,l_maxx,l_miny,l_maxy,nko)
             call mhuaes3 (w5, hu_pres,w6, px_pres,satues_l, &
                           l_ninj, nko, l_ninj)
-            w5(1:l_ni,1:l_nj,1:nko) = min(w5(1:l_ni,1:l_nj,1:nko), ES_MAX)
             if ( Out3_cliph_L ) then
                w5(1:l_ni,1:l_nj,1:nko) = max(w5(1:l_ni,1:l_nj,1:nko),0.)
             end if
