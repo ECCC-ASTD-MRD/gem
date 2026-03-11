@@ -1,0 +1,128 @@
+## Geophysique
+in=AL  ;  freq=0;           search=GEOP,CLIM;  interp=near   ;  timeint=any;
+in=MG  ;  freq=0;           search=GEOP     ;  interp=near   ;
+in=LH  ;  freq=0;           search=GEOP     ;  interp=linear ;
+in=Y7  ;  freq=0;           search=GEOP     ;  interp=linear ;
+in=Y8  ;  freq=0;           search=GEOP     ;  interp=linear ;
+in=Y9  ;  freq=0;           search=GEOP     ;  interp=linear ;
+in=GA  ;  freq=0;           search=GEOP     ;  interp=near   ;
+in=ZP  ;  freq=0;           search=GEOP     ;  interp=linear ;
+in=VF  ;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,26; 
+in=VG  ;  freq=0;           search=GEOP     ;  interp=near   ;
+in=J1  ;  freq=0;           search=GEOP     ;  interp=near   ; levels= 1,7    ; mandatory=true ;
+in=J2  ;  freq=0;           search=GEOP     ;  interp=near   ; levels= 1,7    ; mandatory=true ;
+in=ZVG2;  freq=0;           search=GEOP     ;  interp=linear ;
+in=SSS ;  freq=0;           search=GEOP     ;  interp=linear ;
+in=SLOP;  freq=0;           search=GEOP     ;  interp=linear ; mandatory=true;
+in=DRND;  freq=0;           search=GEOP     ;  interp=linear ; mandatory=true;
+in=Z0LD;  freq=0;           search=GEOP     ;  interp=near;
+
+## Surface et sol
+in=ICEL;  freq=0;           search=ANAL,CLIM;  interp=near   ;  timeint=linear;
+in=TM  ;  freq=0;           search=ANAL     ;  interp=linear ;  timeint=none  ;
+in=LG  ;  freq=0;           search=ANAL,CLIM;  interp=linear   ;  timeint=none  ;
+in=DN  ;  freq=0;  search=ANAL     ;  interp=near   ;
+#in=SD  ;  freq=HOUR,0,3,3;  search=ANAL     ;  interp=near   ;  timeint=none  ;  levels= 1,5 ;
+in=I0  ;  freq=0;  search=ANAL     ;  interp=linear ;  timeint=none  ;  levels= 1,2 ;
+in=I1  ;  freq=0;  search=ANAL     ;  interp=near   ;  timeint=none  ;  levels= 1,2 ;
+in=I2  ;  freq=0;  search=ANAL     ;  interp=near   ;
+in=I3  ;  freq=0;  search=ANAL     ;  interp=near   ;
+in=I4  ;  freq=0;  search=ANAL     ;  interp=near   ;
+in=I6  ;  freq=0;  search=ANAL     ;  interp=near   ;
+in=I7  ;  freq=0;           search=ANAL     ;  interp=linear ;  timeint=none  ;  levels= 1,3 ;
+in=I8  ;  freq=0;           search=ANAL,CLIM;  interp=near   ;  timeint=linear; 
+in=I9  ;  freq=0;           search=ANAL     ;  interp=linear ;  timeint=none  ;  levels= 1,2 ;
+in=EMIB;  freq=0;           search=CLIM     ;  interp=near   ;  timeint=linear;
+
+## SVS
+in=WSOL; freq=0; timeint=none; search=ANAL;  interp=near; levels= 1,7; mandatory=true;
+in=ISOL; freq=0; timeint=none; search=ANAL;  interp=near; levels= 1,7; mandatory=true;
+in=WVEG; freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=SNAL; freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=SVAL; freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=SNDN; freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=SVDN; freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=SNDP; freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=SVDP; freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=WSV;  freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=WSN;  freq=0; timeint=none; search=ANAL;  interp=near;              mandatory=true;
+in=TGR ; freq=0; timeint=none; search=ANAL;  interp=near; levels= 1,2; mandatory=true;
+in=TSN ; freq=0; timeint=none; search=ANAL;  interp=near; levels= 1,2; mandatory=true;
+in=TSNV; freq=0; timeint=none; search=ANAL;  interp=near; levels= 1,2; mandatory=true;
+in=TVG ; freq=0; timeint=none; search=ANAL;  interp=near; levels= 1,2; mandatory=true;
+in=SD  ; freq=0; search=ANAL     ;  interp=near   ;  timeint=none  ;  levels= 1,5 ;
+
+## PBL et turbulence
+#in=EN  ;  freq=0;           search=ANAL     ;  interp=linear ;  vinterp=linear;
+#in=TURB;  freq=0;           search=ANAL     ;  interp=near   ;  vinterp=linear;
+#in=B5  ;  freq=0;           search=ANAL     ;  interp=linear ;                   levels= 1,5 ;
+#in=H   ;  freq=0;           search=ANAL     ;  interp=linear ;
+#in=ZN  ;  freq=0;           search=ANAL     ;  interp=linear ;  vinterp=linear;
+#in=QTBL;  freq=0;           search=ANAL     ;  hinterp=linear;  vinterp=l-cond;  levels=-1   ;
+#in=FE  ;  freq=0;           search=ANAL     ;  hinterp=linear;  vinterp=l-cond;  levels=-1   ;
+#in=NC  ;  freq=0;           search=ANAL     ;  hinterp=linear;  vinterp=l-cond;  levels=-1   ;
+#in=FN  ;  freq=0;           search=ANAL     ;  hinterp=linear;  vinterp=l-cond;  levels=-1   ;
+
+## Microphysique P3
+#in=MPNC;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+#in=MPNR;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+#in=MPQC;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+#in=MPQR;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+#in=QTI1;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+#in=QMI1;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+#in=NTI1;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+#in=BMI1;  freq=0;           search=ANAL     ;  interp=cubic  ;  vinterp=cubic ;
+
+## TEB VARIABLES
+in=WSRF;  freq=0;           search=ANAL     ;  interp=near   ;
+in=WSRD;  freq=0;           search=ANAL     ;  interp=near   ;
+in=TIRD;  freq=0;           search=ANAL     ;  interp=near   ;
+in=TBLD;  freq=0;           search=ANAL     ;  interp=near   ;
+in=TCAN;  freq=0;           search=ANAL     ;  interp=near   ;
+in=QCAN;  freq=0;           search=ANAL     ;  interp=near   ;
+in=SARF;  freq=0;           search=ANAL     ;  interp=near   ;
+in=SERF;  freq=0;           search=ANAL     ;  interp=near   ;   
+in=SSRF;  freq=0;           search=ANAL     ;  interp=near   ;
+in=SARD;  freq=0;           search=ANAL     ;  interp=near   ;
+in=SERD;  freq=0;           search=ANAL     ;  interp=near   ;
+in=SSRD;  freq=0;           search=ANAL     ;  interp=near   ;
+in=TLRF;  freq=0;           search=ANAL     ;  interp=near   ;                   levels= 1,3 ;
+in=TLRD;  freq=0;           search=ANAL     ;  interp=near   ;                   levels= 1,3 ;
+in=TLWL;  freq=0;           search=ANAL     ;  interp=near   ;                   levels= 1,3 ;
+in=SWRF;  freq=0;           search=ANAL     ;  interp=near   ; 
+in=STRF;  freq=0;           search=ANAL     ;  interp=near   ; 
+in=SDRF;  freq=0;           search=ANAL     ;  interp=near   ; 
+in=SWRD;  freq=0;           search=ANAL     ;  interp=near   ; 
+in=STRD;  freq=0;           search=ANAL     ;  interp=near   ; 
+in=SDRD;  freq=0;           search=ANAL     ;  interp=near   ; 
+in=NATF;  freq=0;           search=GEOP     ;  interp=near   ;
+in=BLDF;  freq=0;           search=GEOP     ;  interp=near   ;
+in=PAVF;  freq=0;           search=GEOP     ;  interp=near   ;
+in=WHOR;  freq=0;           search=GEOP     ;  interp=near   ;
+in=BLDH;  freq=0;           search=GEOP     ;  interp=near   ;
+in=Z0RF;  freq=0;           search=GEOP     ;  interp=near   ;
+in=Z0RD;  freq=0;           search=GEOP     ;  interp=near   ;
+in=ALRF;  freq=0;           search=GEOP     ;  interp=near   ;
+in=ALRD;  freq=0;           search=GEOP     ;  interp=near   ;
+in=ALWL;  freq=0;           search=GEOP     ;  interp=near   ;
+in=EMRF;  freq=0;           search=GEOP     ;  interp=near   ;
+in=EMRD;  freq=0;           search=GEOP     ;  interp=near   ;
+in=EMWL;  freq=0;           search=GEOP     ;  interp=near   ;
+in=HCRF;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=HCRD;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=HCWL;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=TCRF;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=TCRD;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=TCWL;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=DPRF;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=DPRD;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=DPWL;  freq=0;           search=GEOP     ;  interp=near   ;                   levels= 1,3 ;
+in=Z0TW;  freq=0;           search=GEOP     ;  interp=near   ;
+in=QHTR;  freq=0;           search=GEOP     ;  interp=near   ;
+in=QHIN;  freq=0;           search=GEOP     ;  interp=near   ;
+in=QETR;  freq=0;           search=GEOP     ;  interp=near   ;
+in=QEIN;  freq=0;           search=GEOP     ;  interp=near   ;
+
+#radar data as input
+
+

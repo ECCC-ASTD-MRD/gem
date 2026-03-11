@@ -1,0 +1,51 @@
+grid=1,core;
+grid=2,free;
+grid=3,reduc,13,2572,13,1322,2;
+
+levels=1,eta,-1;
+levels=2,eta,0;
+levels=3,pres,[1000.,975.,950.,925.,900.,875.,850.,825.,800.,775.,750.,725.,700.,675.,650.,625.,600.,550.,500.,450.,400.,350.,300.,250.,200.,150.,100.,70.,50.,30.,20.,10.];
+
+steps=1,hour,0.;
+steps=2,step,<0,1440,15>;
+steps=3,step,<1440,2880,30>;
+
+steps=4,step,<0,1440,30>;
+steps=5,hour,<25.,48.,1.>;
+steps=6,step,<0,2880,30>;
+steps=7,hour,<0.,48.,1.>;
+steps=8,hour,<0.,48.,6.>;
+steps=9,hour,<0.,7.,1.>,<12.,48.,6.>;
+steps=10,hour,<0.,48., 12.>;
+
+sortie ([LA,LO,MX,DGZM]                    , grid, 1, levels, 1, steps, 1)
+sortie ([TT,TD,ES,HU,HR,GZ,UU,VV,WW,PN,P0] , grid, 1, levels, 3, steps, 7)
+
+sortie ([TD,ES,TT,HU,UU,VV,WW,GZ,QC,ZZ]    , grid, 1, levels, 1, steps, 7)
+sortie ([PN,P0,ME,PT]                      , grid, 1, levels, 1, steps, 7)
+
+
+sortie_p([TG,TJ,UD,VD,NT,TCC,ECC,EI,EV,AP,
+          FB,FC,FI,FL,FS,FSD,FSF,FSI,FSV,
+          FV,HV,PC,RC,DN,SD,AL,LG,MG,GL,
+          TM,HS,2F,Z0,I0,I1,I2,I3,I4,I5,
+          I6,I7,I8,I9,REC,REI1,RN,FN,X4,
+          X5,IC,II,IH,W3,W4,IV,K3,K9,U6,
+          K4,U4,FDAC,FDRE,TBLD,TIRD,TLRF,
+          TLRD,TLWL,TJS,TJST,TDST,SWRD,
+          WSRD,SWRF,WSRF,RN1,RN2,SN1,SN2,
+          SN3,FR,FR1,FR2,PE,PE1,PE2,SN,
+          QGRD,QGRF,QGWL,QGTW,VIS,VIS1,
+          H_SN,WGE,WGX,WGN,ICR,IIR,ECTT,
+          ECTP,CX,AI,AS,SI,J8,J9,RB,RR,IO,TJST,TDST,DQST,UDST,VDST] , grid, 1, levels, 1, steps, 7)
+
+sortie_p ([STRF,STRD,SDRF,SDRD,SSRF,SSRD,
+           QHRD,QERD,QHRF,QERD,QHWL,SARF,
+           SARD,SERF,SERD,TCAN,QCAN,TBLD,
+           TIRD]                           , grid, 1, levels, 1, steps, 10)
+
+sortie_p ([ZEC,ZET,RT,PR]                  , grid, 1, levels, 1, steps, 6)
+
+xnbit([Z0,MX],                                         bits,24)
+xnbit([RT,PR,SN,SN1,SN2,SN3,RN,RN1,RN2,PE1,FR1,FR2,IO],bits,32)
+

@@ -1,0 +1,217 @@
+ &grid
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 80      ,     Grd_nj    = 60
+  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
+  Grd_lonr   = 180.0   ,     Grd_latr  = 2.75
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 2
+/
+ &grid_nat_grid_2.5km
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 2560    ,     Grd_nj    = 1310
+  Grd_dx     = 0.0225  ,     Grd_dy    = 0.0225
+  Grd_lonr   = 184.961246948689,Grd_latr  = 2.19875000044703
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 4       ,
+/
+ &dyn_kernel
+   Dynamics_hydro_L  = .false.
+   dynamics_Kernel_S = 'DYNAMICS_FISL_P'
+/
+   dynamics_Kernel_S = 'DYNAMICS_FISL_H'
+
+
+&lam
+  Lam_blendoro_L = .false.     ,
+  Lam_gbpil_T=3
+  Lam_blend_T=3
+/
+
+ &step
+  Fcst_nesdt_S   = '12'
+  Fcst_end_S     = "6h"
+  Fcst_gstat_s   = "1h"
+  Step_dt        = 900.
+/
+
+ &step_2.5km
+  Fcst_nesdt_S   = '12'
+  Fcst_end_S     = '6H'   
+  Fcst_gstat_S   = '1h'
+  Step_dt        = 60.
+/
+
+&Adz_cfgs
+	Adz_slt_winds = .true.
+/
+
+&gem_cfgs_not
+  Vtopo_length_S = '1h'
+/
+
+&sol
+  Sol_type_S = 'ITERATIVE_3D'
+  Sol_fgm_eps   = 1.d-05
+/
+
+ &dyn_fisl
+  Cstv_tstr_8     = 240.0      ,
+  Schm_itcn       = 2          , 
+  Schm_itnlh      = 2          , 
+  Schm_wload_L    = .true.     ,
+  Schm_hzdadw_L   = .true.     , 
+  Schm_advec      = 2
+/
+  Schm_orols_fromgeophy_L = .true.
+
+ &hvdif
+  Hzd_pwr         = 2          , 
+  Hzd_lnr         = 0.4        ,
+  Hzd_pwr_theta   = 6          , 
+  Hzd_lnr_theta   = 0.02       ,
+
+  Vspng_coeftop   = 67000.     , 
+  Vspng_nk        = 0           ,
+/
+
+ &vert_layers
+  hyb=
+  0.001682400, 0.003046800, 0.005517700, 0.009992500, 0.018096000,
+  0.028585000, 0.040027000, 0.051027000, 0.060642000, 0.068471000,
+  0.074525997, 0.079820000, 0.085440002, 0.091453999, 0.097892001,
+  0.104780003, 0.112159997, 0.120059997, 0.128509998, 0.137559995,
+  0.147239998, 0.157609999, 0.168699995, 0.180580005, 0.193289995,
+  0.206900001, 0.221430004, 0.236919999, 0.253360003, 0.270770013,
+  0.289160013, 0.308510005, 0.328790009, 0.349990010, 0.372070014,
+  0.394970000, 0.418639988, 0.443010002, 0.467999995, 0.493550003,
+  0.519559979, 0.545970023, 0.572669983, 0.599569976, 0.626600027,
+  0.653639972, 0.680630028, 0.707459986, 0.734049976, 0.760349989,
+  0.786239982, 0.811680019, 0.836470008, 0.860279977, 0.882839978,
+  0.903959990, 0.923510015, 0.941399992, 0.957599998, 0.972140014,
+  0.985099971, 0.995000005
+
+  hyb_H=
+ 43756.4023,  39318.1914,  35090.8477,  31060.8438,  27136.6133,
+ 24161.5703,  21995.9473,  20447.1094,  19351.3457,  18580.7734,
+ 18042.8926,  17607.1973,  17175.1387,  16743.1016,  16310.9150,
+ 15878.8105,  15446.1660,  15013.3779,  14580.7666,  14147.7617,
+ 13714.9189,  13281.5586,  12848.4268,  12414.7881,  11981.2051,
+ 11547.2939,  11114.3330,  10681.3379,  10246.2051,   9809.4922,
+  9372.0869,   8935.4023,   8500.8115,   8069.0381,   7641.2344,
+  7218.6914,   6802.2773,   6393.0088,   5991.8540,   5599.2866,
+  5216.2485,   4842.9409,   4480.1753,   4128.3555,   3787.5525,
+  3458.4089,   3140.7646,   2835.0325,   2541.2358,   2259.0730,
+  1988.9929,   1730.5981,   1485.0991,   1254.8451,   1041.4413,
+   845.6649,    667.7510,    507.6251,    364.7609,    238.2119,
+   126.7142,     42.3482,
+
+  hyb_rcoef = 0., 10., 0., 100.
+/
+  hyb_rcoef = 3., 15., 0., 100.
+  hyb_flat= 45000.
+
+ &inp
+Inp_npes=4
+/
+&init_off
+  Iau_period   = 21600.        ,  Iau_interval = 3600.         ,
+/
+ &init
+  Init_balgm_L    = .true.     , Init_dftr_L     = .true.
+  Init_dfwin_L    = .true.     , Init_dflength_S = '3h'
+  Init_dfpl_S     = '6h'
+/
+
+ &out
+  Out3_etik_s     = "base"   , Out3_ip3=-1
+  Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+                    4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
+                    3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
+                    2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
+                    1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
+  Out3_nbitg      = 32         , Out3_cliph_L     = .true.    ,
+  Out3_linbot     =  3         ,
+  Out3_close_interval_S= '1h'  , Out3_postproc_fact= 30
+/
+
+  SCHMURB         = 'TEB'		 ,
+ &surface_cfgs
+  SCHMSOL         = 'ISBA'     , 
+  TDIAGLIM        = .true.     ,
+  ICEMELT         = .true.     ,
+  BETA            = 1.0        ,
+  Z0TLAT          = 25., 30.   ,
+  LIMSNODP        = .true.     ,
+  SALTY_QSAT      = .true.     ,
+  ADJ_I0_SNOW     = .false.    ,
+  Z0TTYPE         ='deacu12'   ,
+  VEG_RS_MULT     = 2.0			 ,
+  IMPFLX          = .false.
+  LEADFRAC			 = 0.
+  Icelac       	 = .true.     
+  Isba_melting_fix = .true.   ,
+/
+
+ &convection_cfgs
+ DEEP       = 'kfc'     , 
+ KFCRAD     = 500.       , 
+ KFCDEPTH = 2000.
+ KFCTRIG4   = 0.,0.,0.5,0.5,
+ cmt_type   = 'NIL'
+ deep_timeconv = '30m'
+
+ SHAL     = 'ktrsnt'
+ shal_timeconv = '3h'
+/
+
+ &physics_cfgs
+  lhn          = 'IRPCP'       ,
+  lhn_weight   = 0.2           ,
+  lhn_filter   = 3.            ,
+  lhn_start_S	= 'steps,10'
+  lhn_stop_S	= 'steps,360'
+  lhn_ramp_S	= 'steps,10'
+  
+  TOFD            = 'beljaars04'
+  TOFD_ALPHA		= 50.
+  RADIA           = 'cccmarad' , 
+  KNTRAD_S        = '15m'
+  STRATOS         = .false.    ,
+  LMETOX          = .false.    ,
+
+  PBL_RICRIT  	  =  0.15, 2.
+
+  GWDRAG          = 'nil'      , 
+  NON_ORO         = .false.    ,
+
+  LONGMEL         = 'blac62'   , 
+  FLUVERT         = 'moistke'  , 
+  Fnn_mask     = .false.       ,
+  Fnn_reduc    = 1.            ,
+ 
+  pbl_shal        = 'nil'      ,
+  pbl_moistke_legacy_cloud=.true.,
+
+  STCOND          = 'mp_p3'    , 
+  P3_ncat      = 1             ,
+  P3_depfact   = 1.0           ,
+  P3_subfact   = 1.0           ,
+  P3_debug     = .false.       ,
+  mpdiag_for_sfc = .true.
+
+  SATUCO          = .true.     , 
+  INILWC         = .false.      ,
+  PCPTYPE         = 'bourge'    , 
+  MOYHR          = 6           ,
+  QCO2            = 380.0      ,
+/
+ phystat_dble_l = .true.
+ phystat_2d_l = .false.
+ phystat_freq_S = '0h'
+ phystat_list_s = 'ALLVARS=EDPV'
+ phystat_input_l = .false.
+ debug_mem_L = .true
+ debug_trace_L = .true
+
