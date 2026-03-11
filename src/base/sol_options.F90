@@ -71,7 +71,7 @@ module sol_options
    namelist /sol  / Sol_one_transpose_L
 
    !# True => use quad precision for norm computation
-   logical :: Sol_quadnorm_L = .true.
+   logical :: Sol_quadnorm_L = .false.
 
 contains
 
