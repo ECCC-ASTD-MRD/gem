@@ -43,6 +43,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/03/99
+!       S. Leroyer  jan 2026 : custom parameters with teb_snow options
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -131,7 +132,8 @@ END FUNCTION SNOW_FRAC_NAT
       SUBROUTINE SNOW_FRAC_ROAD(PWSNOW_ROAD,OSNOW,PDN_ROAD,PDF_ROAD)
 !     ##############################################################
 !
-USE MODD_SNOW_PAR_TEB, ONLY : XWCRN
+USE MODD_SNOW_PAR_TEB, ONLY : XWCRN, XWCRN_MA00, XWCRN_JA14
+use sfc_options, only: teb_snow, teb_snroad
 !!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW_ROAD ! snow amount over roads (kg/m2) 
@@ -139,15 +141,33 @@ LOGICAL, DIMENSION(:), INTENT(IN)  :: OSNOW    ! T: snow-fall is occuring
 REAL, DIMENSION(:), INTENT(OUT) :: PDN_ROAD    ! snow fraction over roads
 REAL, DIMENSION(:), INTENT(OUT) :: PDF_ROAD    ! snow-free fraction over roads
 !
+REAL :: PWCRN ! Local assignment of min snow needed to cover the surface
+REAL :: PDN_MAX ! maximum fraction of snow
+!
 PDF_ROAD(:)     = 1.
 PDN_ROAD(:)     = 0.
+!
+! assignemnt options
+ IF (TEB_SNOW .EQ. 'MA00' .OR. TEB_SNOW .EQ. 'LE10' ) THEN
+  PWCRN = XWCRN_MA00
+  PDN_MAX=0.7
+ ELSE IF (TEB_SNOW .EQ. 'JA14') THEN
+  PWCRN = XWCRN_JA14
+  PDN_MAX=0.7
+ ELSE IF (TEB_SNOW .EQ. 'CUSTOM') THEN
+  PWCRN = teb_snroad(1)
+  PDN_MAX=teb_snroad(13)
+ ELSE
+  PWCRN = XWCRN
+  PDN_MAX=0.7
+ END IF
 !
 ! due to the flatness of horizontal surfaces (compared to landscape and
 ! vegetation), the amount of snow necessary to cover the entire surface XWCRN
 ! is reduced (equal to 1kg/m2 instead of 10).
 !
 WHERE (PWSNOW_ROAD(:)>0. .OR. OSNOW)
-  PDN_ROAD(:)     = MAX(MIN(PWSNOW_ROAD(:)/(PWSNOW_ROAD(:) + XWCRN*0.1) , 0.7), 0.01)
+  PDN_ROAD(:)     = MAX(MIN(PWSNOW_ROAD(:)/(PWSNOW_ROAD(:) + PWCRN) , PDN_MAX), 0.01)
   PDF_ROAD(:)     = 1.-PDN_ROAD(:)
 END WHERE
 !
@@ -159,7 +179,8 @@ END SUBROUTINE SNOW_FRAC_ROAD
       SUBROUTINE SNOW_FRAC_ROOF(PWSNOW_ROOF,OSNOW,PDN_ROOF,PDF_ROOF)
 !     ##############################################################
 !
-USE MODD_SNOW_PAR_TEB, ONLY : XWCRN
+USE MODD_SNOW_PAR_TEB, ONLY : XWCRN, XWCRN_MA00, XWCRN_JA14
+use sfc_options, only: teb_snow, teb_snroof
 !!!#include <arch_specific.hf>
 !
 REAL, DIMENSION(:), INTENT(IN)  :: PWSNOW_ROOF ! snow amount over roofs (kg/m2) 
@@ -167,15 +188,34 @@ LOGICAL, DIMENSION(:), INTENT(IN)  :: OSNOW    ! T: snow-fall is occuring
 REAL, DIMENSION(:), INTENT(OUT) :: PDN_ROOF    ! snow fraction over roofs
 REAL, DIMENSION(:), INTENT(OUT) :: PDF_ROOF    ! snow-free fraction over roofs
 !
+REAL :: PWCRN ! Local assignment of min snow needed to cover the surface
+REAL :: PDN_MAX ! maximum fraction of snow
+!
 PDF_ROOF(:)     = 1.
 PDN_ROOF(:)     = 0.
+!
+! assignemnt options
+ IF (TEB_SNOW .EQ. 'MA00' .OR. TEB_SNOW .EQ. 'LE10' ) THEN
+  PWCRN = XWCRN_MA00
+  PDN_MAX=1.0
+ ELSE IF (TEB_SNOW .EQ. 'JA14') THEN
+  PWCRN = XWCRN_JA14
+  PDN_MAX=1.0
+ ELSE IF (TEB_SNOW .EQ. 'CUSTOM') THEN
+  PWCRN = teb_snroof(1)
+  PDN_MAX=teb_snroof(13)
+ ELSE
+  PWCRN = XWCRN
+  PDN_MAX=1.0
+ END IF
 !
 ! due to the flatness of horizontal surfaces (compared to landscape and
 ! vegetation), the amount of snow necessary to cover the entire surface XWCRN
 ! is reduced (equal to 1kg/m2 instead of 10).
 !
 WHERE (PWSNOW_ROOF(:)>0. .OR. OSNOW)
-  PDN_ROOF(:)     = MAX(PWSNOW_ROOF(:)/(PWSNOW_ROOF(:) + XWCRN*0.1),0.01)
+!  PDN_ROOF(:)     = MAX(PWSNOW_ROOF(:)/(PWSNOW_ROOF(:) + PWCRN),0.01)
+  PDN_ROOF(:)     = MAX(MIN(PWSNOW_ROOF(:)/(PWSNOW_ROOF(:) + PWCRN) , PDN_MAX), 0.01)
   PDF_ROOF(:)     = 1.-PDN_ROOF(:)
 END WHERE
 !

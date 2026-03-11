@@ -103,7 +103,7 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
          0.17  ,  2.034    /
    data  TMELICE , TMELSNO  /  273.05 , 273.15  /
    data  ALBDI   ,  ALBMI ,  ALBDS  ,  ALBMS / &
-         0.57    ,  0.50  ,  0.83   ,  0.77  /
+         0.57    ,  0.50  ,  0.87   ,  0.82  /
    data  COEFEXT / &
          1.5     /
    data  ROICE  / &

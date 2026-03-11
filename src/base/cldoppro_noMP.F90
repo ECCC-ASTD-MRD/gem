@@ -99,6 +99,7 @@ contains
       real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp
       real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zmrk2
       real, pointer, dimension(:), contiguous :: zmg,zml,ztopthw,ztopthi,zdlat
+      real, pointer, dimension(:,:), contiguous   :: zrewx, zreix
      !----------------------------------------------------------------
 
       MKPTR1D(zdlat, dlat, pvars)
@@ -113,6 +114,8 @@ contains
       MKPTR1D(ztopthw, topthw, pvars)
 
       MKPTR2D(zmrk2, mrk2, pvars)
+      MKPTR2Dm1(zrewx, rewx, pvars)
+      MKPTR2Dm1(zreix, reix, pvars)
 
 
       !----------------------------------------------------------------
@@ -120,6 +123,9 @@ contains
       call init2nan(reifac, rewfac)
 
       rec_grav=1./grav
+      zrewx    = 0.0
+      zreix    = 0.0
+
 
       ! impose coherence so that output profile variables are fully consistent with what RT has seen
       ! le premier if change le bit-pattern , je ne comprends pas pourquoi
@@ -220,6 +226,7 @@ contains
          ! Radius is a user-specified constant (in microns)
          rew = rew_const
       end select
+      zrewx=rew*1.e-6
 
       ! Adjust the effective radius using stochastic perturbations
       rewfac(:) = ens_spp_get('rew_mult', zmrk2, default=1.)
@@ -248,7 +255,7 @@ contains
             do i = 1, ni
                zrieff(i,k) = 1000. * icewcin(i,k) * aird(i,k) ! convert to gm-3
                zrieff(i,k) = (1.2351 + 0.0105*(tt(i,k) - TCDK)) * (45.8966*zrieff(i,k)**0.2214 + 0.7957*zrieff(i,k)**0.2535*(tt(i,k) - 83.15))
-               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*abs(zdlat(i)))) ! impose a lat dependent min
+               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*cos(zdlat(i)))) ! impose a lat dependent min
                rei(i,k) = 0.64952*zrieff(i,k)
                rei(i,k) =  min(rei(i,k), 70.0) ! necessary to avoid crashes
             enddo
@@ -257,12 +264,19 @@ contains
          ! Radius is a user-specified constant (in microns)
          rei(:,:) = rei_const
       end select
+      zreix=rei*1.e-6
 
       ! Adjust the effective radius using stochastic perturbations
       reifac(:) = ens_spp_get('rei_mult', zmrk2, default=1.)
       do k=1, nkm1
          rei(:,k) = reifac(:) * rei(:,k)
       enddo
+
+! mask output effective radii where there is no cloud
+      where (cldfrac(:,:) <= cldfth)
+            zreix(:,:)= 0.0
+            zrewx(:,:)= 0.0
+      endwhere
 
       !----------------------------------------------------------------------
       !     cloud radiative properties for radiation.

@@ -38,6 +38,11 @@ Evaporate detrained condensate in shallow convection
 | .false. || logical
 
 |-
+| bkf_fnfacs ||
+Scaling of shallow convection cloud fraction
+| 1. || real
+
+|-
 | bkf_kch ||
 Number of species for convective transport (never tested)
 | 0 || integer
@@ -154,6 +159,11 @@ Conservation corrections for deep convective scheme
 | deep_timerefresh ||
 
 | -1. || real
+
+|-
+| deep_wavg ||
+Use time-averaged vertical motion for deep convection trigger
+| .false. || logical
 
 |-
 | kfcdepth ||
@@ -284,6 +294,11 @@ Minimum environmental mass flux for mid-level convection (kg/s)
 | -1. || real
 
 |-
+| mid_wavg ||
+Use time-averaged vertical motion for mid-level trigger
+| .false. || logical
+
+|-
 | shal ||
 Switch for shallow convection
 * 'NIL'
@@ -310,6 +325,11 @@ Over land and lakes we keep the value set by the "ramp" above over sea water:
 * for :lat: <= TRIGLAT(1) we use the new value KFCTRIGL
 * and linear interpolation in between TRIGLAT(1) and TRIGLAT(2)
 | 0.0 || real
+
+|-
+| trigtauw ||
+Vertical motion relaxation for trigger tests (s)
+| 3600. || real
 |}
 === physics_cfgs Namelist  ===
 
@@ -650,6 +670,15 @@ Pressure (in Pa) that defines the bottom emission level for gravity waves
 | 0 || integer
 
 |-
+| p3_autoaccr ||
+Switch for parameterization of autoconversion/accretion/self-collection in P3 microphysics
+* 'SEIFERT2001 ': Seifert & Beheng 2001 (recommanded)
+* 'BEHENG1994  ': Beheng, 1994
+* 'KHAIROUT2000': Khairoutdinov & Kogan, 2000 (default)
+* 'KOGAN2013   ': Kogan 2013
+| 'KHAIROUT2000' || character(len=16)
+
+|-
 | p3_debug ||
 switch for real-time debugging in microphysics (P3)
 | .false. || logical
@@ -661,18 +690,14 @@ calibration factor for ice deposition in microphysics (P3)
 
 |-
 | p3_dtmax ||
-Maximum time step (s) to be taken by the microphysics (P3) scheme, with time-splitting
+Maximum time step (s) to be taken by the microphysics (P3), with time-splitting
 used to reduce step to below this value if necessary
 | 60. || real
 
 |-
-| p3_iparam ||
-Switch for p3 parameterization of autoconversion/accretion/self-collection in microphysics (P3) scheme
-1: Seifert & Beheng 2000 (recommanded)
-2: Beheng, 1994
-3: Khairoutdinov & Kogan, 2000 (default)
-4: Kogan 2013
-| 3 || integer
+| p3_freq3ddiag ||
+frequency (min) for calculating 3D diagnostic output in microphysics (P3)
+| 60. || real
 
 |-
 | p3_liqfrac ||
@@ -707,8 +732,8 @@ calibration factor for ice sublimation in microphysics (P3)
 
 |-
 | p3_supid ||
-Ice supersaturation threshold for deposition ice nucleation(P3)
-| .05 || real
+Ice supersaturation threshold for deposition ice nucleation (P3)
+| 0.05 || real
 
 |-
 | p3_trplmomi ||
@@ -982,6 +1007,16 @@ Conservation corrections for radiation scheme
 | rad_esfc ||
 Use emissivity computed by the surface schemes
 | .false. || logical
+
+|-
+| rad_exp_rei ||
+
+| -1. || real
+
+|-
+| rad_exp_rew ||
+
+| -1. || real
 
 |-
 | rad_linoz_l ||
@@ -1534,6 +1569,11 @@ Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfra
 | 0.03 || real
 
 |-
+| lforlit ||
+(SVS2) activate forest litter in SVS2 if .true.
+| .false. || logical
+
+|-
 | limsnodp ||
 Limit snow depth to 10 cm for calculation of heat conductivity of snow
 over sea-ice and glacier if .true.
@@ -1541,12 +1581,12 @@ over sea-ice and glacier if .true.
 
 |-
 | lmacropores_svs1 ||
-If .true., macropores are activated and enhance infiltration in a frozen soil
+(SVS1) If .true., macropores are activated and enhance infiltration in a frozen soil
 | .false. || logical
 
 |-
 | lphase_change_eff_svs1 ||
-If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
+(SVS1) If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
 | .false. || logical
 
 |-
@@ -1582,6 +1622,11 @@ If .true., SVS1 simulates soil freezing and thawing and its impact on hydrology
 |-
 | lwater_ponding_svs ||
 If .true., SVS1 or SVS2 simulates water ponding at the surface
+| .false. || logical
+
+|-
+| lwfcliq_svs1 ||
+
 | .false. || logical
 
 |-
@@ -1655,6 +1700,11 @@ Urban surface processes
 * 'NIL' : No Urban surface processes
 * 'TEB' : Town Energy Balance (TEB) urban scheme
 | 'NIL' || character(len=16)
+
+|-
+| sfc_poids ||
+Surface weights / Poids; LEGACY as of sps_6.3.0.
+| 'LEGACY' || character(len=6)
 
 |-
 | sl_afd ||
@@ -1777,6 +1827,7 @@ Soil texture database/calculations for SVS land surface scheme
 * 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)
 * 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)
 * 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC World Soil Information
+* 'SOILGRIDSV2' : 6 layers of sand, clay, bulk density, & oc info from ISRIC World Soil Information
 | 'GSDE' || character(len=16)
 
 |-
@@ -1788,6 +1839,17 @@ Logical - Activate Crocus debugging options  if .true. (see README_crodebug.md)
 | svs_aldat ||
 Values (1:NCLASS) used for the lookup table ALDAT if svs_read_aldat=.T.
 | -999. || real
+
+|-
+| svs_cg_depth ||
+determine depth over which soil thermal inertia is computed [m]
+when set to zero, only 1st layer is used (default option for backward compatibility)
+| 0. || real
+
+|-
+| svs_cg_ice ||
+specify which equation to use to take ice into account when computing the heat capacity of bare ground
+| 'BELAIR2003' || character(len=16)
 
 |-
 | svs_d2dat ||
@@ -1869,6 +1931,11 @@ Specify the exponent applied to the ratio WD/WFC when computing Beta (only used 
 | svs_hrsurf_rs ||
 Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]
 | 50. || real
+
+|-
+| svs_hydro_nummethod ||
+
+| 'RK4_IC4' || character(len=16)
 
 |-
 | svs_lai11 ||
@@ -2071,6 +2138,24 @@ Limit temperature inversions to dlrate in surface layer if .true.
 | tdlrate ||
 Set tdiaglim lapse rate (K/m) in surface layer if .true.
 | 0.2 || real
+
+|-
+| teb_snow ||
+(TEB) Options for parameters governing the snow evolution on roofs nd roads
+* 'MA00'   :  Default Masson 2000
+* 'JA14'   :    opt Järvi et al 2014
+* 'LE10'   :    opt Lemonsu et al 2010
+| 'MA00  ' || character(len=6)
+
+|-
+| teb_snroad ||
+
+|  || 
+
+|-
+| teb_snroof ||
+
+| -1.0 || real
 
 |-
 | urb_diagtemp ||

@@ -42,6 +42,7 @@
 !!    -------------
 !!      Original       01/2004
 !!      Rename with _teb to avoid confusion  with updated Surfex version of this module  M. Abrahamowicz 01/2025
+!       !       S. Leroyer  jan 2026 : custom parameters with teb_snow options
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -55,12 +56,16 @@ implicit none
 !
 ! Snow emissivity:
 !
-REAL, PARAMETER       :: XEMISSN = 1.0  ! (-)
+REAL, PARAMETER       :: XEMISSN = 1.0        ! (-)
+REAL, PARAMETER       :: XEMISSN_JA14 = 0.99  ! (-)
+REAL, PARAMETER       :: XEMISSN_SVS1 = 0.97  ! (-)
 !
 ! Critical value of the equivalent water content
 ! of the snow reservoir for snow fractional coverage and albedo computations
 !
-REAL, PARAMETER       :: XWCRN = 10.0   ! (kg m-2)
+REAL, PARAMETER       :: XWCRN = 10.0       ! (kg m-2)
+REAL, PARAMETER       :: XWCRN_MA00 = 1.0   ! (kg m-2)
+REAL, PARAMETER       :: XWCRN_JA14 = 0.8   ! (kg m-2)
 !
 ! Roughness length of pure snow surface 
 !
@@ -76,10 +81,14 @@ REAL, PARAMETER       :: XANSMIN = 0.50 ! (-)
 REAL, PARAMETER       :: XANSMAX = 0.85 ! (-)
 !
 ! Snow aging coefficients (albedo and Force-Restore density):
-!
-REAL, PARAMETER       :: XANS_TODRY    = 0.008     ! (-) 
-REAL, PARAMETER       :: XANS_T        = 0.240     ! (-)
-!
+! tau_a  ! albedo decrease with time
+REAL, PARAMETER       :: XANS_TODRY    = 0.008     ! (-)
+! tau_f ! albedo decrease if melting occurs  - different flavors
+REAL, PARAMETER       :: XANS_T_MA00   = 0.01      ! GEM  default   ----- Douville 1995 from Verseghy (1991)
+REAL, PARAMETER       :: XANS_T        = 0.240     ! DO95 and ISBA  ----- default value for veg and as in LE10 for TEB (-)
+REAL, PARAMETER       :: XANS_T_JA14   = 0.11      ! JA14           ----- Järvi et al 2014 (-) urban
+REAL, PARAMETER       :: XANS_T_LE10   = 0.174    ! LE10           -
+
 ! Minimum and maximum values of the density of snow 
 ! for Force-Restore snow option
 !

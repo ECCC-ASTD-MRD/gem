@@ -34,6 +34,15 @@ module sfc_options
    real, dimension(NL_SVS_DEFAULT):: DP_SVS_DEFAULT =  (/ 0.05, 0.1, 0.2, 0.4, 1.0, 2.0, 3.0 /)
    !#----------------------------------
 
+   !# ----  FOR TEB BUILT-UP LAND SCHEME ------
+   integer, parameter :: NB_TEB_SNOWPAR = 13    !  number of parameters for snow in TEB
+   ! values of (1) WCRN,(2)tau_a (cold snow alb),(3)Almin, (4)almax, (5)rhomin, (6)rhomax, (7)tau_r (compaction),
+   !           (8)emissivity, (9)tau_f (warm snow alb), (10) tau_anthropo, (11) zom, (12) z0h  (13) snfrac_max
+   !                                                           (1)  (2)    (3)   (4)  (5)   (6)   (7)   (8)    (9)  (10)  (11)   (12)  (13)
+    real, dimension(NB_TEB_SNOWPAR):: TEB_SNROOF_DEFAULT =  (/ 1.0, 0.04, 0.50, 0.85, 100., 750., 0.01, 1.00, 0.01, 0.0, 0.001, 0.0001, 1.0 /)
+    real, dimension(NB_TEB_SNOWPAR):: TEB_SNROAD_DEFAULT =  (/ 1.0, 0.08, 0.20, 0.85, 100., 750., 0.10, 1.00, 0.01, 1.0, 0.001, 0.0001, 0.7 /)
+   !#----------------------------------
+
    real, parameter :: CRITEXTURE = 0.1
    real, parameter :: CRITLAC    = 0.01
    real, parameter :: CRITMASK   = 0.001
@@ -50,6 +59,7 @@ module sfc_options
    logical           :: atm_external = .false.
    logical           :: atm_tplus  = .false.
    logical           :: climat     = .false.
+   logical           :: cplocn     = .false.
    real              :: delt       = 0.
    integer(INT64)  :: jdateo     = 0
    logical           :: rad_off    = .false.
@@ -57,6 +67,9 @@ module sfc_options
    logical           :: update_alwater = .false.
    logical           :: z0veg_only = .false.
    logical           :: thermal_stress = .false.
+   logical           :: thermal_stress_utci = .false.
+   logical           :: thermal_stress_shade = .false.
+   logical           :: thermal_stress_roof = .false.
    integer           :: kntveg     = -1
    logical           :: timings_L  = .false.
    integer           :: nphyoutlist = -1
@@ -310,6 +323,15 @@ module sfc_options
    logical           :: isba_snow_z0veg = .false.
    namelist /surface_cfgs/ isba_snow_z0veg
 
+   !# Surface weights / Poids; LEGACY as of sps_6.3.0.
+   character(len=6)           :: sfc_poids = 'LEGACY'
+   namelist /surface_cfgs/ sfc_poids
+   character(len=*), parameter :: SFC_POIDS_OPT(3) = (/ &
+        'LEGACY', &
+        'CONSER', &
+        'MODMG ' &
+        /)
+
    !# Computation of bare ground snow fraction
    !# * 'NIL'   : Legacy approach implemented in ISBA (Belair et al. 003)
    !# * 'PHY98' : Use the same definition as in Physics 1998 documentation, Douville 1995 and Pitman 1991
@@ -388,13 +410,22 @@ module sfc_options
    logical           :: limsnodp    = .false.
    namelist /surface_cfgs/ limsnodp
 
-   !# If .true., macropores are activated and enhance infiltration in a frozen soil
+   !# (SVS2) activate forest litter in SVS2 if .true.
+   logical           :: lforlit     = .false.
+   namelist /surface_cfgs/ lforlit
+
+   !# (SVS1) If .true., macropores are activated and enhance infiltration in a frozen soil
    logical           :: lmacropores_svs1 = .false.
    namelist /surface_cfgs/ lmacropores_svs1
 
-   !# If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
+   !#  (SVS1) If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
    logical           :: lphase_change_eff_svs1 = .false.
    namelist /surface_cfgs/ lphase_change_eff_svs1 
+
+   !#  (SVS1) If .true., field capacity for bare ground evaporation is calculated with respect to 
+   !          liquid water using modified porosity in presence of frozen soil
+   logical           :: lwfcliq_svs1 = .false.
+   namelist /surface_cfgs/ lwfcliq_svs1
    
    !# (SVS2) If .true., SVS2 simulates interception of snow by canopy, sublimation and inloading of intercepted snow
    logical           :: lsnow_interception_svs2 = .false.
@@ -608,12 +639,14 @@ module sfc_options
    !# * 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)
    !# * 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)
    !# * 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC World Soil Information
+   !# * 'SOILGRIDSV2' : 6 layers of sand, clay, bulk density, & oc info from ISRIC World Soil Information
    character(len=16) :: soiltext    = 'GSDE'
    namelist /surface_cfgs/ soiltext
-   character(len=*), parameter :: SOILTEXT_OPT(3) = (/ &
-        'GSDE     ',  &
-        'SLC      ',  &
-        'SOILGRIDS' &
+   character(len=*), parameter :: SOILTEXT_OPT(4) = (/ &
+        'GSDE       ',  &
+        'SLC        ',  &
+        'SOILGRIDS  ',  &
+        'SOILGRIDSV2'   &
         /)
 
    !# If .true., SVS1 simulates soil freezing and thawing and its impact on hydrology
@@ -664,6 +697,20 @@ module sfc_options
    logical           :: snoalb_anl  = .true.
    namelist /surface_cfgs/ snoalb_anl
 
+   !# determine depth over which soil thermal inertia is computed [m]
+   !# when set to zero, only 1st layer is used (default option for backward compatibility)
+   real              :: svs_cg_depth = 0.
+   namelist /surface_cfgs/ svs_cg_depth
+
+   !# specify which equation to use to take ice into account when computing the heat capacity of bare ground
+   character(len=16) :: svs_cg_ice    = 'BELAIR2003'
+   namelist /surface_cfgs/ svs_cg_ice
+   character(len=*), parameter :: SVS_CG_ICE_OPT(3) = (/ &
+        'BELAIR2003', &
+        'BOONE2000 ', &
+        'FORTIN2026'  &
+        /)   
+
    !# use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true.
    logical           :: svs_dynamic_z0h     = .false.
    namelist /surface_cfgs/ svs_dynamic_z0h 
@@ -702,6 +749,20 @@ module sfc_options
    real              :: svs_hrsurf_rs = 50.
    namelist /surface_cfgs/ svs_hrsurf_rs
 
+   !------------------------------------------------------------------
+   ! NUMERICAL METHOD HYDRO_SVS
+   ! Numerical method used to solve Richards' equations in hydro_svs
+   ! 'EULER':   Euler, forward, 1st order
+   ! 'RK4_IC4': Runge-Kutta 4th order (RK4) (incorrect implementation, but used operationnally in NSRPS IC4)
+   ! 'RK4':     Runge-Kutta 4th order (RK4) (improved implementation as part of IC5)
+   character(len=16) :: svs_hydro_nummethod = 'RK4_IC4'
+   namelist /surface_cfgs/ svs_hydro_nummethod
+   character(len=*), parameter :: SVS_HYDRO_NUMMETHOD_OPT(3) = (/ &
+        'EULER  ', &
+        'RK4_IC4', &
+        'RK4    ' &
+        /)
+        
    !# Option to use average normalized water content rather than average stress to compute transpiration
    logical           :: svs_etr_avg_beta = .false.
    namelist /surface_cfgs/ svs_etr_avg_beta
@@ -1058,6 +1119,25 @@ module sfc_options
    !# Adjust temperature diagnostic in TEB in the street  if .true.
    logical           :: urb_diagtemp = .false.
    namelist /surface_cfgs/ urb_diagtemp
+
+   !# (TEB) Options for parameters governing the snow evolution on roofs nd roads
+   !# * 'MA00'   :  Default Masson 2000
+   !# * 'JA14'   :    opt Järvi et al 2014
+   !# * 'LE10'   :    opt Lemonsu et al 2010
+   character(len=6) :: teb_snow    = 'MA00  '
+   namelist /surface_cfgs/ teb_snow
+   character(len=*), parameter :: TEB_SNOW_OPT(4) = (/ &
+        'MA00  ',  &
+        'JA14  ',  &
+        'LE10  ',  &
+        'CUSTOM' &
+        /)
+
+  !# read the TEB snow parameters (if schmsol=TEB and teb_snow=custom)
+   real :: teb_snroof(NB_TEB_SNOWPAR) = -1.0
+   real :: teb_snroad(NB_TEB_SNOWPAR) = -1.0
+   namelist /surface_cfgs/ teb_snroof
+   namelist /surface_cfgs/ teb_snroad
 
 contains
 

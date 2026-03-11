@@ -148,7 +148,7 @@ git checkout ${phybranch}
 component=rpnphy
 for item in ${mydir}/patches/${component}/*.patch ; do
     if [[ -s ${item} ]] ; then
-       git am -3 -k ${item}
+       git am -3 -k --empty=drop ${item}
        if [[ $? != 0 ]] ; then
           echo "ERROR: problem applying ${item}"
           break

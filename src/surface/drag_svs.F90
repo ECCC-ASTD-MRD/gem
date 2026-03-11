@@ -14,7 +14,7 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
-      SUBROUTINE DRAG_SVS ( TGRS, TVGS, WD, &
+      SUBROUTINE DRAG_SVS ( TGRS, TVGS, WD, WF, &
                               WR, THETAA, VMOD, VDIR, HU,  &  
                               PS, RS, Z0, Z0LOC, Z0VG, WFC, WSAT, CLAY1,  &
                               SAND1, LAI, WRMAX, ZUSL, ZTSL, LAT, & 
@@ -42,7 +42,7 @@
       REAL FCOR(N), Z0HA(N), Z0HBG(N), Z0HVG(N)
       REAL RESAGR(N), RESAVG(N)
       REAL HUSURF(N), HV(N), DEL(N), BETA_EVPG(N)
-      REAL HRSURF(N), WD(N,NL_SVS)
+      REAL HRSURF(N), WD(N,NL_SVS), WF(N, NL_SVS)
       REAL DHUSURF_DQSAT(N)
 !
 !Author
@@ -79,6 +79,7 @@
 ! TGRS      skin (surface) temperature of bare ground
 ! TVGS      skin (surface) temperature of vegetation
 ! WD        Soil volumetric water content
+! WF        Soil volumetric ice content
 ! WR        water content retained by the vegetation canopy
 ! THETAA    potential temperature at the lowest level
 ! VMOD      wind speed at the lowest level
@@ -120,7 +121,7 @@
       INTEGER I, zopt
 
       real, dimension(n) :: temp, coef, qsatgr, qsatvg, &
-           zqsvg, ctugr, ctuvg, z0hg, z0bg_n
+           zqsvg, ctugr, ctuvg, z0hg, z0bg_n, wfc_eff, wsatc
            
 !
 !***********************************************************************
@@ -141,6 +142,9 @@
          Z0HG(I) = Z0M_TO_Z0H * Z0MBG
       END DO         
 !
+
+
+
 !
 !
 !*       1.     RELATIVE AND SPECIFIC HUMIDITY OF THE GROUND (HU)
@@ -161,14 +165,27 @@
             BETA_EVPG(I) = 0.  ! Initialize default value to zero (variable not used by "alpha" methods)
       END DO
 
+      IF(LWFCLIQ_SVS1) THEN              
+         DO I=1,N
+            !Adjust wsat for presence of ice as in hydro_svs
+            WSATC(I)= MAX((WSAT(I,1)-WF(I,1)-0.00001), CRITWATER)
+            !Field capacity with respect to the liquid water using modified soil porosity
+            WFC_EFF(I) = WFC(I,1) * WSATC(I)/WSAT(I,1)
+         END DO
+      ELSE
+         DO I=1,N
+            WFC_EFF(I) = WFC(I,1) 
+         END DO
+      ENDIF
+
       if ( svs_hrsurf_method == "ALPHA_JN90" ) then
          ! formulation based on Alpha method of Jacquemin and Noilhan (1990) BLM, 51: 93-134.
          DO I=1,N
-            TEMP(I)   = PI*WD(I,1)/WFC(I,1)
+            TEMP(I)   = PI*WD(I,1)/WFC_EFF(I)
             HRSURF(I) = 0.5 * ( 1.-COS(TEMP(I)) )
 !           for very humid soil (i.e., wg > wfc ),
 !           we take hu=1
-            IF ( WD(I,1).GT.WFC(I,1)) HRSURF(I) = 1.0
+            IF ( WD(I,1).GT.WFC_EFF(I)) HRSURF(I) = 1.0
 !           there is a specific treatment for dew
 !           (see Mahfouf and Noilhan, jam, 1991)
 !           when hu*qsat < qa, there are two possibilities
@@ -192,7 +209,7 @@
                BETA_EVPG(I) = 1.0
                HRSURF(I) = 1.0
             ELSE
-               TEMP(I) = (WFC(I,1) / MAX(WD(I,1),CRITWATER))
+               TEMP(I) = (WFC_EFF(I) / MAX(WD(I,1),CRITWATER))
                TEMP(I) = TEMP(I) ** MAX(svs_hrsurf_power - (svs_hrsurf_power-1.0)/TEMP(I),1.0)
                BETA_EVPG(I) = RESAGR(I) / ( RESAGR(I) + svs_hrsurf_rs * TEMP(I) )
                HRSURF(I) = BETA_EVPG(I) + (1-BETA_EVPG(I)) * HU(I) / QSATGR(I)

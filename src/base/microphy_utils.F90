@@ -64,21 +64,27 @@ contains
   function mp_init(F_input_path) result(F_istat)
     use microphy_consun
     use microphy_s2
-    use microphy_p3, P3_STATUS_OK=>STATUS_OK
+    use microphy_p3, only: &
+         p3x_init => p3_init, p3x_phybusinit => p3_phybusinit, &
+         p3x_lwc => p3_lwc, p3x_iwc => p3_iwc
+    use microphy_p3v5, only: &
+         P3_STATUS_OK => STATUS_OK, &
+         p3v5_init => p3_init, p3v5_phybusinit => p3_phybusinit, &
+         p3v5_lwc => p3_lwc, p3v5_iwc => p3_iwc
     use microphy_p3v3, only: &
          p3v3_init => p3_init, p3v3_phybusinit => p3_phybusinit, &
          p3v3_lwc => p3_lwc, p3v3_iwc => p3_iwc
     use microphy_my2
     use microphy_kessler
     use microphy_thompson
-    use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac, p3_iparam
+    use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac, p3_autoAccr
     use phy_status, only: physeterror
     implicit none
     character(len=*), intent(in) :: F_input_path  !Directory containing initializing data
     integer :: F_istat                            !Return status (PHY_OK on success)
 
     ! Internal variables
-    integer :: istat
+    integer :: istat, p3_autoAccr_i
     character(len=1024) :: missing_list
 
     ! Initialization
@@ -98,11 +104,45 @@ contains
        mp_lwc => s2_lwc
        mp_iwc => s2_iwc
     case ('MP_P3')
-       call p3_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, p3_iparam, stat=istat)
+       select case(p3_autoAccr)
+       case ('SEIFERT2001')
+          p3_autoAccr_i = 1
+       case ('BEHENG1994')
+          p3_autoAccr_i = 2
+       case ('KHAIROUT2000')
+          p3_autoAccr_i = 3
+       case ('KOGAN2013')
+          p3_autoAccr_i = 4
+       case DEFAULT
+          call physeterror('microphy_utils::mp_init', &
+               'Unsupported p3_autoAccr'//trim(p3_autoAccr))
+          return
+       end select
+       call p3v5_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, p3_autoAccr_i, stat=istat)
        if (istat == P3_STATUS_OK) istat = PHY_OK
-       mp_phybusinit => p3_phybusinit
-       mp_lwc => p3_lwc
-       mp_iwc => p3_iwc
+       mp_phybusinit => p3v5_phybusinit
+       mp_lwc => p3v5_lwc
+       mp_iwc => p3v5_iwc
+    case ('MP_P3X')
+       select case(p3_autoAccr)
+       case ('SEIFERT2001')
+          p3_autoAccr_i = 1
+       case ('KHAIROUT2000')
+          p3_autoAccr_i = 2
+       case ('KOGAN2013')
+          p3_autoAccr_i = 3
+       case DEFAULT
+          call physeterror('microphy_utils::mp_init', &
+               'Unsupported p3_autoAccr'//trim(p3_autoAccr))
+          return
+       end select
+       call p3x_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac,  &
+                    autoAccr_param_in = p3_autoAccr_i,                &
+                    stat = istat)
+       if (istat == P3_STATUS_OK) istat = PHY_OK
+       mp_phybusinit => p3x_phybusinit
+       mp_lwc => p3x_lwc
+       mp_iwc => p3x_iwc
     case ('MP_P3V3')
        call p3v3_init(F_input_path, p3_ncat, stat=istat)
        if (istat == P3_STATUS_OK) istat = PHY_OK

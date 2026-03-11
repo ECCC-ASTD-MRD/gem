@@ -21,6 +21,9 @@ function sfc_nml2(F_namelist) result(F_istat)
    use str_mod, only: str_concat, str_toreal
    use sfc_options
    use sfcbus_mod
+#ifdef HAVE_NEMO
+   use cpl_itf, only: cpl_nml
+#endif
    use sfclayer, only: sl_put, SL_OK
    implicit none
 !!!#include <arch_specific.hf>
@@ -39,6 +42,7 @@ function sfc_nml2(F_namelist) result(F_istat)
 
    integer, parameter :: SFC_NML_ERR = RMN_ERR
    integer, parameter :: SFC_NML_OK  = RMN_OK + 1
+   integer, parameter :: CPL_NML_OK  = 1
 
    integer :: err, unout
    !-------------------------------------------------------------------
@@ -55,6 +59,19 @@ function sfc_nml2(F_namelist) result(F_istat)
    if (.not.RMN_IS_OK(err)) return
 
    unout = msg_getUnit(MSG_INFO)
+#ifdef HAVE_NEMO
+   err   = cpl_nml(F_namelist, unout)
+#else
+   err   = 0
+#endif
+   if (.not.RMN_IS_OK(err)) then
+      call msg(MSG_ERROR,'(sfc_nml) Probleme in cpl_nml')
+      return
+   endif
+   cplocn = (err ==  CPL_NML_OK)
+#ifdef HAVE_NEMO
+   if (cplocn) err = cpl_nml('print', unout)
+#endif
 
    F_istat = SFC_NML_OK
    !-------------------------------------------------------------------
@@ -123,7 +140,8 @@ contains
 
 
    function sfc_nml_check() result(m_istat)
-      use sfc_options, only : nl_svs_default, dp_svs_default
+      use sfc_options, only : nl_svs_default, dp_svs_default, &
+                       nb_teb_snowpar, teb_snroof_default, teb_snroad_default
       use svs_configs, only : nl_svs,dl_svs,ntypel,ntypeh,vl_type,vh_type
       use mode_crodebug
       implicit none
@@ -179,6 +197,12 @@ contains
       if (.not.any(schmriver == SCHMRIVER_OPT)) then
          call str_concat(msg_S, SCHMRIVER_OPT,', ')
          call msg(MSG_ERROR,'(sfc_nml_check) schmriver = '//trim(schmriver)//' : Should be one of: '//trim(msg_S))
+         return
+      endif
+
+      if (.not.any(sfc_poids == SFC_POIDS_OPT)) then
+         call str_concat(msg_S, SFC_POIDS_OPT,', ')
+         call msg(MSG_ERROR,'(sfc_nml_check) sfc_poids = '//trim(sfc_poids)//' : Should be one of: '//trim(msg_S))
          return
       endif
 
@@ -618,6 +642,12 @@ contains
                return
             endif
             
+            if (read_oc .and. .not. (soiltext=='SOILGRIDSV2' .or. soiltext=='GSDE') ) then
+               call str_concat(msg_S, SOILTEXT_OPT, ', ')
+               call msg(MSG_ERROR, '(sfc_nml_check) read_ocshould be used with SOILGRIDSV2')
+               return
+            endif
+
          endif
 
 
@@ -754,6 +784,39 @@ contains
          endif
 
       endif IF_SVS
+
+
+      ! ------ CHECK TEB OPTIONS --------------
+      IF_TEB: if (schmurb == 'TEB' ) then
+
+         if (.not.any(teb_snow == TEB_SNOW_OPT)) then
+               call str_concat(msg_S, TEB_SNOW_OPT, ', ')
+               call msg(MSG_ERROR, '(sfc_nml_check) teb_snow = '//trim(teb_snow)//&
+                    ' : Should be one of: '//trim(msg_S))
+               return
+            endif
+
+         if (teb_snow == 'CUSTOM') then
+            do k=1, nb_teb_snowpar
+             if (teb_snroof(k) == -1) then
+                 call msg(MSG_INFO,'(sfc_nml_check) TEB snow parameters over ROOF teb_snroof'//&
+                 ' NOT SPECIFIED by user, will use DEFAULT VALUE')
+                  teb_snroof = TEB_SNROOF_DEFAULT
+                  EXIT
+             endif
+            enddo
+            do k=1, nb_teb_snowpar
+              if (teb_snroad(k) == -1) then
+                 call msg(MSG_INFO,'(sfc_nml_check) TEB snow parameters over ROAD teb_snroad'//&
+                 ' NOT SPECIFIED by user, will use DEFAULT VALUE')
+                  teb_snroad = TEB_SNROAD_DEFAULT
+                  EXIT
+               endif
+            enddo
+         endif
+
+      endif IF_TEB
+
 
       ! check that use crodebug only with SV2
       ! read in environement variables here if ok to avoid looping on TRNCH

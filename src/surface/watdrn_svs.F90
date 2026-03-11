@@ -1,4 +1,4 @@
-subroutine watdrn( &
+subroutine watdrn_svs( &
      delzw, bcoef, thpora, grksat, grkeff, asatfc, asat0,  &
      asat1, subflw, basflw, satsfc,  &
      ilg, il1, il2, delt)
@@ -8,7 +8,7 @@ subroutine watdrn( &
 
    !  * December 4, 2009, Vincent Fortin
    !
-   !    Initial WATDRN code derived from WAT_DRAIN by Ric Soulis
+   !    Initial WATDRN_SVS code derived from WAT_DRAIN by Ric Soulis
    !    Code entirely rewritten for three main reasons:
    !    - simplify the parameterization by working with average
    !      hydraulic conductivity within a layer (runs faster, but
@@ -36,7 +36,7 @@ subroutine watdrn( &
    !  * February 25, 2014, Vincent Fortin and Nasim Alavi
    !
    !    - asatfc (saturation at field capacity) added as an input
-   !      to WATDRN in order to ensure that lateral flow does not make
+   !      to WATDRN_SVS in order to ensure that lateral flow does not make
    !      water content drop below field capacity
    !      if asatfc is set to zero this change has no impact
    !    - computations now done in real(REAL64) instead of REAL
@@ -44,7 +44,7 @@ subroutine watdrn( &
    !
    !  * August 1, 2014, Vincent Fortin
    !
-   !    - compute 1/tc instead of tc so that WATDRN does not crash
+   !    - compute 1/tc instead of tc so that WATDRN_SVS does not crash
    !      when grkeff=0
    !
    !  Summary:
@@ -75,18 +75,18 @@ subroutine watdrn( &
    !  critical time at which the saturation front reaches the
    !  seepage face.
    !
-   !  Background info on WATDRN:
+   !  Background info on WATDRN_SVS:
    !
-   !  WATDRN is a parameterization for sub-grid scale interflow,
+   !  WATDRN_SVS is a parameterization for sub-grid scale interflow,
    !  i.e. subsurface flow, which is thought to be an important flow
    !  generation process following a rain event at the basin scale
    !
-   !  The underlying principles behind WATDRN are described in
+   !  The underlying principles behind WATDRN_SVS are described in
    !  a paper by Soulis et al. (2000), Atmosphere-Ocean.
    !  However, this code presents a simpler solution to the problem
    !  which assumes that hydraulic conductivity is constant within
    !  a soil layer. This is a departure from previous versions of
-   !  WATDRN aimed at making the code easier to understand
+   !  WATDRN_SVS aimed at making the code easier to understand
    !  and faster to run.
    !
    !  Here is the basic idea: interflow is especially important
@@ -96,7 +96,7 @@ subroutine watdrn( &
    !  the hillslope. But land-surface models have generally as their
    !  prognostic variable the mean water content of the grid box.
    !  Under the hypothesis of Darcian flow along the hillslope
-   !  following a rain event which left the soil saturated, WATDRN
+   !  following a rain event which left the soil saturated, WATDRN_SVS
    !  recovers the saturation distribution along the hillslope
    !  from the bulk saturation, estimates from this the interflow
    !  rate at the seepage face and integrates this rate over the
@@ -283,4 +283,4 @@ subroutine watdrn( &
    enddo
 
    return
-end subroutine watdrn
+end subroutine watdrn_svs

@@ -54,6 +54,7 @@ contains
 
       include "surface.cdk"
       include "physteps.cdk"
+      include "phyinput.inc"
 
       real, parameter :: EC_Z0M_GRASS=0.03             !Threshold "flat grass" roughness for ECMWF diagnostics
       real, parameter :: EC_Z0T_GRASS=0.003            !Grass thermodynamic roughness for ECMWF diagnostics
@@ -99,7 +100,7 @@ contains
 
       zero2d = 0.
       w_p3v5 = 0.
-      if (stcond == 'MP_P3') w_p3v5 = 1.
+      if (stcond == 'MP_P3' .or. stcond == 'MP_P3X') w_p3v5 = 1.
       w_my2 = 0.
       if (stcond(1:6) == 'MP_MY2') w_my2 = 1.
       is_mp = (stcond(1:3) == 'MP_')
@@ -182,34 +183,36 @@ contains
       !     ---------------------------
 
       ! Derived screen-level fields
-      if (.not.(lkount0 .and. .not.is_fluvert_nil) .or. is_fluvert_sfc) then
+!!$      if (.not.(lkount0 .and. .not.is_fluvert_nil) .or. is_fluvert_sfc) then
 
          ! Clip the screen level relative humidity to a range from 0-1
          if (ISREQSTEP("RH") .or. ISREQOUTL((/"HRMX","HRMN"/))) then
-            call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
+            if (.not.ISPHYIN("rhdiag")) &
+                 call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
             zrhdiag(1:ni) = max(min(zrhdiag(1:ni), 1.0), 0.)
          endif
 
          ! Screen level dewpoint depression
-         if (ISREQSTEP("TDK")) then
+         if (ISREQSTEP("TDK") .and. .not.ISPHYIN("tdew")) then
             call mhuaes3(esdiagec, zqdiag, ztdiag, zpplus, .false., ni, 1, ni)
             ztdew(1:ni) = ztdiag(1:ni) - max(esdiagec(1:ni),0.)
          endif
 
-         if (ISREQSTEP("TDS")) then
+         if (ISREQSTEP("TDS") .and. .not.ISPHYIN("tddiagstn")) then
             call mhuaes3(esdiagec, zqdiagstn, ztdiagstn, zpplus, .false., ni, 1, ni)
             ztddiagstn(1:ni) = ztdiagstn(1:ni) - max(esdiagec(1:ni),0.)
          endif
 
          if (ISREQSTEPL((/"ED  ","TDSV"/))) then
-            call mhuaes3(zesdiag, zqdiagstnv, ztdiagstnv, zpplus, .false., ni, 1, ni)
+            if (.not.ISPHYIN("esdiag")) &
+                 call mhuaes3(zesdiag, zqdiagstnv, ztdiagstnv, zpplus, .false., ni, 1, ni)
             zesdiag(1:ni) = max(zesdiag(1:ni),0.)
 
-            if (ISREQSTEP("TDSV")) &
+            if (ISREQSTEP("TDSV") .and. .not.ISPHYIN("tddiagstnv")) &
                  ztddiagstnv(1:ni) = ztdiagstnv(1:ni) - zesdiag(1:ni)         
          endif
 
-      endif
+!!$      endif
 
       ! ECMWF screen-level calculations performed on request
       ECMWF_SCREEN: if (ecdiag) then
@@ -880,7 +883,7 @@ contains
          DO_ACC(zals_fr2, ztls_fr2, dt, w_reset)
          DO_ACC(zass_sn1, ztss_sn1, dt, w_reset)
          DO_ACC(zass_sn2, ztss_sn2, dt, w_reset)
-         if (stcond == 'MP_P3') then
+         if (stcond == 'MP_P3' .or. stcond == 'MP_P3X') then
             DO_ACC(zass_ws, ztss_ws, dt, w_reset)
          endif
          DO_ACC(zass_sn3, ztss_sn3, dt, w_reset)

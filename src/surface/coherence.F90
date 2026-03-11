@@ -65,7 +65,7 @@ subroutine coherence3(pvars, ni)
    real, pointer, dimension(:) :: zsnodpl, zsnval, zsnvden, zsnvdp, zsnvma, zsnvro, zvegh, zvegl, zwsnv
    ! SVS 2
    real, pointer, dimension(:) :: zwveg_vl,zwveg_vh, zhveglpol
-   real, pointer, dimension(:,:) :: zgravel, zbulksoil, zoc
+   real, pointer, dimension(:,:) :: zbulksoil, zoc
 
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
@@ -105,7 +105,6 @@ subroutine coherence3(pvars, ni)
    
    MKPTR2D(zbulksoil , bulksoil)
    MKPTR2D(zclay,    clay)
-   MKPTR2D(zgravel , gravel)
    MKPTR2D(zisoil,   isoil)
    MKPTR2D(zoc , oc)
    MKPTR2D(zsand,    sand)
@@ -259,13 +258,6 @@ subroutine coherence3(pvars, ni)
                zsnvdp(i)  = 0.0
                zsnvma(i)  = 0.0
                zwsnv(i)   = 0.0
-               if (read_oc) then
-                   do k=1,nl_stp
-                      zgravel(i,k) = 0.0
-                      zbulksoil(i,k) = 0.0
-                      zoc(i,k) = 0.0
-                   enddo
-               endif
                if(read_hveglpol) then
                    zhveglpol(i) = -1.0 
                endif
@@ -425,13 +417,6 @@ subroutine coherence3(pvars, ni)
                zwsnv(i)   = 0.0
                if(read_hveglpol) then
                    zhveglpol(i) = -1.0
-               endif
-               if (read_oc) then
-                   do k=1,nl_stp
-                      zgravel(i,k) = 0.0
-                      zbulksoil(i,k) = 0.0
-                      zoc(i,k) = 0.0
-                   enddo
                endif
             end if
          end do

@@ -15,8 +15,8 @@
 !-------------------------------------- LICENCE END --------------------------------------
 SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
      EG, EGV, ER_VL,ER_VH, ETR_VL,ETR_VH, RR, RR_VEG, RSNOW, RSNOWV, &
-     WTA, WTG, ACROOT, WRMAX_VL, WRMAX_VH,  &
-     SNM, SVM, SNCMA, WR_VL, WR_VH, WR_VLT, WR_VHT,  &
+     WTA, WTG, ACROOT, WRMAX_VL, WRMAX_VH, WRMAX_FL, &
+     SNM, SVM, SNCMA, WR_VL, WR_VH, WFL, WR_VLT, WR_VHT, WFLT, &
      PG, ETR_GRID, EG_GRID, N)
   !
   use sfc_options
@@ -36,9 +36,9 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   real, dimension(n)        :: esubsnc, subsnc_cum, sncma
   real, dimension(n,svs2_tilesp1) :: wta, wtg
   real, dimension(n,nl_svs) :: acroot
-  real, dimension(n)        :: rsnow, rsnowv, wrmax_vl, wrmax_vh, snm, svm
+  real, dimension(n)        :: rsnow, rsnowv, wrmax_vl, wrmax_vh, wrmax_fl, snm, svm
   ! prognostic vars (I/0)
-  real, dimension(n)        :: wr_vl, wr_vh, wr_vlt, wr_vht
+  real, dimension(n)        :: wr_vl, wr_vh, wfl, wr_vlt, wr_vht, wflt
   ! output
   real, dimension(n)        ::  PG, EG_GRID
   real, dimension(n,nl_svs) :: ETR_GRID
@@ -48,7 +48,7 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   !          N.Leroux, V.Vionnet (May 2024)
   !Revisions
   !
-  ! 001
+  ! 001      Includes forest litter layer - N.Leroux (Dec 2025)
   !Object
   !     Calculates the evolution of the intercepted liquid water 
   !     in the vegetation canopy (Wr).
@@ -84,8 +84,9 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   !
   ! ACROOT(NL_SVS) active root fraction in each soil layer [0-1]
   !                (ETR is multiplied by ACROOT to get ETR for each layer)
-  ! WRMAX_VL          max water content retained on low vegetation [kg/m2]
-  ! WRMAX_VH          max water content retained on hihj vegetation [kg/m2]
+  ! WRMAX_VL         max water content retained on low vegetation [kg/m2]
+  ! WRMAX_VH         max water content retained on high vegetation [kg/m2]
+  ! WRMAX_FL         max water content retained in forest litter layer [kg/m2]
   !
   !
   !          --- Water and snow in the different reservoirs and tiles ---
@@ -94,6 +95,7 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   ! SVM           snow water equivalent (SWE) for snow under high veg [kg/m2]
   ! WR_VL          water content retained by low vegetation canopy [kg/m2]
   ! WR_VH          water content retained by high vegetation canopy [kg/m2]
+  ! WFL          water content retained by forest litter layer [kg/m2]
   ! SUBSNC_CUM   Cumulated mass loss due to sublimation of incercepted snow [kg m-2]
   ! SNCMA       mass of intercepted snow in the canopy [kg/m2]
   !
@@ -107,6 +109,7 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   ! PG         Water available for infiltration into soil [kg/m2/s]
   ! WR_VLT         new water content retained by low vegetation canopy [kg/m2]
   ! WR_VHT         new water content retained by high wvegetation canopy [kg/m2]
+  ! WFLT           new water content retained by forest litter layer [kg/m2]
   !
   !          -  DIMENSIONS  -
   !
@@ -114,7 +117,7 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   !
   !
   INTEGER I
-  real, dimension(n)        :: rveg_vh, rveg_vl
+  real, dimension(n)        :: rveg_vh, rveg_vl, rveg_fl
 
   !
   !
@@ -133,7 +136,7 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   !
   !
   !-------------------------------------
-  !   1.        EVOLUTION OF THE EQUIVALENT WATER CONTENT WR_VL and WR_VH
+  !   1.        EVOLUTION OF THE EQUIVALENT WATER CONTENT WR_VL, WR_VH, and WFL
   !
   !                                  Remove evaporation from canopy reservoir
   !                                  Then add precipitation. Careful: rain falls
@@ -142,60 +145,83 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   !                                  all rain goes directly to the snowpack and no
   !                                  liquid water remains in the vegetation
   !
-  DO I=1,N
-     !
-    IF( WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN
+   DO I=1,N
+      !
+      !   Mass balance of the high vegetation
+      !
+      IF( WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN
 
-    !                                  Remove P-E from liquid water in vegetation
-    !                                  Rain trapped on high vegetation is computed in snow_interception
-    !                                  Sanity check: WR_VHT must be positive
-    !                                  since ER is limited to WR/DT+RR in ebudget
-    WR_VHT(I) = MAX(0., WR_VH(I) - DT * ER_VH(I))
-    !                                  Compute canopy drip
-    !                                  if Wr > Wrmax, there is runoff
-    RVEG_VH(I) = MAX(0., (WR_VHT(I) - WRMAX_VH(I)) / DT )
-    !
-    !                                  We must be smaller than Wrmax
-    !                                  after runoff is removed
-    !
-    WR_VHT(I) = MIN(WR_VHT(I), WRMAX_VH(I))
+         !                                  Remove P-E from liquid water in vegetation
+         !                                  Rain trapped on high vegetation is computed in snow_interception
+         !                                  Sanity check: WR_VHT must be positive
+         !                                  since ER is limited to WR/DT+RR in ebudget
+         WR_VHT(I) = MAX(0., WR_VH(I) - DT * ER_VH(I))
+         !                                  Compute canopy drip
+         !                                  if Wr > Wrmax, there is runoff
+         RVEG_VH(I) = MAX(0., (WR_VHT(I) - WRMAX_VH(I)) / DT )
+         !
+         !                                  We must be smaller than Wrmax
+         !                                  after runoff is removed
+         !
+         WR_VHT(I) = MIN(WR_VHT(I), WRMAX_VH(I))
 
-    ELSE
-        WR_VHT(I) = 0.0
-        RVEG_VH(I) = 0.
-    ENDIF
-     !
+      ELSE
+         WR_VHT(I) = 0.0
+         RVEG_VH(I) = 0.
+      ENDIF
+      !
+      !   Mass balance of the low vegetation
+      !
+      IF( WTG(I,indx_svs2_vl) .GE.EPSILON_SVS) THEN
 
-    IF( WTG(I,indx_svs2_vl) .GE.EPSILON_SVS) THEN
+         IF (SNM(I).GE.CRITSNOWMASS .OR. RSNOW(I).GE. EPSILON_SVS )THEN
+            !                                  There is snow on the ground, remove evaporation
+            !                                  then drain all liquid water from the vegetation
+            WR_VLT(I) = WR_VL(I) - DT * ER_VL(I)
+            !                                  Liquid water in vegetation becomes runoff
+            RVEG_VL(I) = MAX(0.0,WR_VLT(I)/DT) ! Runoff mult. by dt later on, so water balance maintained..
+            WR_VLT(I) = 0.0
 
-     IF (SNM(I).GE.CRITSNOWMASS .OR. RSNOW(I).GE. EPSILON_SVS )THEN
-        !                                  There is snow on the ground, remove evaporation
-        !                                  then drain all liquid water from the vegetation
-        WR_VLT(I) = WR_VL(I) - DT * ER_VL(I)
-        !                                  Liquid water in vegetation becomes runoff
-        RVEG_VL(I) = MAX(0.0,WR_VLT(I)/DT) ! Runoff mult. by dt later on, so water balance maintained..
-        WR_VLT(I) = 0.0
+         ELSE
+            !                                  Remove P-E from liquid water in vegetation and rain can be trapped by low veg
+            !                                  Sanity check: WR_VHT must be positive
+            !                                  since ER is limited to WR/DT+RR in ebudget
+            WR_VLT(I) = MAX(0., WR_VL(I) - DT * (ER_VL(I) -  RR(I)))
+            !                                  Compute canopy drip
+            !                                  if Wr > Wrmax, there is runoff
+            RVEG_VL(I) = MAX(0., (WR_VLT(I) - WRMAX_VL(I)) / DT )
+            !
+            !                                  Wr must be smaller than Wrmax
+            !                                  after runoff is removed
+            !
+            WR_VLT(I) = MIN(WR_VLT(I), WRMAX_VL(I))
+         END IF
+      ELSE
+         WR_VLT(I) = 0.0
+         RVEG_VL(I) = 0.
+      ENDIF
+      !
+      !   Mass balance of the forest litter layer
+      !
+      IF (LFORLIT .AND. WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN 
 
-     ELSE
-        !                                  Remove P-E from liquid water in vegetation and rain can be trapped by low veg
-        !                                  Sanity check: WR_VHT must be positive
-        !                                  since ER is limited to WR/DT+RR in ebudget
-        WR_VLT(I) = MAX(0., WR_VL(I) - DT * (ER_VL(I) -  RR(I)))
-        !                                  Compute canopy drip
-        !                                  if Wr > Wrmax, there is runoff
-        RVEG_VL(I) = MAX(0., (WR_VLT(I) - WRMAX_VL(I)) / DT )
-        !
-        !                                  Wr must be smaller than Wrmax
-        !                                  after runoff is removed
-        !
-        WR_VLT(I) = MIN(WR_VLT(I), WRMAX_VL(I))
-     END IF
-    ELSE
-        WR_VLT(I) = 0.0
-        RVEG_VL(I) = 0.
-    ENDIF
-     !
-  END DO
+         IF (SVM(I).GE.CRITSNOWMASS .OR. RSNOWV(I).GE. EPSILON_SVS ) THEN
+            !                  There is snow on the ground or there was no during this time step (fraction of snow in vegh > 0)
+            WFLT(I) = MAX(0., WFL(I) - DT * (WTG(I,indx_svs2_gv) / WTG(I,indx_svs2_vh) * EGV(I) - RSNOWV(I))) 
+         ELSE
+            !                  There is no snow, so rain becomes an input (fraction of snow in vegh = 0)
+            WFLT(I) = MAX(0., WFL(I) - DT * (EGV(I) -  RR_VEG(I)))
+         ENDIF
+         !                                  Liquid water in forest litter becomes runoff
+         RVEG_FL(I) =  MAX(0., (WFLT(I) - WRMAX_FL(I)) / DT )
+
+         WFLT(I) = MIN(WFLT(I), WRMAX_FL(I))
+      ELSE
+         RVEG_FL(I) = 0.
+         WFLT(I) = 0.
+      ENDIF
+
+   END DO
 
   !
   !        2.     CALCULATE PRECIPITATION and VEGETATION+SNOW RUNOFF REACHING THE GROUND
@@ -208,18 +234,27 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
   !
   DO I=1,N
       IF( (WTG(I,indx_svs2_vh)+ WTG(I,indx_svs2_vl)) .GE.EPSILON_SVS) THEN
-         ! There is vegetation -- first add snowpack runoff and runoff from vegetation
-         PG(I) = (1. - WTG(I,indx_svs2_vh)) * RSNOW(I) + WTG(I,indx_svs2_vh) * RSNOWV(I) + &
-            WTG(I,indx_svs2_vl)*RVEG_VL(I) + WTG(I,indx_svs2_vh) * RVEG_VH(I)
+
+         IF (.not. LFORLIT) THEN ! No forest litter
+            ! There is vegetation -- first add snowpack runoff and runoff from vegetation
+            PG(I) = (1. - WTG(I,indx_svs2_vh)) * RSNOW(I) + WTG(I,indx_svs2_vh) * RSNOWV(I) + &
+                  WTG(I,indx_svs2_vl)*RVEG_VL(I) + WTG(I,indx_svs2_vh) * RVEG_VH(I)
+         ELSE
+            ! There is vegetation -- first add snowpack runoff and runoff from vegetation
+            PG(I) = WTG(I,indx_svs2_sn) * RSNOW(I) + WTG(I,indx_svs2_vh) * RVEG_FL(I) + &
+               WTG(I,indx_svs2_vl)*RVEG_VL(I)
+         ENDIF
 
          IF( SNM(I).LT.CRITSNOWMASS .AND. RSNOW(I) .LT. EPSILON_SVS ) THEN
             ! No snow on bare ground and low veg, rain falls to bare ground
             PG(I) = PG(I) + WTG(I,indx_svs2_bg) * RR(I)
          ENDIF
 
-         IF ( SVM(I).LT.CRITSNOWMASS .AND. RSNOWV(I) .LT. EPSILON_SVS ) THEN
-            ! No snow at the end AND during the time step  below high veg, rain below canopy falls to ground below canopy
-            PG(I) = PG(I) +  WTG(I,indx_svs2_vh) * RR_VEG(I)
+         IF (.not. LFORLIT) THEN ! No forest litter
+            IF ( SVM(I).LT.CRITSNOWMASS .AND. RSNOWV(I) .LT. EPSILON_SVS) THEN
+               ! No snow at the end AND during the time step  below high veg, rain below canopy falls to ground below canopy
+               PG(I) = PG(I) +  WTG(I,indx_svs2_vh) * RR_VEG(I)
+            ENDIF
          ENDIF
 
        ELSE
