@@ -80,9 +80,9 @@ if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_Fortran_COMPILE
   else()
     set(MKL "-mkl")
   endif()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MKL} ${STATIC_LINK_INTEL_FLAGS}")
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MKL} -static-intel ${STATIC_LINK_INTEL_FLAGS}")
-  set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} ${MKL} ${STATIC_LINK_INTEL_FLAGS}")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MKL}")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MKL} -static-intel")
+  set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} ${MKL}")
   # flags in addition to extra checks defined in cmake_rpn compiler presets
   # https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2023-0/alphabetical-option-list.html
   if (EXTRA_CHECKS)
