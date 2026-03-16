@@ -10,21 +10,15 @@
 # Check name of the script called, to load the proper code-tools
 SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
-DOMAIN=`hostname -d`
-
 # Load code-tools 
 case ${SETUP_SCRIPT_NAME} in
     .eccc_setup_gnu)
-        if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-            . r.load.dot rpn/code-tools/20250925/env/gnu-9.3.0
-        else
-            . r.load.dot rpn/code-tools/20250925/env/gnu
-        fi
+        . r.load.dot rpn/code-tools/20260219/env/gnu
         ;;
-    .eccc_setup_gnu_14.2.0)
+    .eccc_setup_gnu_15.2.0)
         # to avoid linking with libgfortran.so in /lib64
         unset SSMUSE_LD_PREPEND
-        . r.load.dot rpn/code-tools/20250925/env/exp/rhel-8-amd64-64@gnu-14.2.0
+        . r.load.dot rpn/code-tools/20260219/env/exp/rhel-9-amd64-64@gnu-15.2.0
         ;;
 esac
 
