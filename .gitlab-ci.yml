@@ -9,6 +9,8 @@ variables:
 stages:
   - build
   - run_intel_U3
+  - run_gnu_11.4.1
+  - run_gnu_15.2.0
   - package
   - deploy
 
@@ -102,6 +104,67 @@ package:rhel-9-graniterapids-64-intel-2025.1.0:
       - cd ${PIPELINE_SUBDIR}/build-rhel-9-graniterapids-64-intel-2025.1.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
+
+#----- rhel-9-amd64_gnu-11.4.1
+build:rhel-9-amd64_gnu-11.4.1:
+  variables:
+     ORD_SOUMET_CPUS: "4"
+     ORD_SOUMET_W: "30"
+     ORD_SOUMET_M: "8G"
+     ORD_SOUMET_TMPFS: "1G"
+  stage: build
+  tags:
+    - concurrent
+  when: always
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-amd64-64-gnu-11.4.1
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-amd64-64-gnu-11.4.1
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-amd64-64-gnu-11.4.1 .
+    - ./scripts/link-dbase.sh
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-9-amd64-64-gnu-11.4.1
+    - cmake --fresh ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-9-amd64-64-gnu-11.4.1
+    - gem_dbase
+
+#----- rhel-9-amd64_gnu-15.2.0
+build:rhel-9-amd64_gnu-15.2.0:
+  variables:
+     ORD_SOUMET_CPUS: "4"
+     ORD_SOUMET_W: "30"
+     ORD_SOUMET_M: "8G"
+     ORD_SOUMET_TMPFS: "1G"
+  stage: build
+  tags:
+    - concurrent
+  when: always
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu_15.2.0
+    - set -e
+    - mkdir -pv ${PIPELINE_SUBDIR}/build-rhel-9-amd64-64-gnu-15.2.0
+    - mkdir -pv ${PIPELINE_SUBDIR}/work-rhel-9-amd64-64-gnu-15.2.0
+    - ln -sf ${PIPELINE_SUBDIR}/work-rhel-9-amd64-64-gnu-15.2.0 . 
+    - ./scripts/link-dbase.sh
+    - SRC_DIR=$(pwd)
+    - cd ${PIPELINE_SUBDIR}/build-rhel-9-amd64-64-gnu-15.2.0
+    - cmake --fresh ${SRC_DIR}
+    - time make -j $NCPUS
+    - time make work
+  allow_failure: true
+  artifacts:
+    expire_in: 4 hrs
+    paths:
+    - work-rhel-9-amd64-64-gnu-15.2.0
+    - gem_dbase
 
 # #----- ubuntu-24.04-amd64_intel-2025.1.0
 # build:ubuntu-24.04-amd64-intel-2025.1.0:
@@ -937,646 +1000,646 @@ THEO_schar_intel:
     - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
     - test "${_status}" == "ED"
 
-# #----- Running configurations for rhel-8-amd64_gnu-9.3.0
-# 5.2GEM_GY_FISL_H_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=5.2GEM_cfgs_GY_FISL_H
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+#----- Running configurations for rhel-9-amd64_gnu-11.4.1
+5.2GEM_GY_FISL_H_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=5.2GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# CANO_W7cascP_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=CANO_cfgs_W7cascP
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+CANO_W7cascP_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=CANO_cfgs_W7cascP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# CANO_dcmip163r100_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=CANO_cfgs_dcmip163r100
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+CANO_dcmip163r100_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=CANO_cfgs_dcmip163r100
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# CANO_wil7_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=CANO_cfgs_wil7
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+CANO_wil7_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=CANO_cfgs_wil7
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_cfgs_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_cfgs_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_GY_FISL_P_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_GY_FISL_P
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_GY_FISL_P_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_GY_FISL_P
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_GY_FISL_H_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_GY_FISL_H
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_GY_FISL_H_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_GY_spnGC_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_GY_spnGC
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_GY_spnGC_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_GY_spnGC
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_LU_FISL_H_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_LU_FISL_H
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_LU_FISL_H_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_LU_OFFC_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_LU_OFFC
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_LU_OFFC_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_OFFC
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_LU_EXP_P_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_LU_EXP_P
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_LU_EXP_P_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_EXP_P
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_LU_MoSA_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_LU_MoSA
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_LU_MoSA_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_MoSA
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_LU_TEB_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_LU_TEB
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_LU_TEB_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_TEB
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# GEM_LU_THM_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_LU_THM
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+GEM_LU_THM_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_LU_THM
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# IOSVR_LU_H_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=IOSVR_cfgs_LU_H
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+IOSVR_LU_H_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=IOSVR_cfgs_LU_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# IOSVR_GY_H_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=IOSVR_cfgs_GY_H
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+IOSVR_GY_H_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=IOSVR_cfgs_GY_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# OPS_GYens_ic4_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=OPS_cfgs_GYens_ic4
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+OPS_GYens_ic4_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=OPS_cfgs_GYens_ic4
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# OPS_GY_ic4_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=OPS_cfgs_GY_ic4
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+OPS_GY_ic4_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=OPS_cfgs_GY_ic4
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# OPS_LU_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=OPS_cfgs_LU
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+OPS_LU_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=OPS_cfgs_LU
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# PTOPO_GYH_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=PTOPO_cfgs_GYH
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+PTOPO_GYH_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_GYH
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# PTOPO_LUP_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=PTOPO_cfgs_LUP
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+PTOPO_LUP_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=PTOPO_cfgs_LUP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# RSTRT_GYP_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=RSTRT_cfgs_GYP
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+RSTRT_GYP_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=RSTRT_cfgs_GYP
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+      fi
+    - test "${_status}" == "ED"
 
-# THEO_bubbleG_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=THEO_cfgs_bubbleG
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#     - test "${_status}" == "ED"
+THEO_bubbleG_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=THEO_cfgs_bubbleG
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+    - test "${_status}" == "ED"
 
-# THEO_schar_gnu:
-#   stage: run_gnu_9.3.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-9.3.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9]$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=THEO_cfgs_schar
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
-#     - test "${_status}" == "ED"
+THEO_schar_gnu:
+  stage: run_gnu_11.4.1
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-11.4.1
+  when: always
+  only:
+  - /^dev_5\.[0-9]$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu
+    - set -e
+    - cd $GEM_WORK
+    - CFG=THEO_cfgs_schar
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runmod.sh -dircfg ./configurations/$CFG -ptopo $GEMTEST_ptopo -inorder 1;
+    - test "${_status}" == "ED"
 
-# #----- Running one configuration for rhel-8-amd64_gnu-14.2.0
-# GEM_GY_FISL_H_gnu_14:
-#   stage: run_gnu_14.2.0
-#   tags:
-#     - U2
-#   needs:
-#   - build:rhel-8-amd64_gnu-14.2.0
-#   when: always
-#   only:
-#   - /^dev_5\.[0-9].*$/
-#   - tags
-#   allow_failure: true
-#   script:
-#     - set +e
-#     - . ./.eccc_setup_gnu_14.2.0
-#     - set -e
-#     - cd $GEM_WORK
-#     - CFG=GEM_cfgs_GY_FISL_H
-#     - . ./configurations/$CFG/cfg_0000/configexp.cfg
-#     - _status=ABORT
-#     - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
-#     - if [ "${_status}" == "ED" ]; then
-#       _status=ABORT;
-#       . r.call.dot runmod.sh -dircfg ./configurations/$CFG -inorder 1;
-#       fi
-#     - test "${_status}" == "ED"
+#----- Running one configuration for rhel-9-amd64_gnu-15.2.0
+GEM_GY_FISL_H_gnu_15:
+  stage: run_gnu_15.2.0
+  tags:
+    - U2
+  needs:
+  - build:rhel-9-amd64_gnu-15.2.0
+  when: always
+  only:
+  - /^dev_5\.[0-9].*$/
+  - tags
+  allow_failure: true
+  script:
+    - set +e
+    - . ./.eccc_setup_gnu_15.2.0
+    - set -e
+    - cd $GEM_WORK
+    - CFG=GEM_cfgs_GY_FISL_H
+    - . ./configurations/$CFG/cfg_0000/configexp.cfg
+    - _status=ABORT
+    - . r.call.dot runprep.sh -dircfg ./configurations/$CFG
+    - if [ "${_status}" == "ED" ]; then
+      _status=ABORT;
+      . r.call.dot runmod.sh -dircfg ./configurations/$CFG -inorder 1;
+      fi
+    - test "${_status}" == "ED"
