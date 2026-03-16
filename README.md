@@ -1,5 +1,18 @@
 # How to get, compile and run GEM at the CMC.
 
+# Table of Contents
+
+1. [Getting gem git repository](#getting-gem-git-repository)
+2. [Choosing a version](#choosing-a-version)
+3. [Linking to GEM database](#linking-to-gem-database)
+4. [Preparing GEM compilation](#preparing-gem-compilation)
+    1. [Information on scripts](#information-on-scripts)
+5. [Building and installing GEM](#building-and-installing-gem)
+6. [Running GEM](#running-gem)
+7. [Some tips for compilation](#some-tips-for-compilation)
+8. [Structure of the working environment](#structure-of-the-working-environment)
+9. [Structure of GEM source code](#structure-of-gem-source-code)
+
 For general information, a setup script and information on Maestro, see
 README_general and share/gem-maestro/README files
 
@@ -49,19 +62,25 @@ Before making changes, create your own branch from the current branch
 git checkout -b mybranch
 ```
 
-## Linking to GEM database (to be done once)
+## Linking to GEM database
+
+To be done once:
+
 ```
 ./scripts/link-dbase.sh
 ```
 
-## Preparing gem compilation for Intel compiler suite
+## Preparing GEM compilation
+
+Using Intel compiler suite:
+
 ```
 . ./.eccc_setup_intel
 ```
 
-## Or preparing gem compilation for gnu compiler suite
+or using GNU compiler suite (please note you cannot compile with Intel and
+then with GNU in the same shell):
 
-Please note you cannot compile with Intel and then with GNU in the same shell
 ```
 . ./.eccc_setup_gnu
 ```
@@ -72,7 +91,7 @@ other submodules, or adding or removing source files):
 . ./.initial_setup
 ```
 
-### Scripts
+### Information on scripts
 
 Scripts in `scripts/support` and `scripts/rpy` directories are a copy of scripts
 already loaded from SSM domains when a `.eccc_setup*` file is called.  By
@@ -133,7 +152,9 @@ cado cmake-mach-static
 
 See others options with cado -h (short help) or cado help
 
-## Running GEM: example
+## Running GEM
+
+Example on how to run GEM:
 
 ```
 cd $GEM_WORK
@@ -158,19 +179,19 @@ When the `cado cmake` command is called, information is printed, among which
 the list of compilation flags used, such as (example with Intel on science
 side):
 ```
--- (EC) CMAKE_C_FLAGS=-fp-model precise -traceback -Wtrigraphs -xICELAKE-SERVER -diag-disable=10441 -qmkl 
--- (EC) CMAKE_Fortran_FLAGS=-convert big_endian -align array32byte -assume byterecl -fp-model source -fpe0 -traceback -stand f08 -xICELAKE-SERVER -diag-disable=5268,7025,7373 -qmkl -static-intel
+-- (EC) CMAKE_C_FLAGS=-fp-model precise -traceback -Wtrigraphs -xgraniterapids -qmkl
+-- (EC) CMAKE_Fortran_FLAGS=-convert big_endian -align array32byte -assume byterecl -fp-model source -fpe0 -traceback -stand f08 -xgraniterapids -diag-disable=5268,7025,7373 -qmkl -static-intel
 ```
 
 If you choose the debug version (`cado cmake-debug`), some flags are added to the previous ones, and, again, printed when `cado cmake-debug` is called:
 ```
--- (EC) CMAKE_C_FLAGS_DEBUG=-O0 -g -ftrapuv
--- (EC) CMAKE_Fortran_FLAGS_DEBUG=-O0 -g -ftrapuv
+-- (EC) CMAKE_C_FLAGS_DEBUG=-O0 -g3 -ftrapv
+-- (EC) CMAKE_Fortran_FLAGS_DEBUG=-O0 -g3 -ftrapuv -debug-parameters all
 ```
 With `cado cmake-debug-extra`:
 ```
--- (EC) CMAKE_C_FLAGS_DEBUG=-O0 -g -ftrapuv -Wall
--- (EC) CMAKE_Fortran_FLAGS_DEBUG=-O0 -g -ftrapuv -warn all -check all -qopt-report=5 -C -init=snan,arrays -warn nointerfaces -check noarg_temp_created
+-- (EC) CMAKE_C_FLAGS_DEBUG=-O0 -g3 -ftrapv
+-- (EC) CMAKE_Fortran_FLAGS_DEBUG=-O0 -g3 -ftrapuv -debug-parameters all -qopt-report=3 -init=snan,arrays -warn nointerfaces -check noarg_temp_created,nouninit
 ```
 
 *Important note*: if you want to change the compilation type, for example, first, you compiled with the debug version (`cado cmake-debug`), and then you want to use the release version (`cado cmake`), you need to remove the contents of the build directory between these two commands. You can use the following command: `. ./.initial_setup` which will empty the build and work directories, and then you can proceed from the start with the `cado cmake` configure command.
@@ -184,7 +205,7 @@ If you want to change those flags, you can either:
     `cmake_rpn/modules/ec_compiler_presets/ECCC/rhel-8-icelake-64/inteloneapi-2022.1.2.cmake`
 - or edit the `CMakeLists.txt` file and add the flags at the end of the following lines (for Intel):
 ```
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl ${STATIC_LINK_INTEL_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qmkl")
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qmkl -static-intel -diag-disable 5268 ${STATIC_LINK_INTEL_FLAGS}")
 ```
 
