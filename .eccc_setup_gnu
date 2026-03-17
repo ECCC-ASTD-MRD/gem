@@ -39,7 +39,10 @@ fi
 export COMPILER_SUITE=gnu
 COMPILER_VERSION=$(utils/compiler.sh gnu)
 export COMPILER_VERSION
-
+# Problem with OpenMPI with gnu 11.4.1
+if [ "${COMPILER_VERSION}" == "11.4.1" ]; then
+     export OMPI_MCA_hwloc_base_binding_policy=none
+fi
 # Call common setup file
 . ./.common_setup ${COMPILER_SUITE}
 
