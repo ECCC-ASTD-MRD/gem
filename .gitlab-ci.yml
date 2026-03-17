@@ -114,7 +114,7 @@ build:rhel-9-amd64_gnu-11.4.1:
      ORD_SOUMET_TMPFS: "1G"
   stage: build
   tags:
-    - concurrent
+    - ppp7-concurrent
   when: always
   script:
     - set +e
@@ -144,7 +144,7 @@ build:rhel-9-amd64_gnu-15.2.0:
      ORD_SOUMET_TMPFS: "1G"
   stage: build
   tags:
-    - concurrent
+    - ppp7-concurrent
   when: always
   script:
     - set +e
@@ -1004,7 +1004,7 @@ THEO_schar_intel:
 5.2GEM_GY_FISL_H_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1030,7 +1030,7 @@ THEO_schar_intel:
 CANO_W7cascP_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1056,7 +1056,7 @@ CANO_W7cascP_gnu:
 CANO_dcmip163r100_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1082,7 +1082,7 @@ CANO_dcmip163r100_gnu:
 CANO_wil7_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1108,7 +1108,7 @@ CANO_wil7_gnu:
 GEM_cfgs_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1134,7 +1134,7 @@ GEM_cfgs_gnu:
 GEM_GY_FISL_P_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1160,7 +1160,7 @@ GEM_GY_FISL_P_gnu:
 GEM_GY_FISL_H_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1186,7 +1186,7 @@ GEM_GY_FISL_H_gnu:
 GEM_GY_spnGC_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1212,7 +1212,7 @@ GEM_GY_spnGC_gnu:
 GEM_LU_FISL_H_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1238,7 +1238,7 @@ GEM_LU_FISL_H_gnu:
 GEM_LU_OFFC_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1264,7 +1264,7 @@ GEM_LU_OFFC_gnu:
 GEM_LU_EXP_P_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1290,7 +1290,7 @@ GEM_LU_EXP_P_gnu:
 GEM_LU_MoSA_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1316,7 +1316,7 @@ GEM_LU_MoSA_gnu:
 GEM_LU_TEB_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1342,7 +1342,7 @@ GEM_LU_TEB_gnu:
 GEM_LU_THM_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1368,7 +1368,7 @@ GEM_LU_THM_gnu:
 IOSVR_LU_H_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1394,7 +1394,7 @@ IOSVR_LU_H_gnu:
 IOSVR_GY_H_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1420,7 +1420,7 @@ IOSVR_GY_H_gnu:
 OPS_GYens_ic4_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1446,7 +1446,7 @@ OPS_GYens_ic4_gnu:
 OPS_GY_ic4_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1472,7 +1472,7 @@ OPS_GY_ic4_gnu:
 OPS_LU_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1498,7 +1498,7 @@ OPS_LU_gnu:
 PTOPO_GYH_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1524,7 +1524,7 @@ PTOPO_GYH_gnu:
 PTOPO_LUP_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1550,7 +1550,7 @@ PTOPO_LUP_gnu:
 RSTRT_GYP_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1576,7 +1576,7 @@ RSTRT_GYP_gnu:
 THEO_bubbleG_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1598,7 +1598,7 @@ THEO_bubbleG_gnu:
 THEO_schar_gnu:
   stage: run_gnu_11.4.1
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-11.4.1
   when: always
@@ -1621,7 +1621,7 @@ THEO_schar_gnu:
 GEM_GY_FISL_H_gnu_15:
   stage: run_gnu_15.2.0
   tags:
-    - U2
+  - ppp7
   needs:
   - build:rhel-9-amd64_gnu-15.2.0
   when: always
