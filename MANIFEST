@@ -1,5 +1,5 @@
 NAME       : gem
-VERSION    : 5.3.0-a20
+VERSION    : 5.3.0-a21
 MACH_VERSION : 3.3.0-a17.0
 BUILD      : RelWithDebInfo
 DESCRIPTION: ECCC-MRD Global Environmental Multi-scale model - GEM
@@ -17,8 +17,8 @@ cplocn = v5.2.1
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-rmn  >= 20.1.0-b4
-tdpack >= 1.6.4
-vgrid >= 6.9.11
-rpncomm >= 4.6.9
-fst-tools >= 20.1.0-b3
+rmn  >= 20.1.0-b6
+tdpack >= 1.6.4.1
+vgrid >= 6.9.11.1
+rpncomm >= 4.6.14
+fst-tools >= 20.1.0-b5
