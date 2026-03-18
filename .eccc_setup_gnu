@@ -10,27 +10,21 @@
 # Check name of the script called, to load the proper code-tools
 SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
-DOMAIN=`hostname -d`
-
 # Load code-tools 
 case ${SETUP_SCRIPT_NAME} in
     .eccc_setup_gnu)
-        if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-            . r.load.dot rpn/code-tools/20250925/env/gnu-9.3.0
-        else
-            . r.load.dot rpn/code-tools/20250925/env/gnu
-        fi
+        . r.load.dot rpn/code-tools/20260219/env/gnu
         ;;
-    .eccc_setup_gnu_14.2.0)
+    .eccc_setup_gnu_15.2.0)
         # to avoid linking with libgfortran.so in /lib64
         unset SSMUSE_LD_PREPEND
-        . r.load.dot rpn/code-tools/20250925/env/exp/rhel-8-amd64-64@gnu-14.2.0
+        . r.load.dot rpn/code-tools/20260219/env/exp/rhel-9-amd64-64@gnu-15.2.0
         ;;
 esac
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot mrd/rpn/libs/20251009-beta
-. r.load.dot mrd/rpn/utils/20251009-beta
+. r.load.dot mrd/rpn/libs/20260316-beta
+. r.load.dot mrd/rpn/utils/20260316-beta
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
@@ -45,7 +39,10 @@ fi
 export COMPILER_SUITE=gnu
 COMPILER_VERSION=$(utils/compiler.sh gnu)
 export COMPILER_VERSION
-
+# Problem with OpenMPI with gnu 11.4.1
+if [ "${COMPILER_VERSION}" == "11.4.1" ]; then
+     export OMPI_MCA_hwloc_base_binding_policy=none
+fi
 # Call common setup file
 . ./.common_setup ${COMPILER_SUITE}
 

@@ -71,6 +71,9 @@ APP_COLORS=( [BLINK]="\x1b[5m" [BLACK]="\x1b[30m" [RED]="\x1b[31m" [GREEN]="\x1b
 typeset -A LOG_COLORS
 LOG_COLORS=( [MUST]="" [ERROR]="${APP_COLORS[RED]}" [WARNING]="${APP_COLORS[YELLOW]}" [INFO]="" [DEBUG]="${APP_COLORS[LIGHTCYAN]}" [EXTRA]="${APP_COLORS[CYAN]}" [PROGRESS]="${APP_COLORS[MAGENTA]}" )
 
+#----- If not interactive do not use colors
+tty -s || LOG_COLOR=0
+
 #----------------------------------------------------------------------------
 # Nom      : <log_start>
 # Creation : Octobre 2009 - J.P. Gauthier - CMC/CMOE
@@ -261,7 +264,7 @@ log_print() {
    msg="${datetime}${levels}${msg}${time}"
 
    #----- Print on stderr in case of error
-   [[ $level = "ERROR" ]] && printf -- "$msg\n" 1>&2
+ #  [[ $level = "ERROR" ]] && printf -- "$msg\n" 1>&2
 
    #----- Add the color if need be
    [[ $LOG_COLOR -eq 1 ]] && msg="${APP_COLORS[RESET]}${LOG_COLORS[$level]}${msg}${APP_COLORS[RESET]}"

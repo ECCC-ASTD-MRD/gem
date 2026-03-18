@@ -29,11 +29,11 @@ case ${SETUP_SCRIPT_NAME} in
 esac
 
 # Load code-tools 
-. r.load.dot rpn/code-tools/20250925/env/inteloneapi-${COMPILER_VERSION}
+. r.load.dot rpn/code-tools/20260219/env/inteloneapi-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20251009-beta
-. r.load.dot rpn/utils/20251009-beta
+. r.load.dot rpn/libs/20260316-beta
+. r.load.dot rpn/utils/20260316-beta
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 

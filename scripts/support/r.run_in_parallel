@@ -129,7 +129,7 @@ mpi_aprun_linux_launch() {
    export PMI_NO_FORK=1
    [[ ${nompi} == pseudo_mpi ]] && export PMI_NO_PREINITIALIZE=1      # workaround when MPI library is not used
 
-   [[ "$map" == map ]] && log_print INFO "Rank map requested" && export MPICH_RANK_REORDER_DISPLAY=1     # PE map requested
+   { [[ ${LOG_LEVEL} = "DEBUG" ]] || [[ ${LOG_LEVEL} = "EXTRA" ]]; } && export MPICH_RANK_REORDER_DISPLAY=1
    ExtraAprun="-d ${ThreadsInWorld[${MpiCommWorld}]} -cc depth"       # use number of threads as spacing
    export OMP_NUM_THREADS=${ThreadsInWorld[${MpiCommWorld}]}
 
@@ -473,7 +473,7 @@ expand_node_map() {
    ListOfHosts=($(uniq ${nodefile}))
    NumberOfHosts=${#ListOfHosts[@]}
 
-   expand_node ${NumberOfHosts} ${ListOfHosts}
+   expand_node ${NumberOfHosts} >${MY_NODEFILE}
 }
 
 # Expand a series of number doublets/triplets into a full list)
@@ -490,7 +490,7 @@ expand_node() {
       for hnum in $(seq ${hlist}) ; do
          ((npe=npe0))
          tty -s && ((hnum=hnum%nhost-1))    # number of hosts is phony (often 1) if interactive
-         while ((npe>0)) ; do echo ${ListOfHosts[$((hnum-1))]} ; ((npe=npe-1)) ;done
+         while ((npe>0)) ; do echo ${ListOfHosts[$((hnum))]} ; ((npe=npe-1)) ;done
       done
    done
 }
@@ -533,7 +533,7 @@ expand_node_spec() {
 
    ((loops=(nprocs+nhosts-1)/nhosts))   # number of tasks per host (rounded up)
    if ((loops*OMP_NUM_THREADS > MaxCores)) ; then
-      echo "ERROR: not enough cores available on node, $((loops*OMP_NUM_THREADS)) requested, $((MaxCores)) available"
+      log_print ERROR "Not enough cores available on node, $((loops*OMP_NUM_THREADS)) requested, $((MaxCores)) available"
       rm -rf ${tmpdir}
       exit 1
    fi
@@ -546,7 +546,7 @@ expand_node_spec() {
          for j in $(seq $loops) ; do
             echo "${i}"
          done
-      done >${MY_NODEFILE}
+      done | head -${nprocs} >${MY_NODEFILE}
    fi
 
    ListOfNodes=($(cat ${MY_NODEFILE}))
@@ -778,9 +778,10 @@ wait_for() {
                                # Added -nodepack mode for filling nodes
 #Version="2.1.0 2024/05/16"    # Added possibility to combine -nodemap and -nodespec
 #Version="2.1.1 2024/11/25"    # Fixes for IOserver
-#Version="2.2.0"    # Check for unknown state nodes to count the down nodes
+#Version="2.2.0"               # Check for unknown state nodes to count the down nodes
+#Version="2.2.1"               # Changed default stack from unlimited to 4G
 true
-Version="2.2.1"    # Changed defasult stack form unlimited to 4G
+Version="2.3.0"    # Added darshan profiler and moved -jio to the profiler flag options
 
 MY_NODEFILE=${PARALLEL_NODEFILE:-${GECOSHEP_PNET_HOSTFILE:-${LOADL_HOSTFILE:-${PBS_NODEFILE:-${HOME}/.NODEFILE}}}}
 #SLURM uses SLURM_JOB_NODELIST env variable
@@ -810,7 +811,6 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY/OpenMPI/MPICH]" \
     -inorder "" "yes" "[list out/err of members in process order]" \
     -instancedir "${PARALLEL_INSTANCES_DIR}" "${PARALLEL_INSTANCES_DIR}" "[directory containing instance names]" \
     -instances "${PARALLEL_INSTANCES}" "${PARALLEL_INSTANCES}" "[instance name for member or list of instances for master]" \
-    -jio "" "SUMMARY" "[activate jio]" \
     -map "" "map" "[display processor map]" \
     -maxcores "${MAX_CORES}" "65536" "[]" \
     -members "" "" "[NxM, N members of size M, override npey and npex]" \
@@ -822,7 +822,7 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY/OpenMPI/MPICH]" \
     -nodefile "${MY_NODEFILE}"  "${MY_NODEFILE}" "[list of nodes to use]" \
     -nodemap "NoNe" "NoNe" "[process to node map (0:nprocess ... n:nprocess)]" \
     -nodepack "" "fill" "[pack jobs to fill nodes (default is to spread over nodes)]" \
-    -nodespec "NoNe" "NoNe" "[split node map among sub jobs (N1,N2,...Nn:Jn)]"\
+    -nodespec "NoNe" "NoNe" "[split node map among sub jobs (N1,N2,...Nn:Jn), starting from sub job J1=1]"\
     -nompi "run_with_mpi" "run_in_background" "[do not use mpi to launch]" \
     -nosep "" "yes" "[deactivate separator between members]" \
     -npex "${BATCH_MPI_CPUS:-1}" "${BATCH_MPI_CPUS:-1}" "[member size, total number of cpus if 1 member]" \
@@ -839,13 +839,13 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY/OpenMPI/MPICH]" \
     -preexec "" "" "[prefix program execution with this (time/gdb/...)]" \
     -prerun "" "" "[prefix to process placement (mpirun/aprun)]" \
     -processorder "" "yes" "[synonym for inorder]" \
-    -profile "" "" "[enable profiler (Cray=map,map:batch)]" \
+    -profile "" "" "[enable profiler (map,map:batch,darshan,jio:SUMMARY,jio:DETAILED,jio:TRACE)]" \
     -selftest "" "c.f.fail.999999" "[quick selftest]" \
     -singleworld "" "yes" "[instances share MPI world]" \
     -smt "1" "2" "[SMT or hyperthreading]" \
     -spliteo "no" "yes" "[split stderr from stdout]" \
     -splittmp "" "splittmp" "[unique TMPDIR for each PE]"\
-    -stack "4000000" "" "[Stack size]"\
+    -stack "unlimited" "" "[Stack size]"\
     -sync "" "yes" "[force fileystem sync (Lustre coherency patch)]" \
     -tag "child" "full" "[full/child/member/stderr/none/seq]" \
     -timeout "60" "60" "[timeout for multiple instances]" \
@@ -863,13 +863,6 @@ LOG_TIME=1
 
 export APRUN="$(which aprun 2>/dev/null)"
 [[ -n ${APRUN} ]] && hostos=CLE && export KMP_AFFINITY=disabled # Cray linux environment
-
-[[ -n $jio ]] && export JIO_ENV=${JIO_ENV:-JIO_${jio}}
-[[ -n ${JIO_ENV} ]] && which s.jio-prof-linux-64.so 2>/dev/null 1>/dev/null && jio="$(which s.jio-prof-linux-64.so 2>/dev/null)"  # automatic activation if JIO_ENV is set
-which s.jio-prof-linux-64.so 2>/dev/null 1>/dev/null || unset jio
-[[ -n "$jio" ]] && jio="$(readlink -e $(which s.jio-prof-linux-64.so 2>/dev/null))" && \
-   log_print INFO "Using $JIO_ENV from '$jio'" && \
-   JIO_PRELOAD="LD_PRELOAD=$jio JIO_DIAG=\${JIO_DIAG:-\${TMPDIR}/JIO_DIAG_TEMP} OMP_NUM_THREADS=\${OMP_NUM_THREADS:-1}"
 
 #----- Check for debugger
 exec_prefix=""
@@ -900,17 +893,51 @@ fi
 
 #----- Check for profiler
 if [[ -n ${profile} ]]; then
-   if [[ ${profile:0:3} = "map" ]]; then
-      which map >/dev/null 2>&1  || . r.load.dot ain/opt/forge/21.1.3
-      prerun="$(which map 2>/dev/null)"                             # -profile map
-      [[ ${profile:4} = "batch" ]] && prerun="${prerun} --profile"  # -profile map:batch
-   else
-      log_print ERROR "invalid -profile ${profile} option"
-      log_end -1
-   fi
+   case ${profile} in
+      "map" | "map:batch")
+         type -P map >/dev/null 2>&1  || . r.load.dot main/opt/forge/21.1.3
+         prof=$(type -P map)
+         if [[ -n "${prof}" ]]; then
+            prerun="$(which map 2>/dev/null)"                             # -profile map
+            [[ ${profile:4} = "batch" ]] && prerun="${prerun} --profile"  # -profile map:batch
+            log_print INFO "Using 'map' profiler from $prof"
+         else 
+            log_print ERROR "Could not find 'map' profiler"
+            log_end -1
+         fi
+         ;;
+     "darshan")
+         type -P darshan-analyzer >/dev/null 2>&1  || . r.load.dot hpco/exp/darshan/darshan-3.4.6--intelmpi--gcc
+         prof=$(echo ${LD_LIBRARY_PATH} | tr : '\n' | grep darshan)
+         if [[ -n "${prof}" ]]; then
+            export DARSHAN_LOG_DIR=./
+            export DARSHAN_LOGFILE=${DARSHAN_LOG_DIR}/${SLURM_JOB_ID}${PBS_JOBID}.darshan
+            export DXT_ENABLE_IO_TRACE=1
+            export DARSHAN_MODMEM=10
+            preexec="LD_PRELOAD=$(echo ${LD_LIBRARY_PATH} | tr : '\n' | grep darshan)/libdarshan.so "
+            log_print INFO "Using 'darshan' profiler from $prof"
+         else 
+            log_print ERROR "Could not find 'darshan' profiler"
+            log_end -1
+         fi
+         ;;
+      "jio" | "jio:SUMMARY" | "jio:DETAILED" | "jio:TRACE")
+         prof=$(type -P jio-config >/dev/null 2>&1)
+         if [[ !${prof} ]]; then
+            export JIO_ENV=${JIO_ENV:-JIO_${profile:4}}
+            preexec="LD_PRELOAD=$(echo ${LD_LIBRARY_PATH} | tr : '\n' | grep rpn\/utils)/libjio.so JIO_DIAG=\${JIO_DIAG:-\${TMPDIR}/JIO_DIAG_TEMP} OMP_NUM_THREADS=\${OMP_NUM_THREADS:-1}"
+            log_print INFO "Using 'jio' profiler from $prof"
+         else 
+            log_print ERROR "Could not find 'jio' profiler"
+            log_end -1
+         fi
+         ;;
+      *)
+         log_print ERROR "invalid -profile ${profile} option"
+         log_end -1
+         ;;
+   esac
 fi
-
-preexec="${JIO_PRELOAD} ${preexec}"
 
 OMP_NUM_THREADS=${OMP_NUM_THREADS:-1}
 ((OMP_NUM_THREADS = OMP_NUM_THREADS * smt))
@@ -921,9 +948,16 @@ export CoresPerSocket=8
 export NumasPerNode=1
 
 if [[ "$hostos" == Linux ]] ; then
+   HTActive="$(cat /sys/devices/system/cpu/smt/active)"
    NumasPerNode="$(LC_ALL=C lscpu | grep 'NUMA node(s):' | sed 's/.* //')"
    CoresPerNode="$(LC_ALL=C lscpu | grep '^CPU(s):' | sed 's/.* //')"
    CoresPerSocket="$(LC_ALL=C lscpu | grep 'per socket:' | sed 's/.* //')"
+
+   # Give non HT core count, unless -smt 2 is specified
+   if [[ ${HTActive} == 1 && ${smt}!=2 ]]; then
+      CoresPerNode=$((CoresPerNode/2))
+      CoresPerSocket=$((CoresPerSocket/2))
+   fi
 fi
 if [[ "$hostos" == CLE ]] ; then
    NumasPerNode="$(aprun -n 1 --environment-override LC_ALL=C lscpu | grep 'NUMA node(s):' | sed 's/.* //')"
@@ -1065,7 +1099,7 @@ if [[ -d "${instancedir}" && -n "${instances}" ]] ; then
          wait_for creation ${timeout} ${instancedir} ${instances}.DONE # done is signalled by creating DONE and then deleting ACK
          rm ${instancedir}/${instances}.DONE
          rm -f ${instancedir}/${instances}.args
-	 rm -f ${instancedir}/${instances}.env
+	      rm -f ${instancedir}/${instances}.env
          log_print INFO "(slave ${instances}) ${instances}.DONE received"
          log_print INFO "END of slave instance ${instances}"
          exit $?     # slave job done
@@ -1289,7 +1323,12 @@ MpiRunEnv=./${MpiRunEnv#${tmpdir}/}.${MpiCommWorld}
 source ./${MpiRunParms#${tmpdir}/}.${MpiCommWorld}
 PNames=(${ProgramNames[@]})
 DNames=(${DirNames[@]})
-Index=\${PIndex[\${MP_CHILD}]}
+if [[ -z "${singleworld}" ]]; then
+  index_in_group=\${MP_CHILD}
+else
+  index_in_group=\${RP_WorldChild}
+fi
+Index=\${PIndex[\${index_in_group}]}
 
 cd \${DNames[\${Index}]}
 export OMP_NUM_THREADS=\${NThreads[\${Index}]}
@@ -1344,7 +1383,7 @@ EOT
       ((MaxPe=0))
       ((Instances=0))
       ((npe_total=0))   # reset ::ntasks for next world
-      unset NLThreads ProgramIndex ProgramNames DirNames NThreads
+      unset NLThreads ProgramIndex ProgramNames DirNames NThreads args
       shift
       continue
    fi  #  if "${1}" == "@@"  wrap up a world
