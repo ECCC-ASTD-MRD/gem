@@ -140,7 +140,6 @@
   Sl_lmin_water                = 10.                           ,
   Sl_lmin_seaice               = 10.                           ,
   Soiltext                     = 'SOILGRIDS'                   ,
-  Svs_gexp                     = 4.000000                      ,
   Svs_hrsurf_method            = 'BETA_ECMWF12'                ,
   Svs_hrsurf_power             = 6.000000                      ,
   Svs_hrsurf_rs                = 50.000000                     ,
@@ -158,6 +157,7 @@
   Ice_emiss                    = '.97'                         ,
   Water_emiss                  = '1.0'                         ,
 /
+  Svs_gexp                     = 4.000000                      ,
 
 &convection_cfgs
   Deep         = 'kfc2'        ,
