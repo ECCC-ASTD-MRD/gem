@@ -59,11 +59,28 @@ module hvdif_options
    namelist /hvdif  / Hzd_pwr
    namelist /hvdif_p/ Hzd_pwr
 
+! use DEl2/Del4  Along Height for the diffusion 
+   logical :: Hzd_ALH_L = .false.
+   namelist /hvdif  / Hzd_ALH_L
+   namelist /hvdif_p/ Hzd_ALH_L
+!
+   !# Order of the background diffusion operator
+   !# 2, 4, 6, 8
+   integer :: Hzd_pwr_z = -1
+   namelist /hvdif  / Hzd_pwr_z
+   namelist /hvdif_p/ Hzd_pwr_z
+
    !# Order of the background diffusion operator on theta
    !# 2, 4, 6, 8
    integer :: Hzd_pwr_theta = -1
    namelist /hvdif  / Hzd_pwr_theta
    namelist /hvdif_p/ Hzd_pwr_theta
+   !# Order of the background z-constant diffusion operator on theta 
+   !# 2, 4, 6, 8
+   integer :: Hzd_pwr_theta_z = -1
+   namelist /hvdif  / Hzd_pwr_theta_z
+   namelist /hvdif_p/ Hzd_pwr_theta_z
+
 
 !  use DEl2 Along Height as the background diffusion operator on theta
    integer :: hzd_theta_ALH_it =1
@@ -102,6 +119,11 @@ module hvdif_options
    logical :: hzd_conserv_th = .false.
    namelist /hvdif  / hzd_conserv_th 
    namelist /hvdif_p/ hzd_conserv_th
+
+! Conservation of Tracers  DEl2 Diffusion operator
+   logical :: hzd_conserv_tr = .false.
+   namelist /hvdif  / hzd_conserv_tr
+   namelist /hvdif_p/ hzd_conserv_tr
 
 ! Apply Theta diffusion as tendency in RHS eqs
    logical :: hzd_apply_th_tend = .false.

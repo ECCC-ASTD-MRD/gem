@@ -24,13 +24,14 @@
       use gmm_pw
       use adz_mem
       use HORgrid_options
+      use hvdif_options
       use lun
       use step_options
       use omp_timing
       use theo_options
       implicit none
 
-      logical, save :: done=.false.
+      logical, save :: done=.false., init_done=.false.
       integer icn, keep_itcn, np
 !
 !     ---------------------------------------------------------------
@@ -59,6 +60,18 @@
 !$omp end parallel
          endif
          done =.true.
+      endif
+
+      if (Hzd_alh_L) then
+         if (.not. init_done) then
+!$omp parallel
+            call hzd_init ()
+            call hzd_init_u ()
+            call hzd_init_v ()
+            call hzd_init_zdt ()
+!$omp end parallel
+         endif
+         init_done =.true.
       endif
 
       select case ( trim(Dynamics_Kernel_S) )

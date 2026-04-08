@@ -156,7 +156,7 @@ contains
          end do
 
       else
-         if (Lun_out >= 0) write(6,'(/2x3a/)') 'SVR_init: SERVER ',trim(F_server_S),' unavailable'
+         if (Lun_out >= 0) write(6,'(/2x,3a/)') 'SVR_init: SERVER ',trim(F_server_S),' unavailable'
       endif
 !     
 !-------------------------------------------------------------------

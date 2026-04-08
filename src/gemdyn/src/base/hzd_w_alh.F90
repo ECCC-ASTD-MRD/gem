@@ -13,7 +13,7 @@
 
 !**s/r - 3D_diffusion operator   computation for GEM_H
 !
-      subroutine  hzd_theta_alh ( F_Sol1,HzdlnR, Minx, Maxx, Miny, Maxy,Nk)
+      subroutine  hzd_w_alh ( F_Sol1,HzdlnR, Minx, Maxx, Miny, Maxy,Nk)
       use gem_options
       use gmm_vt1
       use geomh
@@ -50,11 +50,12 @@
 ! v5.0 - Qaddouri A.       - initial version
 
 
-      integer j,i,k,halox,haloy
+      integer j,i,k
       real(kind=REAL64)    one,half,zero
       parameter( one=1.0d0,half=0.5d0,zero=0.d0)
       real(kind=REAL64)   Afdg1(l_minx:l_maxx, l_miny:l_maxy,Nk),Afdg2(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64)   Bfdg1(l_minx:l_maxx, l_miny:l_maxy,Nk),Bfdg2(l_minx:l_maxx, l_miny:l_maxy,Nk)
+      real   fdg2_4(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
 
       real(kind=REAL64) Jzpi,Jz,Jzm,Jzmi,qkm,qkp,Jzmpi
       real(kind=REAL64) C1_8,C2_8,C,ski,skpi,skip,skpip
@@ -62,12 +63,11 @@
       real(kind=REAL64) add_v8(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64) cdd1_v8(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
       real(kind=REAL64) cdd2_v8(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
+      real(kind=REAL64) dcoef
+      real cflux(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64) Cflux_8(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64) C1flux_8(l_minx:l_maxx, l_miny:l_maxy,Nk),dsten(l_minx:l_maxx, l_miny:l_maxy)
       real(kind=REAL64)  ztht_8(l_minx:l_maxx, l_miny:l_maxy,0:Nk+1),Jxx,Jyy
-      real(kind=REAL64) dcoef
-      real cflux(l_minx:l_maxx, l_miny:l_maxy,Nk)
-      real fdg2_4(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
 
 
 !
@@ -87,25 +87,28 @@
          dcoef = 0.25*sqrt(HzdlnR)*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
       endif
 
-      Afdg1 = .0d0
-      Bfdg1 = .0d0
-      add_v8 =0.0d0
-      bdd_v8=0.0d0
-      cdd1_v8=0.0d0
-      cdd2_v8=0.0d0
-      fdg2_4 =0.0
-      cflux=0.0
-      Cflux_8=zero
+! Apply Horizontal diffusion along z
 
-      do k = 1, nk
-         do j=1+pil_s-1, l_nj-pil_n+1
-            do i=1+pil_w-1, l_ni-pil_e+1
-               fdg2_4(i,j,k )=F_Sol1(i,j,k)
+         Afdg1 = .0d0
+         Bfdg1 = .0d0
+         add_v8 =0.0d0
+         bdd_v8=0.0d0
+         cdd1_v8=0.0d0
+         cdd2_v8=0.0d0
+         fdg2_4 =0.0
+         cflux=0.0
+         Cflux_8=zero
+
+!Field  before diffusion on T-level K  on phii,j
+         do k = 1, nk
+            do j=1+pil_s-1, l_nj-pil_n+1
+               do i=1+pil_w-1, l_ni-pil_e+1
+                  fdg2_4(i,j,k )=F_Sol1(i,j,k)
+               enddo
             enddo
          enddo
-      enddo
 
-      call rpn_comm_xch_halo(fdg2_4,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk+1, &
+         call rpn_comm_xch_halo(fdg2_4,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          k=1
          do j=1+pil_s, l_nj-pil_n
@@ -307,15 +310,18 @@
                enddo
             enddo
          enddo
+!
 
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
                do k = 2 , Nk
-                  F_sol1(i,j,k) = F_sol1(i,j,k) - W_th(i,j,k) * F_sol1(i,j,k-1)
+                  !W = a(i,j,k,1) / b(i,j,k-1,1)
+                  !b(i,j,k) = b(i,j,k,1) - W * c_zdt(i,j,k-1)
+                  F_sol1(i,j,k) = F_sol1(i,j,k) - W_zdt(i,j,k) * F_sol1(i,j,k-1)
                enddo
-               F_sol1(i,j,Nk) = F_sol1(i,j,Nk) / b_th(i,j,Nk)
+               F_sol1(i,j,Nk) = F_sol1(i,j,Nk) / b_zdt(i,j,Nk)
                do k = Nk-1, 1, -1
-                  F_sol1(i,j,k) = (F_sol1(i,j,k) - c_th(i,j,k) * F_sol1(i,j,k+1)) / b_th(i,j,k)
+                  F_sol1(i,j,k) = (F_sol1(i,j,k) - c_zdt(i,j,k) * F_sol1(i,j,k+1)) / b_zdt(i,j,k)
                enddo
             enddo
          enddo

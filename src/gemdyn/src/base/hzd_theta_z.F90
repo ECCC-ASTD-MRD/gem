@@ -33,8 +33,6 @@
       integer i,j,k,ik,dim,dim1
       real, parameter :: p_naught=100000., eps=1.0e-5
       real, dimension(:,:,:), pointer :: pres_t, th, th0, tmp, tmp1, wk
-      !real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_nk)  ::  tmp ,tmp1
-      !real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)  :: th0
 !
 !-------------------------------------------------------------------
 !
@@ -75,17 +73,18 @@
 !$omp end do
          if (hzd_conserv_th) then
 !$omp single
-            call hzd_theta_cons_alh (th,Hzd_lnr_theta_z,l_minx,l_maxx,l_miny,l_maxy, &
-                                     G_nk,hzd_Theta_ALH_it)
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
 !$omp end single
 !$omp single
-            call hzd_CvDel2_flt9pt (tmp,tmp1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk,&
-                                    Hzd_lnR_theta)
+!if(ptopo_myproc==0 .and. ptopo_couleur==0) print*,'============BEFORE hzd_expc_deln'
+            call hzd_expc_deln ( tmp,tmp1, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
+                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_nk )
+!if(ptopo_myproc==0 .and. ptopo_couleur==0) print*,'============AFTER hzd_expc_deln'
 !$omp end single
          else
 !$omp single
-            call hzd_theta_alh (th,Hzd_lnr_theta_z,l_minx,l_maxx,l_miny,l_maxy, &
-                                G_nk,hzd_Theta_ALH_it)
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+
 !$omp end single
             call hzd_exp_deln ( tmp, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
                                 l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_nk )
@@ -103,13 +102,15 @@
       ! Diffusion on constant z 
          if (hzd_conserv_th) then
 !$omp single
-            call hzd_theta_cons_alh (th,Hzd_lnr_theta_z,l_minx,l_maxx,l_miny,l_maxy, &
-                                     G_nk,hzd_Theta_ALH_it)
+            !call hzd_theta_cons_alh (th,Hzd_lnr_theta_z,l_minx,l_maxx,l_miny,l_maxy, &
+            !                         G_nk,hzd_Theta_ALH_it)
+!print*,'====== constant z hzd_conserv  BEFORE  hzd_uvwzd_alh   '
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
+!print*,'====== constant z hzd_conserv  AFTER  hzd_uvwzd_alh   '
 !$omp end single
          else
 !$omp single
-            call hzd_theta_alh (th,Hzd_lnr_theta_z,l_minx,l_maxx,l_miny,l_maxy, &
-                               G_nk,hzd_Theta_ALH_it)
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
 !$omp end single
          endif
       endif

@@ -246,6 +246,12 @@
          if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L
       end if
 
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' .and. Schm_omega_cccma ) then
+         if (lun_out>0) write(Lun_out,9960)
+         return
+      end if
+
+
       err= 0
       err= min( timestr2step (Init_dfnp, Init_dflength_S, Step_dt), err)
       err= min( timestr2sec  (sec,       Init_dfpl_S,     Step_dt), err)
@@ -325,6 +331,7 @@
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9700 format (/,'ABORT: Schm_psadj not valid'/)
+ 9960 format (/,'ABORT: Schm_omega_cccma is only availale with Dynamics_Kernel_S== DYNAMICS_FISL_P'/)
 !
 !-------------------------------------------------------------------
 !
