@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module ebudget_svs2_mod
+  implicit none
+  public
+contains
       SUBROUTINE EBUDGET_SVS2(NSNOWV, TSA, WD, WF , WFL, RR_VEG, &
                    TGRS,TGRVS,TVGLS,TVGHS, TP, TFL, TPERM,  &
                    PGRNDFLUX, PGRNDFLUXV, DT, VMOD, VDIR, LAT, &
@@ -32,7 +35,7 @@
                    TSVS, PHM_CAN, SNCMA, &
                    VGHEIGHT,  &
                    SKYVIEW,SKYVIEWA, FCANS, &
-                   SOILHCAP, SOILCOND, &
+                   SOILHCAP, SOILCOND, DZ_FL, &
                    RR,WR_VL,WR_VH,SNM,SVM, &
                    VTRA, ALBT, &
                    RNET, HFLUX, LE, LEG, LEVL, LEVH, LES,LESV, LEGV,  &
@@ -82,7 +85,7 @@
       REAL LEFF(N), ZQS(N), FRV(N)
       REAL EG(N), EGV(N), HRSURF(N), HRSURFGV(N)
       REAL RESAGR(N), RESA_VL(N), RESA_VH(N), RESASN(N), RESASV(N), RESAEF(N)
-      REAL RESAGRV(N), PFLHCAP(N)
+      REAL RESAGRV(N), PFLHCAP(N), DZ_FL(N)
       REAL RNETSN(N), HFLUXSN(N),LESLNOFRAC(N),LESNOFRAC(N), ESNOFRAC(N), SUBLDRIFT(N)
       REAL RNETSV(N), HFLUXSV(N),LESLVNOFRAC(N),LESVNOFRAC(N), ESVNOFRAC(N), SUBLDRIFTV(N)
       REAL ALPHASV(N), RES_SNCA(N), RR_VEG(N)
@@ -224,6 +227,7 @@
 ! WFL          Liquid water in the forest litter layer  [kg/m2]
 ! RSNOW        Snowpack runoff in the open [mm/s]
 ! RSNOWV       Snowpack runoff in the forest [mm/s]
+! DZ_FL        Thickness of the forest litter layer (m)
 !
 !           - Output -
 ! ALBT      total surface albedo (snow + vegetation + bare ground)
@@ -632,20 +636,15 @@
    !
    !             Mean conductivity soil and forest litter
    !
-               AVCOND_FL(I) =  1. / (DZ_FL / PFLCOND(I) + DELZ(1) / SOILCOND(I,1))
-               IF ((TSVS(I,NSNOWV(I)) - TFL(I)) .gt. EPSILON_SVS) THEN
-                  AVCOND_FLSNV(I) = PGRNDFLUXV(I) / (TSVS(I,NSNOWV(I)) - TFL(I))
-               ELSE
-                  AVCOND_FLSNV(I) = 0.
-               ENDIF
+               AVCOND_FL(I) =  2. / (DZ_FL(I) / PFLCOND(I) + DELZ(1) / SOILCOND(I,1))
+
 
                ABFL(I) =  PFLHCAP(I) / DT                        &
                   + AVCOND_FL(I)                                 &
                   + WTG(I,indx_svs2_gv) / WTG(I,indx_svs2_vh) *  &
                      ( 4.*EMFL*STEFAN*(TFL(I)**3)                &
                      + RORAFL(I) * CPD                           &
-                     + RORAFL(I)*LEFF(I)*HRSURFFL(I)*ZDQSATFL(I))&
-                  + WTG(I,indx_svs2_sv) / WTG(I,indx_svs2_vh) * AVCOND_FLSNV(I)   
+                     + RORAFL(I)*LEFF(I)*HRSURFFL(I)*ZDQSATFL(I))  
 
                BBFL(I) = PFLHCAP(I) / DT + WTG(I,indx_svs2_gv) / WTG(I,indx_svs2_vh)  *  &
                      ( 3.*EMFL*STEFAN*(TFL(I)**3)                    &
@@ -658,7 +657,7 @@
                      + RORAFL(I) * CPD * THETAA(I)                  &
                      + RORAFL(I) * LEFF(I) * HU(I)                  & 
                      - RORAFL(I)*LEFF(I)* HRSURFFL(I)*ZQSATFL(I))   &
-                  + WTG(I,indx_svs2_sv) / WTG(I,indx_svs2_vh) * AVCOND_FLSNV(I) * TSVS(I,NSNOWV(I))! PGRNDFLUXV(I)   
+                     + WTG(I,indx_svs2_sv) / WTG(I,indx_svs2_vh) * PGRNDFLUXV(I)
    !
    !             Update forest litter temperature
    !
@@ -1426,4 +1425,5 @@
 !
 !
       RETURN
-      END
+    END SUBROUTINE EBUDGET_SVS2
+  end module ebudget_svs2_mod

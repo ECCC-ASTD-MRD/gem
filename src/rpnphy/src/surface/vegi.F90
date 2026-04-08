@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-
+module vegi_mod
+  implicit none
+  public
+contains
 subroutine vegi(RG, T, TS, HU, PS, W2, RGL, LAI, RSMIN, GAMMA, WWILT, &
      WFC, RS, N)
    use tdpack
@@ -126,4 +129,5 @@ subroutine vegi(RG, T, TS, HU, PS, W2, RGL, LAI, RSMIN, GAMMA, WWILT, &
    end do
 
    return
-end subroutine vegi
+ end subroutine vegi
+end module vegi_mod

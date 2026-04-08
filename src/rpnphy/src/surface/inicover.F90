@@ -27,6 +27,8 @@ contains
    use sfc_options
    use sfcbus_mod
    use phymem, only: phyvar
+   use aggcovernat_mod, only: aggcovernat
+   use interpveg_mod, only: interpveg
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -214,8 +216,7 @@ contains
    !********************************************************************
 
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
-   real, external :: interpveg
-
+   
    integer :: i
    integer(INT64) :: delti64
    real :: julien, juliens

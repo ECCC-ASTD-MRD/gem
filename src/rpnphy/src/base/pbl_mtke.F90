@@ -7,7 +7,7 @@ module pbl_mtke
 contains
 
   subroutine moistke(en,enold,zn,znt,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
-       fngauss,fnnonloc,gama,gamaq,gamal,hpbl,lh,hpar, &
+       fngauss,fnnonloc,gama,gamaq,gamal,wcascd,hpbl,lh,hpar, &
        wthl_ng,wqw_ng,uw_ng,vw_ng, &
        u,v,t,tve,q,qe,ps,st,s,se, &
        z,z0,gzmom,frv,wstar,fbsurf,turbreg, &
@@ -56,6 +56,7 @@ contains
     real, pointer, dimension(:,:,:), contiguous :: vcoef !coefficients for vertical interpolation
     real, dimension(n,nk), intent(in) :: z            !height of e-levs (m)
     real, dimension(n,nk), intent(in) :: gzmom        !height of momentum levels (m)
+    real, pointer, dimension(:,:), contiguous   :: wcascd !TKE source term for dry thermals (m2/s3)
     real, dimension(n), intent(inout) :: hpar         !height of parcel ascent (m)
     real, dimension(n,nk), intent(inout) :: en        !TKE (m2/s2)
     real, dimension(n,nk), intent(inout) :: zn        !momentum mixing length (m)
@@ -273,6 +274,15 @@ contains
           e_star = e_star + tau*(wb_ng + shr_ng) !update of e* for nonlocal
           shr_term = shr_term + shr_ng !non-gradient for shear production term
           buoy_term = buoy_term + wb_ng !non-gradient buoyancy (thermal production) term
+       endif
+
+       ! Add nonlocal energy cascade term
+       if (pbl_nonloc == 'DEROOY22' .and. associated(wcascd)) then
+          do k=1,nk
+             do j=1,n
+                e_star(j,k) = e_star(j,k) + tau * wcascd(j,k)
+             enddo
+          enddo
        endif
 
        ! Output TKE equation terms for time series

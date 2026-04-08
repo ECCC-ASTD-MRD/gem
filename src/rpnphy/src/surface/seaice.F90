@@ -15,6 +15,10 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module seaice_mod
+  implicit none
+  public
+contains
 subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
      N, M, NK)
    use tdpack
@@ -28,6 +32,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    use sfcbus_mod
    use phy_status, only: physeterror
    use difuvd12_mod, only: difuvd1, difuvd2
+   use fillagg_mod, only: fillagg
    implicit none
 !!!#include <arch_specific.hf>
    !@Object The multi-level model calculates the temperature profile across a
@@ -92,8 +97,8 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    real,dimension(n) :: tb,    vmod,  vdir, zsnodp_m,  vmod0
    real,dimension(n) :: my_ta,my_qa
    real,dimension(n) :: zu10, zusr   ! wind at 10m and at sensor level
-   real,dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
-   real,dimension(n) :: zusurfzt, zvsurfzt, zqd
+   real,dimension(n) :: zref_sw_surf, zemit_lw_surf
+   real,dimension(n) :: zusurfzt, zvsurfzt
 
    real,dimension(n,nl) :: a, b, c, cap, cond, d, dz, sour, tp, z
 
@@ -104,7 +109,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    real,pointer,dimension(:) :: z0h, z0m, zalfaq, zalfat
    real,pointer,dimension(:) :: zdlat, zfcor, zfdsi, zftemp, zfvap
    real,pointer,dimension(:) :: zml, zqdiag, zrainrate, zrunofftot
-   real,pointer,dimension(:) :: zsnodp, zsnowrate, ztdiag
+   real,pointer,dimension(:) :: zsnodp, zsnowe, zsnowrate, ztdiag
    real,pointer,dimension(:) :: ztsrad, zudiag, zvdiag, zfrv, zzusl, zztsl
    real,pointer,dimension(:) :: zfsd, zfsf, zcoszeni
    real,pointer,dimension(:) :: zutcisun, zutcishade, zwbgtsun, zwbgtshade
@@ -182,6 +187,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    zrainrate(1:n) => bus( x(rainrate,1,1)     : )
    zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
+   zsnowe   (1:n) => bus( x(snowe,1,indx_sfc) : )
    zsnowrate(1:n) => bus( x(snowrate,1,1)     : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
@@ -953,6 +959,11 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
           ZALFAQ   (I) = - CTU(I) *  QSICE(I)
         endif
 
+        ! Compute SWE over sea ice using assumption of a constant snow density in the sea ice scheme
+        ! ROSNOW(1) is used since it corresponds to the value used when computing the changes in snow depth
+        ! due to snowfall and snow melt.         
+        ZSNOWE(I) =  ZSNODP(I) * ROSNOW(1)
+
       end do
 
       ! Estimate diagnostic quantities at user-specified level
@@ -1043,8 +1054,8 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
       !   8.     Heat Stress Indices
       !------------------------------------
       !#TODO: at least 4 times identical code in surface... separeted s/r to call
-      IF_TERMAL_STRESS: if (thermal_stress) then
-
+      IF_THERMAL_STRESS: if (thermal_stress) then
+!     Compute wind at z=zt for wbgt
       i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt, &
            v_diag=zvsurfzt,tdiaglim=SEAICE_TDIAGLIM,L_min=sl_Lmin_seaice,spdlim=vmod)
@@ -1072,23 +1083,20 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
          zusr(i) = zu10(i)
          endif
 
-             zqd(i) = max( ZQDIAG(i) , 1.e-6)
+        if (atm_external) then
+      !# if direct/diffuse solar radiation not in forcing used default partitionning
+          zfsd(i) = 0.85*fsol(i)
+          zfsf(i) = 0.15*fsol(i)
+        endif
 
-            zref_sw_surf(i) = albsfc(i) * fsol(i)
-            zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsrad(i)**4
-
-         zzenith(i) = acos(zcoszeni(i))
-         if (fsol(i) > 0.0) then
-            zzenith(i) = min(zzenith(i), pi/2.)
-         else
-            zzenith(i) = max(zzenith(i), pi/2.)
-         endif
+        zref_sw_surf(i) = albsfc(i) * fsol(i)
+        zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsrad(i)**4
 
       end do
 
-         call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+         call SURF_THERMAL_STRESS(ZTDIAG, zqdiag,         &
               ZU10,ZUSR,  ps,                             &
-              ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+              ZFSD, ZFSF, ZFDSI, acos(zcoszeni),          &
               ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
               Zutcisun ,Zutcishade,                       &
               zwbgtsun, zwbgtshade,                       &
@@ -1096,11 +1104,12 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
               ztglbsun, ztglbshade, ztwetb,               &
               ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
               ZQ6,ZQ7, N)
-      endif IF_TERMAL_STRESS
+      endif IF_THERMAL_STRESS
 
 !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
       call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_ICE, &
                      SURFLEN )
 
    return
-end subroutine seaice3
+ end subroutine seaice3
+end module seaice_mod

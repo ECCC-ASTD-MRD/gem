@@ -31,6 +31,13 @@ function sfc_main2(pvars, trnch, kount, dt, ni, nk) result(F_istat)
    use copybus, only: copybus3
    use agrege, only: agrege3
    use sfclayer, only: sl_adjust,SL_OK
+   use isba_mod, only : isba4
+   use svs_mod, only : svs
+   use svs2_mod, only : svs2
+   use water_mod, only : water2
+   use seaice_mod, only : seaice3
+   use glaciers_mod, only : glaciers2
+   use cslm_main_mod, only : cslm_main
 
 #ifdef HAVE_NEMO
    use cpl_itf, only: cpl_update

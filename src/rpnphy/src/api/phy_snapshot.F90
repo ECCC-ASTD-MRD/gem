@@ -40,6 +40,9 @@ contains
       integer :: istat
       real, pointer :: busprt_digf(:,:), busptr(:,:)
       character(len=32) :: gmmname, gmmname_digf
+#ifdef HAVE_MACH
+      integer, external :: chm_snapshot
+#endif
       ! ------------------------------------------------------------------
       F_istat = RMN_ERR
       if (phy_init_ctrl == PHY_NONE) then
@@ -96,6 +99,10 @@ contains
       ! coupling may have something to do for snapshot
 
       call cpl_snapshot(F_mode)
+#endif
+
+#ifdef HAVE_MACH
+      istat = chm_snapshot(F_mode)
 #endif
 
       F_istat = RMN_OK

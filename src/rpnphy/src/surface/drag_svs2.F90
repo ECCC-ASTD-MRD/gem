@@ -14,6 +14,11 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
 
+module drag_svs2_mod
+  implicit none
+  public
+contains
+
       SUBROUTINE DRAG_SVS2 ( TGRS, TGRVS, TVGLS, TVGHS, TFL, TSV,TS,  WD1, &
                               WR_VL, WR_VH, WFL, THETAA, VMOD, VDIR, HU, RHOA, &
                               PS, RS, Z0, Z0LOC, Z0VG, WFC, WSAT, CLAY1,  &
@@ -1168,4 +1173,5 @@
 
 
       RETURN
-      END
+    END SUBROUTINE DRAG_SVS2
+  end module drag_svs2_mod

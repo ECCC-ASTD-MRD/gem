@@ -22,6 +22,7 @@
       real, pointer, dimension(:) :: zrainrate
       real, pointer, dimension(:) :: zrunofftot
       real, pointer, dimension(:) :: zsnodp
+      real, pointer, dimension(:) :: zsnowe
       real, pointer, dimension(:) :: zsnowrate
       real, pointer, dimension(:) :: ztdiag
       real, pointer, dimension(:) :: ztsrad

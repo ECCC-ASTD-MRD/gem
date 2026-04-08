@@ -1,4 +1,9 @@
-      SUBROUTINE FLXSURFZ(CDM, CDH, CTU, RIB, FTEMP, FVAP, ILMO,     &
+module flxsurfz_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE FLXSURFZ(CDM, CDH, CTU, RIB, FTEMP, FVAP, ILMO,     &
                           UE, FCOR, TA , QA , ZU, ZT, VA,            &
                           TG , QG , H , Z0 , Z0T,                    &
                           LZZ0, LZZ0T, FM, FH,N,IL1,IL2,FI,ITER,JL )
@@ -310,4 +315,5 @@
 !
       RETURN
       END FUNCTION PSI
-      END
+    END SUBROUTINE FLXSURFZ
+  end module flxsurfz_mod

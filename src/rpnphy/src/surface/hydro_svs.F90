@@ -13,6 +13,11 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module hydro_svs_mod
+  implicit none
+  public
+contains
+
 SUBROUTINE HYDRO_SVS ( DT, &
      EG, ER, ETR, RR, RSNOW, RSNOWV, &
      IMPERVU, VEGL, VEGH, PSN, PSNVH, ACROOT, WRMAX,    &
@@ -23,6 +28,10 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !
   use sfc_options
   use svs_configs
+  use soil_ksatc_mod, only: soil_ksatc
+  use watdrn_svs_mod, only: watdrn_svs
+  use soil_fluxes_mod, only: soil_fluxes
+  
   implicit none
 !!!#include <arch_specific.hf>
 
@@ -204,7 +213,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !Fraction of  satsfc used for calculating runoff
   !    if macropores are activated: the satsfc_th is set to 0 (satsfc is not used to generate surface runoff)
   !    if macropores are not activated : satsfc_th is set to 1 (satsfc is used as default to generate runoff)
-  IF(LMACROPORES_SVS1) THEN
+  IF(LMACROPORES_SVS) THEN
        SATSFC_TH = 0
   ELSE
        SATSFC_TH = 1
@@ -385,7 +394,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
         ENDIF
         
 	!Macropore threshold water content and hydraulic conductivity
-        IF (lmacropores_svs1) THEN
+        IF (lmacropores_svs) THEN
             WMP = WSATC(I,K)*mp_alpha                   
             IF (WD(I,K) >= WMP) THEN
         		KSATC(I,K) = KSAT(I,K)		
@@ -623,7 +632,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
 
                  ! Downward liquid water flux is limited to avoid the saturation of the layer below  
                  IF(K.NE.NL_SVS) THEN
-                    IF (lmacropores_svs1) THEN 
+                    IF (lmacropores_svs) THEN 
                         WMP = WSATC(I,K+1)*mp_alpha
                         IF (WDT(I,K+1) >= WMP) THEN
                             WAT_DOWN = W*(WDT(I,K)-WSATC(I,K))*DELZ(K)
@@ -751,3 +760,4 @@ SUBROUTINE HYDRO_SVS ( DT, &
 
   RETURN
 END SUBROUTINE HYDRO_SVS
+end module hydro_svs_mod

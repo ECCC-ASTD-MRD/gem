@@ -1,4 +1,9 @@
-      SUBROUTINE LKTRANS (CQ1A,CQ1B,CQ2A,CQ2B,CQ3A,CQ3B,   &
+module lktrans_mod
+  implicit none
+  public
+contains  
+
+SUBROUTINE LKTRANS (CQ1A,CQ1B,CQ2A,CQ2B,CQ3A,CQ3B,   &
                  BLAK,IL1,IL2,ILG,CQ1BI,CQ2BI,CQ3BI)
 !======================================================================
 !     * DEC  7/07 - M.MACKAY.  	COMPUTES LIGHT EXTINCTION COEFFICIENTS
@@ -41,4 +46,5 @@
 100   CONTINUE
 
       RETURN
-      END
+    END SUBROUTINE LKTRANS
+  end module lktrans_mod

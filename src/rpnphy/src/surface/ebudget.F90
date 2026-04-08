@@ -13,11 +13,15 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
+module ebudget_mod
+  implicit none
+  public
+contains
 
 subroutine ebudget4(T, TS, T2, W2, WF, WL, &
      WS, DT, ALPHAS, RAINRATE, &
      RG, ALVG, ALBT, EMIST, EMSVC, RAT, THETAA, HU, PS, RHOA, &
-     VEG, HRSURF, HV, DEL, RESA, RS, CT, &
+     VEG, HRSURF, DHUSURF_DQSAT, HV, DEL, RESA, RS, CT, &
      CG, ZCS, PSN, PSNV, PSNG, WSAT, D2, SNODP, &
      TST, T2T, RNET, HFLUX, LE, LEG, LEV, &
      LES, LER, LETR, GFLUX, EFLUX, &
@@ -55,6 +59,7 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
    ! RHOA      air density near the surface
    ! VEG       fraction of the grid covered by vegetation
    ! HRSURF    relative humidity of the surface
+   ! DHUSURF_DQSAT derivative of HUSURF = HRSURF*QSAT wrt QSAT
    ! HV        Halstead coefficient (relative humidity of veg. canopy)
    ! DEL       portion of the leaves covered by water
    ! RESA      aerodynamic surface resistance
@@ -91,7 +96,7 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
    real W2(N), WF(N), WL(N), WSAT(N), D2(N), SNODP(N)
    real RG(N), ALVG(N), ALBT(N), RAT(N), THETAA(N)
    real HU(N), PS(N), RHOA(N), VEG(N)
-   real HRSURF(N), HV(N), DEL(N), RESA(N), RS(N), CT(N)
+   real HRSURF(N), DHUSURF_DQSAT(N), HV(N), DEL(N), RESA(N), RS(N), CT(N)
    real CG(N), ZCS(N), PSN(N), PSNV(N), PSNG(N)
    real TST(N), T2T(N), RNET(N), HFLUX(N), LE(N)
    real LEG(N), LEV(N), LES(N), LER(N), LETR(N), GFLUX(N)
@@ -252,14 +257,14 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
       A(I) = 1. / DT + CT(I) * (4. * EMIST(I) * STEFAN &
            * (TS(I)**3) +  RORA(I) * ZDQSAT(I) * &
            ( CHLC*VEG(I)*(1-PSNV(I))*HV(I) &
-           + LEFF(I)*(1.-VEG(I))*(1.-PSNG(I))*HRSURF(I) &
+           + LEFF(I)*(1.-VEG(I))*(1.-PSNG(I))*DHUSURF_DQSAT(I) &
            + (CHLC+CHLF)*PSN(I) )+ RORA(I) * CPD) &
            + 2. * PI / 86400.
 
       B(I) = 1. / DT + CT(I) * (3. * EMIST(I) * STEFAN &
            * (TS(I)** 3) + RORA(I) * ZDQSAT(I) * &
            ( CHLC*VEG(I)*(1-PSNV(I))*HV(I) &
-           + LEFF(I)*(1.-VEG(I))*(1.-PSNG(I))*HRSURF(I) &
+           + LEFF(I)*(1.-VEG(I))*(1.-PSNG(I))*DHUSURF_DQSAT(I) &
            + (CHLC+CHLF)*PSN(I) ) )
 
       C(I) = 2. * PI * T2(I) / 86400. + CT(I) &
@@ -541,4 +546,5 @@ subroutine ebudget4(T, TS, T2, W2, WF, WL, &
    end do
 
    return
-end subroutine ebudget4
+ end subroutine ebudget4
+end module ebudget_mod

@@ -1,4 +1,8 @@
-      SUBROUTINE XIT(NAME,N)
+module xit_mod
+  implicit none
+  public
+contains
+SUBROUTINE XIT(NAME,N)
 ! 
 !     * OCT 01/92 - E.CHAN. (CHANGE STOP 1 TO STOP)
 !     * JUN 10/91 - E.CHAN. (TRANSLATE HOLLERITH LITERALS AND 
@@ -14,7 +18,9 @@
 !     * N.LT.0 IS FOR AN ABNORMAL END. THE LINE IS DOTTED.
 !     * IF N IS LESS THAN -100 THE PROGRAM SIMPLY TERMINATES. 
 !     * OTHERWISE IF N IS LESS THAN ZERO THE PROGRAM ABORTS.
-! 
+!     *03-2026 - Maria - declare I, N as integers
+  
+      INTEGER I, N 
       CHARACTER*(*) NAME
       CHARACTER*8   NAME8, DASH, STAR
 ! 
@@ -34,4 +40,5 @@
 ! 
 !---------------------------------------------------------------------
  6010 FORMAT('0',A8,'  END  ',A8,9A8,I8)
-      END   
+    END SUBROUTINE XIT
+  end module xit_mod

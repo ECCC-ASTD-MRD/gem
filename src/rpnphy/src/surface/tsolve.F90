@@ -1,4 +1,9 @@
-      SUBROUTINE TSOLVE(ISNOW,FI,                                      &
+module tsolve_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE TSOLVE(ISNOW,FI,                                      &
                         QSWNET,QLWOUT,QTRANS,QSENS,QEVAP,EVAP,         &
                         TZERO,QZERO,GZERO,QMELT,CDH,CDM,RIB,CFLUX,     &
                         FTEMP,FVAP,ILMO,UE,H,                          &
@@ -99,7 +104,10 @@
 !     *                         CLASS VERSION 2.0 (WITH CANOPY).        
 !     * APR 11/89 - D.VERSEGHY. ITERATIVE SURFACE TEMPERATURE           
 !     *                         CALCULATIONS FOR SNOW/SOIL.             
-!                                                                       
+!
+      use xit_mod, only: xit
+      use drcoef_mod, only: drcoef
+      use flxsurfz_mod, only: flxsurfz
       IMPLICIT NONE                                                     
                                                                         
 !     * INTEGER CONSTANTS.                                              
@@ -569,4 +577,5 @@
   350 CONTINUE                                                          
 !                                                                       
       RETURN                                                            
-      END                                                               
+    END SUBROUTINE TSOLVE
+  end module tsolve_mod

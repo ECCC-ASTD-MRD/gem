@@ -15,6 +15,12 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 !/@*
+module cslm_main_mod
+   implicit none
+   public
+contains 
+
+
 subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, m, nk )
    !use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
@@ -23,6 +29,25 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
    use phy_status, only: physeterror
    use suncos, only: suncos2
+   use fillagg_mod, only: fillagg
+   use eqnst_mod, only: eqnst
+   use classi_mod, only: classi
+   use snoalba_mod, only: snoalba
+   use tlsprep_mod, only: tlsprep
+   use tsolve_mod, only: tsolve
+   use tlspost_mod, only: tlspost
+   use snovap_mod, only: snovap
+   use tmelt_mod, only: tmelt
+   use sninfl_mod, only: sninfl
+   use snoalbw_mod, only: snoalbw
+   use ndrcoefl_mod, only: ndrcoefl
+   use freeconv_mod, only: freeconv
+   use lktrans_mod, only: lktrans
+   use tsolvl_mod, only: tsolvl
+   use mixlyr_mod, only: mixlyr
+   use xit_mod, only: xit
+   use snoadd_mod, only: snoadd
+   
    implicit none
 #include <arch_specific.hf>
    !@Object    CANADIAN SMALL LAKE MODEL
@@ -237,7 +262,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       real,pointer,dimension(:) ::  zalfaq, zalfat, zftemp, zfvap, zrunofftot
       real,pointer,dimension(:) ::  zqdiag, ztdiag, ztsurf, ztsrad, zudiag, zvdiag
       real,pointer,dimension(:) ::  zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
-      real,pointer,dimension(:) ::  zsnodp
+      real,pointer,dimension(:) ::  zsnodp, zsnowe
       real,pointer,dimension(:) ::  zemisr
 
 ! ----* DIAGNOSTIC OUTPUT FIELDS *-------------------------------------
@@ -251,8 +276,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !----------------------------------------------------------------------------------------
 ! MODULES
 !----------------------------------------------------------------------------------------
-      EXTERNAL CLASSI, XIT, EQNST, NDRCOEFL, FREECONV, TSOLVL, LKTRANS, MIXLYR
-      EXTERNAL SNOALBA, TLSPREP, TSOLVE, TLSPOST, SNOVAP, TMELT, SNINFL, SNOALBW, SNOADD, DRCOEF, FLXSURFZ
+      !EXTERNAL CLASSI, XIT, EQNST, NDRCOEFL, FREECONV, TSOLVL, LKTRANS, MIXLYR
+      !EXTERNAL SNOALBA, TLSPREP, TSOLVE, TLSPOST, SNOVAP, TMELT, SNINFL, SNOALBW, SNOADD, DRCOEF, FLXSURFZ
 
 !----------------------------------------------------------------------------------------
 ! CLASS common block variables whose values are taken from thermoconsts.inc or set elsewhere
@@ -368,7 +393,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
    zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
    zfrv     (1:n) => bus( x(frv,1,indx_sfc)   : )
-   zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )  !Lake snow depth (cm)
+   zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )  !Lake snow depth (m)
+   zsnowe   (1:n) => bus( x(snowe,1,indx_sfc) : )  !Lake snow water equivalent (kg/m2)
 
 !========================================================================================
 ! PHYSICAL LAKE PROPERTIES FIXED FOR NOW.  (based on small boreal lake L239 at ELA)
@@ -516,9 +542,9 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
           IF(SNO(I).GT.0.0)    THEN
               ZSNOW(I)=SNO(I)/RHOSNO(I)
               IF(ZSNOW(I).GE.(SNOLIM-0.00001)) THEN
-                  FLS(I)=1.0
+                  FLS(I)=MIN(FICE(I),1.0)
               ELSE
-                  FLS(I)=ZSNOW(I)/SNOLIM
+                  FLS(I)=MIN(FICE(I),1.0)*ZSNOW(I)/SNOLIM  
                   ZSNOW(I)=SNOLIM
                   WSNOW(I)=WSNOW(I)/FLS(I)
               ENDIF
@@ -1135,13 +1161,15 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 525       CONTINUE
 !
 !--- MIXING UNDER ICE
-        ELSE IF ((JMIX .GE. 2) .AND. ((ZMIX-ICEBOT).GE.DELZLK) ) THEN
-          DO 530, J=1,JMIX
-            ZTOP=DELSKIN + (J-1)*DELZLK
-            IF (ICEBOT .LE. ZTOP) THEN
-             TLAK(I,J)=TMIX
-            ENDIF
-530       CONTINUE
+! 20260320: M. Mackay: Forced convective mixing under ice tends to stall ice growth near layer boundaries. 
+!           Free convection is still allowed but we should turn off the forced convection.  
+        !ELSE IF ((JMIX .GE. 2) .AND. ((ZMIX-ICEBOT).GE.DELZLK) ) THEN
+        !  DO 530, J=1,JMIX
+        !    ZTOP=DELSKIN + (J-1)*DELZLK
+        !    IF (ICEBOT .LE. ZTOP) THEN
+        !     TLAK(I,J)=TMIX
+        !    ENDIF
+!530       CONTINUE
         ENDIF
 !-----------------------------------------------------------------------
 ! ---* COMPUTE TEMPERATURE, DENSITY, EXPANSIVITY OF MIXED LAYER WATER
@@ -1364,8 +1392,15 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !            print *, "STOR FIN =", LSTF(I)
 !          ENDIF
 
-!         Include CSLM simulated snow depth in snodpl(indx_lake)
-          ZSNODP(I)  = ZSNOW(I)
+!         Include CSLM simulated snow depth and swe in snodpl(indx_lake)
+          IF(SNO(I) >0.) THEN
+             ZSNODP(I)  = SNO(I) / RHOSNO(I)  ! Snow depth in m (is converted later in cm for the output file)
+             ZSNOWE(I)  = SNO(I)   + WSNOW(I)
+           ELSE
+             ZSNODP(I)  = 0.
+             ZSNOWE(I)  = 0.
+           ENDIF
+
 
 ! EG_MOD4: 
 ! Remove liquid water evap. from CSLM output runoff in order
@@ -1382,3 +1417,4 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    return
 
  end subroutine cslm_main
+end module  cslm_main_mod

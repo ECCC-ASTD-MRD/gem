@@ -1,5 +1,8 @@
 !copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
-
+module snow_alone_mod
+  implicit none
+  public
+contains
       SUBROUTINE SNOW_ALONE (TSNS,TSND,RHOSL,ALPHAS,WL, & 
                            SNODP,SM, &   
                            PS,VMOD, VDIR, RHOA,THETAA,RG,RAT, &  
@@ -809,4 +812,5 @@
       END DO
 !
       RETURN
-      END
+    END SUBROUTINE SNOW_ALONE
+  end module snow_alone_mod

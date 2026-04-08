@@ -1,4 +1,9 @@
-      SUBROUTINE SNOALBA(ALVSSN,ALIRSN,ALVSSC,ALIRSC,ALBSNO,           &
+module snoalba_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE SNOALBA(ALVSSN,ALIRSN,ALVSSC,ALIRSC,ALBSNO,           &
                          TRSNOWC, ALSNO, TRSNOWG, FSDB, FSFB, RHOSNO,  &
                          REFSN,BCSN,SNO,CSZ,ZSNOW,FSNOW,ASVDAT,ASIDAT, &
                          ALVSG, ALIRG,                                 &
@@ -36,7 +41,8 @@
 !     *                         VISIBLE AND NEAR-IR PORTIONS;           
 !     *                         CALCULATE TRANSMISSIVITY TO             
 !     *                         SHORTWAVE RADIATION.                    
-!                                                                       
+!
+      use xit_mod, only: xit
       IMPLICIT NONE                                                     
 !                                                                       
 !     * INTEGER CONSTANTS.                                              
@@ -112,4 +118,5 @@
 !     END IF ! ISNOALB                                                  
                                                                         
       RETURN                                                            
-      END                                                               
+    END SUBROUTINE SNOALBA
+  end module snoalba_mod

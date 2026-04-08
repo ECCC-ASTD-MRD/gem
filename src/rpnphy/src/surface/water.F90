@@ -15,6 +15,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module water_mod
+  implicit none
+  public
+contains
+
 subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
      n, m, nk)
    use tdpack
@@ -22,6 +27,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    use sfc_options
    use sfcbus_mod
    use phy_status, only: physeterror
+   use fillagg_mod, only: fillagg
 
 #ifdef HAVE_NEMO
    use cpl_itf     , only: cpl_update
@@ -113,8 +119,8 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    real, dimension(n) :: this_inc,prev_inc,denom
    real, dimension(n) :: my_ta,my_qa
    real, dimension(n) :: zu10,zusr          ! wind at 10m and sensor level
-   real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
-   real, dimension(n) :: zusurfzt, zvsurfzt, zqd
+   real, dimension(n) :: zref_sw_surf, zemit_lw_surf
+   real, dimension(n) :: zusurfzt, zvsurfzt
 
    integer I
    real qsat_o_salty, delh, delq, zw, z1, z2, re
@@ -536,7 +542,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    !#TODO: at least 4 times identical code in surface... separeted s/r to call
    IF_THERMAL_STRESS: if (thermal_stress) then
 
-   ! Compute wind at z=zt
+   ! Compute wind at z=zt for wbgt
    i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
         hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
         tdiaglim=WATER_TDIAGLIM,L_min=sl_Lmin_water,spdlim=vmod)
@@ -565,24 +571,22 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
          else
          zusr(i) = zu10(i)
          endif
-
-            zqd(i) =max( ZQDIAG(i) , 1.e-6)  
+         
+      if (atm_external) then
+      !# if direct/diffuse solar radiation not in forcing used default partitionning
+         zfsd(i) = 0.85*zflusolis(i)
+         zfsf(i) = 0.15*zflusolis(i)
+      endif
 
          zref_sw_surf(i) = alvis_wat(i) * zflusolis(i)
          zemit_lw_surf(i)  = (1. - zemisr(i)) * zfdsi(i) + zemisr(i)*STEFAN   &
               *ztsurf(i)**4
-         zzenith(i) = acos(zcoszeni(i))      
-         if (zflusolis(i) > 0.0) then
-            zzenith(i) = min(zzenith(i), pi/2.)
-         else
-            zzenith(i) = max(zzenith(i), pi/2.)
-         endif
 
       end do
 
-      call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+      call SURF_THERMAL_STRESS(ZTDIAG, zqdiag,         &
            ZU10,ZUSR,  ps,                             &
-           ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+           ZFSD, ZFSF, ZFDSI, acos(zcoszeni),          &
            ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
            Zutcisun ,Zutcishade,                       &
            zwbgtsun, zwbgtshade,                       &
@@ -627,4 +631,5 @@ contains
            (nu+1)*karman*frv_w/(base_depth*stab_func) * inc) - zdsst
    end function warm_func
 
-end subroutine water2
+ end subroutine water2
+end module water_mod

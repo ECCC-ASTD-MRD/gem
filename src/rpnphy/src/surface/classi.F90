@@ -1,3 +1,8 @@
+module classi_mod
+  implicit none
+  public
+contains  
+
       SUBROUTINE CLASSI(VPD,TADP,PADRY,RHOAIR,RHOSNI,       &
                         RPCP,TRPCP,SPCP,TSPCP,              &
                         TA,QA,PCPR,RRATE,SRATE,PRESSG,      &
@@ -145,4 +150,5 @@
 100   CONTINUE
 !
       RETURN
-      END
+    END SUBROUTINE CLASSI
+  end module classi_mod
