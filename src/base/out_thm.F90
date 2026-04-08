@@ -23,6 +23,7 @@
       use vgrid_wb
       use geomh
       use gmm_vt1
+      use gmm_vt0
       use gmm_pw
       use gmm_geof
       use VERgrid_options
@@ -61,7 +62,7 @@
 
       integer,save :: lastdt= -1
       integer i,j,k,ii,l_ninj,nko,istat,nk_under,nk_src,knd
-      integer pngz,pnvt,pntt,pnes,pntd, pnhr,pnpx,pntw,pnwe,pnww,&
+      integer pngz,pnvt,pntt,pnes,pntd, pnhr,pnpx,pntw,pnww,&
               pnzz,pnth,pnpn,pnp0,psum,pnpt,pnla,pnlo,pnme,pnmx
       integer, dimension(:), pointer     :: ip1m,indo
 
@@ -97,7 +98,7 @@
 
       pnpn=0 ; pnp0=0 ; pnpt=0 ; pnla=0 ; pnlo=0 ; pnme=0 ; pnmx=0
       pngz=0 ; pnvt=0 ; pntt=0 ; pnes=0 ; pntd=0 ; pnhr=0 ; pnpx=0
-      pntw=0 ; pnwe=0 ; pnww=0 ; pnzz=0 ; pnth=0
+      pntw=0 ; pnww=0 ; pnzz=0 ; pnth=0
       hyb0(1)=0.0
       ind0(1)=1
 
@@ -117,7 +118,6 @@
          if (Outd_var_S(ii,set) == 'HR') pnhr=ii
          if (Outd_var_S(ii,set) == 'PX') pnpx=ii
          if (Outd_var_S(ii,set) == 'TW') pntw=ii
-         if (Outd_var_S(ii,set) == 'WE') pnwe=ii
          if (Outd_var_S(ii,set) == 'WW') pnww=ii
          if (Outd_var_S(ii,set) == 'ZZ') pnzz=ii
          if (Outd_var_S(ii,set) == 'TH') pnth=ii
@@ -155,7 +155,7 @@
       psum=pnpn+pnp0+pnpt+pnla+pnlo+pnme+pnmx
       psum=psum +  &
            pngz+pnvt+pntt+pnes+pntd+pnhr+pnpx+ &
-           pntw+pnwe+pnww+pnzz+pnth
+           pntw+pnww+pnzz+pnth
 
       if (psum == 0) return
 
@@ -357,7 +357,11 @@
       end if ! P0
 
       if (pnww /= 0) then
-         call calomeg_w(myomega,st1,sls,wt1,tt1,wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         if (Schm_omega_cccma) then
+                call calomeg_w2(myomega,st1,st0,sls,ut1,vt1,zdt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         else
+                call calomeg_w(myomega,st1,sls,wt1,tt1,wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         endif
       end if
 
       if (pnth /= 0) then
@@ -599,46 +603,6 @@
             call out_fstecr(myomega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set),&
                  knd,-1,G_nk,indo,nko,Outd_nbit(pnww,set),.false. )
-         end if
-
-         if (pnwe /= 0) then
-         !
-         ! Compute WE (Normalized velocity in eta) mainly used by EER Lagrangian Dispertion Model
-         !
-         ! ZETA = ZETAs + ln(hyb)
-         !
-         ! Taking the total time derivative
-         !  .      .
-         ! ZETA = hyb/hyb
-         !  .     .
-         ! hyb = ZETA*hyb
-         !
-         ! Normalizing by domain height
-         !       .
-         ! WE = ZETA*hyb/( hyb(s) - hyb(t) )
-         !
-         ! Note: put WE=0 at first thermo level to close the domain
-         !       Do not write we for thermo level nk+3/4 since zdt is at surface
-         !       I user wants data at nk_3/4 us 0.5*ffwe(nk-1) (liniar interpolation)
-
-            if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) &
-               call gem_error(-1,'out_thm','REVIEW WE CODE for DYNAMICS_FISL_H')
-
-            istat = gmm_get(gmmk_zdt1_s,zdt1)
-            allocate(ffwe(l_minx:l_maxx,l_miny:l_maxy,G_nk))
-            ffwe(:,:,G_nk)= 0.
-            do k=1,G_nk-1
-               zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
-               do j= 1, l_nj
-               do i= 1, l_ni
-                  ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
-               end do
-               end do
-            end do
-            call out_fstecr(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&
-                 'WE  ',Outd_convmult(pnwe,set),Outd_convadd(pnwe,set),&
-                 knd,-1,G_nk,indo,min(nko,G_nk),Outd_nbit(pnwe,set),.false.)
-            deallocate (ffwe)
          end if
 
          if (pnzz /= 0) then

@@ -94,8 +94,15 @@
 
       cdelta=(Dcst_rayt_8 * geomh_hy_8*Dcst_rayt_8 * geomh_hx_8)**(1.d0/2.0)
       cdelta2 = (cdelta)**2
-      crit_coef =0.25*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
-      base_coefT= HzdlnR*crit_coef
+
+      crit_coef =(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
+      if (Hzd_pwr_z==2)  then
+              base_coefT= 0.25*HzdlnR*crit_coef
+      else
+              !base_coefT=(2.*sqrt(2.)*pi)**(-1.d0)*sqrt(HzdlnR)*crit_coef
+              base_coefT= 0.25*sqrt(HzdlnR)*crit_coef
+      endif
+    !if(ptopo_myproc==0 .and. ptopo_couleur==0)   print*,'=== hzd_theta_cons','pwr=',Hzd_pwr_z,'base_coefT=',base_coefT
 
       do k=1,Nk
       F_coef_8(K) = base_coefT

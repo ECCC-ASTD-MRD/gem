@@ -59,9 +59,10 @@
 !$omp end do 
 
 !$omp single
-               call hzd_u_alh (ut0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-               call hzd_v_alh (vt0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-               call hzd_theta_alh (zdt0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+               call hzd_uvwzd_alh(ut0 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,1)
+               call hzd_uvwzd_alh(vt0 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,2)
+               call hzd_uvwzd_alh(zdt0,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+
 !$omp end single
 
                call hzd_exp_deln ( u_tmp  , Hzd_pwr, Hzd_lnR, WS1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
@@ -81,9 +82,9 @@
 !$omp end do
             else
 !$omp single
-               call hzd_u_alh (ut0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-               call hzd_v_alh (vt0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-               call hzd_theta_alh (zdt0,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+               call hzd_uvwzd_alh(ut0 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,1)
+               call hzd_uvwzd_alh(vt0 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,2)
+               call hzd_uvwzd_alh(zdt0,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
 !$omp end single
             endif
          endif
