@@ -13,6 +13,11 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module phtsyn_svs2_mod
+  implicit none
+  public
+contains
+
       SUBROUTINE PHTSYN_SVS2 ( LAI_NCLASS, VEGFRAC, &
                TCAN,  PRESSG,  RESAVG,  QA, QSWV1,  WD, &
                FCD, COSZS, WFC, WWILT, MASKLAT, &
@@ -21,7 +26,6 @@
 !
 !
         use svs_configs
-        use sfc_options, only: svs_gexp
         use sfc_options, only: svs_etr_avg_beta
         use sfc_options, only: svs_etr_fcd_dyn
         use sfc_options, only: svs_etr_max_roots_ignored
@@ -75,7 +79,7 @@
       REAL INICO2I(KK), ALPHA(KK), RMLCOEFF(KK), BB(KK), MM(KK)
       REAL CO2CC, DELTA_CO2, N_EFFECT
       INTEGER ISC4(KK)
-      REAL GEXP
+      REAL GEXP_CST
 !
 !Author
 !          S. Zhang (March 2013)
@@ -425,12 +429,9 @@
 !     FOR VALUES HIGHER THAN 1. WHEN GEXP IS ABOUT 10, PHOTOSYNTHESIS DOES
 !     NOT START DECREASING UNTIL ABOUT SOIL MOISTURE IS HALF WAY BETWEEN
 !     WILTING POINT AND FIELD CAPACITY.
-      if ( svs_gexp .GT. 0. ) then
-         GEXP = svs_gexp
-      else
-         ! Default value used for backward compatibility
-         GEXP = 2.
-      end if   
+!     Default value used for backward compatibility
+!     TODO: This should be updated following modifications made in MoSA
+      GEXP_CST = 2.
 !
 !     GENERATE THE KK_TO_ICC INDEX FOR CORRESPONDENCE BETWEEN 9 PFTs AND THE
 !     12 VALUES IN THE PARAMETER VECTORS
@@ -709,7 +710,7 @@
          DO K=1,NL_SVS
             BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
             ! soil moisture stress term per layer, with beta bounded between 0 and 1
-            G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP
+            G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP_CST
          ENDDO
          ! dynamic root fraction that takes into account soil moisture stress
          fcd_dyn(i,1) = fcd(i,1) * (1. + (G_WSOL(i,1) - 1.) * svs_etr_fcd_dyn)
@@ -746,7 +747,7 @@
                if (svs_etr_max_roots_ignored > 0.0) then
                  avg_beta(i) = avg_beta(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i)))
                endif
-               avg_gwsol(i) = 1.0 - ( 1.0 - min(avg_beta(i), 1.0) ) ** GEXP
+               avg_gwsol(i) = 1.0 - ( 1.0 - min(avg_beta(i), 1.0) ) ** GEXP_CST
              elseif (svs_etr_max_roots_ignored > 0.0) then
                avg_gwsol(i) = min(avg_gwsol(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i))), 1.0)
              endif
@@ -1089,3 +1090,4 @@
 
       RETURN
     END SUBROUTINE PHTSYN_SVS2
+  end module phtsyn_svs2_mod

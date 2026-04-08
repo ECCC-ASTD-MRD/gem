@@ -28,6 +28,11 @@ subroutine inicover_svs2(pvars, kount, ni)
    use sfcbus_mod
    use svs_configs, only :  ntypeh, vh_type
    use phymem, only: phyvar
+   use aggcovernat_mod, only: aggcovernat
+   use aggveghigh_mod, only: aggveghigh
+   use aggveglow_mod, only: aggveglow
+   use interpveg_mod, only: interpveg
+   use veglowhigh_svs2_mod, only: veglowhigh_svs2
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -287,7 +292,6 @@ subroutine inicover_svs2(pvars, kount, ni)
 
    !********************************************************************
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
-   real, external :: interpveg
 
    integer :: i,k
    integer(INT64) :: delti64

@@ -16,6 +16,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module outqenv_mod
+  implicit none
+  public
+contains
+  
 subroutine OUTQENV2(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND,    &
      PEMIT_LW_FAC, PEMIT_LW_GRND, PLW_RAD, &
      PBLD, PBLD_HEIGHT, PWALL_O_HOR, PDIR_SW, PZENITH,    &
@@ -196,4 +201,5 @@ subroutine OUTQENV2(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND,    &
    enddo
 
    return
-end subroutine OUTQENV2
+ end subroutine OUTQENV2
+end module outqenv_mod

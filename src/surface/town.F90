@@ -81,6 +81,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
         ,urb_diagwind, urb_diagtemp, sl_Lmin_town, vamin
    use sfcbus_mod
    use phy_status, only: physeterror
+   use fillagg_mod, only: fillagg
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -437,6 +438,8 @@ call snow_frac_roof(xwsnow_roof(:),psnow(:)>0.,xfsnow_roof,xtemp)
         zalvis (i) = pdir_alb   (i,1)
         zsnodp (i) = xbld(i)      * xdsnow_roof(i)  +   &
                     (1.-xbld(i))  * xdsnow_road(i)
+        zsnowe(i) =  xbld(i)      * xwsnow_roof(i)  +   &
+                    (1.-xbld(i))  * xwsnow_road(i)
         zfv    (i) = psftq      (i) * xlvtt
 !  runoff -- aggregated with all other surface tiles. Convert to mm
         zrunofftot(i) = xrunoff(i) * dt

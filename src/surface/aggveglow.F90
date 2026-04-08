@@ -13,7 +13,11 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-
+module aggveglow_mod
+  implicit none
+  public
+contains  
+  
 subroutine aggveglow(fcover, tablen, tables, aggf, lat, ni, nclass)
   use svs_configs, only : ntypel, vl_type, furb_vl, epsilon_svs
    implicit none
@@ -108,3 +112,4 @@ subroutine aggveglow(fcover, tablen, tables, aggf, lat, ni, nclass)
 
    return
  end subroutine aggveglow
+end module aggveglow_mod

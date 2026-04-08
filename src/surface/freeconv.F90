@@ -1,5 +1,11 @@
-      SUBROUTINE FREECONV(LKICEH,T0,TLAK,RHOIW,NLAK,NLAKMAX,ILG,IL1,IL2)
-!=======================================================================
+module freeconv_mod
+  implicit none
+  public
+contains
+
+  SUBROUTINE FREECONV(LKICEH,T0,TLAK,RHOIW,NLAK,NLAKMAX,ILG,IL1,IL2)
+  !=======================================================================
+      use eqnst_mod, only: eqnst
       IMPLICIT NONE
 !
 ! ----* LAKE MODEL VARIABLES *----------------------------------------
@@ -72,4 +78,5 @@
 100   CONTINUE
 6666  FORMAT(A37,4I5,F5.1)
       RETURN
-      END
+    END SUBROUTINE FREECONV
+  end module freeconv_mod

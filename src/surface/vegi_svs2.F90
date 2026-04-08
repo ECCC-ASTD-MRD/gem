@@ -13,10 +13,14 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module vegi_svs2_mod
+  implicit none
+  public
+contains
       SUBROUTINE VEGI_SVS2 ( RG, T, TVEG, HU, PS, &
            WD , RGL, LAI, LAI_VH, LAI_VL, HVEGLPOL, RSMIN, GAMMA, WWILT, WFC, &
            SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, Z0MVH,  &
-           VGH_HEIGHT,VGH_DENS, SNCMA, WR_VH, WFL_ICE, &
+           VGH_HEIGHT,VGH_DENS, SNCMA, WR_VH, WFL_ICE, DZ_FL, &
            RS, SKYVIEW,  &
            SKYVIEWA, VTR, VTRA, &
            FCD, ACROOT, WRMAX_VL, WRMAX_VH, WRMAX_FL, PHM_CAN, HVEGAPOL, SCAP, N  )
@@ -39,7 +43,7 @@
       REAL D50(N), D95(N), ACROOT(N,NL_SVS) , WRMAX_VL(N),  WRMAX_VH(N)
       REAL HVEGLPOL(N), HVEGAPOL(N), SNCMA(N)
       REAL Z0MVH(N),  VGH_HEIGHT(N), VGH_DENS(N), PHM_CAN(N)
-      REAL SCAP(N), WR_VH(N), WRMAX_FL(N), WFL_ICE(N)
+      REAL SCAP(N), WR_VH(N), WRMAX_FL(N), WFL_ICE(N), DZ_FL(N)
 !
 !Author
 !          Vionnet al. (2017-2024)
@@ -84,6 +88,7 @@
 ! SNCMA    mass of intercepted snow in the canopy [kg/m2]
 ! WR_VH    Water retained by high vegetation [kg/m2]
 ! WFL_ICE  Frozen water in the forest litter layer [kg/m2]
+! DZ_FL    Thickness of the forest litter layer [m]
 !
 !          - Input/Output -
 ! VGH_DENS  Density of trees in areas of high vegeation (m)
@@ -284,7 +289,7 @@
 
             ! For forest litter layer
              IF (LFORLIT) THEN
-               WRMAX_FL(I) = 0.12 * DZ_FL * RHOW - WFL_ICE(I)
+               WRMAX_FL(I) = 0.12 * DZ_FL(I) * RHOW - WFL_ICE(I)
              ENDIF
 
 !
@@ -393,4 +398,5 @@
 
 !
       RETURN
-      END
+    END SUBROUTINE VEGI_SVS2
+  end module vegi_svs2_mod

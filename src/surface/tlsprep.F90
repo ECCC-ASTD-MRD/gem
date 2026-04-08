@@ -1,4 +1,9 @@
-      SUBROUTINE TLSPREP(GCOEFFS,GCONSTS,CPHCHS,TCSNOW,HCPSNO,IWATER,  &
+module tlsprep_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE TLSPREP(GCOEFFS,GCONSTS,CPHCHS,TCSNOW,HCPSNO,IWATER,  &
                         ZRSLDM,ZRSLDH,ZRSLFM,ZRSLFH,ZDSLM,ZDSLH,       &
                         ZOSCLM,ZOSCLH,ZOMLNS,ZOELNS,ZOM,ZOH,           &
                         TVIRTA,TPOTA,CRIB,DRAGS,CEVAP,IEVAP,ISAND,     &
@@ -120,4 +125,6 @@
   300 CONTINUE
 !
       RETURN                                                                      
-      END
+    END SUBROUTINE TLSPREP
+  end module tlsprep_mod
+  

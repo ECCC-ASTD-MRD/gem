@@ -13,14 +13,18 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module drag_mod
+  implicit none
+  public
+contains  
 
 subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
      PS, RS, VEG, Z0H, Z0TOT, WFC, &
      PSNG, PSNV, LAI, ZUSL, ZTSL, LAT, FCOR, &
+     WSAT, WF, &
      RESA, ILMO, HST, FRV, FTEMP, FVAP, &
      CH, CD, HRSURF, HUSURF, HV, DEL, ZQS, &
-     CTU, N)
+     CTU, BETA_EVPG, DHUSURF_DQSAT, N)
    use tdpack
    use sfclayer, only: sl_sfclayer,SL_OK
    use sfc_options
@@ -59,6 +63,8 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    ! ZUSL      reference height for wind input
    ! LAT       latitude
    ! FCOR      Coriolis factor
+   ! WSAT      volumetric water content at saturation
+   ! WF        Soil volumetric ice content
    !           - Output -
    ! CH        drag coefficient for heat
    ! CD        drag coefficient for momentum
@@ -70,16 +76,20 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    ! ZQS       area-averaged relative humidity of a model tile
    ! CTU       homogeneous boundary condition term in the
    !           diffusion equation for Theta and Q
+   ! BETA_EVPG beta factor of the bare ground surface (only used when
+   !           evap. formulation based on Beta methods)
+   ! DHUSURF_DQSAT Derivative of HUSURF = HRSURF*QSAT wrt QSAT
 
    integer N
    real TS(N), WG(N), WR(N), THETAA(N), VMOD(N), VDIR(N), HU(N)
    real PS(N), RS(N), VEG(N), Z0TOT(N), WFC(N)
    real Z0H(N)
    real PSNG(N), PSNV(N), LAI(N), ZUSL(N), ZTSL(N)
-   real LAT(N), FCOR(N)
+   real LAT(N), FCOR(N), WSAT(N), WF(N)
    real RESA(N), ILMO(N), HST(N), FRV(N), FTEMP(N), FVAP(N)
    real CH(N), CD(N), HUSURF(N), HV(N), DEL(N), ZQS(N)
    real HRSURF(N), CTU(N)
+   real BETA_EVPG(N), DHUSURF_DQSAT(N)
 
    !@Author S. Belair (January 1997)
    !@Revisions
@@ -118,7 +128,7 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
 
    integer :: i, zopt
    real :: ue
-   real, dimension(n) :: TEMP, WRMAX, QSAT, COEF, CMU
+   real, dimension(n) :: TEMP, WRMAX, QSAT, COEF, CMU, WSATC, WFC_EFF
 
    !------------------------------------------------------------------------
 
@@ -142,30 +152,63 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
 
    do I=1,N
       QSAT(I) = FOQST( TS(I), PS(I) )
+      BETA_EVPG(I) = 0.  ! Initialize default value to zero (variable not used by "alpha" methods)
    end do
 
-   do I=1,N
+   IF(ISBA_LWFCLIQ) THEN              
+      DO I=1,N
+         !Adjust wsat for presence of ice as in hydro_svs
+         WSATC(I)= MAX((WSAT(I)-WF(I)-0.00001), CRITWATER)
+         !Field capacity with respect to the liquid water using modified soil porosity
+         WFC_EFF(I) = WFC(I) * WSATC(I)/WSAT(I)
+      END DO
+   ELSE
+      DO I=1,N
+         WFC_EFF(I) = WFC(I) 
+      END DO
+   ENDIF
 
-      !  when hu*qsat < qa, there are two possibilities
+   if ( isba_hrsurf_method == "ALPHA_JN90" ) then
+      ! formulation based on Alpha method of Jacquemin and Noilhan (1990) BLM, 51: 93-134. 
+      do I=1,N
+         ! when hu*qsat < qa, there are two possibilities
+         !
+         ! a) low-level air is dry, i.e., qa < qsat
+         if ( HRSURF(I)*QSAT(I).lt.HU(I).and.QSAT(I).gt.HU(I) ) &
+              HRSURF(I) = HU(I) / QSAT(I)
+         !
+         ! b) low-level air is humid, i.e., qa >= qsat
+         if ( HRSURF(I)*QSAT(I).lt.HU(I).and.QSAT(I).le.HU(I) ) &
+              HRSURF(I) = 1.0
+         !
+         ! for very humid soil (i.e., wg > wfc ), we take hu=1
+         if ( WG(I).gt.WFC_EFF(I) ) &
+              HRSURF(I) = 1.0
+         !
+         DHUSURF_DQSAT(I) = HRSURF(I)
+      end do
+   else if ( isba_hrsurf_method == "BETA_ECMWF12") then
+      ! formulation based on Beta method of Albergel et al (2012) HESS 16: 3607-3620.
+      ! but adapted to behave like Beta methods when soil is dry
+      do I=1,N
+         if (HU(I) .gt. QSAT(I)) then
+            ! Beta is maximal in the following cases
+            ! - air more humid than soil water: condensation occurs at rate independent of soil moisture
+            BETA_EVPG(I) = 1.0
+            HRSURF(I) = 1.0
+         else
+            TEMP(I) = (WFC_EFF(I) / MAX(WG(I),CRITWATER))
+            TEMP(I) = TEMP(I) ** MAX(isba_hrsurf_power - (isba_hrsurf_power-1.0)/TEMP(I),1.0)
+            BETA_EVPG(I) = RESA(I) / ( RESA(I) + isba_hrsurf_rs * TEMP(I) )
+            HRSURF(I) = BETA_EVPG(I) + (1-BETA_EVPG(I)) * HU(I) / QSAT(I)
+         endif
+         !
+         DHUSURF_DQSAT(I) = BETA_EVPG(I)
+      end do
+   endif
 
-      !  low-level air is dry, i.e., qa < qsat
-
-      if ( HRSURF(I)*QSAT(I).lt.HU(I).and.QSAT(I).gt.HU(I) ) &
-           HRSURF(I) = HU(I) / QSAT(I)
-
-      ! b) low-level air is humid, i.e., qa >= qsat
-
-      if ( HRSURF(I)*QSAT(I).lt.HU(I).and.QSAT(I).le.HU(I) ) then
-         HRSURF(I) = 1.0
-      endif
-
-      !  for very humid soil (i.e., wg > wfc ), we take hu=1
-
-      if ( WG(I).gt.WFC(I) ) &
-           HRSURF(I) = 1.0
-
-   end do
-
+  !
+  ! Calculate specific humidity over surface    
    do I=1,N
       HUSURF(I) = HRSURF(I) * QSAT(I)
    end do
@@ -250,4 +293,5 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
    end do
 
    return
-end subroutine drag7
+ end subroutine drag7
+end module drag_mod

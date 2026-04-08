@@ -15,6 +15,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module iniptsurf_mod
+  implicit none
+  public
+contains
+  
 function iniptsurf5() result(F_istat)
    use sfc_options
    use sfcbus_mod
@@ -43,7 +48,7 @@ function iniptsurf5() result(F_istat)
 #include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
-   integer, parameter :: nb_agrege = 48
+   integer, parameter :: nb_agrege = 49
    integer, parameter :: nb_glaciers = 1
    integer, parameter :: nb_water = 4
    integer, parameter :: nb_ice = 2
@@ -67,8 +72,8 @@ function iniptsurf5() result(F_istat)
         'ALFAQ'    , 'ALFAT'    , 'ALVIS'    , 'BM'       , 'BT'       , &
         'EMISR'    , 'FC'       , 'FRV'      , 'FTEMP'    , 'FV'       , &
         'FVAP'     , 'HST'      , 'ILMO'     , &
-        'QDIAG'    , 'QSURF'    , 'RUNOFFTOT', 'SNODP'    , 'TDIAG'    , &
-        'TSURF'    , 'UDIAG'    , 'VDIAG'    , &
+        'QDIAG'    , 'QSURF'    , 'RUNOFFTOT', 'SNODP'    , 'SNOWE'    , &
+        'TDIAG'    , 'TSURF'    , 'UDIAG'    , 'VDIAG'    , &
         'QDIAGTYP' , 'TDIAGTYP' , 'UDIAGTYP' , 'VDIAGTYP' , &
         'QDIAGTYPV', 'TDIAGTYPV', 'UDIAGTYPV', 'VDIAGTYPV', &
         'YUTCISUN' , 'YUTCISHADE' ,                                      &
@@ -306,4 +311,5 @@ function iniptsurf5() result(F_istat)
 
    F_istat = RMN_OK
    return
-end function iniptsurf5
+ end function iniptsurf5
+end module iniptsurf_mod

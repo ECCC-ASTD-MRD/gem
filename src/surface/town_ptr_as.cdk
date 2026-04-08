@@ -24,6 +24,7 @@
       zrainrate(1:n) => bus( x( rainrate,1,1)     : )
       zrunofftot(1:n)=> bus( x( runofftot,1,indx_urb) : )
       zsnodp   (1:n) => bus( x( snodp,1,indx_urb) : )
+      zsnowe   (1:n) => bus( x( snowe,1,indx_urb) : )
       zsnowrate(1:n) => bus( x( snowrate,1,1)     : )
       ztdiag   (1:n) => bus( x( tdiag,1,1)        : )
       ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_urb) : )

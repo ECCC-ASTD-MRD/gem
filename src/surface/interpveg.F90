@@ -16,7 +16,12 @@
 !**
 !*
 !
-      REAL FUNCTION INTERPVEG( JULIEN, TABLE )
+module interpveg_mod
+  implicit none
+  public
+contains
+
+  REAL FUNCTION INTERPVEG( JULIEN, TABLE )
 !
       implicit none
 !!!#include <arch_specific.hf>
@@ -75,5 +80,5 @@
 !
 !
       RETURN
-      END
-
+    END FUNCTION INTERPVEG
+  end module interpveg_mod

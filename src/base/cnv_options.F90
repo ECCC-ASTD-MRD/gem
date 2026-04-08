@@ -236,6 +236,15 @@ module cnv_options
    real              :: kfctaucape(4)   = (/-1., -1., -1., -1./)
    namelist /convection_cfgs/ kfctaucape
 
+   !# Coefficient for trigger adjustment by subgrid-scale orography (sgo)
+   real              :: kfctrigsgo      = 0.
+   namelist /convection_cfgs/ kfctrigsgo
+
+   !# Exponent (power) applied to subgrid-scale orography (sgo) when computing
+   !# sgo-based trigger adjustment 
+   real              :: kfctrigsgop     = 1.
+   namelist /convection_cfgs/ kfctrigsgop
+   
    !# Trigger parameter of Kain-Fritsch convection scheme (WKLCL).
    !# Trigger parameter will increase from kfctrigw(3) to kfctrigw(4) [m/s]
    !# between wstar values kfctrigw(1) and kfctrigw(2)

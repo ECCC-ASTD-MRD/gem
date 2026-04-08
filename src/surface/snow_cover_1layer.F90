@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_SNOW_COVER_1LAYER
+  implicit none
+  public
+contains
 !   ##########################################################################
     SUBROUTINE SNOW_COVER_1LAYER(PTSTEP, PANSMIN, PANSMAX, PTODRY,         &
                                  PRHOSMIN, PRHOSMAX, PRHOFOLD, OALL_MELT,  &
@@ -636,3 +640,4 @@ END WHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SNOW_COVER_1LAYER
+end module MODI_SNOW_COVER_1LAYER

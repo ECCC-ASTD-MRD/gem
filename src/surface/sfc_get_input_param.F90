@@ -13,7 +13,11 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------
-
+module sfc_get_input_param_mod
+  implicit none
+  public
+contains
+  
 function sfc_get_input_param()  result(istat)
    use, intrinsic :: iso_fortran_env, only: INT64
    use wb_itf_mod, only: WB_OK, WB_MSG_INFO, wb_verbosity, wb_get
@@ -49,6 +53,7 @@ function sfc_get_input_param()  result(istat)
    endif
    !-------------------------------------
    return
-end function sfc_get_input_param
+ end function sfc_get_input_param
+end module sfc_get_input_param_mod
 
 

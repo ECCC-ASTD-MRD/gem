@@ -1,3 +1,7 @@
+module watdrn_svs_mod
+  implicit none
+  public
+contains
 subroutine watdrn_svs( &
      delzw, bcoef, thpora, grksat, grkeff, asatfc, asat0,  &
      asat1, subflw, basflw, satsfc,  &
@@ -283,4 +287,5 @@ subroutine watdrn_svs( &
    enddo
 
    return
-end subroutine watdrn_svs
+ end subroutine watdrn_svs
+end module watdrn_svs_mod

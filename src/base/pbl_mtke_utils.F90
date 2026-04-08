@@ -680,9 +680,12 @@ contains
        end do
     endif
 
+    ! For simplificty, assume sigmas(nk) to be the same as level above; to be revisited
+    sigmas(:,nk) = sigmas(:,nk-1)
+
     ! Adjust subgrid-scale variance of sigma_s for unresolved orographic gravity waves
     SGS_GW: if (sgs_gwfac > 0.) then
-       do k=1,nk-1
+       do k=1,nk
           do j=1,n
 
              ! Only compute in stable environments with significant SGS orographic variance
@@ -726,15 +729,18 @@ contains
     endif SGS_GW
 
     ! Compute the normalized saturation deficit (Q1)
-    q1(:,1:nk-1) = ccoef(:,1:nk-1) / ( sigmas(:,1:nk-1) + EPS )
-    q1(:,1) = 0. ; q1(:,nk) = 0. ;
-    q1=max(-6.,min(4.,q1))
-    sigmas(:,1) = 0.; sigmas(:,nk) = 0.
+    q1(:,1:nk) = ccoef(:,1:nk) / ( sigmas(:,1:nk) + EPS )
+    
+    q1(:,1) = 0. ; sigmas(:,1) = 0.
+    
+    q1=max(-6.,q1)
+    if (pbl_q1max_l)  q1=min(4.,q1)
+
     pblq1 = q1
     pblsigs = sigmas
 
     ! Compute cloud properties for local or nonlocal scalings
-    do k=2,nk-1
+    do k=2,nk
        do j=1,n
 
           NONLOCAL: if( pbl_nonloc == 'LOCK06' ) then
@@ -763,35 +769,58 @@ contains
 
           else
 
-             ! Compute cloud fraction (BS98, Eq. B1)
-             if( q1(j,k) > -1.2) then
-                frac(j,k) = max(0.,min(1.,0.5 + 0.36*atan(1.55*q1(j,k))))
-             elseif( q1(j,k) >= -6.0) then
-                frac(j,k) = exp(q1(j,k)-1.0)
+             if (pbl_q1gauss_l) then
+
+                ! analytical formula for cloud fraction from gaussian distribution
+                ! using error function erf 
+                if( q1(j,k) >= -6.0) then
+                   frac(j,k) = 0.5 * ( 1. + erf( q1(j,k)/sqrt(2.) ) )
+                else
+                   frac(j,k) = 0.
+                endif
+                
              else
-                frac(j,k) = 0.
+                
+                ! Compute cloud fraction (approximation based on BS98, Eq. B1)
+                if( q1(j,k) > -1.2) then
+                   frac(j,k) = max(0.,min(1.,0.5 + 0.36*atan(1.55*q1(j,k))))
+                elseif( q1(j,k) >= -6.0) then
+                   frac(j,k) = exp(q1(j,k)-1.0)
+                else
+                   frac(j,k) = 0.
+                endif
+                
              endif
+
              fnnonloc(j,k) = frac(j,k)
 
           endif NONLOCAL
 
-          ! Compute liquid water specific humidity (BS98, Eq. B2)
-          !JM start (modification to LM06 Eq. 6) - no impact
-!!$        if( q1(j,k) >= 2.0 ) then
-!!$          qc(j,k) = 2.032 + 0.9*(q1(j,k)-2.)
-!!$        elseif( q1(j,k) >= 0.0 ) then
-          if (q1(j,k) >= 0.0) then
-             !JM end
-             qc(j,k) = exp(-1.) + 0.66*q1(j,k) + 0.086*q1(j,k)**2
-          elseif( q1(j,k) >= -6.0 ) then
-             qc(j,k) = exp(1.2*q1(j,k)-1.)
+          ! Compute liquid water specific humidity
+
+          if (pbl_q1gauss_l) then
+
+             ! analytical formula from gaussian distribution
+             if( q1(j,k) >= -6.0 ) then
+                qc(j,k) = frac(j,k)*q1(j,k) + 1./sqrt(2.*PI) * exp( -0.5*q1(j,k)**2 )
+             else
+                qc(j,k) = 0.
+             endif
+
           else
-             qc(j,k) = 0.
+             
+             ! approximation based on BS98, Eq. B2
+             if( q1(j,k) >= 0.0 ) then
+                qc(j,k) = exp(-1.) + 0.66*q1(j,k) + 0.086*q1(j,k)**2
+             elseif( q1(j,k) >= -6.0 ) then
+                qc(j,k) = exp(1.2*q1(j,k)-1.)
+             else
+                qc(j,k) = 0.
+             endif
+             
           endif
-          !JM start - no impact
-!!$        qc(j,k) = min ( qc(j,k)*sigmas(j,k) , qcmax )
+
           qc(j,k) = min(qc(j,k)*(sigmas(j,k)+EPS),qcmax)
-          !JM end
 
           ! Compute cloud-induced flux enhancement factor * cloud fraction
           if (pbl_fnn == 'BECHTOLD98') then
@@ -853,11 +882,21 @@ contains
     end do
 
     ! Fill array extrema
-    frac(1:n,1) = 0. ; frac(1:n,nk) = 0.
-    fnn (1:n,1) = 0. ; fnn (1:n,nk) = 0.
-    qc  (1:n,1) = 0. ; qc  (1:n,nk) = 0.
-    fnnonloc(1:n,1) = 0.; fnnonloc(1:n,nk) = 0.
-    fngauss(1:n,1) = 0.; fngauss(1:n,nk) = 0.
+    frac(1:n,1)     = 0.
+    fnn(1:n,1)      = 0.
+    qc(1:n,1)       = 0.
+    fnnonloc(1:n,1) = 0.
+    fngauss(1:n,1)  = 0.
+
+    if (.not.pbl_cldnk_l) then
+       sigmas(1:n,nk)   = 0.
+       q1(1:n,nk)       = 0.
+       frac(1:n,nk)     = 0.
+       fnn(1:n,nk)      = 0.
+       qc(1:n,nk)       = 0.
+       fnnonloc(1:n,nk) = 0.
+       fngauss(1:n,nk)  = 0.
+    endif
 
     ! Create a vertical function to eliminate PBL cloud effects at upper levels
     call blweight(weight,s,ps,n,nk)

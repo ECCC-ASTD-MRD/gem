@@ -15,6 +15,12 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 !/@*
+
+module fillagg_mod
+  implicit none
+  public
+contains
+
 subroutine fillagg(bus,bussiz,ptsurf,ptsurfsiz,indx_sfc,surflen)
    use sfcbus_mod
    implicit none
@@ -68,4 +74,5 @@ subroutine fillagg(bus,bussiz,ptsurf,ptsurfsiz,indx_sfc,surflen)
    end do
    !--------------------------------------------------------------   
    return
-end subroutine fillagg
+ end subroutine fillagg
+end module fillagg_mod

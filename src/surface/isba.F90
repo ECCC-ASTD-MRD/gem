@@ -16,6 +16,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module isba_mod
+  implicit none
+  public
+contains
+
 subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
    use tdpack_const, only: PI
    use phy_status, only: phy_error_L, physeterror
@@ -23,6 +28,14 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
    use sfc_options, only: atm_external, atm_tplus, radslope, vamin, sl_Lmin_soil, &
         zu, zt, impflx, thermal_stress, z0tevol
    use sfcbus_mod
+
+   use soili_mod, only: soili2
+   use vegi_mod, only: vegi
+   use drag_mod, only: drag7
+   use ebudget_mod, only: ebudget4
+   use hydro_mod, only: hydro3
+   use update3_mod, only: update4
+   use fillagg_mod, only: fillagg
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Multitasking of the surface scheme ISBA
@@ -67,9 +80,9 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
    real,dimension(n) :: my_ta,   my_ua,   my_va,  vmod,   vmod0
    real,dimension(n) :: zref_sw_surf, zemit_lw_surf
    real,dimension(n) :: zu10, zusr
-   real,dimension(n) :: zusurfzt, zvsurfzt, zqd
-   real,dimension(n) :: zzenith
-
+   real,dimension(n) :: zusurfzt, zvsurfzt
+   real,dimension(n) :: zbetasf, dhusurf_dqsat
+   
    real,pointer,dimension(:) :: cmu
    real,pointer,dimension(:) :: ctu
    real,pointer,dimension(:) :: hu
@@ -140,6 +153,7 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
    real,pointer,dimension(:) :: zsnodp
    real,pointer,dimension(:) :: zsnoma
    real,pointer,dimension(:) :: zsnoro
+   real,pointer,dimension(:) :: zsnowe
    real,pointer,dimension(:) :: zsnowrate
    real,pointer,dimension(:) :: zstomr
    real,pointer,dimension(:) :: ztdiag
@@ -262,6 +276,7 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
    zsnoma   (1:n) => bus( x(snoma,1,1)        : )
    zsnoro   (1:n) => bus( x(snoro,1,1)        : )
+   zsnowe   (1:n) => bus( x(snowe,1,indx_sfc) : )
    zsnowrate(1:n) => bus( x(snowrate,1,1)     : )
    zstomr   (1:n) => bus( x(stomr,1,1)        : )
    ztdiag   (1:n) => bus( x(tdiag,1,1)        : )
@@ -378,14 +393,14 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
         z0h, Z0TOT, zWFC, &
         zPSNG, zPSNV, &
         zLAI, zzusl, zztsl, &
-        zdLAT, zFCOR, zRESA, &
+        zdLAT, zFCOR, zWSAT, zISOIL, zRESA, &
         zILMO, zHST, &
         zFRV, zFTEMP, &
         zFVAP, &
         CH, CD, HRSURF, zHUSURF, &
         zHV, &
         DEL, zqsurf, &
-        ctu, &
+        ctu, zbetasf , DHUSURF_DQSAT, &
         N)
    if (phy_error_L) return
 
@@ -398,7 +413,7 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
         zALVEG, zALVIS, zemisr, zemsvc,&
         zFDSI, zthetaa, &
         hu, ps, RHOA, &
-        zVEGFRAC, HRSURF, &
+        zVEGFRAC, HRSURF, DHUSURF_DQSAT,  &
         zHV, DEL, &
         zRESA, zRST, &
         CT, CG, ZCS, &
@@ -533,12 +548,15 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
       ! Fill runoff variable
       zRUNOFFTOT(i) = zOVERFL(i)
 
+      !Fill SWE variable
+      ZSNOWE(I) = ZSNOMA(I) + ZWSNOW(I)
+
    end do
 !-----------------------------------------------------
    !#TODO: at least 4 times identical code in surface... separeted s/r to call
    IF_THERMAL_STRESS: if (thermal_stress) then
 
-      ! Compute wind at the globe sensor level
+      ! Compute wind at zt for wbgt
    i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsoil1,zqsurf, &
         zz0veg,zz0tveg,zdlat,zfcor,optz0=zopt,   &
         L_min=sl_Lmin_soil,spdlim=vmod, &
@@ -560,30 +578,27 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
             zu10(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
          endif
 
-         ! wind  at SensoR level zubos at z=zt
+         ! wind  at z=zt
          if( (abs(zusurfzt(i)) >= 0.1) .and. (abs(zvsurfzt(i)) >= 0.1)) then
          zusr(i) = sqrt( zusurfzt(i)**2 + zvsurfzt(i)**2)
          else
          zusr(i) = zu10(i)
          endif
 
-            zqd(i) = max( ZQDIAG(i) , 1.e-6) 
+      if (atm_external) then
+      !# if direct/diffuse solar radiation not in forcing used default partitionning
+         zfsd(i) = 0.85*zfsolis(i)
+         zfsf(i) = 0.15*zfsolis(i)
+      endif
 
          zref_sw_surf (i)  = zalvis(i) * zfsolis(i)
          zemit_lw_surf(i)  = zfsolis(i) - zref_sw_surf (i) + zfdsi(i) - zrnet_s(i)
 
-         zzenith(i) = acos(zcoszeni(i))      
-         if (zfsolis(i) > 0.0) then
-            zzenith(i) = min(zzenith(i), pi/2.)
-         else
-            zzenith(i) = max(zzenith(i), pi/2.)
-         endif
-
       end do
 
-      call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+      call SURF_THERMAL_STRESS(ZTDIAG, zqdiag,         &
            ZU10, zusr, ps,                             &
-           ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+           ZFSD, ZFSF, ZFDSI, acos(zcoszeni),          &
            ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
            Zutcisun ,Zutcishade,                       &
            zwbgtsun, zwbgtshade,                       &
@@ -598,4 +613,5 @@ subroutine isba4(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, N, M, NK)
         SURFLEN)
 
    return
-end subroutine isba4
+ end subroutine isba4
+end module isba_mod

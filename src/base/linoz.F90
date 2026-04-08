@@ -110,13 +110,6 @@ contains
 
       IF_KOUNT0: if (kount == 0) then
 
-         if (.not.ISPHYIN('o3ce')) zo3ce = -1.
-         if (.not.ISPHYIN('ttce')) zttce = 0.
-         if (.not.ISPHYIN('lin4')) zlin4 = 0.
-         if (.not.ISPHYIN('lin5')) zlin5 = 0.
-         if (.not.ISPHYIN('lin6')) zlin6 = 0.
-         if (.not.ISPHYIN('lin7')) zlin7 = 0.
-
          ! Initialize ozone with climatology, if not found in analysis
          ! micro g /kg air <-- kg /kg air
          !   climato_phase2_v2 (Paul V)

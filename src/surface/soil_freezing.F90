@@ -1,5 +1,8 @@
 !copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
-
+module soil_freezing_mod
+  implicit none
+  public
+contains
       SUBROUTINE SOIL_FREEZING(DT, TSOIL, VEGL, VEGH, PSN, PSNVH,  &
                                 SOILCONDZ, SOILHCAPZ , TGRS, TVEGS,   &
                                 WSOIL, ISOIL,  &
@@ -593,4 +596,5 @@
 
 !
 
-      END SUBROUTINE SOIL_FREEZING
+    END SUBROUTINE SOIL_FREEZING
+  end module soil_freezing_mod

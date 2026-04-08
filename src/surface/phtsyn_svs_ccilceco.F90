@@ -13,6 +13,11 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+
+module phtsyn_svs_ccilceco_mod
+  implicit none
+  public
+contains
       SUBROUTINE PHTSYN_SVS_CCILCECO ( LAI_NCLASS, VEGFRAC, &
                TCAN,  PRESSG,  RESAVG,  QA, QSWV1,  WD, &
                FCD, COSZS, WFC, WWILT, MASKLAT, &
@@ -28,14 +33,14 @@
       REAL LAI_NCLASS(N,NCLASS),VEGFRAC(N,NCLASS)
       REAL WD(N,NL_SVS),FCD(N,NL_SVS),WFC(N,NL_SVS), WWILT(N,NL_SVS)
    
-      INTEGER KK,ICC,IG, IC, L2MAX, NN, MASKLAT(N), GEXP
+      INTEGER KK,ICC,IG, IC, L2MAX, NN, MASKLAT(N), GEXP_CST
       PARAMETER (KK=12)  ! PRODUCT OF CLASS PFTs AND L2MAX (4 x 3 = 12)
       PARAMETER (ICC=9)  ! 9 types of vegetation CCMA land surface model
       PARAMETER (IG=3)  ! 
       PARAMETER (IC=4)  ! Number of plant functional types PFTS:
       ! NEEDLE LEAF , BROAD LEAF , CROPS, GRASSES
       PARAMETER (L2MAX=3)  !
-      PARAMETER (GEXP=2) ! !     EXPONENT FOR SOIL MOISTURE STRESS. FOR SN EQUAL TO 1, PHOTOSYNTHESIS
+      PARAMETER (GEXP_CST=2) ! !     EXPONENT FOR SOIL MOISTURE STRESS. FOR SN EQUAL TO 1, PHOTOSYNTHESIS
 !     DECREASES LINEARLY WITH SOIL MOISTURE, AND OF COURSE NON-LINEARLY
 !     FOR VALUES HIGHER THAN 1. WHEN SN IS ABOUT 10, PHOTOSYNTHESIS DOES
 !     NOT START DECREASING UNTIL ABOUT SOIL MOISTURE IS HALF WAY BETWEEN
@@ -737,7 +742,7 @@
             ! beta between 0. an 1.  , 
             BETA_WSOL(I,K) =  min( max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) , 1.0)
             ! soil moisture stress term per layer
-            G_WSOL(i,k) = 1.0 - ( 1.0 - BETA_WSOL(I,K) ) ** GEXP
+            G_WSOL(i,k) = 1.0 - ( 1.0 - BETA_WSOL(I,K) ) ** GEXP_CST
          ENDDO
          ! average soil moisture term ... weighted by root fractions 
          ! Total roots = 1.0 if vegetation present ... set the term=0.0 if no vegetation
@@ -1084,3 +1089,4 @@
 
       RETURN
     END SUBROUTINE PHTSYN_SVS_CCILCECO
+  end module phtsyn_svs_ccilceco_mod

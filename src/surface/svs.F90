@@ -16,6 +16,10 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !** S/P SVS
 !
+module svs_mod
+  implicit none
+  public
+contains
 subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use, intrinsic :: iso_fortran_env, only: INT64
    use phy_status, only: phy_error_L, physeterror
@@ -25,9 +29,22 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    use sfc_options, only: atm_external, atm_tplus, radslope, jdateo, &
         use_photo, nclass, zu, zt, sl_Lmin_soil, VAMIN, svs_local_z0m, &
         vf_type,lsoil_freezing_svs1,lwater_ponding_svs,critwater, &
-        svs_snowfrac_ground
+        svs_snowfrac_ground, thermal_stress
    use svs_configs
    use suncos, only: suncos2
+   use soili_svs_mod, only: soili_svs
+   use vegi_svs_mod, only: vegi_svs
+   use soil_freezing_mod, only: soil_freezing
+   use drag_svs_mod, only: drag_svs
+   use snow_alone_mod, only: snow_alone
+   use snow_veg_mod, only: snow_veg
+   use ebudget_svs_mod, only: ebudget_svs
+   use hydro_svs_mod, only: hydro_svs
+   use phtsyn_svs_ccilceco_mod, only: phtsyn_svs_ccilceco
+   use phtsyn_svs_mod, only: phtsyn_svs
+   use update_svs_mod, only: update_svs
+   use fillagg_mod, only: fillagg
+   use tdpack, only: stefan  
    implicit none
 !!!#include <arch_specific.hf>
 !
@@ -37,6 +54,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 !
 ! 001      Rewrite ISBA into SVS (multi-budget, multi-layer isba)
 !              Add sea ice surface
+! 002      Add thermal stress diagnostics (S. Leroyer, March 2026)
 !Object
 !          Multitasking of the surface scheme SVS
 !
@@ -103,6 +121,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zqdiagtyp
    real,pointer,dimension(:) :: zqsurf
    real,pointer,dimension(:) :: zsnodp
+   real,pointer,dimension(:) :: zsnowe
    real,pointer,dimension(:) :: ztdiag
    real,pointer,dimension(:) :: ztdiagtyp
    real,pointer,dimension(:) :: zthetaa
@@ -123,7 +142,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,pointer,dimension(:) :: zmaxpond
    real,pointer,dimension(:) :: zvegh
    real,pointer,dimension(:) :: zvegl
-   
+   real,pointer,dimension(:) :: zfsd
+   real,pointer,dimension(:) :: zfsf   
 !
 !
 
@@ -143,6 +163,10 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: wsaturc1,sig_topo
 ! 
    real, dimension(n,nl_svs) :: isoilt, wsoilt
+
+!  use for thermal_stress
+   real,dimension(n) :: zemit_lw_surf, zref_sw_surf
+   real,dimension(n) :: zuuped, zuvped, zvvped, zudix
 !
 !******************************************************
 !
@@ -174,6 +198,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
       zqsurf   (1:n) => bus( x(qsurf,1,indx_sfc) : )
       zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
+      zsnowe   (1:n) => bus( x(snowe,1,indx_sfc) : )
       ztdiag   (1:n) => bus( x(tdiag,1,1)        : )
       ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
       ztsa     (1:n) => bus( x(tsa,1,1)          : )     
@@ -192,6 +217,8 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
       zslop    (1:n) => bus( x(slop,1,1)        : )
       zvegh    (1:n) => bus( x(vegh,1,1)        : )
       zvegl    (1:n) => bus( x(vegl,1,1)        : )
+      zfsd     (1:n) => bus( x(fsd,1,1)          : )
+      zfsf     (1:n) => bus( x(fsf,1,1)          : )
 
       if(svs_snowfrac_ground=='LA23') then
            zsigs    (1:n) => bus( x(sigs,1,1)        : )
@@ -365,7 +392,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(ROOTDP     ,1,1)),  bus(x(D50   ,1,1)),    &
            bus(x(D95   ,1,1)),  BUS(x(PSNGRVL,1,1)), &
            BUS(x(VEGH   ,1,1)), BUS(x(VEGL   ,1,1)), &
-           bus(x(RST     ,1,1)),     &
+           bus(x(GEXP     ,1,1)), bus(x(RST     ,1,1)),     &
            bus(x(SKYVIEW ,1,1)), bus(x(VEGTRANS,1,1)),   &   
            bus(x(frootd   ,1,1)), bus(x(frootdyn,1,1)), &
            BUS(x(BETAVG,1,1)), BUS(x(GWSOL,1,1))   , &
@@ -595,6 +622,7 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                         BUS(x(WFC    ,1,1))  , BUS(x(WWILT  ,1,1)), &
                         MASKLAT50            , &
                         BUS(x(BETAVG,1,1))   , BUS(x(GWSOL,1,1)), &
+                        bus(x(GEXP     ,1,1)), &
                         BUS(x(VGCTEM ,1,1))  , BUS(x(LAICTEM,1,1)), &
                         BUS(x(RCCTEM ,1,1))  , BUS(x(CO2I1  ,1,1)), &
                         BUS(x(AVG_GWSOL,1,1)), NCLASS, N)
@@ -647,9 +675,71 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
         BUS(x(WFLUX,I,1)) = RHOA(I)*BUS(x(EFLUX,I,1))
         BUS(x(ACCEVAP,I,1)) = BUS(x(ACCEVAP,I,1)) + BUS(x(WFLUX,I,1)) * DT
 !
-!       CALCULATE MEAN SNOW DEPTH FOR ESTHETIC PURPOSE ONLY
+!       CALCULATE MEAN SNOW DEPTH AND MEAN SWE FOR GRID-AVERAGED DIAGNOSTIC 
         zsnodp(i) = bus(x(VEGH,i,1)) * bus(x(SNVDP,i,1)) + (1. -  bus(x(VEGH,i,1))) * bus(x(SNODPL,i,1))
+        zsnowe(i) = bus(x(VEGH,i,1)) * (bus(x(SNVMA,i,1))+bus(x(WSNV,i,1))) +   &
+                (1. -  bus(x(VEGH,i,1))) * (bus(x(SNOMA,i,1))+bus(x(WSNOW,i,1)))
       end do
+!
+IF_THERMAL_STRESS_SVS: if (thermal_stress) then
+
+!  COMPUTE WIND AT THE PEDESTRIAN HEIGHT (zt as temp.) FOR WBGT
+      i = sl_sfclayer(zthetaa,hu,vmod,vdir,zzusl,zztsl,ztsa,zqsurf, &
+           z0m,z0h,zdlat,zfcor,L_min=sl_Lmin_soil,spdlim=vmod_lmin, &
+           hghtm_diag=zt,hghtt_diag=zt,t_diag=ztdiag,q_diag=zqdiag, &
+           u_diag=zuuped,v_diag=zvvped,tdiaglim=TDIAGLIM_FALSE) 
+      
+      if (i /= SL_OK) then
+         call physeterror('svs TS', 'error 2 returned by sl_sfclayer()')
+         return
+      endif
+
+      if (sl_Lmin_soil > 0.) then
+         ! re-scale winds 
+         zuuped = zuuped * vmod / vmod_lmin
+         zvvped = zvvped * vmod / vmod_lmin
+      endif
+
+   do i=1,N
+   zuvped(i)=sqrt(zuuped(i)**2 + zvvped(i)**2)
+      if (abs(zzusl(i)-zu) <= 2.0) then
+           zudix(i) = vmod(i)
+      else
+           zudix(i) = sqrt(zudiag(i)**2+zvdiag(i)**2)
+      endif
+
+      if (atm_external) then
+      !# if direct/diffuse solar radiation not in forcing used default partitionning
+         zfsd(i) = 0.85*zfsolis(i)
+         zfsf(i) = 0.15*zfsolis(i)
+      endif
+
+!  UPGOING ENERGY FROM THE GROUND, SHORT AND LONG WAVE. Note : alvis and emis are updated in ebudget
+   zref_sw_surf (i) = bus(x(alvis,i,indx_sfc)) * zfsolis(i)
+!  longwave: version 1 based on emissivity and surf temp
+!   zemit_lw_surf(i) = (1.-bus(x(emis,i,1))) * bus(x(fdsi,i,1)) + &
+!                     bus(x(emis,i,1))*stefan*(bus(x(tsa,i,1)))**4
+!            version 2 based on the net radiation
+   zemit_lw_surf(i) = zfsolis(i) - zref_sw_surf(i) + bus(x(fdsi,i,1)) &
+                      - bus(x(RNET_S,i,1))
+  end do
+
+   call surf_thermal_stress(ztdiag, zqdiag,          &
+         zudix, zuvped, ps,                          &
+         zfsd, zfsf,                                 &
+         bus(x(fdsi,1,1)), acos(suncosa),            &
+         zref_sw_surf ,zemit_lw_surf,                &
+         bus(x(yutcisun,1,indx_sfc)),bus(x(yutcishade,1,indx_sfc)), &
+         bus(x(ywbgtsun,1,indx_sfc)),bus(x(ywbgtshade,1,indx_sfc)), &
+         bus(x(yradsun,1,indx_sfc)) ,bus(x(yradshade,1,indx_sfc)),  &
+         bus(x(ytglbsun,1,indx_sfc)),bus(x(ytglbshade,1,indx_sfc)), &
+         bus(x(ytwetb,1,indx_sfc)),                                 &
+         bus(x(yq1,1,indx_sfc)),bus(x(yq2,1,indx_sfc)), &
+         bus(x(yq3,1,indx_sfc)),bus(x(yq4,1,indx_sfc)), &
+         bus(x(yq5,1,indx_sfc)),bus(x(yq6,1,indx_sfc)), &
+         bus(x(yq7,1,indx_sfc)), N)
+
+endif IF_THERMAL_STRESS_SVS
 !
 !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
       CALL FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_SOIL,  &  
@@ -660,3 +750,4 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 
       RETURN
     END subroutine svs
+  end module svs_mod

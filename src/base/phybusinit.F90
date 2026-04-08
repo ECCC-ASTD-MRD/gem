@@ -15,6 +15,7 @@ subroutine phybusinit(ni,nk)
    use ens_perturb, only: ens_nc2d
    use microphy_utils, only: mp_phybusinit
    use phymem, only: phymem_init, phymem_add, phymem_find, phymem_alloc
+   use sfc_businit_mod, only: sfc_businit
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
@@ -48,6 +49,7 @@ subroutine phybusinit(ni,nk)
    character(len=4), parameter :: LVLT = 'T'
 
    character(len=6)  :: nag, nmar, dwwz, nuv, psss, nccl
+   character(len=2)  :: o3p01
    integer :: ier, iverb, nsurf, i
    logical :: lbourg3d, lbourg
    logical :: lkfbe, lshal, lshbkf, lmid
@@ -61,7 +63,7 @@ subroutine phybusinit(ni,nk)
    logical :: lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly, lwindgust
-   logical :: lpcp_frac, ladvzn, ls2, lmp, lcsun
+   logical :: lpcp_frac, ladvzn, ls2, lmp, lcsun, lpblderooy
    !---------------------------------------------------------------------
 
    ier = phymem_init()
@@ -125,7 +127,8 @@ subroutine phybusinit(ni,nk)
    ls2     = (stcond == 'S2')
    lcsun   = (stcond == 'CONSUN')
    lmp     = (stcond(1:3) == 'MP_')
-
+   lpblderooy = (pbl_nonloc == 'DEROOY22')
+   
    ! Compute linoz diags only on demand
    do i=1,nphyoutlist
       out_linoz = any(phyoutlist_S(i) == (/ &
@@ -160,7 +163,8 @@ subroutine phybusinit(ni,nk)
         'CCCMARAD ', &
         'CCCMARAD2'  &
         /)) .and. kntraduv_S /= '')      
-
+   o3p01 = P0
+   if (llinoz) o3p01 = P1
    
    dwwz = 'd1'
    lsurfonly = (fluvert == 'SURFACE')

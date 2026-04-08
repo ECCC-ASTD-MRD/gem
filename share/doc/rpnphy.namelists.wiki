@@ -227,6 +227,17 @@ Logical key for variation of the trigger function depending on latitude and land
 | .false. || logical
 
 |-
+| kfctrigsgo ||
+Coefficient for trigger adjustment by subgrid-scale orography (sgo)
+| 0. || real
+
+|-
+| kfctrigsgop ||
+Exponent (power) applied to subgrid-scale orography (sgo) when computing
+sgo-based trigger adjustment
+| 1. || real
+
+|-
 | kfctrigtau ||
 Relaxation timescale for trigger velocity
 | -1. || real
@@ -751,6 +762,11 @@ Coefficient controlling strength of TKE diffusion
 | 0.07 || real
 
 |-
+| pbl_cldnk_l ||
+Estimate pbl-cloud properties at lowest prognostic level
+| .false. || logical
+
+|-
 | pbl_cmu_timeavg ||
 Time-averaging of transfer coefficient for momentum to reduce 2-dt
 oscillations in fluxes
@@ -834,12 +850,23 @@ Run with legacy moistke clouds (no limits on cloud effects)
 Use the non-local PBL cloud formulation
 * 'NIL   ' : no non-local PBL cloud formulation
 * 'LOCK06' : Non-local cloud scheme of Lock and Mailhot (2006)
+* 'DEROOY22'   : Use a mass-flux scheme based on de Rooy et al. (2022; GMD)
 | 'NIL' || character(len=16)
 
 |-
 | pbl_progvar ||
 Use prognostic equations for subgrid-scale variances of conserved variables
 | .false. || logical
+
+|-
+| pbl_q1gauss_l ||
+Use gaussian-distribution formulas to derive cloud-fraction and condensate from Q1
+| .false. || logical
+
+|-
+| pbl_q1max_l ||
+Apply a maximum value to the normalized saturation surplus Q1
+| .true. || logical
 
 |-
 | pbl_ribkg ||
@@ -980,6 +1007,18 @@ N2O bckgrnd atmospheric concentration (PPMV)
 | -1. || real
 
 |-
+| rad_anu ||
+Cloud internal homogeneity (ANU) factor : Set ANU as a fonction of cloud fraction (ccc_cldifm.F90)
+Default below will reproduce pre gem5.3.0-a21 hard coded values
+Higher anu implies more homogeneous clouds
+rad_anu(1) : first boundary in cldfrac
+rad_anu(2) : second boundary in cldfrac
+rad_anu(3) : anu for cldfrac <= rad_anu(1)
+rad_anu(4) : anu for rad_anu(1) < cldfrac < rad_anu(2)
+rad_anu(5) : anu for cldfrac >= rad_anu(2)
+|  || 
+
+|-
 | rad_atmpath ||
 Atmospheric path length for solar radiation
 * 'RODGERS67' : Formulation used by Li and Barker (2005)
@@ -1029,9 +1068,12 @@ Compute and apply tendencies from longwave radiation
 | .true. || logical
 
 |-
-| rad_mpagg_l ||
-use relative weigthing when combining opt props from implicit and explicit clouds
-| .false. || logical
+| rad_mpagg ||
+Formulation for combining implicit and explicit clouds in microphysics-based configurations
+* 'BINARY  ' : All cloud fractions are assumed to be 1 when cloud is present (incorrect)
+* 'RELATIVE' : Cloud weighting is normalized by the total cloud fraction so that they sum to 1
+* 'MERGED  ' : Cloud weighting is adjusted to account for "merged" volumes in which clouds from different sources coexist
+| 'BINARY' || character(len=16)
 
 |-
 | rad_part_nomp ||
@@ -1161,8 +1203,9 @@ Condensation scheme name
 * 'NIL       ' : No explicit condensation scheme used
 * 'CONSUN    ' : Sunqvist type condensation scheme
 * 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme
-* 'MP_P3     ' : P3 microphysics scheme (v5)
+* 'MP_P3     ' : P3 microphysics scheme (v5.3)
 * 'MP_P3V3   ' : P3 microphysics scheme (v3)
+* 'MP_P3X    ' : P3 microphysics scheme (v5.5)
 * 'KESSLER   ' : Kessler warm rain scheme
 * 'THOMPSON  ' : Thompson microphysics scheme
 | 'NIL' || character(len=16)
@@ -1483,6 +1526,28 @@ Implicit surface fluxes if .true.; explicit fluxes if .false.
 | .false. || logical
 
 |-
+| isba_hrsurf_method ||
+Specify which method is used to compute hrsurf
+* ALPHA_JN90  : (default) [pending description]
+* BETA_ECMWF12: [pending description]
+| 'ALPHA_JN90' || character(len=16)
+
+|-
+| isba_hrsurf_power ||
+Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method)
+| 1. || real
+
+|-
+| isba_hrsurf_rs ||
+Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]
+| 50. || real
+
+|-
+| isba_lwfcliq ||
+
+| .false. || logical
+
+|-
 | isba_melting_fix ||
 If .true. apply temporary fix to ISBA
 * timestep dependent KCOEF
@@ -1580,14 +1645,14 @@ over sea-ice and glacier if .true.
 | .false. || logical
 
 |-
-| lmacropores_svs1 ||
+| lmacropores_svs ||
 (SVS1) If .true., macropores are activated and enhance infiltration in a frozen soil
 | .false. || logical
 
 |-
 | lphase_change_eff_svs1 ||
 (SVS1) If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
-| .false. || logical
+| .true. || logical
 
 |-
 | lsfclayer_crocus_svs2 ||
@@ -1632,7 +1697,7 @@ If .true., SVS1 or SVS2 simulates water ponding at the surface
 |-
 | mp_alpha ||
 mp_alpha parameter in the macropore activation option (based on a sensitivity analysis)
-| 0.6 || real
+| 0.55 || real
 
 |-
 | nsl ||
@@ -1809,17 +1874,17 @@ Use snow age "XA" to calculate snow albedo if .false.
 |-
 | soildbtm_svs1 ||
 Option to set the depth of the lower boundrary condition below the soil column (module soil_freezing.F90)
-| 'MID' || character(len=16)
+| 'DEEP' || character(len=16)
 
 |-
 | soilgrndhf_svs1 ||
 Option to compute HFLUX for bareground in the module soil_freezing.F90 (Use the soil thermal restiance (default) or the skin conductivity from Table 2.1 of the sup. mat. of Boussetta et al., 2021)
-| 'RTH_GRND' || character(len=16)
+| 'LAM_BOU2021' || character(len=16)
 
 |-
 | soilsnowhf_svs1 ||
 Option to compute the heat flux between the soil and the snowpack in the module soil_freezing.F90
-| 'DST_MAXD' || character(len=16)
+| 'ST_D_DD' || character(len=16)
 
 |-
 | soiltext ||
@@ -1844,11 +1909,17 @@ Values (1:NCLASS) used for the lookup table ALDAT if svs_read_aldat=.T.
 | svs_cg_depth ||
 determine depth over which soil thermal inertia is computed [m]
 when set to zero, only 1st layer is used (default option for backward compatibility)
+default should eventually be changed to 0.12 based on the fact that cg = sqrt(tau*k/pi)
+where k is the thermal diffusivity of the soil [m2/s] and tau = 86400 [s]
+if no information is known about the soil, IEC 60853-2 recommends k=5·10-7 m2/s
+hence svs_cg_depth = 0.12 m
 | 0. || real
 
 |-
 | svs_cg_ice ||
 specify which equation to use to take ice into account when computing the heat capacity of bare ground
+* BELAIR2003: (default) Adjustment to heat capacity based on total water content (WD+WF)
+* BOONE2000:  Adjustment to heat capacity that takes into account the reduced heat capacity of ice vs liquid water
 | 'BELAIR2003' || character(len=16)
 
 |-
@@ -1857,23 +1928,33 @@ Values (1:NCLASS) used for the lookup table D2DAT if svs_read_d2dat=.T.
 | -999. || real
 
 |-
-| svs_d50crops ||
-Values (1:13) used for the lookup table D50CROPS if svs_read_d50crops=.T.
-| -999. || real
-
-|-
 | svs_d50dat ||
 Values (1:NCLASS) used for the lookup table D50DAT if svs_read_d50dat=.T.
 | -999. || real
 
 |-
-| svs_d95crops ||
-Values (1:13) used for the lookup table D50CROPS if svs_read_d95crops=.T.
+| svs_d50veg15 ||
+Values (1:13) used for the lookup table D50VEG15 if svs_read_d50veg15=.T.
+| -999. || real
+
+|-
+| svs_d50veg16 ||
+Values (1:13) used for the lookup table D50VEG16 if svs_read_d50veg16=.T.
 | -999. || real
 
 |-
 | svs_d95dat ||
 Values (1:NCLASS) used for the lookup table D95DAT if svs_read_d95dat=.T.
+| -999. || real
+
+|-
+| svs_d95veg15 ||
+Values (1:13) used for the lookup table D95VEG15 if svs_read_d95veg15=.T.
+| -999. || real
+
+|-
+| svs_d95veg16 ||
+Values (1:13) used for the lookup table D95VEG16 if svs_read_d95veg16=.T.
 | -999. || real
 
 |-
@@ -1899,37 +1980,39 @@ Maximum fraction of wilted roots that can be ignored when computing average stre
 | 0.0 || real
 
 |-
-| svs_gexp ||
+| svs_gexpveg ||
 Exponent in function defining vegetation stress when estimating transpiration
 Transpiration decreases more slowly with soil moisture when svs_gexp is high
 it does not start decreasing until about soil moisture is half way between wilting
 point and field capacity when svs_gexp=10.
-A positive value is expected, but a negative value is used by default to keep this option
-inactive if a value is not provided.
 Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value
 of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when
 the CTEM parameterization is used.
-This behaviour is preserved if the value of the key is less or equal to zero for
+This behaviour is preserved if svs_read_gexpveg = .false. for
 backward compatibility purposes.
 Since this is a bugfix, eventually the default value of the key should be changed
 to a positive value.
-| -1. || real
+Values (26) used for the lookup table D95VEG16 if svs_read_gexpveg=.T.
+| -999. || real
 
 |-
 | svs_hrsurf_method ||
 Specify which method is used to compute hrsurf
-* ALPHA_JN90  : (default) [pending description]
-* BETA_ECMWF12: [pending description]
+* ALPHA_JN90    : (default) "alpha" method proposed by Jacquemin and Noilhan (1990), BLM
+* BETA_ECMWF12  : resistance method of Albergel et al. (2012) modified by Fortin et al. (2026)
+in order to behave like a "beta" method in dry conditions
 | 'ALPHA_JN90' || character(len=16)
 
 |-
 | svs_hrsurf_power ||
 Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method)
+With default value of 1, BETA_ECMWF12 method becomes equivalent to resistance method of Albergel et al. (2012)
 | 1. || real
 
 |-
 | svs_hrsurf_rs ||
 Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]
+Default value of 50 s/m proposed by Albergel et al. (2012)
 | 50. || real
 
 |-
@@ -1978,23 +2061,38 @@ Option to change the lookup table D2DAT in inicover_svs.F90
 | .false. || logical
 
 |-
-| svs_read_d50crops ||
-Option to read a lookup table of monthly values for D50 for class 15 (crops)
-| .false. || logical
-
-|-
 | svs_read_d50dat ||
 Option to change the lookup table D50DAT in inicover_svs.F90
 | .false. || logical
 
 |-
-| svs_read_d95crops ||
-Option to read a lookup table of monthly values for D95 for class 15 (crops)
+| svs_read_d50veg15 ||
+Option to read a lookup table of monthly values for D50 for class 15
+| .false. || logical
+
+|-
+| svs_read_d50veg16 ||
+Option to read a lookup table of monthly values for D50 for class 16
 | .false. || logical
 
 |-
 | svs_read_d95dat ||
 Option to change the lookup table D95DAT in inicover_svs.F90
+| .false. || logical
+
+|-
+| svs_read_d95veg15 ||
+Option to read a lookup table of monthly values for D95 for class 15
+| .false. || logical
+
+|-
+| svs_read_d95veg16 ||
+Option to read a lookup table of monthly values for D95 for class 16
+| .false. || logical
+
+|-
+| svs_read_gexpveg ||
+Option to read a lookup table of monthly values for D50 for class 16
 | .false. || logical
 
 |-

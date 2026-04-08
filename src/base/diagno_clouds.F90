@@ -12,8 +12,6 @@ module diagno_clouds
 
 #include "phymkptr.hf"
 #include "nocld.cdk"
-#include "nbsnbl.cdk"
-#include "cldop.cdk"
 
    real, parameter :: THIRD = 0.3333333 !#TODO test with 1./3. (bit pattern change)
    integer, parameter :: TOPC2 = 5000.  !#Top level for cloud tendencies (Pa) (we take 10xtopc in nocld... ad hoc)
