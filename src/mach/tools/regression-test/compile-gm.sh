@@ -56,8 +56,9 @@ echo -e "\n== Strating compile-gm script: ${scriptstartdate}  == \n" | tee -a ${
 echo -e "\n GEM-MACH compilation location: ${TASK_BASEDIR}/GEM-MACH \n"
 cmake_dir=${TASK_BASEDIR}/GEM-MACH
 cd ${cmake_dir}
-#source ${cmake_dir}/.eccc_setup_intel
+#source ${cmake_dir}/.eccc_setup_intel_2025.1.0 -> Commented out because it is done through common environment
 source ${cmake_dir}/.initial_setup
+${cmake_dir}/scripts/link-dbase.sh
 
 # Tell the world about GEM environment and compiler
 cat << EOF | tee -a ${gmtestinfo}
@@ -82,10 +83,16 @@ EOF
 if [[ "${cmpl_opt}" == "dbg" ]] ; then
    (time make VERBOSE=1 cmake-mach-debug) |& tee ${cmake_dir}/make.cmake-mach-debug.out
    (time make VERBOSE=1 -j work) |& tee ${cmake_dir}/make.work.out
+elif [[ "${cmpl_opt}" == "dbe" ]] ; then
+   (time make VERBOSE=1 cmake-mach-debug-extra) |& tee ${cmake_dir}/make.cmake-mach-debug-extra.out
+   (time make VERBOSE=1 -j work) |& tee ${cmake_dir}/make.work.out
+elif [[ "${cmpl_opt}" == "str" ]] ; then
+   (time make VERBOSE=1 cmake-mach-strict) |& tee ${cmake_dir}/make.cmake-mach-strict.out
+   (time make VERBOSE=1 -j work) |& tee ${cmake_dir}/make.work.out
 elif [[ "${cmpl_opt}" == "pkg" ]] ; then
    (time make cmake-mach-static) |& tee ${cmake_dir}/make.cmake-mach-static.out
    (time make -j work) |& tee ${cmake_dir}/make.work.out
-   (time make  package) |& tee ${cmake_dir}/make.package.out
+   (time make package) |& tee ${cmake_dir}/make.package.out
 else
    (time make cmake-mach) |& tee ${cmake_dir}/make.cmake-mach.out
    (time make -j work) |& tee ${cmake_dir}/make.work.out

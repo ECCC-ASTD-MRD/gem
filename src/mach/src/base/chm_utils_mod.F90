@@ -59,7 +59,8 @@ use, intrinsic :: iso_fortran_env, only: real32, real64, int32, int64, logical_k
    integer(i4)    :: dbg_id = -1    ! Debug horizontal grid point
    integer(i4)    :: dbg_jd = -1    ! Debug slice id
 
-   logical(lk4)    :: chm_error_l = .false.
+   logical(lk4)   :: chm_error_l = .false.
+   logical(lk4)   :: chm_rstn_l = .false. ! flag from chm_snapshot
 
    contains
 !============================================================================

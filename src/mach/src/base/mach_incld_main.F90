@@ -104,7 +104,7 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
 !
    integer(kind=4)                 :: nptsnz
    integer(kind=4)                 :: ii, kk, jj, mm, ijk
-   integer(kind=4)                 :: ibin, isize_0, nmax, nq, ncw
+   integer(kind=4)                 :: ibin, nmax, nq, ncw
    integer(kind=4)                 :: idrf, ij, iwf, iae
    integer(kind=4), parameter      :: icom_aq = 7 ! Number  of aerosol components
                                                   ! taking part in aqueous chemistry
@@ -149,6 +149,7 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
 
    real(kind=4), dimension(pni*pnk, nswdep)             :: fluxnew
    integer(kind=4), dimension(pni*pnk)                  :: iaq
+   integer(kind=4), dimension(pni, pnk)                 :: ircrit
 !
 !  External subroutines
 !
@@ -166,10 +167,6 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
    dtsplt = dtspmx  ! initial dtsplt (225 s)
 
    gaz_conc = max(gaz_conc, gmin)
-
-   aq = 1.0e-18
-   aq(:, :, :, :, 6) = 1.0e-7
-   aq(:, :, :, :, 7) = 1.0e-7
 !
    do mm = 2, maxns
       ij = ipos_g(mm)
@@ -191,6 +188,7 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
 !  gas/particle list is not the same as H2SO4, i.e. sulphuric acid in
 !  gas-phase, in AURAMS.
 
+   aq = 0.0
    do kk = 1, pnk
       do ii = 1, pni
          gtmp(ii, kk, 4)  = 0.0 !h2so4
@@ -199,6 +197,12 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
          gtmp(ii, kk, 9)  = 0.0 !nh4no3
          gtmp(ii, kk, 10) = 0.0 !dust
          gtmp(ii, kk, 12) = chm_bkgd_co2
+         ircrit(ii,kk) = max(int(rcrit(ii, kk)), 1)
+         if (ircrit(ii,kk) <= isize) then
+            aq(ii,kk,:,:,1:5) = 1.0e-18
+            aq(ii,kk,:, :, 6) = 1.0e-7
+            aq(ii,kk,:, :, 7) = 1.0e-7
+         end if
       end do
    end do
 
@@ -212,25 +216,25 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
       do kk = 1, pnk
          do ii = 1, pni
             qbin_bulk = 0.0 ! water
-            isize_0 = int(rcrit(ii, kk))
-            do ibin = isize_0, isize
+            if(ircrit(ii,kk) > isize) cycle
+            do ibin = ircrit(ii,kk), isize
                qbin_bulk = qbin_bulk + q_bin(ii, kk, ibin, 1)
             end do
 
 !  we must calculate vfrac here because information's about cwc
 !  in each individual bin is lost a few line below when we
 !  transfer qbulk into the first size bin of q_bin .
-            do ibin = isize_0, isize
-               if (qbin_bulk > 0.0) then
+            if (qbin_bulk > smf) then
+               do ibin = ircrit(ii,kk), isize
                   vfrac(ii, kk, ibin) = q_bin(ii, kk, ibin, 1) / qbin_bulk
-               end if
-            end do
+               end do
+            end if
 !  transfer qbin_bulk into the first size bin of q_bin(overwrite the first bin!)
             q_bin(ii, kk, 1, 1) = qbin_bulk ! save qbin_bulk in first bin
             q_bin(ii, kk, 1, 2) = 0.0
 
-!  assign qbulk to qbin(ii) for ii=isize_0, isize
-            do ibin = isize_0, isize
+!  assign qbulk to qbin(ii) for ii=ircrit(ii,kk), isize
+            do ibin = ircrit(ii,kk), isize
                q_bin(ii, kk, ibin, 1) = qbin_bulk
                q_bin(ii, kk, ibin, 2) = 0.0
             end do
@@ -245,11 +249,10 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
       do ii = 1, pni
 !  Air density (in g/m^3)
          rhom(ii, kk) = roarow(ii, kk) * 1000.0
+         if(ircrit(ii,kk) > isize) cycle
+         fract(ii, kk) = max(0.0, (1.0 - (rcrit(ii, kk) - real(ircrit(ii,kk)))))
 
-         isize_0 = int(rcrit(ii, kk))
-         fract(ii, kk) = max(0.0, (1.0 - (rcrit(ii, kk) - real(isize_0))))
-
-         do ibin = isize_0, isize
+         do ibin = ircrit(ii,kk), isize
             q_bin_t = q_bin(ii, kk, ibin, 1) + q_bin(ii, kk, ibin, 2)
             if (q_bin_t <= 0) cycle
 
@@ -286,13 +289,11 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
             end do
          end do
 
-         if (isize_0 <= isize) then
-            do mm = 1, icom_aq
-               do jj = 1, 2
-                  aq(ii, kk, isize_0, jj, mm) = aq(ii, kk, isize_0, jj, mm) * fract(ii, kk)
-               end do
+         do mm = 1, icom_aq
+            do jj = 1, 2
+               aq(ii, kk, ircrit(ii,kk), jj, mm) = aq(ii, kk, ircrit(ii,kk), jj, mm) * fract(ii, kk)
             end do
-         end if
+         end do
       end do
    end do
 
@@ -318,7 +319,8 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
             do kk = 1, pnk
                do ii = 1, pni
                   aq_bulk = 0.0
-                  do ibin = int(rcrit(ii, kk)), isize   ! all activated bins are
+                  if (ircrit(ii,kk) > isize) cycle
+                  do ibin = ircrit(ii,kk), isize   ! all activated bins are
                      aq_bulk = aq_bulk + aq(ii, kk, ibin, jj, mm)
                   end do
                   aq(ii, kk, 1, jj, mm) = aq_bulk ! save aq_bulk in first bin
@@ -501,8 +503,8 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
       if (ibulk == 1) then
          do jj = 1, maxnsaq
             do ijk = 1, nptsnz
-               daq_chem(ijk, jj, 1) = daq_chem(ijk, jj, 1) +          &
-                           (aqnew(ijk, jj, 1) - aqnew_before(ijk, jj, 1))
+               daq_chem(ijk, jj, 1) = daq_chem(ijk, jj, 1) +        &
+                       (aqnew(ijk, jj, 1) - aqnew_before(ijk, jj, 1))
                aqnew_before(ijk, jj, 1) = aqnew(ijk, jj, 1)
             end do
          end do
@@ -545,8 +547,8 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
             do jj = 1, 2
                do mm = 1, maxnsaq
                   do ijk = 1, nptsnz
-                     daq_chem(ijk, mm, jj) = daq_chem(ijk, mm, jj) +     &
-                           (aqnew(ijk, mm, jj) - aqnew_before(ijk, mm, jj))
+                     daq_chem(ijk, mm, jj) = daq_chem(ijk, mm, jj) +    &
+                         (aqnew(ijk, mm, jj) - aqnew_before(ijk, mm, jj))
 
                      aqnew_before(ijk, mm, jj) = aqnew(ijk, mm, jj)
                   end do
@@ -584,12 +586,12 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
                   ijk = (kk - 1) * pni + ii
                   factor = 1.0e+09 / (rtempnew(ijk) * rho_h2o) * 1.0e-06
                   aqnew(ijk, iwf, 1) = max(aqmin, (aqnew(ijk, iwf, 1) * &
-                     (1. - adj_ctr(ii, kk)) + aqnew(ijk, iwf, 1) * &
-                     adj_ctr(ii, kk) * exp(-fctr(ii, kk) * chm_timestep)))
+                       (1. - adj_ctr(ii, kk)) + aqnew(ijk, iwf, 1) *    &
+                       adj_ctr(ii, kk) * exp(-fctr(ii, kk) * chm_timestep)))
                   aqnew_diff = aqnew(ijk, iwf, 1) - aqnew_before(ijk, iwf, 1)
-                  fluxnew(ijk, iwf)  = fluxnew(ijk, iwf) - &
-                                       (aqnew_diff * baq(ijk, 2, 1) * factor)
-                  daq_flux(ijk, iwf, 1)  = daq_flux(ijk, iwf, 1) + aqnew_diff
+                  fluxnew(ijk, iwf) = fluxnew(ijk, iwf) - &
+                       (aqnew_diff * baq(ijk, 2, 1) * factor)
+                  daq_flux(ijk, iwf, 1) = daq_flux(ijk, iwf, 1) + aqnew_diff
                end do
             end do
          end do
@@ -598,8 +600,8 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
          call mach_incld_steady(aqnew, nptsnz, 1)
 
          do ijk = 1, nptsnz
-            fluxnew(ijk, 9) = fluxnew(ijk, 1) + 2.0 * fluxnew(ijk, 4) +  &
-                              fluxnew(ijk, 5) - fluxnew(ijk, 6) +        &
+            fluxnew(ijk, 9) = fluxnew(ijk, 1) + 2.0 * fluxnew(ijk, 4) + &
+                              fluxnew(ijk, 5) - fluxnew(ijk, 6) +       &
                               fluxnew(ijk, 8) - fluxnew(ijk, 7)
             fluxnew(ijk, 9) = max(0.0, fluxnew(ijk, 9))
             daq_flux(ijk, 9, 1) = daq_flux(ijk, 9, 1) +  &
@@ -693,11 +695,12 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
 
       do mm = 1, 3
          do jj = 1, 2
-            do ibin = 1, isize
-               do kk = 1, pnk
-                  do ii = 1, pni
-                     aq_orig(ii, kk, ibin, jj, mm) = aq_orig(ii, kk, ibin, jj, mm) +  &
-                                                     vfrac(ii, kk, ibin) * daq_chem_f(ii, kk, jj, mm)
+            do kk = 1, pnk
+               do ii = 1, pni
+                  if(ircrit(ii,kk) > isize) cycle
+                  do ibin = ircrit(ii,kk), isize
+                     aq_orig(ii, kk, ibin, jj, mm) = aq_orig(ii, kk, ibin, jj, mm) + &
+                             vfrac(ii, kk, ibin) * daq_chem_f(ii, kk, jj, mm)
                   end do
                end do
             end do
@@ -708,12 +711,13 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
 ! *** ratio instead of liquid water volume ratio
 ! *** (WG, Oct. 2001)
 !
+      aqfrc = 0.0
       do mm = 1, 3
          do kk = 1, pnk
             do ii = 1, pni
-               isize_0 = int(rcrit(ii, kk))
+               if(ircrit(ii,kk) > isize) cycle
                aq_bulk = 0.0
-               do ibin = isize_0, isize
+               do ibin = ircrit(ii,kk), isize
                   aq_bulk = aq_bulk + aq_orig(ii, kk, ibin, 1, mm)
                end do
                aqfrc(ii, kk, mm) = daq_flux_f(ii, kk, 1, mm) / (aq_bulk + 0.1 * aqmin)
@@ -724,10 +728,12 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
 !
       do mm = 1, 3
          do jj = 1, 2
-            do ibin = 1, isize
-               do kk = 1, pnk
-                  do ii = 1, pni
-                     aq(ii, kk, ibin, jj, mm) = aq_orig(ii, kk, ibin, jj, mm) * (aqfrc(ii, kk, mm) + 1.0)
+            do kk = 1, pnk
+               do ii = 1, pni
+                  if(ircrit(ii,kk) > isize) cycle
+                  do ibin = ircrit(ii,kk), isize
+                     aq(ii, kk, ibin, jj, mm) = aq_orig(ii, kk, ibin, jj, mm) * &
+                                                (aqfrc(ii, kk, mm) + 1.0)
                      aq(ii, kk, ibin, jj, mm) = max(0.0, aq(ii, kk, ibin, jj, mm))
                   end do
                end do
@@ -740,11 +746,11 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
             qbin_bulk = q_bin(ii, kk, 1, 1)
 !  calculate rain water (mol per m3) due to cloud-to-rain
 !  Note: qbin_bulk is in kg/m3_air.
-            flux(ii, kk, 10) = qbin_bulk * fctr(ii, kk) *  chm_timestep * 1000.0 / 18.0
+            flux(ii, kk, 10) = qbin_bulk * fctr(ii, kk) * chm_timestep * 1000.0 / 18.0
 
             remfrc = min(0.0, max(-1.0, aqfrc(ii, kk, 1)))
-            isize_0 = int(rcrit(ii, kk))
-            do ibin = isize_0, isize
+            if(ircrit(ii,kk) > isize) cycle
+            do ibin = ircrit(ii,kk), isize
 !
 !  adjust number concentration for cloud-to-rain removal
 !  and account for wet removal of non aqueous-phase aerosol
@@ -755,8 +761,8 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
                do iae = 1, icom
                   iwf = ip_wflx(iae)
                   if (iwf <= 10) cycle    ! skip SO4(=), NO3(-), and NH4(+)
-                  flux(ii, kk, iwf) = flux(ii, kk, iwf) - remfrc * &
-                                     aerocon(ii, kk, iae, ibin) * rhom(ii, kk) / mwt_aero(iae)
+                  flux(ii, kk, iwf) = flux(ii, kk, iwf) - remfrc *     &
+                       aerocon(ii, kk, iae, ibin) * rhom(ii, kk) / mwt_aero(iae)
                   aerocon(ii, kk, iae, ibin) = (1.0 + remfrc) * aerocon(ii, kk, iae, ibin)
                end do
             end do
@@ -770,35 +776,42 @@ subroutine mach_incld_main(gaz_conc, aerocon, q_bin, tempk, psacw, rad1, rcrit,&
 
    do kk = 1, pnk
       do ii = 1, pni
-         isize_0 = int(rcrit(ii, kk))
-         do ibin = isize_0 + 1, isize
-            q_bin_t = q_bin(ii, kk, ibin, 1) + q_bin(ii, kk, ibin, 2)
+         if(ircrit(ii,kk) > isize) cycle
+         if(ircrit(ii,kk) < isize) then
+            do ibin = ircrit(ii,kk) + 1, isize
+               q_bin_t = q_bin(ii, kk, ibin, 1) + q_bin(ii, kk, ibin, 2)
 !  convert = den_air * den_water / lwc / mwt
 !  (kg/m^3a) (kg/m^3w)  (kg/m^3a)
 !  note => kmol/m^3 = mol/l, rhom in g/m^3 and den_water = 1000.
-            if (q_bin_t <= 0) cycle
-            convert = rhom(ii, kk) / q_bin_t
-            aerocon(ii, kk, iae_SU, ibin) = (aq(ii, kk, ibin, 1, 1) + aq(ii, kk, ibin, 2, 1)) / convert * mwt_aero(iae_SU)
-            aerocon(ii, kk, iae_NI, ibin) = (aq(ii, kk, ibin, 1, 2) + aq(ii, kk, ibin, 2, 2)) / convert * mwt_aero(iae_NI)
-            aerocon(ii, kk, iae_AM, ibin) = (aq(ii, kk, ibin, 1, 3) + aq(ii, kk, ibin, 2, 3)) / convert * mwt_aero(iae_AM)
+               if (q_bin_t <= 0) cycle
+               convert = rhom(ii, kk) / q_bin_t
+               aerocon(ii, kk, iae_SU, ibin) = (aq(ii, kk, ibin, 1, 1) + &
+                       aq(ii, kk, ibin, 2, 1)) / convert * mwt_aero(iae_SU)
+               aerocon(ii, kk, iae_NI, ibin) = (aq(ii, kk, ibin, 1, 2) + &
+                       aq(ii, kk, ibin, 2, 2)) / convert * mwt_aero(iae_NI)
+               aerocon(ii, kk, iae_AM, ibin) = (aq(ii, kk, ibin, 1, 3) + &
+                       aq(ii, kk, ibin, 2, 3)) / convert * mwt_aero(iae_AM)
 ! no updating for CM for now
-!      aerocon(ii, kk, iae_SD, ibin) = (aq(ii, kk, ibin, 1, 4) + aq(ii, kk, ibin, 2, 4)) / &
-!                                            convert * mwt_aero(iae_SD) * 4.0
-         end do
-         if (isize_0 > isize) cycle
-         q_bin_t = q_bin(ii, kk, isize_0, 1) + q_bin(ii, kk, isize_0, 2)
+!              aerocon(ii, kk, iae_SD, ibin) = (aq(ii, kk, ibin, 1, 4) + &
+!                      aq(ii, kk, ibin, 2, 4)) / convert * mwt_aero(iae_SD) * 4.0
+            end do
+         end if
+         q_bin_t = q_bin(ii, kk, ircrit(ii,kk), 1) + q_bin(ii, kk, ircrit(ii,kk), 2)
          if (q_bin_t <= 0) cycle
          convert = rhom(ii, kk) / q_bin_t
-         aerocon(ii, kk, iae_SU, isize_0) = aerocon(ii, kk, iae_SU, isize_0) * (1.0 - fract(ii, kk)) + (aq(ii, kk, isize_0, 1, 1) +  &
-                                     aq(ii, kk, isize_0, 2, 1)) / convert * mwt_aero(iae_SU)
-         aerocon(ii, kk, iae_NI, isize_0) = aerocon(ii, kk, iae_NI, isize_0) * (1.0 - fract(ii, kk)) + (aq(ii, kk, isize_0, 1, 2) +  &
-                                     aq(ii, kk, isize_0, 2, 2)) / convert * mwt_aero(iae_NI)
-         aerocon(ii, kk, iae_AM, isize_0) = aerocon(ii, kk, iae_AM, isize_0) * (1.0 - fract(ii, kk)) + (aq(ii, kk, isize_0, 1, 3) +  &
-                                     aq(ii, kk, isize_0, 2, 3)) / convert * mwt_aero(iae_AM)
+         aerocon(ii, kk, iae_SU, ircrit(ii,kk)) = aerocon(ii, kk, iae_SU, ircrit(ii,kk)) * &
+                (1.0 - fract(ii, kk)) + (aq(ii, kk, ircrit(ii,kk), 1, 1) +                 &
+                aq(ii, kk, ircrit(ii,kk), 2, 1)) / convert * mwt_aero(iae_SU)
+         aerocon(ii, kk, iae_NI, ircrit(ii,kk)) = aerocon(ii, kk, iae_NI, ircrit(ii,kk)) * &
+                (1.0 - fract(ii, kk)) + (aq(ii, kk, ircrit(ii,kk), 1, 2) +                 &
+                aq(ii, kk, ircrit(ii,kk), 2, 2)) / convert * mwt_aero(iae_NI)
+         aerocon(ii, kk, iae_AM, ircrit(ii,kk)) = aerocon(ii, kk, iae_AM, ircrit(ii,kk)) * &
+                (1.0 - fract(ii, kk)) + (aq(ii, kk, ircrit(ii,kk), 1, 3) +                 &
+                aq(ii, kk, ircrit(ii,kk), 2, 3)) / convert * mwt_aero(iae_AM)
 
-!      aerocon(ii, kk, iae_SD, isize_0) = aerocon(ii, kk, iae_SD, isize_0) *  &
-!             (1.0 - fract(ii, kk)) + (aq(ii, kk, isize_0, 1, 4) +  &
-!              aq(ii, kk, isize_0, 2, 4)) / convert * mwt_aero(iae_SD) * 4.0
+!        aerocon(ii, kk, iae_SD, ircrit(ii,kk)) = aerocon(ii, kk, iae_SD, ircrit(ii,kk)) *   &
+!               (1.0 - fract(ii, kk)) + (aq(ii, kk, ircrit(ii,kk), 1, 4) +                   &
+!               aq(ii, kk, ircrit(ii,kk), 2, 4)) / convert * mwt_aero(iae_SD) * 4.0
       end do
    end do
 

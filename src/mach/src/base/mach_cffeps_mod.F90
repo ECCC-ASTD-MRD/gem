@@ -8,6 +8,8 @@
 !
 !============================================================================
 module mach_cffeps_mod
+   use rmn_gmm, only: gmm_metadata, gmm_create, gmm_get, gmm_flag_rstr, &
+                      gmm_flag_inan
    implicit none
 
    save
@@ -77,6 +79,9 @@ module mach_cffeps_mod
    real(kind=4), pointer, dimension(:,:) :: lfire_info
    real(kind=4), pointer, dimension(:,:) :: lfire_emissions
    integer(kind=4), dimension(:), allocatable :: fire_me_species_index
+
+! For creating fire info snapshot in GEM
+   type(gmm_metadata) :: meta_fire_info, meta_fire_emis
 
 ! To be (re-)defined at initialization
    integer(kind=4) :: cffeps_steps

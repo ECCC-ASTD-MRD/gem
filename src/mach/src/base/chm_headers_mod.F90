@@ -146,5 +146,10 @@ integer function chm_cffeps_init(F_basedir_S, my_pe, numproc, rpi0_j0)
    integer(kind=4), dimension(5, numproc), intent(in) :: rpi0_j0
 end function chm_cffeps_init
 
+function chm_snapshot(F_mode) result(F_istat)
+   character(len=*), intent(in) :: F_mode
+   integer(kind=4) ::  F_istat
+end function chm_snapshot
+
 end interface
 end module chm_headers_mod
