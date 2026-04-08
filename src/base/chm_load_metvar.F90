@@ -155,8 +155,6 @@ subroutine chm_load_metvar(pvars, metvar2d, metvar3d)
   if (qrplus > 0) then
      metvar3d(:,:,MV3D_QCPLUS) = metvar3d(i, k, MV3D_QCPLUS) + &
                           max(0.,reshape(pvars(qrplus)%data,(/chm_ni,chm_nk/)))
-  else
-     metvar3d(:,:,MV3D_QCPLUS) = 0.0
   endif
   if (chm_indirect_l) then
      metvar3d(:,:,MV3D_NCPLUS)= reshape(pvars(ncplus)%data,(/chm_ni,chm_nk/))

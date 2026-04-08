@@ -3,17 +3,12 @@
 set -e
 echo "---------------> ${0} BEGIN <---------------"
 ###
-# load RPN utils environment (r.entry.dot)
-###
-. r.load.dot /fs/ssm/eccc/mrd/rpn/utils/20220509
-###
 # read in arguments:
 ###
 arguments=$*
 echo ${0} ${arguments}
-. r.entry.dot
 eval `cclargs_lite -D " " ${0}                                                                     \
-  -s          "$PWD"    "nil"    "[Directory FROM where GEMMACHv2/CHEM code shall be imported ]"   \
+  -s          "$PWD"    "nil"    "[Directory FROM where mach/src/base code shall be imported ]"   \
   -v          "0"       "1"      "[verbose switch; triggered if -v is typed in ]"                  \
   ++ ${arguments}`
 ###
@@ -24,7 +19,7 @@ if [ ! -d ${s} ]; then
    exit 1
 else
    sc=`true_path ${s}`
-   echo "True path for CHEM code is ${sc}"
+   echo "True path for mach/src/base code is ${sc}"
    cd ${sc}
 fi
 ###
