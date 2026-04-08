@@ -848,7 +848,7 @@ contains
       integer :: istat,istat2,fileid,n
       character(len=2048) :: string_S,string1_S
       !---------------------------------------------------------------------
-      write(string_S, '(a,1x,i0.1x,a)') '(priv_parse_cfgfile) ',F_id,trim(F_filename_S)
+      write(string_S, '(a,1x,i0,1x,a)') '(priv_parse_cfgfile) ',F_id,trim(F_filename_S)
       call msg(MSG_DEBUG,string_S)
 
       F_istat = RMN_ERR
