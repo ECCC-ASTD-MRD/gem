@@ -54,8 +54,8 @@ if [ ${src_mach} == ${dst_mach} -a $fcp == 0 ] ; then
 
 else
 
-   # We here take advantage of the fact that ppp5-6:sitestore are mounted on robert and underhill
-   machinelist=":robert:underhill:ppp5:ppp6:"
+   # We here take advantage of the fact that ppp7-8:sitestore are mounted on conrad and moira
+   machinelist=":conrad:moira:ppp7:ppp8:"
    is_visible() {
       if [[ -n "$(echo ${machinelist} | grep :${1}:)" ]] ; then
          echo 1

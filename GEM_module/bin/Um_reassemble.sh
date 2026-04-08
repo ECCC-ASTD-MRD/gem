@@ -49,10 +49,7 @@ if [ ${ienati} -gt 0 ] ; then
         if [ ${is_usr} = 1 ];then
 	        destination=${type: -1}${destination}
         fi
-        cnt=$(echo ${destination} | sed 's/-/ /g' | wc -w)
-        if [ $cnt -gt 1 ] ; then
-           destination=${destination%%-*}_${destination#*_}
-        fi
+        destination=$(echo ${destination} | sed 's/-[0-9]*-[0-9]*//')
         break
      done
      printf "    destination          : ${destination}\n"
@@ -65,13 +62,13 @@ if [ ${ienati} -gt 0 ] ; then
      
      nfiles=$(echo ${bliste} | wc -w)
      del=80 ; upv=1 ; cur=1
-     while [ $upv -lt $nfiles ] ; do
+     for k in $(seq 1 $del $nfiles) ; do
+	     cur=$k
         upv=$((cur+del-1))
         upv=$((upv < nfiles ? upv : nfiles))
         subl=$(echo ${bliste} | cut -d " " -f ${cur}-${upv})
         editfst -s ${subl} -d ${dst}/${destination} -i e1.dir
         editfst -s ${subl} -d ${dst}/${destination} -e -i e2.dir
-        cur=$((upv+1))
      done
 
      /bin/rm -f ${abort_file}
