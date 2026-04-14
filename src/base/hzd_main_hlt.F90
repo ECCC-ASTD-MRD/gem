@@ -20,6 +20,7 @@
       use glb_ld
       use gmm_vt1
       use gmm_pw
+      use gmm_hzd
       use HORgrid_options
       use hvdif_options
       use ens_options
@@ -44,7 +45,9 @@
 
 !-------------------------------------------------------------------
 !
-      if (hzd_conserv_th) then 
+      call gtmg_start (60, 'HZD_main', 1 )
+
+      if (hzd_conserv_th .or. hzd_conserv_tr) then 
 !$omp single
          call get_air_dens_hlt (1)
 !$omp end single
@@ -52,7 +55,6 @@
 
       if (Lun_debug_L) write (Lun_out,1000)
 
-      call gtmg_start (60, 'HZD_main', 1 )
 
       xch_UV = .false.
       xch_TT = .false.
@@ -105,12 +107,23 @@
          xch_TR = .true.
          do i=1, Tr3d_ntr
             if (Tr3d_hzd(i)) then
-              if (Hzd_tr_ALH_L) then
-                  call hzd_theta_alh (tracers_P(i)%pntr,Hzd_lnR_tr,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_tr_ALH_it)
-              else
-                  call hzd_exp_deln (tracers_P(i)%pntr, Hzd_pwr_tr,&
-                       Hzd_lnR_tr, wk, l_minx,l_maxx,l_miny,l_maxy,G_nk)
-              endif
+               if (Hzd_tr_ALH_L) then
+                  if ( hzd_conserv_tr )then
+                     call hzd_tr_cons_alh (tracers_P(i)%pntr,Hzd_lnR_tr, &
+                                              l_minx,l_maxx,l_miny,l_maxy,G_nk,1)
+                  else
+                     call hzd_tr_alh (tracers_P(i)%pntr,Hzd_lnR_tr, &
+                                              l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_tr_ALH_it)
+                  endif
+               else
+                  if ( hzd_conserv_tr )then
+                    call hzd_expc_deln (tracers_P(i)%pntr,air_dens, Hzd_pwr_tr,Hzd_lnR_tr, wk, &
+                                        l_minx,l_maxx,l_miny,l_maxy,G_nk)
+                  else
+                    call hzd_exp_deln (tracers_P(i)%pntr, Hzd_pwr_tr,&
+                          Hzd_lnR_tr, wk, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+                  endif
+               endif
             end if
          end do
          call gtmg_stop (63)
@@ -156,10 +169,11 @@ u_tmp=0. ; v_tmp =0. ; w_tmp =0. ; zdt_tmp =0.
             end do
 !$omp end do 
 !$omp single
-            call hzd_u_alh (ut1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-            call hzd_v_alh (vt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-            call hzd_theta_alh (wt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-            call hzd_theta_alh (zdt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_uvwzd_alh(ut1 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,1)
+            call hzd_uvwzd_alh(vt1 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,2)
+            call hzd_uvwzd_alh(wt1 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+            call hzd_uvwzd_alh(zdt1,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+
 !$omp end single
 
             call hzd_exp_deln ( u_tmp, Hzd_pwr, Hzd_lnR, wk,&
@@ -184,10 +198,11 @@ u_tmp=0. ; v_tmp =0. ; w_tmp =0. ; zdt_tmp =0.
 !$omp end do 
          else
 !$omp single
-            call hzd_u_alh (ut1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-            call hzd_v_alh (vt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-            call hzd_theta_alh (wt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
-            call hzd_theta_alh (zdt1,Hzd_lnR_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,hzd_uvwz_ALH_it)
+            call hzd_uvwzd_alh(ut1, Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,1)
+            call hzd_uvwzd_alh(vt1, Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,2)
+            call hzd_uvwzd_alh(wt1, Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+            call hzd_uvwzd_alh(zdt1,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+
 !$omp end single
          endif
 !  Vertical sponge  *

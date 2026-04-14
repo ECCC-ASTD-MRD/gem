@@ -31,11 +31,15 @@ module hzd_mod
    real(kind=REAL64), dimension(:,:), pointer, contiguous :: Hzd_geom_u => null()
    real(kind=REAL64), dimension(:,:), pointer, contiguous :: Hzd_geom_v => null()
    real(kind=REAL64), dimension(:), allocatable   :: Hzd_smago_lnrM_8, Hzd_smago_lnrT_8
+   real(kind=REAL64) , dimension(:), allocatable :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
+   !real(kind=REAL64), dimension (:,:,:,:), allocatable :: vsten,vsten_u, vsten_v
+   real(kind=REAL64), dimension (:,:,:), allocatable :: a_u, b_u, c_u, W_u, &
+                                                        a_v, b_v, c_v, W_v, &
+                                                        a_th, b_th, c_th, W_th, &
+                                                        a_zdt, b_zdt, c_zdt, W_zdt
 
    integer      Hzd_niter,Hzd_niter_tr,Hzd_niter_theta
-   real(kind=REAL64) , dimension(:), allocatable :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
-!
+
    real, dimension(:,:,:), allocatable :: air_density,air_density_U,air_density_V,air_density_m
-   !real, dimension(:,:,:), allocatable :: hzd_th_tend 
 
 end module hzd_mod

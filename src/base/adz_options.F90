@@ -134,7 +134,7 @@ contains
       if ( F_unf < 0 ) then
          adz_nml= 0
          if ( Lun_out >= 0) then
-            if ( F_unf == -1 ) write (Lun_out,nml=adz_cfgs)
+            if ( F_unf == -1 .or. F_unf == -2 ) write (Lun_out,nml=adz_cfgs)
          end if
          return
       end if
