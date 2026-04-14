@@ -95,7 +95,7 @@ contains
       
 ! The WORLD by colors...
       string_S=trim(F_component_S)//': The WORLD by colors'
-      if (myproc_IOS == 0) write(6,'(xa)') trim(string_S)
+      if (myproc_IOS == 0) write(6,'(x,a)') trim(string_S)
       allocate (clients_npes(3,MiMd_ncolors))
       do i=1,MiMd_ncolors
          if (trim(MiMd_world(i)%name_S)=="GEMDM") gem_id=i

@@ -15,8 +15,8 @@
 !**s/r hzd_flt9pt  - 9 points explicit horizontal conservatif diffusion
 !                                     Del2 operator
 
-      subroutine hzd_CvDel2_flt9pt (rfd,rho,Minx,Maxx,Miny,Maxy,nk&
-                            ,lnR)
+      subroutine hzd_CvDel2_flt9pt (rfd,sfd,rho,Minx,Maxx,Miny,Maxy,nk, &
+                                    nu,m,n)
       use HORgrid_options
       use glb_ld
       use hzd_mod
@@ -25,11 +25,9 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
-      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,nk
-      real, intent(INOUT) :: rfd (Minx:Maxx,Miny:Maxy,nk), rho(Minx:Maxx,Miny:Maxy,nk)
-!                             rfd (Minx:Maxx,Miny:Maxy,nk),&
-!                             rho(Minx:Maxx,Miny:Maxy,nk)
-      real, intent(IN) :: lnR
+      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,nk,m,n
+      real, intent(INOUT) :: rfd (Minx:Maxx,Miny:Maxy,nk), rho(Minx:Maxx,Miny:Maxy,nk), &
+                             sfd (Minx:Maxx,Miny:Maxy,nk)
 !-----------------------------------------------------------------------
       real wk(Minx:Maxx,Miny:Maxy)!l_minx:l_maxx,l_miny:l_maxy)
       real(kind=REAL64) :: c1,c2,c3
@@ -53,43 +51,65 @@
          jn = l_nj - pil_n
       end if
 
-!
-      nu = pt25*lnR
-      nu = min ( nu, pt25-epsilon )
-!
       c1 = nu*(one-two*nu)
       c2 = nu**2
       c3 = nu*four*(nu-one)
 
+      if(m==n) then
          do k=1,nk
             do j=j0,jn
-             do i=i0,in
-             a=half*(rho(i+1,j,k)+rho(i,j,k))
-             b=half*(rho(i,j,k)+rho(i-1,j,k))
-             c=half*(rho(i,j+1,k)+rho(i,j,k))
-             d=half*(rho(i,j,k)+rho(i,j-1,k))
+               do i=i0,in
+                  a=half*(rho(i+1,j,k)+rho(i,j,k))
+                  b=half*(rho(i,j,k)+rho(i-1,j,k))
+                  c=half*(rho(i,j+1,k)+rho(i,j,k))
+                  d=half*(rho(i,j,k)+rho(i,j-1,k))
 
-             e= pt25*(rho(i+1,j,k)+rho(i+1,j+1,k)+rho(i,j+1,k)+rho(i,j,k))
-             f= pt25*(rho(i+1,j,k)+rho(i+1,j-1,k)+rho(i,j-1,k)+rho(i,j,k))
-             g= pt25*(rho(i,j,k)+rho(i,j+1,k)+rho(i-1,j+1,k)+rho(i-1,j,k))
-             h= pt25*(rho(i,j,k)+rho(i-1,j,k)+rho(i-1,j-1,k)+rho(i,j-1,k))
+                  e= pt25*(rho(i+1,j,k)+rho(i+1,j+1,k)+rho(i,j+1,k)+rho(i,j,k))
+                  f= pt25*(rho(i+1,j,k)+rho(i+1,j-1,k)+rho(i,j-1,k)+rho(i,j,k))
+                  g= pt25*(rho(i,j,k)+rho(i,j+1,k)+rho(i-1,j+1,k)+rho(i-1,j,k))
+                  h= pt25*(rho(i,j,k)+rho(i-1,j,k)+rho(i-1,j-1,k)+rho(i,j-1,k))
 
-             wk(i,j)=   &
-                  c1/rho(i,j,k)*(&
-             a*(rfd(i+1,j,k)-rfd(i,j,k))-b*(rfd(i,j,k)-rfd(i-1,j,k))+&
-             c*(rfd(i,j+1,k)-rfd(i,j,k))-d*(rfd(i,j,k)-rfd(i,j-1,k)) ) +&
-             c2/rho(i,j,k)*( &
-             e*(rfd(i+1,j+1,k)-rfd(i,j,k))-h*(rfd(i,j,k)-rfd(i-1,j-1,k))+&
-             g*(rfd(i-1,j+1,k)-rfd(i,j,k))-f*(rfd(i,j,k)-rfd(i+1,j-1,k)) )
-
+                  rfd(i,j,k)=  rfd(i,j,k) + &
+                     c1/rho(i,j,k)*(&
+                  a*(sfd(i+1,j,k)-sfd(i,j,k))-b*(sfd(i,j,k)-sfd(i-1,j,k))+&
+                  c*(sfd(i,j+1,k)-sfd(i,j,k))-d*(sfd(i,j,k)-sfd(i,j-1,k)) ) +&
+                  c2/rho(i,j,k)*( &
+                  e*(sfd(i+1,j+1,k)-sfd(i,j,k))-h*(sfd(i,j,k)-sfd(i-1,j-1,k))+&
+                  g*(sfd(i-1,j+1,k)-sfd(i,j,k))-f*(sfd(i,j,k)-sfd(i+1,j-1,k)) )
+               end do
             end do
-            end do
-           do j=j0,jn
-             do i=i0,in
-               rfd(i,j,k)= rfd(i,j,k) + wk(i,j)
-             enddo
-           enddo  
          end do
+!
+      else
+         do k=1,nk
+            do j=j0,jn
+               do i=i0,in
+                  a=half*(rho(i+1,j,k)+rho(i,j,k))
+                  b=half*(rho(i,j,k)+rho(i-1,j,k))
+                  c=half*(rho(i,j+1,k)+rho(i,j,k))
+                  d=half*(rho(i,j,k)+rho(i,j-1,k))
+
+                  e= pt25*(rho(i+1,j,k)+rho(i+1,j+1,k)+rho(i,j+1,k)+rho(i,j,k))
+                  f= pt25*(rho(i+1,j,k)+rho(i+1,j-1,k)+rho(i,j-1,k)+rho(i,j,k))
+                  g= pt25*(rho(i,j,k)+rho(i,j+1,k)+rho(i-1,j+1,k)+rho(i-1,j,k))
+                  h= pt25*(rho(i,j,k)+rho(i-1,j,k)+rho(i-1,j-1,k)+rho(i,j-1,k))
+
+                  wk(i,j)=   &
+                         c1/rho(i,j,k)*(&
+                  a*(sfd(i+1,j,k)-sfd(i,j,k))-b*(sfd(i,j,k)-sfd(i-1,j,k))+&
+                  c*(sfd(i,j+1,k)-sfd(i,j,k))-d*(sfd(i,j,k)-sfd(i,j-1,k)) ) +&
+                  c2/rho(i,j,k)*( &
+                  e*(sfd(i+1,j+1,k)-sfd(i,j,k))-h*(sfd(i,j,k)-sfd(i-1,j-1,k))+&
+                  g*(sfd(i-1,j+1,k)-sfd(i,j,k))-f*(sfd(i,j,k)-sfd(i+1,j-1,k)) )
+               end do
+            end do
+            do j=j0,jn
+               do i=i0,in
+                  sfd(i,j,k)= rfd(i,j,k) + wk(i,j)
+               enddo
+            enddo  
+         end do
+      endif
 !
 !----------------------------------------------------------------------
 !

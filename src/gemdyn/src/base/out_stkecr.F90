@@ -39,7 +39,7 @@
       include "rpn_comm.inc"
 
       logical iope_L
-      integer  nz, err, ni, nis, njs, k, kk, wk_njs,tag,stat,l
+      integer  nz, err, nis, njs, k, kk, wk_njs,tag,stat,l
       integer, dimension (:)    , pointer :: zlist
       real   , dimension (:,:,:), pointer :: wk_glb
 !
@@ -144,7 +144,7 @@
                   Out_rec%deet=Out_deet
                   Out_rec%npas=Out_npas
                   Out_rec%grtyp='Z'
-                  Out_rec%ni=ni
+                  Out_rec%ni=nis
                   Out_rec%nj=njs
                   Out_rec%nk=1
                   Out_rec%ig4=Out_ig4

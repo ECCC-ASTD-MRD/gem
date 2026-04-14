@@ -117,6 +117,13 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Schm_Topo_L
    namelist /dyn_fisl_p/ Schm_Topo_L
 
+
+   !# True-> compute omega from vertical coordinate definition
+   !#        Only for GEM-P (for CCCMA)
+   logical :: Schm_omega_cccma = .false.
+   namelist /dyn_fisl  / Schm_omega_cccma
+   namelist /dyn_fisl_p/ Schm_omega_cccma
+   
    !# * 0   ->          NO advection
    !# * 1   -> traditional advection
    !# * 2   -> consistent advection with respect to off-centering
