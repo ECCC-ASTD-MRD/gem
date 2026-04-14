@@ -1,6 +1,6 @@
 NAME       : gem
-VERSION    : 5.3.0-a21
-MACH_VERSION : 3.3.0-a17.0
+VERSION    : 5.3.0-a22
+MACH_VERSION : 3.3.0-a22
 BUILD      : RelWithDebInfo
 DESCRIPTION: ECCC-MRD Global Environmental Multi-scale model - GEM
 SUMMARY    : The Global Environmental Multiscale (GEM) model is a numerical weather prediction model developed by the Meteorological Research Division of Environment and Climate Change Canada.
@@ -8,16 +8,16 @@ MAINTAINER : Chantal Pic - Chantal.Pic@ec.gc.ca
 URL        : https://github.com/ECCC-ASTD-MRD/gem
 
 # Components
-modelutils = 1.8.0-a18
-rpnphy = 6.3.0-a20
-gemdyn = 5.3.0-a20
-mach = 3.3.0-a17.0
+modelutils = 1.8.0-a22
+rpnphy = 6.3.0-a22
+gemdyn = 5.3.0-a22
+mach = 3.3.0-a22
 cplocn = v5.2.1
 
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-rmn  >= 20.1.0-b6
+rmn  >= 20.1.0-b7
 tdpack >= 1.6.4.1
 vgrid >= 6.9.11.1
 rpncomm >= 4.6.14
