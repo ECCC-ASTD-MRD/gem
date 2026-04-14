@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_SURFACE_AERO_COND_TEB
+  implicit none
+  public
+contains
 !   ######################################################################
     SUBROUTINE SURFACE_AERO_COND_TEB(PRI, PZREF, PUREF, PVMOD, PZ0,&
                                     PZ0H, PAC                     )
@@ -160,3 +164,4 @@ CONTAINS
 !
 !
 END SUBROUTINE SURFACE_AERO_COND_TEB
+end module MODI_SURFACE_AERO_COND_TEB

@@ -309,6 +309,29 @@ module sfc_options
    logical           :: impflx      = .false.
    namelist /surface_cfgs/ impflx
 
+   !# Specify which method is used to compute hrsurf
+   !# * ALPHA_JN90  : (default) [pending description]
+   !# * BETA_ECMWF12: [pending description]
+   character(len=16) :: isba_hrsurf_method    = 'ALPHA_JN90'
+   namelist /surface_cfgs/ isba_hrsurf_method
+   character(len=*), parameter :: ISBA_HRSURF_METHOD_OPT(2) = (/ &
+        'ALPHA_JN90   ', &
+        'BETA_ECMWF12 ' &
+        /)  
+
+   !# Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method) 
+   real              :: isba_hrsurf_power = 1.
+   namelist /surface_cfgs/ isba_hrsurf_power   
+
+   !# Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]
+   real              :: isba_hrsurf_rs = 50.
+   namelist /surface_cfgs/ isba_hrsurf_rs
+   
+   !# If .true., field capacity for bare ground evaporation is calculated with respect to 
+   !             liquid water using modified porosity in presence of frozen soil
+   logical           :: isba_lwfcliq = .false.
+   namelist /surface_cfgs/ isba_lwfcliq
+
    !# If .true. apply temporary fix to ISBA
    !# * timestep dependent KCOEF
    !# * No PSN factor for meting and freezing
@@ -415,11 +438,11 @@ module sfc_options
    namelist /surface_cfgs/ lforlit
 
    !# (SVS1) If .true., macropores are activated and enhance infiltration in a frozen soil
-   logical           :: lmacropores_svs1 = .false.
-   namelist /surface_cfgs/ lmacropores_svs1
+   logical           :: lmacropores_svs = .false.
+   namelist /surface_cfgs/ lmacropores_svs
 
    !#  (SVS1) If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
-   logical           :: lphase_change_eff_svs1 = .false.
+   logical           :: lphase_change_eff_svs1 = .true.
    namelist /surface_cfgs/ lphase_change_eff_svs1 
 
    !#  (SVS1) If .true., field capacity for bare ground evaporation is calculated with respect to 
@@ -454,7 +477,7 @@ module sfc_options
 
    ! mp_alpha is a parameter related to the macropore activation function in SVS 
    !# mp_alpha parameter in the macropore activation option (based on a sensitivity analysis)
-   real              :: mp_alpha    = 0.6
+   real              :: mp_alpha    = 0.55
    namelist /surface_cfgs/ mp_alpha
 
    !# (SVS2) Number of snow layers in multi-layer snowpack scheme:
@@ -654,7 +677,7 @@ module sfc_options
    namelist /surface_cfgs/ lsoil_freezing_svs1 
 
    !#  Option to compute the heat flux between the soil and the snowpack in the module soil_freezing.F90
-   character(len=16) :: soilsnowhf_svs1     = 'DST_MAXD'
+   character(len=16) :: soilsnowhf_svs1     = 'ST_D_DD'
    namelist /surface_cfgs/ soilsnowhf_svs1
    character(len=*), parameter :: SOILSNOWHF_SVS1_OPT(4) = (/ &
         'DST_HD  ', &   ! DST_HD: use the Deep Snow Temperature and Half the snow Depth
@@ -664,7 +687,7 @@ module sfc_options
         /)
 
    !#  Option to compute HFLUX for bareground in the module soil_freezing.F90 (Use the soil thermal restiance (default) or the skin conductivity from Table 2.1 of the sup. mat. of Boussetta et al., 2021)
-   character(len=16) :: soilgrndhf_svs1     = 'RTH_GRND'
+   character(len=16) :: soilgrndhf_svs1     = 'LAM_BOU2021'
    namelist /surface_cfgs/ soilgrndhf_svs1
    character(len=*), parameter :: SOILGRNDHF_SVS1_OPT(2) = (/ &
         'RTH_GRND   ', &   ! RTH_GRND: use a soil thermal resistance in the computation of surface heat flux of bare ground
@@ -672,7 +695,7 @@ module sfc_options
         /)
 
    !#  Option to set the depth of the lower boundrary condition below the soil column (module soil_freezing.F90)
-   character(len=16) :: soildbtm_svs1     = 'MID'
+   character(len=16) :: soildbtm_svs1     = 'DEEP'
    namelist /surface_cfgs/ soildbtm_svs1
    character(len=*), parameter :: SOILDBTM_SVS1_OPT(3) = (/ &
         'MID ', &   ! default condition. The temperature is set at a depth of half the thickness of the lower layer below the bottom of the soil column
@@ -699,41 +722,31 @@ module sfc_options
 
    !# determine depth over which soil thermal inertia is computed [m]
    !# when set to zero, only 1st layer is used (default option for backward compatibility)
+   !# default should eventually be changed to 0.12 based on the fact that cg = sqrt(tau*k/pi)
+   !# where k is the thermal diffusivity of the soil [m2/s] and tau = 86400 [s]
+   !# if no information is known about the soil, IEC 60853-2 recommends k=5·10-7 m2/s
+   !# hence svs_cg_depth = 0.12 m
    real              :: svs_cg_depth = 0.
    namelist /surface_cfgs/ svs_cg_depth
 
    !# specify which equation to use to take ice into account when computing the heat capacity of bare ground
+   !# * BELAIR2003: (default) Adjustment to heat capacity based on total water content (WD+WF)
+   !# * BOONE2000:  Adjustment to heat capacity that takes into account the reduced heat capacity of ice vs liquid water
    character(len=16) :: svs_cg_ice    = 'BELAIR2003'
    namelist /surface_cfgs/ svs_cg_ice
-   character(len=*), parameter :: SVS_CG_ICE_OPT(3) = (/ &
+   character(len=*), parameter :: SVS_CG_ICE_OPT(2) = (/ &
         'BELAIR2003', &
-        'BOONE2000 ', &
-        'FORTIN2026'  &
+        'BOONE2000 '  &
         /)   
 
    !# use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true.
    logical           :: svs_dynamic_z0h     = .false.
-   namelist /surface_cfgs/ svs_dynamic_z0h 
-
-   !# Exponent in function defining vegetation stress when estimating transpiration
-   !# Transpiration decreases more slowly with soil moisture when svs_gexp is high
-   !# it does not start decreasing until about soil moisture is half way between wilting
-   !# point and field capacity when svs_gexp=10.
-   !# A positive value is expected, but a negative value is used by default to keep this option
-   !# inactive if a value is not provided.
-   !# Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value
-   !# of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when
-   !# the CTEM parameterization is used.
-   !# This behaviour is preserved if the value of the key is less or equal to zero for
-   !# backward compatibility purposes.
-   !# Since this is a bugfix, eventually the default value of the key should be changed
-   !# to a positive value.
-   real              :: svs_gexp = -1.
-   namelist /surface_cfgs/ svs_gexp
+   namelist /surface_cfgs/ svs_dynamic_z0h
 
    !# Specify which method is used to compute hrsurf
-   !# * ALPHA_JN90  : (default) [pending description]
-   !# * BETA_ECMWF12: [pending description]
+   !# * ALPHA_JN90    : (default) "alpha" method proposed by Jacquemin and Noilhan (1990), BLM
+   !# * BETA_ECMWF12  : resistance method of Albergel et al. (2012) modified by Fortin et al. (2026)
+   !#                   in order to behave like a "beta" method in dry conditions
    character(len=16) :: svs_hrsurf_method    = 'ALPHA_JN90'
    namelist /surface_cfgs/ svs_hrsurf_method
    character(len=*), parameter :: SVS_HRSURF_METHOD_OPT(2) = (/ &
@@ -742,10 +755,12 @@ module sfc_options
         /)
 
    !# Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method)
+   !# With default value of 1, BETA_ECMWF12 method becomes equivalent to resistance method of Albergel et al. (2012)
    real              :: svs_hrsurf_power = 1.
    namelist /surface_cfgs/ svs_hrsurf_power
 
    !# Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]
+   !# Default value of 50 s/m proposed by Albergel et al. (2012)
    real              :: svs_hrsurf_rs = 50.
    namelist /surface_cfgs/ svs_hrsurf_rs
 
@@ -899,21 +914,57 @@ module sfc_options
    real    :: svs_vegcrops(13) = -999.
    namelist /surface_cfgs/ svs_vegcrops
 
-   !# Option to read a lookup table of monthly values for D50 for class 15 (crops)
-   logical :: svs_read_d50crops = .false.
-   namelist /surface_cfgs/ svs_read_d50crops
+   !# Option to read a lookup table of monthly values for D50 for class 15
+   logical :: svs_read_d50veg15 = .false.
+   namelist /surface_cfgs/ svs_read_d50veg15
 
-   !# Values (1:13) used for the lookup table D50CROPS if svs_read_d50crops=.T.
-   real    :: svs_d50crops(13) = -999.
-   namelist /surface_cfgs/ svs_d50crops
+   !# Option to read a lookup table of monthly values for D50 for class 16
+   logical :: svs_read_d50veg16 = .false.
+   namelist /surface_cfgs/ svs_read_d50veg16
 
-   !# Option to read a lookup table of monthly values for D95 for class 15 (crops)
-   logical :: svs_read_d95crops = .false.
-   namelist /surface_cfgs/ svs_read_d95crops
+   !# Values (1:13) used for the lookup table D50VEG15 if svs_read_d50veg15=.T.
+   real    :: svs_d50veg15(13) = -999.
+   namelist /surface_cfgs/ svs_d50veg15
 
-   !# Values (1:13) used for the lookup table D50CROPS if svs_read_d95crops=.T.
-   real    :: svs_d95crops(13) = -999.
-   namelist /surface_cfgs/ svs_d95crops
+   !# Values (1:13) used for the lookup table D50VEG16 if svs_read_d50veg16=.T.
+   real    :: svs_d50veg16(13) = -999.
+   namelist /surface_cfgs/ svs_d50veg16
+
+   !# Option to read a lookup table of monthly values for D95 for class 15 
+   logical :: svs_read_d95veg15 = .false.
+   namelist /surface_cfgs/ svs_read_d95veg15
+
+   !# Option to read a lookup table of monthly values for D95 for class 16 
+   logical :: svs_read_d95veg16 = .false.
+   namelist /surface_cfgs/ svs_read_d95veg16
+
+   !# Values (1:13) used for the lookup table D95VEG15 if svs_read_d95veg15=.T.
+   real    :: svs_d95veg15(13) = -999.
+   namelist /surface_cfgs/ svs_d95veg15
+
+   !# Values (1:13) used for the lookup table D95VEG16 if svs_read_d95veg16=.T.
+   real    :: svs_d95veg16(13) = -999.
+   namelist /surface_cfgs/ svs_d95veg16
+
+
+   !# Option to read a lookup table of monthly values for D50 for class 16
+   logical :: svs_read_gexpveg = .false.
+   namelist /surface_cfgs/ svs_read_gexpveg
+
+   !# Exponent in function defining vegetation stress when estimating transpiration
+   !# Transpiration decreases more slowly with soil moisture when svs_gexp is high
+   !# it does not start decreasing until about soil moisture is half way between wilting
+   !# point and field capacity when svs_gexp=10.
+   !# Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value
+   !# of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when
+   !# the CTEM parameterization is used.
+   !# This behaviour is preserved if svs_read_gexpveg = .false. for
+   !# backward compatibility purposes.
+   !# Since this is a bugfix, eventually the default value of the key should be changed
+   !# to a positive value.
+   !# Values (26) used for the lookup table D95VEG16 if svs_read_gexpveg=.T.
+   real    :: svs_gexpveg(26) = -999.
+   namelist /surface_cfgs/ svs_gexpveg
 
    !# Option to read a lookup table of monthly values for LAI for class 11
    logical :: svs_read_lai11 = .false.

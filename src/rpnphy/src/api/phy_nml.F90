@@ -2,6 +2,7 @@
 module phy_nml_mod
    use clib_itf_mod, only: clib_isreadok, clib_toupper
    use debug_mod, only: init2nan_L
+   use sfc_nml_mod, only: sfc_nml2
    use str_mod, only: str_concat, str_toreal
    use series_mod, only: series_nml
    use phy_status, only: PHY_ERROR, PHY_NONE, PHY_OK, PHY_CTRL_NML_OK, phy_init_ctrl
@@ -39,7 +40,7 @@ contains
       integer, external :: chm_nml
 #endif
 
-      integer, external :: sfc_nml2, msg_getUnit
+      integer, external :: msg_getUnit
 
       integer :: err, unout
       character(len=1024) :: msg_S
@@ -214,6 +215,7 @@ contains
       if (priv_stropt(rad_exp_rei,     'rad_exp_rei',     RAD_EXP_REI_OPT, reix_const) == RMN_ERR) return
       if (priv_stropt(rad_exp_rew,     'rad_exp_rew',     RAD_EXP_REW_OPT, rewx_const) == RMN_ERR) return
       if (priv_stropt(rad_conserve,    'rad_conserve',    RAD_CONSERVE_OPT) == RMN_ERR) return
+      if (priv_stropt(rad_mpagg,       'rad_mpagg',       RAD_MPAGG_OPT) == RMN_ERR) return
       if (priv_stropt(linoz_chm,       'linoz_chm',       LINOZ_CHM_OPT) == RMN_ERR) return
       if (priv_stropt(iuv_method,      'iuv_method',      IUV_METHOD_OPT) == RMN_ERR) return
       if (priv_stropt(radia,           'radia',           RADIA_OPT) == RMN_ERR) return

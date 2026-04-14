@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
+module soil_fluxes_mod
+  implicit none
+  public
+contains
 
 subroutine SOIL_FLUXES(DT, &
          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, WD_RK, &
@@ -158,3 +162,4 @@ subroutine SOIL_FLUXES(DT, &
 
 return
 end subroutine SOIL_FLUXES
+end module soil_fluxes_mod

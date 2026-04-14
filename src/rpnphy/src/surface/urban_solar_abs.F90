@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module MODI_URBAN_SOLAR_ABS
+  implicit none
+  public
+contains
 subroutine URBAN_SOLAR_ABS(PDIR_SW, PSCA_SW, PZENITH,                    &
                                PBLD, PWALL_O_HOR, PCAN_HW_RATIO,             &
                                PALB_ROOF,                                    &
@@ -604,3 +607,4 @@ end subroutine TOWN_ALBEDO
 !-------------------------------------------------------------------------------
 
 end subroutine URBAN_SOLAR_ABS
+end module MODI_URBAN_SOLAR_ABS

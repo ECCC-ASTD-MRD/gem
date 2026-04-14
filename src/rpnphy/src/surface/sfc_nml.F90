@@ -15,6 +15,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module sfc_nml_mod
+  implicit none
+  public
+contains
+  
 function sfc_nml2(F_namelist) result(F_istat)
    use clib_itf_mod, only: clib_toupper, clib_isreadok
    use wb_itf_mod
@@ -167,6 +172,7 @@ contains
       istat = clib_toupper(soil_cond)
       istat = clib_toupper(soil_ksat_ice)
       istat = clib_toupper(svs_hrsurf_method)
+      istat = clib_toupper(isba_hrsurf_method)
       istat = clib_toupper(svs_snow_rain)
       istat = clib_toupper(vf_type)
       istat = clib_toupper(water_emiss)
@@ -408,16 +414,7 @@ contains
          !If soil freezing is activated, make sure that the soil-snow heat flux is set to either DST_HD, DST_FD, DST_MAXD (default) or ST_D_DD
          !If soil freezing is activated, make sure that the option for setting the skin conductivity/resistance for bare-ground is set to either RTH_GRND or LAM_BOU2021
          !If soil freezing is activated, make sure that the dbtm option is set to either MID (default), DEEP ort NOFL
-         if (.not.lsoil_freezing_svs1) then
-            if (lmacropores_svs1) then
-                call msg(MSG_ERROR, '(sfc_nml_check) lmacropores_svs1 should be set to TRUE only when lsoil_freezing_svs1 is set to TRUE')
-                return
-            endif
-            if (lphase_change_eff_svs1) then
-                call msg(MSG_ERROR, '(sfc_nml_check) lphase_change_eff_svs1 should be set to TRUE only when lsoil_freezing_svs1 is set to TRUE')
-                return
-            endif
-        else
+         if (lsoil_freezing_svs1) then
             if (.not.any(soil_cond == SOIL_COND_OPT)) then
                 call str_concat(msg_S, SOIL_COND_OPT,', ')
                 call msg(MSG_ERROR,'(sfc_nml_check) soil_cond = '//trim(soil_cond)//' : Should be one of: '//trim(msg_S))
@@ -438,7 +435,7 @@ contains
                 call msg(MSG_ERROR,'(sfc_nml_check) soildbtm_svs1 = '//trim(soildbtm_svs1)//' : Should be one of: '//trim(msg_S))
                 return
             endif
-            if (lmacropores_svs1) then
+            if (lmacropores_svs) then
                 if (mp_alpha < 0 .or. mp_alpha > 1) then
                     call msg(MSG_ERROR, '(sfc_nml_check) mp_alpha must be within the 0 and 1 interval')
                     return
@@ -531,6 +528,13 @@ contains
                  ' : Should be one of: '//trim(msg_S))
             return
          endif
+
+          if (.not.any(isba_hrsurf_method == ISBA_HRSURF_METHOD_OPT)) then
+            call str_concat(msg_S, ISBA_HRSURF_METHOD_OPT, ', ')
+            call msg(MSG_ERROR, '(sfc_nml_check) isba_hrsurf_method = '//trim(svs_hrsurf_method)//&
+                 ' : Should be one of: '//trim(msg_S))
+            return
+         endif        
          
          if (.not.any(vf_type == VFTYPE_OPT)) then
             call str_concat(msg_S, VFTYPE_OPT,', ')
@@ -912,4 +916,5 @@ contains
       return
    end function sfc_nml_post_init
 
-end function sfc_nml2
+ end function sfc_nml2
+end module sfc_nml_mod

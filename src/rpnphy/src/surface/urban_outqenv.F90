@@ -14,7 +14,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module MODI_URBAN_OUTQENV
+  implicit none
+  public
+contains
 !/@*
 !   ##########################################################################
 SUBROUTINE URBAN_OUTQENV(PSCA_SW, PREF_SW_FAC, PREF_SW_GRND, PREF_SW_ROOF,  &
@@ -200,3 +203,4 @@ PQ13(:)=ZEB*PEMIT_LW_FAC(:)*ZFFAC(:)
 !
 !
 END SUBROUTINE URBAN_OUTQENV
+end module MODI_URBAN_OUTQENV

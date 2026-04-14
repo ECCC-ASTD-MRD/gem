@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module hydro_svs2_mod
+  implicit none
+  public
+contains
 SUBROUTINE HYDRO_SVS2 ( DT, &
      IMPERVU,  PG, ETR_GRID, EG_GRID,  &
      WSAT, KSAT, PSISAT, BCOEF, FBCOF, WFCINT, GRKEF, &
@@ -23,6 +27,9 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
   use sfc_options
   use svs_configs
   use svs2_tile_configs
+  use soil_ksatc_mod, only: soil_ksatc
+  use watdrn_svs_mod, only: watdrn_svs
+  use soil_fluxes_mod, only: soil_fluxes
 
   implicit none
 !!!#include <arch_specific.hf>
@@ -138,7 +145,7 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
   real, dimension(n,nl_svs)   :: asatfc, wsatc, asat0, grkefl, ksatmean
   real, dimension(n)          :: asat1, basflw, satsfc, subflw
 
-  real                        :: wat_down
+  real                        :: wat_down, wmp, satsfc_th
 
   real, dimension(n)          :: pond_ret ! Amount of surface runoff retained in the pond
 
@@ -168,6 +175,15 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
   !                   - harmonic mean of the hydraulic conductivity
   
   WAT_REDIS = 1
+
+  !Fraction of  satsfc used for calculating runoff
+  !    if macropores are activated: the satsfc_th is set to 0 (satsfc is not used to generate surface runoff)
+  !    if macropores are not activated : satsfc_th is set to 1 (satsfc is used as default to generate runoff)
+  IF(LMACROPORES_SVS) THEN
+       SATSFC_TH = 0
+  ELSE
+       SATSFC_TH = 1
+  ENDIF
   !
   !
   !        1.     CALCULATE THE REQUIRED PARAMETERS FOR NEW HYDROLOGY ROUTINE
@@ -191,6 +207,15 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
 
         ! Horizontal soil hydraulic conductivity decays with depth
         GRKSAT (I,K) = GRKSAT_C1 * EXP( GRKSAT_C2 *(DL_SVS(NL_SVS)-DL_SVS(K))/DL_SVS(NL_SVS))*KSATC(I,K)
+    	
+        !Macropore threshold water content and hydraulic conductivity
+        IF (lmacropores_svs) THEN
+            WMP = WSATC(I,K)*mp_alpha                   
+            IF (WD(I,K) >= WMP) THEN
+        		KSATC(I,K) = KSAT(I,K)		
+            ENDIF
+        ENDIF
+
         GRKEFL (I,K) = GRKEF(I)*GRKSAT(I,K)
      END DO
   END DO
@@ -205,7 +230,8 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
 
   DO I=1,N
      !use ksat to calculate runoff (mm/s)
-     RUNOFF(I) = MAX( (SATSFC(I)*PG(I)+(1-SATSFC(I))*MAX(PG(I)-KSATC(I,1)*1000.,0.0)) , 0.0 )             
+     !If SATSFC (computed from watdrn_svs) exceeds a thrshold then, use this theshold to compute runoff from saturation
+     RUNOFF(I) = MAX( (MIN(SATSFC_TH,SATSFC(I))*PG(I)+(1- MIN(SATSFC_TH,SATSFC(I)))*MAX(PG(I)-KSATC(I,1)*1000.,0.0)) , 0.0 )
 
 ! EG_code related to ponding of water
      IF (lwater_ponding_svs) THEN
@@ -366,8 +392,18 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
 
                  ! Downward liquid water flux is limited to avoid the saturation of the layer below  
                  IF(K.NE.NL_SVS) THEN   
-                    WAT_DOWN = MIN(W*(WDT(I,K)-WSATC(I,K))*DELZ(K),  &
-                         MAX(0.,(WSATC(I,K+1)-WDT(I,K+1))*DELZ(K+1)) )
+                    IF (lmacropores_svs) THEN 
+                        WMP = WSATC(I,K+1)*mp_alpha
+                        IF (WDT(I,K+1) >= WMP) THEN
+                            WAT_DOWN = W*(WDT(I,K)-WSATC(I,K))*DELZ(K)
+                        ELSE
+                            WAT_DOWN = MIN(W*(WDT(I,K)-WSATC(I,K))*DELZ(K),  &
+                                 MAX(0.,(WSATC(I,K+1)-WDT(I,K+1))*DELZ(K+1)) )
+                        ENDIF
+                    ELSE
+                        WAT_DOWN = MIN(W*(WDT(I,K)-WSATC(I,K))*DELZ(K),  &
+                             MAX(0.,(WSATC(I,K+1)-WDT(I,K+1))*DELZ(K+1)) )
+                    ENDIF
                  ELSE
                     WAT_DOWN = W*(WDT(I,K)-WSATC(I,K))*DELZ(K)
                  ENDIF
@@ -484,3 +520,4 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
 
   RETURN
 END SUBROUTINE HYDRO_SVS2
+end module hydro_svs2_mod

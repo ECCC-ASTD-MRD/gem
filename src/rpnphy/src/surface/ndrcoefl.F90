@@ -1,9 +1,15 @@
-      SUBROUTINE NDRCOEFL (CDMN,CDHN,VA,ZREFM,ZREFH,FICE,FLS,ILG,IL1,IL2)
+module ndrcoefl_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE NDRCOEFL (CDMN,CDHN,VA,ZREFM,ZREFH,FICE,FLS,ILG,IL1,IL2)
 !=======================================================================
 !     * AUG 14/18 - M.MACKAY.  	NEUTRAL TURBULENT TRANSFER COEFFICIENTS
 !     *                         BASED ON DRCOEFL.F90
 !=======================================================================
 !
+      use xit_mod, only: xit
       IMPLICIT NONE
 !
 ! ----* INPUT FIELDS *------------------------------------------------
@@ -65,4 +71,5 @@
 100   CONTINUE
 
       RETURN 
-      END        
+    END SUBROUTINE NDRCOEFL
+  end module ndrcoefl_mod

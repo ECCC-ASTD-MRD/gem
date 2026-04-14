@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module soili_svs_mod
+  implicit none
+  public
+contains
       SUBROUTINE SOILI_SVS (WD, &
            WF, SNM, SVM, RHOS, RHOSV, & 
            VEGH, VEGL, &  
@@ -191,23 +195,6 @@ include "isbapar.cdk"
           DO K=1,NL_SVS
             ! Boone et al. (2000), eq. B2
             CGK(I,K) = CGSAT(I,K) * ((WSAT(I,K)-WF(I,K)) / MAX(WD(I,K),0.001))** &
-                    ( 0.5*BCOEF(I,K)/LOG(10.) )
-            CGK(I,K) = MIN( CGK(I,K), 2.0E-5 )
-            CGK(I,K) = (1-WF(I,K)) * CGK(I,K) + WF(I,K) * C_ICE
-          END DO
-        END DO
-      ELSE IF (svs_cg_ice .EQ. 'FORTIN2026') THEN
-        ! Boone et al. (2000), eq. B3
-        C_ICE = 2 * (PI / (LAMI*CICE*RHOI*DAY))**0.5
-        DO I=1,N
-          DO K=1,NL_SVS
-            ! We assume that part of the layer is ice free and the rest
-            ! is pure ice.
-            ! Logic is as follow: if WD is total liquid content but concentrated
-            ! in (1-WF) fraction of layer, then liquid content in that portion of
-            ! the soil layer has to be equal to WD/(1-WF). We now proceed to compute
-            ! CG for non-frozen fraction of the layer using this new water content.
-            CGK(I,K) = CGSAT(I,K) * (WSAT(I,K)*(1-WF(I,K))) / MAX(WD(I,K),0.001)** &
                     ( 0.5*BCOEF(I,K)/LOG(10.) )
             CGK(I,K) = MIN( CGK(I,K), 2.0E-5 )
             CGK(I,K) = (1-WF(I,K)) * CGK(I,K) + WF(I,K) * C_ICE
@@ -679,4 +666,5 @@ include "isbapar.cdk"
        END DO
 
       RETURN
-      END
+    END SUBROUTINE SOILI_SVS
+  end module soili_svs_mod

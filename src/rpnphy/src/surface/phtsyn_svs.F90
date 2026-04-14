@@ -13,15 +13,20 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-      SUBROUTINE PHTSYN_SVS ( LAI_NCLASS, VEGFRAC, &
+module phtsyn_svs_mod
+  implicit none
+  public
+contains
+
+  SUBROUTINE PHTSYN_SVS ( LAI_NCLASS, VEGFRAC, &
                TCAN,  PRESSG,  RESAVG,  QA, QSWV1,  WD, &
-               FCD, COSZS, WFC, WWILT, MASKLAT, BETA_WSOL, G_WSOL, &
+               FCD, COSZS, WFC, WWILT, MASKLAT, BETA_WSOL, G_WSOL, GEXP, &
 !--------------------------INPUTS ABOVE AND OUTPUTS BELOW --------------
                FCANC, AILCG,  RC,CO2I1,  AVG_GWSOL, NCLASS, N)
 !
 !
         use svs_configs
-        use sfc_options, only: svs_gexp
+        use sfc_options, only: svs_read_gexpveg
         use sfc_options, only: vf_type, svs_read_vf2ctemdat, svs_vf2ctemdat 
       implicit none
 !!!#include <arch_specific.hf>
@@ -72,7 +77,7 @@
       REAL INICO2I(KK), ALPHA(KK), RMLCOEFF(KK), BB(KK), MM(KK)
       REAL CO2CC, DELTA_CO2, N_EFFECT
       INTEGER ISC4(KK)
-      REAL GEXP
+      REAL GEXP(N)
 !
 !Author
 !          S. Zhang (March 2013)
@@ -417,17 +422,13 @@
       FCANC          = 0.0
       AILCG          = 0.0
 
-!     EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
+!     'GEXP': EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
 !     DECREASES LINEARLY WITH SOIL MOISTURE, AND OF COURSE NON-LINEARLY
 !     FOR VALUES HIGHER THAN 1. WHEN GEXP IS ABOUT 10, PHOTOSYNTHESIS DOES
 !     NOT START DECREASING UNTIL ABOUT SOIL MOISTURE IS HALF WAY BETWEEN
 !     WILTING POINT AND FIELD CAPACITY.
-      if ( svs_gexp .GT. 0. ) then
-         GEXP = svs_gexp
-      else
-         ! Default value used for backward compatibility
-         GEXP = 2.
-      end if   
+!     Default value is set to 2 in inicover_svs used for backward compatibility
+
 !
 !     GENERATE THE KK_TO_ICC INDEX FOR CORRESPONDENCE BETWEEN 9 PFTs AND THE
 !     12 VALUES IN THE PARAMETER VECTORS
@@ -704,12 +705,13 @@
 
       ! For backward compatibility - computation of BETA_WSOL, G_WSOL and AVG_GWSOL
       ! is now done in vegi_svs. This code should eventually be removed.
-      if (svs_gexp .le. 0) then
+
+      if (.not. (svs_read_gexpveg .or. vf_type .eq. 'CCILC_WE')) then
       DO I=1,N
          DO K=1,NL_SVS
             BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
             ! soil moisture stress term per layer, with beta bounded between 0 and 1
-            G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP
+            G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP(I)
          ENDDO
          ! average soil moisture term ... weighted by root fractions 
          ! Total roots = 1.0 if vegetation present ... set the term=0.0 if no vegetation
@@ -1056,3 +1058,4 @@
 
       RETURN
     END SUBROUTINE PHTSYN_SVS
+  end module phtsyn_svs_mod

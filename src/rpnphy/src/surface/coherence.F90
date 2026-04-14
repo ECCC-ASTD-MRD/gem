@@ -60,7 +60,7 @@ subroutine coherence3(pvars, ni)
    real, pointer, dimension(:) :: zalveg,  zcveg,  zgamveg,  zglacier,  zglsea,  zicedp,  zlai,  zmg,  zrgl,  zrootdp,  zsnoal, zsnoden, zsnoma,  zsnoro,  zstomr,  zvegfrac,  zwsnow,  zwveg
 !!$      real, pointer, dimension(:) :: zsdepth
 
-   real, pointer, dimension(:,:) :: zclay, zisoil, zsand, zsnodp, ztglacier, ztsoil, zwsoil,ztpsoil
+   real, pointer, dimension(:,:) :: zclay, zisoil, zsand, zsnodp,zsnowe, ztglacier, ztsoil, zwsoil,ztpsoil
    ! SVS
    real, pointer, dimension(:) :: zsnodpl, zsnval, zsnvden, zsnvdp, zsnvma, zsnvro, zvegh, zvegl, zwsnv
    ! SVS 2
@@ -109,6 +109,7 @@ subroutine coherence3(pvars, ni)
    MKPTR2D(zoc , oc)
    MKPTR2D(zsand,    sand)
    MKPTR2D(zsnodp,   snodp)
+   MKPTR2D(zsnowe,   snowe)
    MKPTR2D(ztglacier,tglacier)
    MKPTR2D(ztsoil,   tsoil)
    MKPTR2D(ztpsoil,   tpsoil)
@@ -125,14 +126,20 @@ subroutine coherence3(pvars, ni)
 !VDIR NODEP
       do i=1,ni
          if (zmg(i).lt.critmask) then
-
             zmg      (i)              = 0.0
             zglacier (i)              = 0.0
             zsnodp   (i,indx_soil)    = 0.0
             zsnodp   (i,indx_glacier) = 0.0
-            if (schmurb  == 'TEB') zsnodp   (i,indx_urb ) = 0.0
-            if (schmlake /= 'NIL') zsnodp   (i,indx_lake) = 0.0
-
+            zsnowe   (i,indx_soil)    = 0.0
+            zsnowe   (i,indx_glacier) = 0.0
+            if (schmurb  == 'TEB') then
+                zsnodp   (i,indx_urb ) = 0.0
+                zsnowe   (i,indx_urb) = 0.0
+            endif
+            if (schmlake /= 'NIL') then 
+                zsnodp   (i,indx_lake) = 0.0
+                zsnowe   (i,indx_lake) = 0.0
+            endif                
          end if
       end do
 
@@ -294,6 +301,7 @@ subroutine coherence3(pvars, ni)
             zglsea (i)          = 0.0
             zicedp (i)          = 0.0
             zsnodp (i,indx_ice) = 0.0
+            zsnowe (i,indx_ice) = 0.0
          else
             zicedp (i) = max( zicedp(i) , minicedp )
          end if
@@ -435,6 +443,7 @@ subroutine coherence3(pvars, ni)
       do i=1,ni
           if (zsnodp(i,indx_soil).lt.critsnow) then
               zsnodp(i,indx_soil) = 0.0
+              zsnowe(i,indx_soil) = 0.0
           end if
       end do
 

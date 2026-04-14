@@ -18,7 +18,7 @@ contains
        wumaxout, rliqout, riceout, &
        rliq_int, rice_int, &
        rnflx, snoflx, &
-       kount, xlat, mg, mlac, wstar, tstar, tke, kt, &
+       kount, xlat, mg, mlac, wstar, tstar, tke, kt, sigs, &
        coadvu, coadvv, coage, cowlcl, cozlcl, mrk2, critmask, delt)
     use, intrinsic :: iso_fortran_env, only: INT64
     use tdpack_const, only: CHLF, CPD, GRAV, PI, RGASD, TRPL
@@ -56,7 +56,7 @@ contains
     real, intent(out)   :: rnflx(ix,kx), snoflx(ix,kx)
     integer, intent(in) ::  kount
     real, intent(in) :: xlat(ix), mg(ix), mlac(ix), wstar(ix), tstar(ix)
-    real, intent(in) :: tke(ix,kx), kt(ix,kx)
+    real, intent(in) :: tke(ix,kx), kt(ix,kx), sigs(ix)
     real, pointer, dimension(:) :: coadvu, coadvv, coage, cowlcl, cozlcl
     real, pointer :: mrk2(:,:)
     real, intent(in) :: critmask, delt
@@ -172,6 +172,7 @@ contains
     ! XLAT     latitude(radians)
     ! MG       land-sea mask
     ! MLAC     fraction of lakes (mask)
+    ! SIGS     subgrid-scale orographic standard deviation (m)
 
     !          - Output -
     ! ZCRR     convective rainfall rate
@@ -460,6 +461,12 @@ contains
        endwhere
     endif
 
+    ! Adjust trigger over rough terrain :
+    ! ===================================================
+    do i=1,ix
+       wklcla(i) = wklcla(i) - kfctrigsgo * sigs(i)**kfctrigsgop
+    enddo
+    
     ! ===================================================
 
     if (KFCTRIGA.gt.0.0) then

@@ -25,8 +25,9 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
      PTRAD_HSUN, PTRAD_HSHADE,                          &
      PTGLOBE_SUN, PTGLOBE_SHADE, PTWETB,                &
      PQ1_H,PQ2_H,PQ3_H,PQ4_H,PQ5_H,PQ6_H,PQ7_H ,N)
-   use tdpack_const, only: TCDK
+   use tdpack_const, only: TCDK, pi
    use sfc_options, only: thermal_stress_utci, thermal_stress_shade
+   use outqenv_mod, only: outqenv2
    implicit none
 
    !    PURPOSE       : COMPUTES THERMAL STRESS INDICATORS over a slab surface
@@ -49,8 +50,8 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
    real, dimension(N), intent(IN)  :: PQA        !  Air specific humidity  (kg/kg)
    real, dimension(N), intent(IN)  :: PPS        !  air pressure at the surface
 
-   real, dimension(N), intent(IN)  :: PU10       !  wind speed at 10m (m/s)
-   real, dimension(N), intent(IN)  :: PUSR       !  Air wind speed 10-m over the roof at the sensor level (m/s)
+   real, dimension(N), intent(IN)  :: PU10       !  wind speed at 10m (m/s) - for UTCI
+   real, dimension(N), intent(IN)  :: PUSR       !  wind speed at the same height than temp. (m/s) - for WBGT
 
    real, dimension(N), intent(IN)  :: PZENITH       ! solar zenithal angle (rad from vert.)
    real, dimension(N), intent(IN)  :: PDIR_SW       ! Direct solar radiation (W/m²)
@@ -90,7 +91,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
 
    !  declarations of local variables
    real, dimension(N) :: ZEHPA !water vapour pressure (hPa)
-   real, dimension(N) :: ZUNDEF
+   real, dimension(N) :: ZUNDEF, zqa, zzenith
    ! energy components for the globe
    real, dimension(N) :: PQ1_G
    real, dimension(N) :: PQ2_G
@@ -122,6 +123,13 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
 
    do JJ = 1, N
       ZUNDEF(JJ)=0.0
+      zqa(jj) = max( pqa(jj) , 1.e-6)
+      if (pdir_sw(jj) > 0.0) then
+         zzenith(jj) = min(pzenith(jj), pi/2.)
+      else
+         zzenith(jj) = max(pzenith(jj), pi/2.)
+      endif
+
    enddo
 
    !========================================================
@@ -174,7 +182,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
       ! compute the (psychometric) wet-bulb temperatures (C)
       !========================================================
 
-      PTWETB(JJ)       = WETBULBT_SURF(PPS(JJ), PTA(JJ)-TCDK, PQA(JJ))
+      PTWETB(JJ)       = WETBULBT_SURF(PPS(JJ), PTA(JJ)-TCDK, zqa(JJ))
 
       !========================================================
       ! compute the wet bulb globe temperature indices  (WBGT) (C)
@@ -213,7 +221,7 @@ subroutine SURF_THERMAL_STRESS(PTA, PQA,                &
       ! compute the Universal Thermal and Climate Index UTCI (C)
       !========================================================
 
-      ZEHPA(JJ) = PQA(JJ)* PPS(JJ)/ (0.622 + 0.378 * PQA(JJ)) /100.
+      ZEHPA(JJ) = zqa(JJ)* PPS(JJ)/ (0.622 + 0.378 * zqa(JJ)) /100.
 
       PUTCI_OUTSUN(JJ) = UTCI_APPROX_SURF(PTA(JJ) -TCDK, ZEHPA(JJ),       &
            PTRAD_HSUN(JJ) -TCDK, PU10(JJ))

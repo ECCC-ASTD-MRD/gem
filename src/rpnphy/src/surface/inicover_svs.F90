@@ -27,6 +27,12 @@ subroutine inicover_svs(pvars, kount, ni)
    use sfc_options
    use sfcbus_mod
    use phymem, only: phyvar
+   use lookup4ccilc_we_mod, only: lookup4ccilc_we
+   use aggcovernat_mod, only: aggcovernat
+   use aggveghigh_mod, only: aggveghigh
+   use aggveglow_mod, only: aggveglow
+   use interpveg_mod, only: interpveg
+   use veglowhigh_mod, only: veglowhigh
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -82,7 +88,7 @@ subroutine inicover_svs(pvars, kount, ni)
    ! Tables for the veg characteristics for each veg type
    !********************************************************************
       REAL ALDAT(NCLASS), D2DAT(NCLASS), D50DAT(NCLASS), D95DAT(NCLASS)
-      REAL RSMINDAT(NCLASS)
+      REAL RSMINDAT(NCLASS), GEXPDAT(NCLASS)
       REAL LAIDAT(NCLASS), VEGDAT(NCLASS),EMISDAT(NCLASS) 
       REAL CVDAT(NCLASS), RGLDAT(NCLASS), GAMMADAT(NCLASS)
       REAL Z0MDAT(NCLASS), MAXPDAT(NCLASS)
@@ -185,7 +191,14 @@ subroutine inicover_svs(pvars, kount, ni)
                     0.981  , 0.981  , 0.981  , 0.981  , 0.981  , &
                     1.000  , 0.992  , 0.995  , 0.941  , 0.993  , & 
                     0.993  /
-
+!
+      DATA GEXPDAT/ & 
+                    2.  , 2.  , 2.  , 2.  , 2.  , & 
+                    2.  , 2.  , 2.  , 2.  , 2.  , & 
+                    2.  , 2.  , 2.  , 2.  , 2.  , &
+                    2.  , 2.  , 2.  , 2.  , 2.  , &
+                    2.  , 2.  , 2.  , 2.  , 2.  , & 
+                    2.  /
 !
 !
 
@@ -193,19 +206,28 @@ subroutine inicover_svs(pvars, kount, ni)
    !                tables describing the annual evolution of veg fields
    !********************************************************************
 
-   real, save :: d50crops(13),d95crops(13)
+   real, save :: d50veg15(13),d95veg15(13),d50veg16(13),d95veg16(13)
    
-   data d50crops/ &
+   data d50veg15/ &
         0.15   , 0.15   , 0.15  , 0.15  , 0.15   , &
         0.15   , 0.30   , 0.30  , 0.30  , 0.15   , &
         0.15   , 0.15   , 0.15                      /
                     
-   data  d95crops/ &
+   data  d95veg15/ &
         1.0    , 1.0    , 1.0   , 1.0   , 1.0    , &
         1.0    , 2.5    , 2.5   , 2.5   , 1.0    , &
         1.0    , 1.0    , 1.0                       /
              
-             
+   data d50veg16/ &
+        0.15   , 0.15   , 0.15  , 0.15  , 0.15   , &
+        0.15   , 0.30   , 0.30  , 0.30  , 0.15   , &
+        0.15   , 0.15   , 0.15                      /
+                    
+   data  d95veg16/ &
+        1.0    , 1.0    , 1.0   , 1.0   , 1.0    , &
+        1.0    , 2.5    , 2.5   , 2.5   , 1.0    , &
+        1.0    , 1.0    , 1.0                       /
+
    real, save :: vegcrops(13),vegdat14(13),vegdat16(13),vegdat17(13)
 
    data vegcrops/ &
@@ -287,7 +309,6 @@ subroutine inicover_svs(pvars, kount, ni)
 
    !********************************************************************
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
-   real, external :: interpveg
 
    integer :: i,k
    integer(INT64) :: delti64
@@ -319,9 +340,10 @@ subroutine inicover_svs(pvars, kount, ni)
 !    Default look-up for vf_type .eq. CCILC_WE:
 !    This have being tweaked to work with geophy file produced
 !    using CCILC_WE and tested just for North America (HRDPS)
+
       if (vf_type .eq. 'CCILC_WE') &
-      call lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT, &
-                           d50crops,d95crops,vegcrops,vegdat14,vegdat16,vegdat17, &
+      call lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT, GEXPDAT, &
+                           d50veg15,d95veg15,d50veg16,d95veg16,vegcrops,vegdat14,vegdat16,vegdat17, &
                            lai11, lai14, lai15, lai16, lai17, nclass)
 
       ! Read some of the look up tables from namelist
@@ -331,11 +353,14 @@ subroutine inicover_svs(pvars, kount, ni)
       if (svs_read_d95dat)   d95dat   = svs_d95dat
       if (svs_read_vegdat)   vegdat   = svs_vegdat
       if (svs_read_z0mdat)   z0mdat   = svs_z0mdat
+      if (svs_read_gexpveg)  gexpdat   = svs_gexpveg
       
       ! Read look-up monthly climatology
       
-      if (svs_read_d50crops) d50crops = svs_d50crops
-      if (svs_read_d95crops) d95crops = svs_d95crops
+      if (svs_read_d50veg15) d50veg15 = svs_d50veg15
+      if (svs_read_d50veg16) d50veg16 = svs_d50veg16
+      if (svs_read_d95veg15) d95veg15 = svs_d95veg15
+      if (svs_read_d95veg16) d95veg16 = svs_d95veg16
       
       if (svs_read_vegcrops) vegcrops = svs_vegcrops
       if (svs_read_vegdat14) vegdat14 = svs_vegdat14
@@ -368,18 +393,25 @@ subroutine inicover_svs(pvars, kount, ni)
       delti64 = int (delti64)
       julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
       
-      ! Use a monthly climatology of rooting depth for crops
+      ! Use a monthly climatology of rooting depth for veg15 and veg16
       ! Only applies to class 15 et 16 and the same values are used in both hemispheres!!!
       ! TODO: generalize to other crop classes and both hemispheres.
-      if (svs_read_d50crops .or. vf_type .eq. 'CCILC_WE') then
-         d50dat(15) = interpveg(julien, d50crops)
-         d50dat(16) = interpveg(julien, d50crops)
+      if (svs_read_d50veg15 .or. vf_type .eq. 'CCILC_WE') then
+         d50dat(15) = interpveg(julien, d50veg15)
       endif
 
-      if (svs_read_d95crops .or. vf_type .eq. 'CCILC_WE') then
-         d95dat(15) = interpveg(julien, d95crops)
-         d95dat(16) = interpveg(julien, d95crops)
+      if (svs_read_d50veg16 .or. vf_type .eq. 'CCILC_WE') then
+         d50dat(16) = interpveg(julien, d50veg16)
       endif
+
+      if (svs_read_d95veg15 .or. vf_type .eq. 'CCILC_WE') then
+         d95dat(15) = interpveg(julien, d95veg15)
+      endif
+
+      if (svs_read_d95veg16 .or. vf_type .eq. 'CCILC_WE') then
+         d95dat(16) = interpveg(julien, d95veg16)
+      endif
+
 
       ! Fill the laidatd and vegdatd fields for
       ! land use classes varying with seasons
@@ -462,6 +494,8 @@ subroutine inicover_svs(pvars, kount, ni)
       call aggcovernat(PTR1D(vegf), d95dat, d95dat , PTR1D(d95), &
            PTR1D(dlat), ni, nclass)
       call aggcovernat(PTR1D(vegf), maxpdat, maxpdat , PTR1D(maxpond), &
+           PTR1D(dlat), ni, nclass)
+      call aggcovernat(PTR1D(vegf), gexpdat, gexpdat , PTR1D(gexp), &
            PTR1D(dlat), ni, nclass)
 
       do i=1,ni

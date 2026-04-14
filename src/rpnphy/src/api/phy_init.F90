@@ -9,12 +9,14 @@ module phy_init_mod
    use timestr_mod, only: timestr2step, timestr2sec
 
    use cnv_options
+   use itf_cpl_init_mod, only: itf_cpl_init
    use phybudget, only: pb_init
    use phy_status, only: PHY_OK, PHY_ERROR, PHY_NONE, PHY_CTRL_NML_OK, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_L, physeterror
    use phy_options
    use phygridmap
    use series_mod, only: series_init
    use sfcexch_options, only: sfcexch_options3
+   use sfc_debu_mod, only: sfc_init1
    use ens_perturb, only: ptp_L, ptp_nc, spp_L, spp_nc, ptpenvu, ptpenvb, ptpcape, ptpcritw, &
         ptpfacreduc, ens_nc2d, ens_spp_init, ENS_OK
    use check_options, only: check_options2
@@ -138,7 +140,7 @@ contains
       integer :: F_istat !Return status
       !@authors Desgagne, Chamberland, McTaggart-Cowan, Spacek -- Spring 2014
       !*@/
-      integer, external :: msg_getUnit, sfc_init1, itf_cpl_init
+      integer, external :: msg_getUnit
 
       logical :: print_L
       integer :: unout, options, itype, isizeof, ntr, nsurf, nextra

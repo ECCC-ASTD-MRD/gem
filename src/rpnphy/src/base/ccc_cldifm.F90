@@ -5,13 +5,14 @@ module ccc_cldifm_mod
 contains
 
    !**S/P CLDIFM - GASEOUS CALCULATION
-!
+
       subroutine ccc_cldifm1 (cldmin, cldmax, anu, a1, ncd, &
                          ncu, nblk, nct, ncum, ncdm, &
                          cldfrac, pfull, mrk2, lev1, cut, maxc, &
                          il1, il2, ilg, lay, lev)
         use ens_perturb, only: ens_nc2d, ens_spp_get
-!
+        use phy_options
+
       implicit none
 !!!#include <arch_specific.hf>
 !
@@ -20,11 +21,11 @@ contains
       real, dimension(ilg) :: anumult
       real cldmin(ilg,lay), cldmax(ilg,lay), anu(ilg,lay), a1(ilg,12), &
            cldfrac(ilg,lay), pfull(ilg,lev), c1(ilg), mrk2(ilg,ens_nc2d)
-!
+
       integer ncd(ilg,lay), ncu(ilg,lay), nblk(ilg,lay), nct(ilg), &
               ncum(lay), ncdm(lay), levc(ilg,lay), intg1(ilg), &
               intg2(ilg)
-!
+
 !Authors
 !
 !        J. Li, M. Lazare, CCCMA, rt code for gcm4
@@ -78,37 +79,37 @@ contains
 ! intg2   number of cloud layers in column
 !
 !*
-!
-      do 10 i = il1, il2
+
+      do i = il1, il2
         intg1(i)                =  0
         intg2(i)                =  0
         nct(i)                  =  lev
         c1(i)                   =  0.0
         levc(i,1)               =  1
-   10 continue
-
+      enddo
 ! Retrieve stochastic parameter information on request
       anumult = ens_spp_get('hetero_mult', mrk2, 1.)        
-!
+
 !----------------------------------------------------------------------
 !     determine the highest cloud location. nct is the upper level of
 !     the highest cloud,
 !     determine the nu (anu) factor for cloud sub-grid variability
 !     based on cloud fraction.
 !----------------------------------------------------------------------
-!
-      do 25 k = 1, lay
+
+! to reproduce pre gem 5.3.a21 code: rad_anu=0.9,1.0,1.0,2.0,4.0
+      do k = 1, lay
         km1 = k - 1
-        do 20 i = il1, il2
-          if (cldfrac(i,k) .le. 0.9)                                then
-            anu(i,k)            =  1.0
-          elseif (cldfrac(i,k) .gt. 0.9 .and. cldfrac(i,k) .lt. 1.0)then
-            anu(i,k)            =  2.0
+        do i = il1, il2
+          if (cldfrac(i,k) <= rad_anu(1)) then
+            anu(i,k) = rad_anu(3)
+          elseif (cldfrac(i,k) > rad_anu(1) .and. cldfrac(i,k) < rad_anu(2)) then
+            anu(i,k) = rad_anu(4)
           else
-            anu(i,k)            =  4.0
+            anu(i,k) = rad_anu(5)
           endif
           anu(i,k) = anu(i,k) * anumult(i)
-!
+
 !----------------------------------------------------------------------
 !     minimum anu, it is extremely important to ensure consistency
 !     between the definitions of anu here and their subsequent use in
@@ -116,7 +117,7 @@ contains
 !     cldmax the maximum cloud fraction for each cloud block.
 !     cldmin the minimum cloud fraction for each cloud block.
 !----------------------------------------------------------------------
-!
+
           if (cldfrac(i,k) .lt. cut)                                then
             anu(i,k)            =  1000.0
             cldmax(i,k)         =  0.0
@@ -127,32 +128,32 @@ contains
               anu(i,k)          =  min (anu(i,km1), anu(i,k))
               cldmax(i,k)       =  max (cldmax(i,km1), cldfrac(i,k))
             endif
-!
+
             intg2(i)            =  intg2(i) + 1
             if (intg2(i) .eq. 1) nct(i) = k
           endif
-!
+
 !----------------------------------------------------------------------
 !     determine lev1 for solar radiation
 !----------------------------------------------------------------------
-!
+
           if (pfull(i,k) .ge. 0.99)                                 then
             c1(i)               =  c1(i) + 1.0
             if (c1(i) .eq. 1.0)  levc(i,1) =  k
           endif
-!
-   20   continue
-   25 continue
-!
+
+         enddo
+      enddo
+
       lev1                      =  lev
       maxc                      =  lev
-!
+
       a1(:,:)                   =  0.
 
-      do 40 i = il1, il2
+      do i = il1, il2
         maxc                    =  min (nct(i), maxc)
         lev1                    =  min (lev1, levc(i,1))
-!
+
 !----------------------------------------------------------------------
 !     determine the layer order for each cloud block through down and
 !     up paths, ncd and ncu.
@@ -162,17 +163,17 @@ contains
 !     nct is the top level number for the highest cloud
 !     determine the minimum anu
 !----------------------------------------------------------------------
-!
+
         levc(i,1)               =  0
         levc(i,2)               =  0
-   40 continue
-        maxc=max(maxc,lev1)
-!
-      do 65 k = 2, lev
+      enddo
+      maxc=max(maxc,lev1)
+
+      do k = 2, lev
         km1 = k - 1
         l = lev - k + 1
         lp1 = l + 1
-        do 60 i = il1, il2
+        do i = il1, il2
           if (cldfrac(i,km1) .lt. cut)                              then
             levc(i,1)           =  0
             ncd(i,km1)          =  0
@@ -180,17 +181,17 @@ contains
             levc(i,1)           =  levc(i,1) + 1
             ncd(i,km1)          =  levc(i,1)
           endif
-!
+
           if (cldfrac(i,l) .ge. cut .and. l .lt. lay)               then
             anu(i,l)            =  min (anu(i,lp1), anu (i,l))
             cldmax(i,l)         =  max (cldmax(i,lp1), cldmax(i,l))
           endif
-   60   continue
-   65 continue
-!
-      do 75 l = lay, 1, -1
+        enddo
+      enddo
+
+      do l = lay, 1, -1
         lp1 = l + 1
-        do 70 i = il1, il2
+        do i = il1, il2
           if (cldfrac(i,l) .lt. cut)                                then
             levc(i,2)           =  0
             ncu(i,l)            =  0
@@ -210,17 +211,17 @@ contains
             else
               nblk(i,l)         =  nblk(i,lp1)
             endif
-!
+
             if (ncu(i,l) .eq. 1)                                    then
               cldmin(i,l)       =  cldfrac(i,l)
             else
               cldmin(i,l)       =  min (cldmin(i,lp1), cldfrac(i,l))
             endif
           endif
-   70   continue
-   75 continue
-!
-      do 80 i = il1, il2
+        enddo
+      enddo
+
+      do i = il1, il2
         x                       =  a1(i,3) * (1.0 - a1(i,1)) * &
                                   (1.0 - a1(i,2))
         a1(i,4)                 =  a1(i,1) * a1(i,2)
@@ -232,7 +233,7 @@ contains
           y                     =  a1(i,3) - x
           z                     =  0.
         endif
-!
+
         if (a1(i,3) .ge. x + a1(i,1))                               then
           a1(i,6)               =  a1(i,1)
           a1(i,5)               =  a1(i,3) - x - a1(i,6)
@@ -243,28 +244,28 @@ contains
         a1(i,3)                 =  x
         a1(i,5)                 =  0.5 * (a1(i,5) + y)
         a1(i,6)                 =  0.5 * (a1(i,6) + z)
-   80 continue
-!
+     enddo
+
 !----------------------------------------------------------------------
 !     determine the maximum portion in a cloud block
 !     determine the maximum number for ncd and ncu, for iteration in
 !     longwave
 !----------------------------------------------------------------------
-!
-      do 105 k = 1, lay
+
+      do k = 1, lay
         km1 = k - 1
         ncum(k)                 =  0
         ncdm(k)                 =  0
-        do 100 i = il1, il2
+        do i = il1, il2
           if (ncd(i,k) .gt. 1)                                      then
             cldmin(i,k)         =  min (cldmin(i,km1), cldmin(i,k))
           endif
-!
+
           ncum(k)               =  max (ncu(i,k), ncum(k))
           ncdm(k)               =  max (ncd(i,k), ncdm(k))
-  100   continue
-  105 continue
-!
+        enddo
+      enddo
+
       return
       end subroutine ccc_cldifm1
 

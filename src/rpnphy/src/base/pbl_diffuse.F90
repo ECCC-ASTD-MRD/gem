@@ -242,7 +242,7 @@ contains
           gam0(j,k) = rsg*zsige(j,k)/ztve(j,k)
           kmsg(j,k) = zkm(j,k)*gam0(j,k)**2
           ktsg(j,k) = zkt(j,k)*gam0(j,k)**2
-          NONLOCAL: if (pbl_nonloc == 'LOCK06') then
+          NONLOCAL: if (pbl_nonloc /= 'NIL') then
              ! Normalize the non-gradient flux terms (added to implicit solver)
              wthl_ng(j,k) = zwtng(j,k)*gam0(j,k)
              wqw_ng(j,k)  = zwqng(j,k)*gam0(j,k)

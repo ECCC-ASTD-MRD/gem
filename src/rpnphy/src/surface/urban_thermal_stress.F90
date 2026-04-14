@@ -14,7 +14,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module MODI_URBAN_THERMAL_STRESS
+  implicit none
+  public
+contains
 !/@*
 subroutine URBAN_THERMAL_STRESS(PT_CAN, PQ_CAN, PTI_BLD, PQI_BLD,        &
                     PU_CAN, PU10, PURF, PU10RF, PPS,PPA,                 &
@@ -378,3 +381,4 @@ PUTCI_RFSHADE =UTCI_APPROX(PTA-XTT,ZEHPA,PTRAD_HRFSHADE- XTT, PU10RF)
     endif IF_THERMAL_STRESS_ROOF
 
 end subroutine URBAN_THERMAL_STRESS
+end module MODI_URBAN_THERMAL_STRESS

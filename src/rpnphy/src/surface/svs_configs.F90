@@ -297,11 +297,8 @@ module svs_configs
 ! Constants related to SVS2 forest litter
 !---------------------------------------------------------
 
-  REAL, PARAMETER   :: DZ_FL = 0.03        ! Thichness of forest litter [m] (Napoly et al., 2017)
   REAL, PARAMETER   :: CFL_dry = 1.926E3   ! Specific heat of forest litter [J/kg/K] (Napoly et al., 2017)
-  REAL, PARAMETER   :: RHO_FL = 45         ! Density of forest litter [kg/m3]  (Napoly et al., 2017)
-  REAL, PARAMETER   :: EMFL = 0.9          ! Density of forest litter [kg/m3]  (Napoly et al., 2017)
-  REAL, PARAMETER   :: EMVH_FL = 0.95      ! Emissivity of forest litter []
+  REAL, PARAMETER   :: EMFL = 0.9          ! Emissivity of forest litter []
   REAL, PARAMETER   :: ALFL = 0.3          ! Albedo of forest litter []
 
 !

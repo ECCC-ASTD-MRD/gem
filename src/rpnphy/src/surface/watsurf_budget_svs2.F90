@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module watsurf_budget_svs2_mod
+  implicit none
+  public
+contains
 SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
      EG, EGV, ER_VL,ER_VH, ETR_VL,ETR_VH, RR, RR_VEG, RSNOW, RSNOWV, &
      WTA, WTG, ACROOT, WRMAX_VL, WRMAX_VH, WRMAX_FL, &
@@ -290,3 +294,4 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
 
   RETURN
 END SUBROUTINE WATSURF_BUDGET_SVS2
+end module watsurf_budget_svs2_mod

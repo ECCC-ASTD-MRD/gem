@@ -1,4 +1,9 @@
-      SUBROUTINE SNOALBW(ALBSNO,RHOSNO,ZSNOW,HCPSNO,TSNOW,           &
+module snoalbw_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE SNOALBW(ALBSNO,RHOSNO,ZSNOW,HCPSNO,TSNOW,           &
                          FI,S,RMELT,WSNOW,RHOMAX,ISAND,              &
                          ILG,IG,IL1,IL2,JL)                             
 !                                                                       
@@ -38,7 +43,8 @@
 !     *                         AGING. (ASSIGN DIFFERENT LOWER          
 !     *                         SNOW ALBEDO LIMITS FOR DRY AND          
 !     *                         MELTING SNOW.)                          
-!                                                                       
+!
+      use xit_mod, only: xit
       IMPLICIT NONE                                                     
 !                                                                       
 !     * INTEGER CONSTANTS.                                              
@@ -110,4 +116,5 @@
       ENDIF                                                             
 !                                                                       
       RETURN                                                            
-      END                                                               
+    END SUBROUTINE SNOALBW
+  end module snoalbw_mod

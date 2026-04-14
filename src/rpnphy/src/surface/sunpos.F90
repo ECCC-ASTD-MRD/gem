@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_SUNPOS
+  implicit none
+  public
+contains
       SUBROUTINE SUNPOS (KYEAR, KMONTH, KDAY, PTIME, &
                          PLON, PLAT, PTSUN, PZENITH, PAZIMSOL)
 !     ####################################################################################
@@ -206,3 +210,4 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SUNPOS
+end module MODI_SUNPOS

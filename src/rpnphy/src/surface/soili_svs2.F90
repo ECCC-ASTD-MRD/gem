@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module soili_svs2_mod
+  implicit none
+  public
+contains
       SUBROUTINE SOILI_SVS2 (WD, &
            WF, SNM, SVM, RHOS, RHOSV, &
            VEGH, VEGL, &
@@ -25,7 +29,7 @@
            WTA, WTG, CG,PSOILHCAPZ, PSOILCONDZ, PSNGRVL,  &
            Z0H, ALGR, EMGR, ALGRV, EMGRV, PSNVH, PSNVHA, PSURFVHA,   &
            ALVA, LAIVA, CVPA, EVA, Z0HA, Z0MVG, RGLA, STOMRA ,&
-           GAMVA,CONDSLD, CONDDRY, PFLCOND, PFLHCAP, N )
+           GAMVA,CONDSLD, CONDDRY, PFLCOND, PFLHCAP, DZ_FL, RHO_FL, N )
          !
         use tdpack_const, only: PI
         use svs_configs
@@ -45,7 +49,7 @@
       REAL CGSAT(N), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
       REAL Z0(N), WFL(N), WFL_ICE(N)
       REAL CG(N), WTA(N,svs2_tilesp1), WTG(N,svs2_tilesp1)
-      REAL PSNGRVL(N)
+      REAL PSNGRVL(N), DZ_FL(N), RHO_FL(N)
       REAL PSOILHCAPZ_DRY(N,NL_SVS), PSOILHCAPZ(N,NL_SVS),PSOILCONDZ(N,NL_SVS)
       REAL Z0H(N), ALGR(N), ALGRV(N), CLAY(N), SAND(N)
       REAL DECI(N), EVER(N), LAID(N)
@@ -145,6 +149,8 @@
 ! PSOILHCAPZ soil heat capacity
 ! PFLCOND    Thermal conductivity of forest litter layer (W/m/K)
 ! PFLHCAP   Effective heat capacity of the forest litter layer (J/m2/K)
+! DZ_FL   Thickness of the forest litter layer (m)
+! RHO_FL   Density of forest litter (kg/m3)
 !
 include "isbapar.cdk"
 !
@@ -595,9 +601,31 @@ include "isbapar.cdk"
 
       IF (LFORLIT) THEN
          DO I=1,N
-            PFLCOND(I) = 0.01 + 0.03 * (WFL(I)/(RHOW * DZ_FL))
-            PFLHCAP(I) = CFL_dry * RHO_FL * DZ_FL + WFL(I) * CWAT &
+
+            IF (VEGH(I).GE.EPSILON_SVS) THEN
+
+               IF (SVM(I) .GE. 5.0) THEN ! There is snow in the forest
+                  DZ_FL(I) = 0.01
+                  RHO_FL(I) = 150.
+               ELSE
+                  DZ_FL(I) = 0.03  ! Napoly et al (2017)
+                  RHO_FL(I) = 50. ! Napoly et al (2017)
+               ENDIF
+
+
+               !                      Thermal conductivity of forest litter layer (W/m/K)
+               PFLCOND(I) = 0.1 + 0.03 * (WFL(I)/(RHOW * DZ_FL(I)))
+
+               !                      Forest litter heat capacity [J/m2/K] 
+               PFLHCAP(I) = CFL_dry * RHO_FL(I) * DZ_FL(I) + WFL(I) * CWAT &
                               + WFL_ICE(I) * CICE
+
+            ELSE
+               PFLCOND(:) = 0.
+               PFLHCAP(:) = 0.
+               DZ_FL(I) = 0.
+               RHO_FL(I) = 0.
+            ENDIF
          END DO
       ELSE
          PFLCOND(:) = 0.
@@ -606,4 +634,5 @@ include "isbapar.cdk"
 
 
       RETURN
-      END
+    END SUBROUTINE SOILI_SVS2
+  end module soili_svs2_mod

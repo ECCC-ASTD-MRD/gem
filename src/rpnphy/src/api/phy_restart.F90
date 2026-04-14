@@ -32,6 +32,9 @@ contains
 
     integer :: istat
     character(len=32) :: WorR_S
+#ifdef HAVE_MACH
+    integer, external :: chm_snapshot
+#endif
 
     ! ------------------------------------------------------------------
     WorR_S = adjustl(F_WorR_S)
@@ -52,6 +55,12 @@ contains
 #ifdef HAVE_NEMO
 ! coupling may have something to do for restart
     call cpl_restart(WorR_S)
+#endif
+    
+#ifdef HAVE_MACH
+    if (WorR_S == PHY_RESTART_WRITE) then
+       istat = chm_snapshot(WorR_S)
+    endif
 #endif
 
     F_istat = RMN_OK

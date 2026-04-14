@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module veglowhigh_ccilceco_mod
+  implicit none
+  public
+contains
 
 subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu, &
      agfrac, ni, nclass)
@@ -151,3 +155,4 @@ subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu
 !
    return
  end subroutine veglowhigh_ccilceco
+end module veglowhigh_ccilceco_mod

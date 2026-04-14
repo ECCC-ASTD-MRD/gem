@@ -13,9 +13,13 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module vegi_svs_mod
+  implicit none
+  public
+contains
       SUBROUTINE VEGI_SVS ( RG, T, TVEG, HU, PS, &
            WD , RGL, LAI, LAIH, RSMIN, GAMMA, WWILT, WFC, &   
-           SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, RS, SKYVIEW, VTR, &    
+           SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, GEXP, RS, SKYVIEW, VTR, &    
            FCD, FCD_DYN, BETA_WSOL, G_WSOL, AVG_GWSOL, ACROOT, WRMAX, N  )
 !
         use tdpack
@@ -80,7 +84,7 @@
 !
       INTEGER I, K
       REAL CSHAPE, f2_k(nl_svs), frac_wilted_roots(n), avg_beta(n)
-      REAL GEXP
+      REAL GEXP(N)
      
       real, dimension(n) :: extinct, f, f1, f2, f3, f4, qsat
 
@@ -126,17 +130,12 @@
 !            
 !
 
-!            EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
+!            'GEXP': EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
 !            DECREASES LINEARLY WITH SOIL MOISTURE, AND OF COURSE NON-LINEARLY
 !            FOR VALUES HIGHER THAN 1. WHEN GEXP IS ABOUT 10, PHOTOSYNTHESIS DOES
 !            NOT START DECREASING UNTIL ABOUT SOIL MOISTURE IS HALF WAY BETWEEN
 !            WILTING POINT AND FIELD CAPACITY.
-             if ( svs_gexp .GT. 0. ) then
-                GEXP = svs_gexp
-             else
-                ! Default value used for backward compatibility
-                GEXP = 2.
-             end if
+!            Default value is set to 2 in inicover_svs and used if 
 
              ! Shape parameter CSHAPE
              CSHAPE=LOG10(0.05/0.95)/LOG10(D95(I)/D50(I))       
@@ -157,14 +156,14 @@
              
              ! f2 for each layer           
              DO K=1,NL_SVS
-                ! if svs_gexp > 0, use f2 formulation that is consistent with photosynthesis code
+                ! if svs_read_gexpveg==True or vf_type == 'CCILC_WE', use f2 formulation that is consistent with photosynthesis code
                 ! this is a bugfix - the if statement should be eventually removed - kept for now for backward compatibility
-                if (svs_gexp .GT. 0.) then
+                if (svs_read_gexpveg .or. vf_type .eq. 'CCILC_WE') then
                   ! computation of BETA_GWSOL and G_WSOL now made here instead of in photosynthesis code to avoid code duplication
                 ! calculate moisture stress on roots
                   BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
                   ! soil moisture stress term per layer, with beta bounded between 0 and 1
-                  G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP
+                  G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP(I)
                   f2_k(k) = max( 1.E-5, G_WSOL(i,k) )
                 else
                   ! original computation of f2 kept for backward compatibility with first OPS version of NSRPS
@@ -247,7 +246,7 @@
                if (svs_etr_max_roots_ignored > 0.0) then
                  avg_beta(i) = avg_beta(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i)))
                endif
-               avg_gwsol(i) = 1.0 - ( 1.0 - min(avg_beta(i), 1.0) ) ** GEXP
+               avg_gwsol(i) = 1.0 - ( 1.0 - min(avg_beta(i), 1.0) ) ** GEXP(I)
              elseif (svs_etr_max_roots_ignored > 0.0) then
                avg_gwsol(i) = min(avg_gwsol(i)/(1.0 - min(svs_etr_max_roots_ignored, frac_wilted_roots(i))), 1.0)
              endif
@@ -350,4 +349,5 @@
 !
 !
       RETURN
-      END
+    END SUBROUTINE VEGI_SVS
+  end module vegi_svs_mod
