@@ -794,3 +794,34 @@ rm:  physics_cfgs/p3_iparam
 #New:  surface_cfgs/teb_snow
 #New:  surface_cfgs/teb_snroad
 #New:  surface_cfgs/teb_snroof
+#------
+fileVersion: 6.3.0-a20 > 6.3.0-a22
+#New:  convection_cfgs/kfctrigsgo
+#New:  convection_cfgs/kfctrigsgop
+#New:  physics_cfgs/pbl_cldnk_l
+#New:  physics_cfgs/pbl_q1gauss_l
+#New:  physics_cfgs/pbl_q1max_l
+#New:  physics_cfgs/rad_anu
+rm:  physics_cfgs/rad_mpagg_l
+#New:  physics_cfgs/rad_mpagg
+#New:  surface_cfgs/isba_hrsurf_method
+#New:  surface_cfgs/isba_hrsurf_power
+#New:  surface_cfgs/isba_hrsurf_rs
+#New:  surface_cfgs/isba_lwfcliq
+rm:  surface_cfgs/lmacropores_svs1
+#New:  surface_cfgs/lmacropores_svs
+rm:  surface_cfgs/svs_d50crops
+rm:  surface_cfgs/svs_d95crops
+#New:  surface_cfgs/svs_d50veg15
+#New:  surface_cfgs/svs_d50veg16
+#New:  surface_cfgs/svs_d95veg15
+#New:  surface_cfgs/svs_d95veg16
+rm:  surface_cfgs/svs_gexp
+#New:  surface_cfgs/svs_gexpveg
+rm:  surface_cfgs/svs_read_d50crops
+rm:  surface_cfgs/svs_read_d95crops
+#New:  surface_cfgs/svs_read_d50veg15
+#New:  surface_cfgs/svs_read_d50veg16
+#New:  surface_cfgs/svs_read_d95veg15
+#New:  surface_cfgs/svs_read_d95veg16
+#New:  surface_cfgs/svs_read_gexpveg

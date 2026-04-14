@@ -14,8 +14,13 @@
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
 
-subroutine lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT,  &
-                           d50crops,d95crops,vegcrops,vegdat14,vegdat16,vegdat17, &
+module lookup4ccilc_we_mod
+  implicit none
+  public
+contains
+
+subroutine lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT, GEXPDAT,  &
+                           d50veg15,d95veg15,d50veg16,d95veg16,vegcrops,vegdat14,vegdat16,vegdat17, &
                            lai11, lai14, lai15, lai16, lai17, nclass)
    implicit none
 !!!#include <arch_specific.hf>
@@ -29,9 +34,9 @@ subroutine lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT,  &
    integer nclass
    
    REAL ALDAT(NCLASS), D2DAT(NCLASS), D50DAT(NCLASS), D95DAT(NCLASS)
-   REAL VEGDAT(NCLASS), Z0MDAT(NCLASS)
+   REAL VEGDAT(NCLASS), Z0MDAT(NCLASS), GEXPDAT(NCLASS)
    
-   real d50crops(13),d95crops(13)
+   real d50veg15(13), d95veg15(13), d50veg16(13), d95veg16(13)
    real vegcrops(13),vegdat14(13),vegdat16(13),vegdat17(13)
    real lai11(13), lai14(13), lai15(13), lai16(13), lai17(13)
         
@@ -70,19 +75,26 @@ subroutine lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT,  &
 !     
        D50DAT = (/  &
                      0.0    , 0.0    , 0.0    , 0.2    , 0.2    , &
-                     0.2    , 0.2    , 0.2    , 0.2    , 0.2    , & 
+                     0.2    , 0.3    , 0.2    , 0.2    , 0.2    , & 
                      0.2    , 0.3    , 0.2    , 0.3    , 0.15   , & 
                      0.15   , 0.3    , 0.2    , 0.2    , 0.2    , & 
-                     0.2    , 0.1    , 0.15   , 0.75   , 0.2    , & 
+                     0.2    , 0.1    , 0.15   , 0.75   , 0.3    , & 
                      0.5    /)
 !      
        D95DAT = (/  &
                      0.0    , 0.0    , 0.0    , 0.9    , 0.9    , &
-                     0.9    , 0.9    , 1.2    , 0.9    , 0.9    , & 
+                     0.9    , 2.5    , 1.2    , 0.9    , 0.9    , & 
                      0.9    , 1.5    , 0.9    , 2.5    , 1.0    , & 
                      1.0    , 2.5    , 0.9    , 0.9    , 0.9    , & 
-                     0.9    , 0.3    , 0.7    , 2.0    , 0.9    , & 
+                     0.9    , 0.3    , 0.7    , 2.0    , 2.5    , & 
                      1.5    /)
+      GEXPDAT  = (/  &
+                    2.  , 2.  , 2.  , 2.  , 2.  , & 
+                    2.  , 4.  , 2.  , 2.  , 2.  , & 
+                    2.  , 2.  , 2.  , 4.  , 4.  , &
+                    4.  , 4.  , 2.  , 2.  , 2.  , &
+                    2.  , 2.  , 4.  , 2.  , 4.  , & 
+                    2.  /)
 !    
 !       RSMINDAT = (/  &
 !                      500.   , 500.   , 500.   , 250.   , 250.   , &
@@ -154,16 +166,26 @@ subroutine lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT,  &
  
  ! Monthly climatology for the various quatities of lookup tables defined above
    
-   d50crops = (/  &
+   d50veg15 = (/  &
          0.15   , 0.15   , 0.15  , 0.15  , 0.15   , &
          0.15   , 0.30   , 0.30  , 0.30  , 0.15   , &
          0.15   , 0.15   , 0.15                   /)
                     
-   d95crops = (/  &
+   d95veg15 = (/  &
          1.0    , 1.0    , 1.0   , 1.0   , 1.0    , &
          1.0    , 2.5    , 2.5   , 2.5   , 1.0    , &
          1.0    , 1.0    , 1.0                    /)
-            
+
+   d50veg16 = (/  &
+         0.15   , 0.15   , 0.15  , 0.15  , 0.15   , &
+         0.15   , 0.30   , 0.30  , 0.30  , 0.15   , &
+         0.15   , 0.15   , 0.15                   /)
+                    
+   d95veg16 = (/  &
+         1.0    , 1.0    , 1.0   , 1.0   , 1.0    , &
+         1.0    , 2.5    , 2.5   , 2.5   , 1.0    , &
+         1.0    , 1.0    , 1.0                    /)
+
     vegcrops = (/  &
          0.05   , 0.05   , 0.05  , 0.20  , 0.40   , &
          0.60   , 0.80   , 0.80  , 0.60  , 0.40   , &
@@ -211,4 +233,5 @@ subroutine lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT,  &
          1.0   , 1.0   , 1.0                      /)
 
    return
-end subroutine lookup4ccilc_we
+ end subroutine lookup4ccilc_we
+end module lookup4ccilc_we_mod

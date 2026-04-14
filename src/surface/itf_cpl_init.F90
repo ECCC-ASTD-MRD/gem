@@ -12,7 +12,10 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
+module itf_cpl_init_mod
+  implicit none
+  public
+contains
 function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_istat)
 #ifdef HAVE_NEMO   
    use cpl_itf, only: cpl_init
@@ -56,4 +59,5 @@ function itf_cpl_init(F_path_S, F_print_L, F_unout, F_dateo, F_dt) result(F_ista
    endif
    !---------------------------------------------------------------
    return
-end function itf_cpl_init
+ end function itf_cpl_init
+end module itf_cpl_init_mod

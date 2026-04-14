@@ -15,8 +15,12 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**S/P PHASE_CHANGES
 !
+module phase_changes_mod
+  implicit none
+  public
+contains
       SUBROUTINE PHASE_CHANGES ( DT, WTG, LAI, &
-           CAP, WSAT, PSISAT, BCOEF, &
+           CAP, DZ_FL, WSAT, PSISAT, BCOEF, &
            TG, WF, WFL_ICE, WFLT,WRMAX_FL, TFL, PFLHCAP, WDT,WFT, WDTT, DELWATER, DELICE, &
            FCD, N, PHASEF, PHASEM, DELTAT, APPHEATCAP, TMAX  )
 !    -----------------------------------------------------------------------
@@ -35,7 +39,7 @@
       REAL TG(N,NL_SVS), WDT(N,NL_SVS), WDTT(N,NL_SVS), WF(N,NL_SVS), WFT(N,NL_SVS), CAP(N,NL_SVS)
       REAL DELWATER(N,NL_SVS), DELICE(N,NL_SVS), TFL(N), WFL_ICE(N), WFLT(N), PFLHCAP(N), WRMAX_FL(N)
       REAL PHASEF(N,NL_SVS), PHASEM(N,NL_SVS),DELTAT(N,NL_SVS), APPHEATCAP(N,NL_SVS), TMAX(N,NL_SVS)
-      REAL WTG(N,svs2_tilesp1)
+      REAL WTG(N,svs2_tilesp1), DZ_FL(N)
 !
 !    ------------------------------------------------------------------------
 !Author
@@ -79,6 +83,7 @@
 ! WRMAX_FL         Max water holding capacity in the forest litter layer (kg/m2)
 ! TFL          Temperature of the forest litter layer (K)
 ! PFLHCAP   Heat mass for the forest litter layer (J K-1 m-2)
+! DZ_FL        Thickness of the forest litter layer (m)
 ! 
 !           - Output -
 ! TG          soil temperature (K)
@@ -101,7 +106,8 @@
 !      real PHASEM, PHASEF, PHASE, DELTAT, APPHEATCAP, PSISATZ
       real PSISATZ
       real, DIMENSION(N) :: PHI_FL, & ! The phase change rate for forest litter (kg m−2 s−1)
-                            EXCESS_FL ! Variable to adjust mass balance due to refreezing/melting of forest litter
+                            EXCESS_FL, & ! Variable to adjust mass balance due to refreezing/melting of forest litter
+                            TFLT  ! Temperature of the forest litter layer at the end of the time step (K)
 !
       REAL, DIMENSION(N,NL_SVS) :: EXCES
 !
@@ -189,7 +195,7 @@
 !                     Update heat content if melting or freezing
             TG(I,K) = TGM + (PHASEF(I,K) - PHASEM(I,K))/(CAP(I,K)+APPHEATCAP(I,K))
 
-!                     Adjust ice and liquid water conents (m3/m3) accordingly :
+!                     Adjust ice and liquid water contents (m3/m3) accordingly :
             WFT(I,K) = WGIM + (PHASEF(I,K) - PHASEM(I,K))/(CHLF*RHOW)   
             WDTT(I,K) = WGM  - (PHASEF(I,K) - PHASEM(I,K))/(CHLF*RHOW)
 
@@ -223,18 +229,18 @@
                   IF (WTG(I,indx_svs2_vh) .GE. EPSILON_SVS) THEN
                         IF (TFL(I) .gt. TRPL) THEN  ! Melting
 
-                              PHI_FL(I) = MIN(WFL_ICE(I), (RHOI*CICE * DZ_FL / CHLF * (TFL(I) - TRPL))) / TAUICE
+                              PHI_FL(I) = MIN(WFL_ICE(I), (RHOI*CICE * DZ_FL(I) / CHLF * (TFL(I) - TRPL))) / (TAUICE)
 
                               WFLT(I) = WFLT(I) + DT * PHI_FL(I)
                               WFL_ICE(I) = WFL_ICE(I) - DT * PHI_FL(I)
-                              TFL(I) = TFL(I) - DT / PFLHCAP(I) * CHLF * PHI_FL(I)
+                              TFLT(I) = TFL(I) - DT / PFLHCAP(I) * CHLF * PHI_FL(I)
 
                               ! Liquid water in forest litter should not exceed maximum holding capacity
                               IF(WFLT(I) .gt. WRMAX_FL(I))THEN
                                     EXCESS_FL(I) = (WRMAX_FL(I) - WFLT(I)) / DT
                                     WFLT(I) = WFLT(I) - DT * EXCESS_FL(I)
                                     WFL_ICE(I) = WFL_ICE(I) + DT * EXCESS_FL(I)
-                                    TFL(I) = TFL(I) + DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)
+                                    TFLT(I) = TFLT(I) + DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)
                               ENDIF
 
                               ! Prevent keeping track of very small numbers for ice content: (melt it)
@@ -249,24 +255,30 @@
 
                         ELSE ! Freezing
 
-                              PHI_FL(I) =  MIN(WFLT(I), (RHOI*CICE * DZ_FL / CHLF * (TRPL - TFL(I)))) / TAUICE
+                              PHI_FL(I) =  MIN(WFLT(I), (RHOI*CICE * DZ_FL(I) / CHLF * (TRPL - TFL(I)))) / (TAUICE)
 
                               WFLT(I) = WFLT(I) - DT * PHI_FL(I)
                               WFL_ICE(I) = WFL_ICE(I) + DT * PHI_FL(I)
-                              TFL(I) = TFL(I) + DT / PFLHCAP(I) * CHLF * PHI_FL(I)
+                              TFLT(I) = TFL(I) + DT / PFLHCAP(I) * CHLF * PHI_FL(I)
 
                               ! Liquid water in forest litter should not be below a chosen threshol of 0.01 mm
                               IF(WFLT(I) < 0.01)THEN
                                     EXCESS_FL(I) = (0.01 - WFLT(I)) / DT
                                     WFLT(I) = 0.01
                                     WFL_ICE(I) = WFL_ICE(I) - DT * EXCESS_FL(I)
-                                    TFL(I) = TFL(I) - DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)
+                                    TFLT(I) = TFLT(I) - DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)
                               ENDIF
                         ENDIF
                   ENDIF
             ENDDO
+
+
+            DO I=1,N
+                  TFL(I) = TFLT(I)
+            ENDDO
       ENDIF
 !
 
-RETURN
-END SUBROUTINE PHASE_CHANGES
+      RETURN
+    END SUBROUTINE PHASE_CHANGES
+end module phase_changes_mod

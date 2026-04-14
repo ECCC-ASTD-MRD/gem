@@ -13,10 +13,15 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
+module snow_interception_svs2_mod
+  implicit none
+  public
+contains
 
-      SUBROUTINE SNOW_INTERCEPTION_SVS2 (DT, TVEG, T, HU, PS, WIND_TOP, ISWR,  RHOA,    &
-                     RR, SR, SNCMA, WRMAX_VH, SKYVIEW, ESUBSNC,SUBSNC_CUM, LAIVH, WTG, HM_CAN,   &
-                     VGH_DENS, SCAP, WR_VH, RR_VEG, SR_VEG,UNLOAD_RATE, FCANS, N)
+      SUBROUTINE SNOW_INTERCEPTION_SVS2 (DT, TVEG, T, HU, PS, WIND_TOP, ISWR,  RHOA,            &
+                     RR, SR, SNCMA, WRMAX_VH, SKYVIEW, ESUBSNC,SUBSNC_CUM, LAIVH, WTG, HM_CAN,  &
+                     VGH_DENS, SCAP, WR_VH, RR_VEG, SR_VEG,UNL_RATE,UNL_CUM, DRP_RATE, DRP_CUM, &
+                     INT_RATE, INT_CUM,MF_RATE, MF_CUM, FCANS, N)
 
 
       use tdpack
@@ -32,12 +37,13 @@
       INTEGER N
 
 
-      REAL SNCMA(N), RR(N), SR(N),  RR_VEG(N), SR_VEG(N), UNLOAD_RATE(N), ISWR(N)
+      REAL SNCMA(N), RR(N), SR(N),  RR_VEG(N), SR_VEG(N), UN_RATE(N), ISWR(N)
       REAL PS(N), RHOA(N), HU(N), WTG(N, svs2_tilesp1), SKYVIEW(N)
       REAL LAIVH(N), TVEG(N), WIND_TOP(N),VGH_DENS(N), T(N)
       REAL ESUBSNC(N), SUBSNC_CUM(N), SCAP(N), FCANS(N), HM_CAN(N)
       REAL DT, SNCMA_INI(N), WRMAX_VH(N), WR_VH(N) 
-
+      REAL UNL_RATE(N), UNL_CUM(N), DRP_RATE(N), DRP_CUM(N),INT_RATE(N), INT_CUM(N)
+      REAL MF_RATE(N), MF_CUM(N)
 !
 !
 !Author
@@ -83,8 +89,15 @@
 !
 ! RR_VEG       liquid precipitation rate below high-vegetation [kg/m2/s]
 ! SR_VEG       solid  precipitation rate below high-vegetation from throufall [kg/m2/s]
-! UNLOAD_RATE  rate of solid unloading below high-vegetation [kg/m2/s]       
 ! FCANS        Canopy layer snowcover fractions from FSM2
+
+! UNL_RATE   rate of solid unloading below high-vegetation [kg/m2/s]     
+! UNL_CUM    cumulated mass of unloading as solid below high-vegetation [kg/m2]  
+! DRP_RATE   rate of dripping from intercepted snow below high-vegetation [kg/m2/s] 
+! DRP_CUM    cumulated mass dripping from intercepted snow below high-vegetation [kg/m2] 
+! INT_RATE   rate of snow interception by high-vegetation [kg/m2/s] 
+! INT_CUM    cumulated snow mass intercepted by high-vegetation [kg/m2] 
+
 
       INTEGER I
 
@@ -93,7 +106,9 @@
 
       REAL, DIMENSION(N) :: DRIP_CPY ! Mass of liquid water dripping below the canopy (kg/m^2)
       REAL, DIMENSION(N) :: NET_SNOW ! Snow mass sent to the snowpack below the canopy  (kg/m^2)
+      REAL, DIMENSION(N) :: INT_SNOW ! Mass of snow intercepted by the canopy  (kg/m^2)
       REAL, DIMENSION(N) :: UNLOAD_MASS ! Solid mass unloading below the canopy  (kg/m^2)
+      REAL, DIMENSION(N) :: MF_MASS ! Change in mass due to melting of intercepted snow and refreezing of liquid water in canopy  (kg/m^2)
       REAL, DIMENSION(N) :: PQSAT ! Specific humidity at saturation [kg kg-1]
       REAL, DIMENSION(N) :: PPSAT ! Vapor presure at saturation [Pa]
       REAL, DIMENSION(N) :: HM_CAN_INI !  Heat mass of the canopy at the beginning of the subroutine
@@ -119,15 +134,21 @@
       !
       ! 1. Evolution of snow mass intercepted by the canopy
       !
-
       ! Initialize snowfall mass directly transfered through the canopy
       NET_SNOW(:) = 0.
 
+      ! Initialize snowfall mass intercepted by the canopy
+      INT_SNOW(:) = 0.
+      
       ! Initialize mass of liquid water dripping below the canopy 
       DRIP_CPY(:) = 0.
 
       ! Initialize solid mass unloading below the canopy
       UNLOAD_MASS(:) = 0.
+
+      ! Initialize mass change due to melting (refreezing) of intercepted snow (liquid water)
+      MF_MASS(:) = 0.
+
       
       SNCMA_INI(:) = SNCMA(:)
 
@@ -136,6 +157,10 @@
       PPSAT(:) = PSAT(T(:))
 
       DO I=1,N
+
+         MELT     = 0.
+         REFREEZE = 0.
+
          IF (CANO_REF_FORCING .EQ.'O2F') THEN
 	    ! Initialize sublimation of intercepted snow
             ESUBSNC(I) = 0.
@@ -156,14 +181,20 @@
                !!!!!!!!
 
                ! Compute Canopy interception, check Pomeroy VGH_DENS position
-               INTCPT = (SCAP(I) - SNCMA(I))*(1. - exp(-(1.-SKYVIEW(I))* SR(I)*DT/SCAP(I))) 
+               ! Make sure that snow cannot be intercepted above SCAP
+               IF(SNCMA(I)<SCAP(I)) THEN
+                  INTCPT = (SCAP(I) - SNCMA(I))*(1. - exp(-(1.-SKYVIEW(I))* SR(I)*DT/SCAP(I))) 
+               ELSE
+                  INTCPT = 0. 
+               ENDIF
 
                ! Update intercepted snow mass
                SNCMA(I) = SNCMA(I) + INTCPT
 
-
                ! Update the amount of snow that falls below high vegetation
                DIRECT_SNOW  = SR(I)*DT - INTCPT
+
+               INT_SNOW(I) = INTCPT
 
                ! Remove mass of intercepted lost by sublimation
                ! Sublimation calculated in the previous time step so should be
@@ -334,8 +365,9 @@
                   ENDIF
 
                   ! 
-                  NET_SNOW(I) = DIRECT_SNOW  ! Throughfall only
-                  UNLOAD_MASS(I) =  UNLOAD
+                  NET_SNOW(I)    = DIRECT_SNOW  ! Throughfall only
+                  UNLOAD_MASS(I) = UNLOAD
+                  MF_MASS(I)     = MELT + REFREEZE
 
                ELSE ! Open 2 Forest
                   !!!!!!!
@@ -357,6 +389,7 @@
                   !!!! high veg via throughfall and unloading
                   NET_SNOW(I) = DIRECT_SNOW
                   UNLOAD_MASS(I) =  SNW_UNLOAD
+                  MF_MASS(I) = 0.
 
                ENDIF
 
@@ -388,17 +421,32 @@
             SR_VEG(I) = NET_SNOW(I)/DT
 
             ! Rate of solid unloading below high-vegetation 
-            UNLOAD_RATE(I) = UNLOAD_MASS(I)/DT
+            UNL_RATE(I) = UNLOAD_MASS(I)/DT
+            ! Rate of liquid dripping below high-vegetation 
+            DRP_RATE(I) = DRIP_CPY(I)/DT
+            ! Rate of snow intercepted by high-vegetation 
+            INT_RATE(I) = INT_SNOW(I)/DT
+            ! Rate of melting of intercepted snow and refreezing of liquid water
+            MF_RATE(I) = MF_MASS(I)/DT
 
          ELSE
             ! no high veg, no modification of rainfall and snowfall
 
             RR_VEG(I) = RR(I)
             SR_VEG(I) = SR(I)
-            UNLOAD_RATE(I) = 0.            
+            UNL_RATE(I) = 0.  
+            DRP_RATE(I) = 0.  
+            INT_RATE(I) = 0.             
+            MF_RATE(I)  = 0.             
 
          ENDIF
+
+         UNL_CUM(I) = UNL_CUM(I) + UNL_RATE(I) * DT
+         DRP_CUM(I) = DRP_CUM(I) + DRP_RATE(I) * DT
+         INT_CUM(I) = INT_CUM(I) + INT_RATE(I) * DT
+         MF_CUM(I)  = MF_CUM(I)  + MF_RATE(I)  * DT
 
       ENDDO
 
       END SUBROUTINE SNOW_INTERCEPTION_SVS2
+    end module snow_interception_svs2_mod

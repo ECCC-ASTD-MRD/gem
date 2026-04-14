@@ -1,5 +1,8 @@
 !copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
-
+module soil_ksatc_mod
+  implicit none
+  public
+contains
       SUBROUTINE SOIL_KSATC( &
         WSOIL, ISOIL, WSAT, KSAT, KSATC, N, NLEVELS)
 
@@ -82,4 +85,5 @@
 
       ENDIF
 
-      END SUBROUTINE SOIL_KSATC
+    END SUBROUTINE SOIL_KSATC
+  end module soil_ksatc_mod

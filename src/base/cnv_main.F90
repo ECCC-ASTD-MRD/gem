@@ -104,7 +104,7 @@ contains
            ztstar, zcapekfc, ztauckfc, zcinkfc, zmg, zml, zdlat, zdxdy, zkmid, &
            zabekfc, zpeffkfc, zrice_int, zrliq_int, zwumaxkfc, zzbasekfc, zztopkfc, &
            zcoadvu,zcoadvv,zcoage,zcowlcl,zwklcl,zcozlcl,ztlcm, zconemc, zconqmc, &
-           zmcd,zmpeff,zmainc
+           zmcd,zmpeff,zmainc, zsigs
       real, pointer, dimension(:,:), contiguous :: ncp, nip, qcm, qcp, qip, qqm, qqp, qrp, &
            sigma, ttm, ttp, uu, vv, wzavg, wz, zfdc, zgztherm, zhufcp, zhushal, &
            zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc,  &
@@ -152,6 +152,7 @@ contains
       MKPTR1D(zmpeff, mpeff, pvars)
       MKPTR1D(zpeffkfc, peffkfc, pvars)
       MKPTR1D(zrckfc, rckfc, pvars)
+      MKPTR1D(zsigs, sigs, pvars)
       MKPTR1D(ztlcm, tlcm, pvars)
       MKPTR1D(zrice_int, rice_int, pvars)
       MKPTR1D(zrliq_int, rliq_int, pvars)
@@ -333,7 +334,7 @@ contains
               zqldi, zqsdi, &
               zrliq_int, zrice_int, &
               zkfcrf, zkfcsf, &
-              kount,zdlat,zmg,zml,zwstar,ztstar,zen,zkt, &
+              kount,zdlat,zmg,zml,zwstar,ztstar,zen,zkt,zsigs, &
               zcoadvu,zcoadvv,zcoage,zcowlcl,zcozlcl,zmrk2,critmask,delt)
          if (phy_error_L) return
          ztlc = zrckfc

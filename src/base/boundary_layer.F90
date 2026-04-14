@@ -21,6 +21,7 @@ contains
       use pbl_sim, only: simplepbl
       use pbl_ri_diffuse, only: diffuseall
       use pbl_diffuse, only: difver
+      use pbl_massflux, only: massflux
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -112,6 +113,12 @@ contains
          endif
       elseif (fluvert == 'YSU') then
          istat = pbl_ysu1(pvars, cdt1, ni, nk, nkm1, trnch)
+         if (phy_error_L) return
+      endif
+
+      ! Mass-flux closures to compute nonlocal mixing
+      if (pbl_nonloc == 'DEROOY22') then
+         call massflux(pvars, kount, ni, nkm1)
          if (phy_error_L) return
       endif
 

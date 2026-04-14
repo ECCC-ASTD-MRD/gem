@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module aggcovernat_mod
+  implicit none
+  public
+contains
 
 subroutine aggcovernat(fcover, tablen, tables, aggf, lat, ni, nclass)
    implicit none
@@ -74,4 +78,5 @@ subroutine aggcovernat(fcover, tablen, tables, aggf, lat, ni, nclass)
    end do
 
    return
-end subroutine aggcovernat
+ end subroutine aggcovernat
+end module aggcovernat_mod

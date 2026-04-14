@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module MODI_TEB
+  implicit none
+  public
+contains
 subroutine TEB2(PT_CANYON, PQ_CANYON, PU_CANYON,                         &
                      PTI_BLD,                                                 &
                      PT_ROOF, PT_ROAD, PT_WALL, PWS_ROOF,PWS_ROAD,            &
@@ -326,7 +329,7 @@ use MODE_THERMOS
 use MODE_SURF_SNOW_FRAC
 
 use MODI_URBAN_SOLAR_ABS
-use MODI_URBAN_DRAG2
+use MODI_URBAN_DRAG
 use MODI_URBAN_SNOW_EVOL
 use MODI_ROOF_LAYER_E_BUDGET
 use MODI_ROAD_WALL_LAYER_E_BUDGET
@@ -394,12 +397,12 @@ real, dimension(:), intent(IN)    :: PZREF         ! reference height of the fir
 real, dimension(:), intent(IN)    :: PUREF         ! reference height of the first
                                                    ! atmospheric level (wind)
 real,               intent(IN)    :: PTSTEP        ! time step
-real, dimension(:), intent(IN)    :: PZ0_TOWN      ! town roughness length
-                                                   ! for momentum
-real, dimension(:), intent(IN)    :: PZ0_ROOF      ! roof roughness length
-                                                   ! for momentum
-real, dimension(:), intent(IN)    :: PZ0_ROAD      ! road roughness length
-                                                   ! for momentum
+real, dimension(:), intent(INOUT) :: PZ0_TOWN      ! town roughness length
+                                                   ! for momentum - INOUT because of urban_drag/sfclayer
+real, dimension(:), intent(INOUT) :: PZ0_ROOF      ! roof roughness length
+                                                   ! for momentum - INOUT because of urban_drag/sfclayer
+real, dimension(:), intent(INOUT) :: PZ0_ROAD      ! road roughness length
+                                                   ! for momentum - INOUT because of urban_drag/sfclayer
 real, dimension(:), intent(IN)    :: PBLD          ! fraction of buildings
 real, dimension(:), intent(IN)    :: PBLD_HEIGHT   ! buildings h
 real, dimension(:), intent(IN)    :: PWALL_O_HOR   ! wall surf. / hor. surf.
@@ -1017,3 +1020,4 @@ PUTCIC_RFSHADE(:)  = PUTCI_RFSHADE(:)
 !-------------------------------------------------------------------------------
 
 end subroutine TEB2
+end module MODI_TEB

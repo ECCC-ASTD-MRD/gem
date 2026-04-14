@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module MODI_URBAN_DRAG
+  implicit none
+  public
+contains
 subroutine URBAN_DRAG2(PTSTEP, PT_CANYON, PQ_CANYON,                    &
                           PTS_ROOF, PTS_ROAD, PTS_WALL, PDELT_SNOW_ROOF,    &
                           PEXNS, PEXNA, PTA, PQA, PPS, PRHOA,               &
@@ -431,3 +434,4 @@ PAC_ROAD_WAT(:) = PAC_ROAD(:) * min ( 1. , ZLE_MAX(:)/ZLE(:) )
 !-------------------------------------------------------------------------------
 
 end subroutine URBAN_DRAG2
+end module MODI_URBAN_DRAG

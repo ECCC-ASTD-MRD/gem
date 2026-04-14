@@ -1,4 +1,9 @@
-      SUBROUTINE SNOVAP(RHOSNO,ZSNOW,HCPSNO,TSNOW,EVAP,QFN,QFG,HTCS, &
+module snovap_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE SNOVAP(RHOSNO,ZSNOW,HCPSNO,TSNOW,EVAP,QFN,QFG,HTCS, &
                         WLOST,TRUNOF,RUNOFF,TOVRFL,OVRFLW,           &
                         FI,R,S,RHOSNI,WSNOW,ILG,IL1,IL2,JL)
 !
@@ -109,4 +114,5 @@
   100 CONTINUE
 !                                                                                  
       RETURN                                      
-      END        
+    END SUBROUTINE SNOVAP
+  end module snovap_mod

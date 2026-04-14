@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_URBAN_FLUXES
+  implicit none
+  public
+contains
 !   ##########################################################################
     SUBROUTINE URBAN_FLUXES(                                                  &
                      PTS_TOWN, PEMIS_TOWN,                                    &
@@ -389,3 +393,4 @@ PEVAP_TOWN(:) = PROOF(:) * ((PLE_ROOF(:)/XLVTT)+(PLESNOW_ROOF(:)/XLSTT)) * PTOTS
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE URBAN_FLUXES
+end module MODI_URBAN_FLUXES

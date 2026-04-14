@@ -88,7 +88,7 @@ contains
            ,XTRFZT,XTRDZT,XURDZU                                 &
            ,XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,XQ8,XQ9,XQ10,XQ11,XQ12,XQ13
 
-      use MODI_TEB2
+      use MODI_TEB
 
       implicit none
 !!!#include <arch_specific.hf>

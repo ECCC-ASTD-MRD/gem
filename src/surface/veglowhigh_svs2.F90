@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-
+module veglowhigh_svs2_mod
+  implicit none
+  public
+contains
 subroutine veglowhigh_svs2(fcover, tablen, tables, low, high, deci, ever, impervu, &
      lat, agfrac, ni, nclass)
   use svs_configs, only : ntypel, vl_type, ntypeh, vh_type, furb_vl, imp_urb, epsilon_svs
@@ -198,3 +201,4 @@ subroutine veglowhigh_svs2(fcover, tablen, tables, low, high, deci, ever, imperv
 !
    return
  end subroutine veglowhigh_svs2
+end module veglowhigh_svs2_mod

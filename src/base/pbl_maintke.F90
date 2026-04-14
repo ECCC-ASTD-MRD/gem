@@ -69,7 +69,7 @@ contains
          zsigm, zsigt, zumoins, zvmoins, zfbl, zfblgauss, zfblnonloc, zfnn, &
          zftot, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
          zrig, zshear2, zc1pbl, zbuoy, zmrk2, zdiffen, zdissen, &
-         zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar, zznu, zznd, zn2, &
+         zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar, zwcascd, zznu, zznd, zn2, &
          zznt, zlscorer2
 
     real, pointer, dimension(:,:,:), contiguous :: zvcoef
@@ -152,6 +152,7 @@ contains
     MKPTR2D(zuwng, uwng, pvars)
     MKPTR2D(zvmoins, vmoins, pvars)
     MKPTR2D(zvwng, vwng, pvars)
+    MKPTR2D(zwcascd, wcascd, pvars)
     MKPTR2D(zwqng, wqng, pvars)
     MKPTR2D(zwtng, wtng, pvars)
     MKPTR2D(zzd, zd, pvars)
@@ -281,7 +282,7 @@ contains
        zvwng = 0.
        
        call moistke(tke,enold,zzn,zznt,zzd,zrif,zrig,zbuoy,zshear2,zpri,zqtbl,zc1pbl,zfnn, &
-            zfblgauss,zfblnonloc,zgte,zgq,zgql,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
+            zfblgauss,zfblnonloc,zgte,zgq,zgql,zwcascd,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
             zumoins,zvmoins,ztmoins,ztve,zhumoins,zhumoins,zpmoins,zsigt,zsigm,zsige, &
             zze,zz0_ag,zgzmom,zfrv_ag,zwstar,fbsurf,zturbreg, &
             zmrk2,zvcoef,zdxdy,zlscorer2,eturbtau,kount,trnch,ni,nkm1)

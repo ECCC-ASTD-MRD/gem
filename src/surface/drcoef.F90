@@ -1,4 +1,9 @@
-      SUBROUTINE DRCOEF(CDM,CDH,RIB,CFLUX,QG,QA,ZOMIN,ZOHIN,   &
+module drcoef_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE DRCOEF(CDM,CDH,RIB,CFLUX,QG,QA,ZOMIN,ZOHIN,   &
                         CRIB,TVIRTG,TVIRTA,VA,FI,ITER,         &
                         ILG,IL1,IL2)
 !
@@ -210,4 +215,5 @@
  100  CONTINUE  
 !-------------------------------------------------------------
       RETURN
-      END                                                        
+    END SUBROUTINE DRCOEF
+  end module drcoef_mod

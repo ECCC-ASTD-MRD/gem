@@ -13,7 +13,11 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module update3_mod
+  implicit none
+  public
+contains
+  
 subroutine update4(TS, T2, WG, W2, WF, WL, WR, WS, &
      ALPHAS, RHOS, RHOSNO, VMOD, CD, RHOA, &
      HFLUX, EFLUX, TST, T2T, WGT, W2T, &
@@ -126,4 +130,5 @@ subroutine update4(TS, T2, WG, W2, WF, WL, WR, WS, &
    end do
 
    return
-end subroutine update4
+ end subroutine update4
+end module update3_mod

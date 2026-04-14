@@ -562,12 +562,14 @@ module phy_options
    !# Use the non-local PBL cloud formulation
    !# * 'NIL   ' : no non-local PBL cloud formulation
    !# * 'LOCK06' : Non-local cloud scheme of Lock and Mailhot (2006)
+   !# * 'DEROOY22'   : Use a mass-flux scheme based on de Rooy et al. (2022; GMD)
    character(len=16) :: pbl_nonloc   = 'NIL'
    namelist /physics_cfgs/ pbl_nonloc
    namelist /physics_cfgs_p/ pbl_nonloc
-   character(len=*), parameter :: PBL_NONLOC_OPT(2) = (/ &
-        'NIL   ',  &
-        'LOCK06'  &
+   character(len=*), parameter :: PBL_NONLOC_OPT(3) = (/ &
+        'NIL     ', &
+        'LOCK06  ', &
+        'DEROOY22' &
         /)
 
    !# Use prognostic equations for subgrid-scale variances of conserved variables
@@ -652,6 +654,21 @@ module phy_options
    logical           :: pbl_zerobc   = .false.
    namelist /physics_cfgs/ pbl_zerobc
    namelist /physics_cfgs_p/ pbl_zerobc
+
+   !# Estimate pbl-cloud properties at lowest prognostic level
+   logical           :: pbl_cldnk_l   = .false.
+   namelist /physics_cfgs/ pbl_cldnk_l
+   namelist /physics_cfgs_p/ pbl_cldnk_l
+
+   !# Apply a maximum value to the normalized saturation surplus Q1
+   logical           :: pbl_q1max_l  = .true.
+   namelist /physics_cfgs/ pbl_q1max_l
+   namelist /physics_cfgs_p/ pbl_q1max_l
+
+   !# Use gaussian-distribution formulas to derive cloud-fraction and condensate from Q1
+   logical           :: pbl_q1gauss_l  = .false.
+   namelist /physics_cfgs/ pbl_q1gauss_l
+   namelist /physics_cfgs_p/ pbl_q1gauss_l
 
    !# Scheme to determine precipitation type
    !# * 'NIL     ': no call to bourge
@@ -855,10 +872,18 @@ module phy_options
    namelist /physics_cfgs/ rad_siglim
    namelist /physics_cfgs_p/ rad_siglim
 
-   !# use relative weigthing when combining opt props from implicit and explicit clouds
-   logical           :: rad_mpagg_l = .false.
-   namelist /physics_cfgs/ rad_mpagg_l
-   namelist /physics_cfgs_p/ rad_mpagg_l
+   !# Formulation for combining implicit and explicit clouds in microphysics-based configurations
+   !# * 'BINARY  ' : All cloud fractions are assumed to be 1 when cloud is present (incorrect)
+   !# * 'RELATIVE' : Cloud weighting is normalized by the total cloud fraction so that they sum to 1
+   !# * 'MERGED  ' : Cloud weighting is adjusted to account for "merged" volumes in which clouds from different sources coexist
+   character(len=16) :: rad_mpagg = 'BINARY'
+   namelist /physics_cfgs/ rad_mpagg
+   namelist /physics_cfgs_p/ rad_mpagg
+   character(len=*), parameter :: RAD_MPAGG_OPT(3) = (/ &
+        'BINARY  ', &
+        'RELATIVE', &
+        'MERGED  ' &
+        /)
 
    !# Compute and apply tendencies from shortwave radiation
    logical :: rad_sw = .true.
@@ -915,6 +940,18 @@ module phy_options
         'LINEARFIT', &
         'BANDRATIO'  &
         /)
+
+   !# Cloud internal homogeneity (ANU) factor : Set ANU as a fonction of cloud fraction (ccc_cldifm.F90)
+   !# Default below will reproduce pre gem5.3.0-a21 hard coded values
+   !# Higher anu implies more homogeneous clouds
+   !# rad_anu(1) : first boundary in cldfrac
+   !# rad_anu(2) : second boundary in cldfrac
+   !# rad_anu(3) : anu for cldfrac <= rad_anu(1)
+   !# rad_anu(4) : anu for rad_anu(1) < cldfrac < rad_anu(2)
+   !# rad_anu(5) : anu for cldfrac >= rad_anu(2)
+   real, dimension(5) :: rad_anu = (/ 0.9, 1.0, 1.0, 2.0, 4.0 /)
+   namelist /physics_cfgs/ rad_anu
+   namelist /physics_cfgs_p/ rad_anu
 
    !# Radiation scheme
    !# * 'NIL      ': no radiation scheme
@@ -1016,8 +1053,9 @@ module phy_options
    !# * 'NIL       ' : No explicit condensation scheme used
    !# * 'CONSUN    ' : Sunqvist type condensation scheme
    !# * 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme
-   !# * 'MP_P3     ' : P3 microphysics scheme (v5)
+   !# * 'MP_P3     ' : P3 microphysics scheme (v5.3)
    !# * 'MP_P3V3   ' : P3 microphysics scheme (v3)
+   !# * 'MP_P3X    ' : P3 microphysics scheme (v5.5)
    !# * 'KESSLER   ' : Kessler warm rain scheme
    !# * 'THOMPSON  ' : Thompson microphysics scheme
    character(len=16) :: stcond       = 'NIL'

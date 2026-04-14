@@ -1,4 +1,9 @@
-      SUBROUTINE TLSPOST(GSNOW,TSNOW,WSNOW,RHOSNO,QMELTS,GZERO,TSNBOT,  &
+module tlspost_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE TLSPOST(GSNOW,TSNOW,WSNOW,RHOSNO,QMELTS,GZERO,TSNBOT,  &
                         HTCS,HMFN,QFN,EVAPS,RPCN,TRPCN,SPCN,TSPCN,      &
                         GCONSTS,GCOEFFS,T0,ZSNOW,TCSNOW,HCPSNO,QTRANS,  &
                         RPCP,TRPCP,SPCP,TSPCP,TZEROS,RHOSNI,            &
@@ -152,4 +157,5 @@
   300 CONTINUE
 !
       RETURN                    
-      END
+    END SUBROUTINE TLSPOST
+ end module tlspost_mod

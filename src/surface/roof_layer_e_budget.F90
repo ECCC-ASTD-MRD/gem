@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_ROOF_LAYER_E_BUDGET
+  implicit none
+  public
+contains
 !   ##########################################################################
     SUBROUTINE ROOF_LAYER_E_BUDGET(PT_ROOF, PQSAT_ROOF,                        &
                              PTA, PQA, PPS,                                    &
@@ -323,3 +327,4 @@ PQSAT_ROOF(:) =  QSAT(PT_ROOF(:,1),PPS(:))
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ROOF_LAYER_E_BUDGET
+end module MODI_ROOF_LAYER_E_BUDGET

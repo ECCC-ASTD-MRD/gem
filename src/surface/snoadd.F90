@@ -1,4 +1,9 @@
-      SUBROUTINE SNOADD(ALBSNO,TSNOW,RHOSNO,ZSNOW,HCPSNO,HTCS,    &
+module snoadd_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE SNOADD(ALBSNO,TSNOW,RHOSNO,ZSNOW,HCPSNO,HTCS,    &
                         FI,S,TS,RHOSNI,WSNOW,ILG,IL1,IL2,JL)
 !
 !     * NOV 17/11 - M.LAZARE.   CHANGE SNOW ALBEDO REFRESHMENT 
@@ -80,4 +85,5 @@
   100 CONTINUE
 !                                                                                  
       RETURN 
-      END    
+    END SUBROUTINE SNOADD
+  end module snoadd_mod

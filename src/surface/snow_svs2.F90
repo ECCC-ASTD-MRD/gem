@@ -3,6 +3,10 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
+module snow_svs2_mod
+  implicit none
+  public
+contains
 SUBROUTINE SNOW_SVS2(  PSNOWSWE,PSNOWTEMP, PSNOWLIQ,PSNOWRHO,PSNOWALB,  &
                       PSNOWAGE, PSNOWDIAMOPT, PSNOWSPHERI, PSNOWHIST,     & 
                       PTSTEP,PTG, PCT, PSOILHCAPZ, & 
@@ -1482,3 +1486,4 @@ ENDDO
 END SUBROUTINE CALL_MODEL
 !
 END SUBROUTINE SNOW_SVS2
+end module snow_svs2_mod

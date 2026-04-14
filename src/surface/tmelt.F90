@@ -1,4 +1,9 @@
-      SUBROUTINE TMELT(ZSNOW,TSNOW,QMELT,R,TR,GZERO,RALB,            &
+module tmelt_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE TMELT(ZSNOW,TSNOW,QMELT,R,TR,GZERO,RALB,            &
                        HMFN,HTCS,HTC,FI,HCPSNO,RHOSNO,WSNOW,         &
                        ISAND,IG,ILG,IL1,IL2,JL) 
 !                                                                                  
@@ -114,4 +119,5 @@
   200 CONTINUE                                               
 !                                                                                  
       RETURN                            
-      END        
+    END SUBROUTINE TMELT
+  end module tmelt_mod
