@@ -23,8 +23,8 @@ case ${SETUP_SCRIPT_NAME} in
 esac
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot mrd/rpn/libs/20260316-beta
-. r.load.dot mrd/rpn/utils/20260316-beta
+. r.load.dot mrd/rpn/libs/20260401-beta
+. r.load.dot mrd/rpn/utils/20260401-beta
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
