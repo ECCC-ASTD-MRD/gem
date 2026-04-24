@@ -58,6 +58,7 @@ endif()
 
 set(WITH_NEMO OFF CACHE BOOL "Control whether to build with NEMO coupling (\"GEM-NEMO\")")
 if (WITH_NEMO)
+  find_package(iris REQUIRED)
   # Add NEMO coupling source files, if source directory exists
   if (EXISTS ${CMAKE_SOURCE_DIR}/src/cplocn/)
     set(CPLOCN_GLOB ${CMAKE_SOURCE_DIR}/src/cplocn/*.F90)
