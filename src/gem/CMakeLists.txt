@@ -32,6 +32,7 @@ target_link_libraries(${gem_exe}
    tdpack::tdpack
    rpncomm::rpncomm
    rmn::rmn-ompi
+   $<$<BOOL:WITH_NEMO>:iris::iris>
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
    ${FFTW}
