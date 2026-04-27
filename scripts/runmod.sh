@@ -197,6 +197,7 @@ while [ ${DOM} -le ${DOMAIN_end} ] ; do
    printf "\n LAUNCHING rungem.sh for domain: cfg_${domain_number} $(date)\n\n"
    . r.call.dot ${TASK_BIN}/rungem.sh \
       -npex $((npex*ngrids)) -npey $npey -nomp $nomp \
+      -nodespec ${nodespec} \
       -mimd ${MIMD_cfg} \
       -cpl ${cpl} -instancedir ${instancedir} -instance ${instance} \
       -dom_start ${DOM} -dom_end ${last_domain} -debug $debug \
