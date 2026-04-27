@@ -17,7 +17,7 @@ cplocn = v5.2.1
 # Dependencies
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-rmn  >= 20.1.0-b7
+rmn  >= 20.1.0-b8
 tdpack >= 1.6.4.1
 vgrid >= 6.9.11.1
 rpncomm >= 4.6.14
