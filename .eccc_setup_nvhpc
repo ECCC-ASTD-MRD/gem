@@ -14,17 +14,17 @@ SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 case ${SETUP_SCRIPT_NAME} in
     .eccc_setup_nvhpc)
-        export COMPILER_VERSION=23.7.0
+        export COMPILER_VERSION=25.9.0
         ;;
-    .eccc_setup_nvhpc_23.7.0)
-        export COMPILER_VERSION=23.7.0
+    .eccc_setup_nvhpc_25.9.0)
+        export COMPILER_VERSION=25.9.0
         ;;
-    .eccc_setup_nvhpc_25.3.0)
-        export COMPILER_VERSION=25.3.0
+    .eccc_setup_nvhpc_25.7.0)
+        export COMPILER_VERSION=25.7.0
         ;;
 esac
 # Load code-tools 
-. r.load.dot rpn/code-tools/20250925/env/exp/rhel-8-amd64-64@nvhpc-${COMPILER_VERSION}
+. r.load.dot rpn/code-tools/20260219/env/exp/rhel-9-amd64-64@nvhpc-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot mrd/rpn/libs/20260427-beta
