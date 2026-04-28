@@ -1619,6 +1619,9 @@ THEO_schar_gnu:
 
 #----- Running one configuration for rhel-9-amd64_gnu-15.2.0
 GEM_GY_FISL_H_gnu_15:
+  variables:
+    ORD_SOUMET_MPI : mpi
+    ORD_SOUMET_M: "2"
   stage: run_gnu_15.2.0
   tags:
   - ppp7
