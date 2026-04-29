@@ -2,7 +2,7 @@ program gem
       
    use app
    use iso_fortran_env
-#ifdef HAVE_NEMO
+#if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    use iris_mod
 #endif
    implicit none
@@ -16,7 +16,7 @@ program gem
    integer(kind=int32) ierror
    integer :: colors(3), COMMs(3), wnum, wme, cnum, cme, un_out
    character(len=256) :: component_S
-#ifdef HAVE_NEMO
+#if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    integer :: model_comm
    integer :: iris_component
    logical :: with_iris
@@ -41,7 +41,7 @@ program gem
 
    call app_start()
 
-#ifdef HAVE_NEMO
+#if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    iris_component = App_MPMD_GetComponentId("iris")
    with_iris = iris_component >= 0
    if(with_iris) then
@@ -56,7 +56,7 @@ program gem
 
    call gemdm (COMMs,cme,3)
 
-#ifdef HAVE_NEMO
+#if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    if(with_iris) then
        call iris%model_finalize()
    endif
