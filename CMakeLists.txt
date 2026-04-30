@@ -224,6 +224,7 @@ ec_build_config()      # Create build configuration script
 ec_prepare_ssm()       # Prepare ssm packaging files
 
 set(CPL_BUILD_DIR "" CACHE PATH "Directory where GEM-NEMO is built, to package it along with GEM")
+set(CPL_GOSSIP_BUILD_DIR "" CACHE PATH "Directory where legacy (GOSSIP) GEM-NEMO is built, to package it along with GEM")
 
 set(CPACK_GENERATOR "TGZ")
 set(CPACK_PACKAGE_VENDOR "ECCC")
@@ -241,6 +242,7 @@ endif()
 if(CPL_BUILD_DIR)
   set(CPACK_INSTALL_CMAKE_PROJECTS
       "${CPL_BUILD_DIR}/;${NAME}-nemo;ALL;/"
+      "${CPL_GOSSIP_BUILD_DIR}/;${NAME}-nemo-gossip;ALL;/"
       "${CMAKE_CURRENT_BINARY_DIR};${NAME};ALL;/"
   )
 endif()
