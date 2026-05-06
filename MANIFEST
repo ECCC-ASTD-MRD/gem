@@ -12,7 +12,8 @@ modelutils = 1.8.0-a22
 rpnphy = 6.3.0-a22
 gemdyn = 5.3.0-a22
 mach = 3.3.0-a22
-cplocn = v5.2.1
+cplocn = v6.0.1
+cplocn-gossip = v5.2.1
 
 # Dependencies
 #    =,<,<=,>,>= : Version rules
