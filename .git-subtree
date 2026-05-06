@@ -1,5 +1,6 @@
 --prefix=src/modelutils git@gitlab.science.gc.ca:MIG/modelutils.git modelutils_1.8.0-a22
 --prefix=src/cplocn git@gitlab.science.gc.ca:concepts/cplocn.git v5.2.1
+--prefix=src/cplocn-gossip git@gitlab.science.gc.ca:concepts/cplocn.git v5.2.1
 --prefix=src/rpnphy git@gitlab.science.gc.ca:MIG/rpnphy.git rpnphy_6.3.0-a22
 --prefix=src/gemdyn git@gitlab.science.gc.ca:dynamics_research/gemdyn.git gemdyn_5.3.0-a22
 --prefix=src/mach git@gitlab.science.gc.ca:ARQI-GEMMACH/GEM-MACH.git mach_3.3.0-a22
