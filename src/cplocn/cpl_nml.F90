@@ -21,6 +21,7 @@ module cpl_nml_mod
 contains
 
       integer function cpl_nml (F_namelistf_S, F_unout)
+      use cpl_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -36,9 +37,8 @@ contains
 !  Default configuration and reading namelist coupling
 
 #include <rmn/WhiteBoard.hf>
-#include "cpl.cdk"
 
-      namelist /coupling/ cpl_ocn_L, cpl_wav_L, cplocn_ocnf_nsprd, cplocn_debug_L
+      namelist /coupling/ cpl_ocn_L, cpl_wav_L, cplocn_ocnf_nsprd, cplocn_debug_L, cplocn_iweight_L
 
       integer, external :: fnom,wkoffit
       character*60 name_list
@@ -65,6 +65,7 @@ contains
       cpl_wav_L = .false.
       cplocn_ocnf_nsprd = 0
       cplocn_debug_L = .false.
+      cplocn_iweight_L = .false.
 
       unf            = 0
       found_namelist = .false.

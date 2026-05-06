@@ -17,6 +17,8 @@
       subroutine cplocn_update (F_f2u, F_name_S, F_pos, F_ni, cplu, &
                                 F_rho, F_u, F_v, F_vmod, F_cmu)
       use rmn_gmm
+      use cpl_mod
+      use cplocn_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -35,9 +37,6 @@
 
 !Purpose
 ! Update field F_f2u
-
-      include "cpl.cdk"
-      include "cplocn.cdk"
 
       integer i,idrv,jdrv,iv,ivU,ivV,ier
       real, parameter :: eps_cplocn_blnd = 1.e-4

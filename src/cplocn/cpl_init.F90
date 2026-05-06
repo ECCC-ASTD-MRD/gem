@@ -24,6 +24,8 @@ contains
                                  F_glb_ni, F_glb_nj, F_lcl_ni, F_lcl_nj     , &
                                  F_i0, F_j0, F_in, F_jn, F_nk               , &
                                  F_z0mtype, F_z0ttype, F_z0lat)
+      use cpl_timers_mod
+      use cpl_mod
       implicit none
 #include <arch_specific.hf>
 #include <rmn/WhiteBoard.hf>
@@ -44,13 +46,14 @@ contains
 !Purpose
 ! Initialize coupling with ocean or other surface component
 
-      include "cpl.cdk"
-
       integer ierr_ocn,ierr_wav,cplocn_init,istat
 
 !
 !     ---------------------------------------------------------------
 !
+    call cplocn_iris_need_timer%create()
+    call cplocn_iris_share_timer%create()
+    call cplocn_other_timer%create()
 
       cpl_init=-1
       ierr_ocn=0

@@ -1,3 +1,5 @@
+module cpl_mod
+
       logical cpl_ocn_L,          & ! Activate coupling with ocean
               cpl_wav_L,          & ! Activate coupling with waves
               cpl_dgflt_H,        & ! Digital filter second half if true
@@ -14,19 +16,9 @@
 
       character(len=17) cpl_rstn_S
 
-      common /cpl_L/ cpl_ocn_L, cpl_wav_L,    &
-                     cpl_dgflt_H, cpl_rstn_L
-
-      common /cpl_I/ cpl_drv_gni, cpl_drv_gnj, cpl_drv_lni, cpl_drv_lnj,&
-                     cpl_drv_i0,  cpl_drv_j0,  cpl_drv_in,  cpl_drv_jn ,&
-                     cpl_drv_gnk, cpl_minx, cpl_maxx, cpl_miny, cpl_maxy
-
-      common /cpl_R/ cpl_drv_delt
-
-      common /cpl_C/ cpl_rstn_S
-      
       integer cplocn_ocnf_nsprd
-      logical cplocn_debug_L
+      logical cplocn_debug_L,     &
+              cplocn_iweight_L
 
-      common /cplocn_I/ cplocn_ocnf_nsprd
-      common /cplocn_L/ cplocn_debug_L
+end module cpl_mod
+

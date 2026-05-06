@@ -21,6 +21,7 @@ module cpl_update_mod
 contains
 
       subroutine cpl_update (F_f2u, F_name_S, F_pos, F_ni, rho, u, v, vmod, cmu, cplu)
+      use cpl_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -42,7 +43,6 @@ contains
 !Purpose
 ! Update field F_f2u
 
-      include "cpl.cdk"
       real   , dimension(F_ni), target  :: rho_w, u_w, v_w, vmod_w, cmu_w
       real   , dimension(:)   , pointer :: F_rho, F_u, F_v, F_vmod, F_cmu
       logical cplu_w
