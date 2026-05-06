@@ -13,8 +13,59 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine cplocn_step (F_stepcount, F_stepdriver)
+      subroutine cplocn_step (F_stepcount, F_stepdriver, tag)
+      use cplocn_mod, only : cplao_xchg_mode
+      implicit none
+
+#include <rmn/msg.h>
+
+      integer unout
+      logical print_L
+
+      integer, intent(in) :: F_stepcount, F_stepdriver
+      character(len=5), intent(in) :: tag
+
+!     locals
+      integer nsend_offset
+
+      integer, external :: msg_getUnit
+!     ________________________________________________________________
+!
+
+      unout   = msg_getUnit(MSG_INFO)
+      print_L = (unout > 0)
+
+      select case( tag )
+      case( 'first' )  ! step=0 special operations for cplao_xchg_mode=0,1
+         if (cplao_xchg_mode < 2) then
+            call cplocn_step_frst_call( F_stepcount, F_stepdriver )
+         endif
+      case( 'ssend' ) ! send at the start of the phy step, only used by cplao_xchg_mode=0
+         if (cplao_xchg_mode < 1) then
+            nsend_offset = -1
+            call cplocn_step_send_call( F_stepcount, F_stepdriver, nsend_offset )
+         endif
+      case( 'esend' ) ! send at the end of the phy step
+         if (cplao_xchg_mode > 0) then
+            nsend_offset = 0
+            call cplocn_step_send_call( F_stepcount, F_stepdriver, nsend_offset )
+         endif
+      case( 'srecv' ) ! receive outside step=0
+         call cplocn_step_recv_call( F_stepcount, F_stepdriver ) ! receive only
+      case default
+         if (print_L) write(unout,*) 'cplocn_step : operation not recognized: ',tag
+         goto 998
+      end select
+
+      return
+ 998  call handle_error(-1,'cplocn_step','Problems')
+      end subroutine cplocn_step
+
+
+      subroutine cplocn_step_frst_call (F_stepcount, F_stepdriver)
       use rmn_gmm
+      use cpl_mod
+      use cplocn_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -30,223 +81,242 @@
 
 #include <rmn/msg.h>
 
-      include "cpl.cdk"
-      include "cplocn.cdk"
-
       integer unout
       logical print_L
 
-      character*16 datev,date_in,date_ou
+      character(len=16) :: datev,date_in,date_ou
       logical flag
-      integer err,i,j,send,recv,n,ni,nj,ivar
-      integer nstp_st
-      real strt_dt
+      integer err,send,recv
 
-      real*8  dayfrac,one,sid,rsid,secs_elapsed
+      real(kind=8) ::  dayfrac,one,sid,rsid,secs_elapsed
       parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
 
       integer, external :: msg_getUnit
 !     ________________________________________________________________
 !
 
-      cplocn_mystep=F_stepdriver
+      if ( F_stepdriver > 0 ) return ! only used at phy step=0
 
       err = gmm_get(gmmk_ocn_busin_s , ocn_busin)
 
       secs_elapsed=dble(F_stepcount)*cpl_drv_delt
 
-      ni = cpl_drv_lni
-      nj = cpl_drv_lnj
-
       unout   = msg_getUnit(MSG_INFO)
       print_L = (unout > 0)
+
+! Performs stepping
+
+      !*         First exchange for ocean to advance in time
+      !*              0
+      !* (atm)   ----------->
+      !*                    |
+      !*                    |
+      !*                    |
+      !*                    |
+      !*                    |
+      !*                    v
+      !* (oce)              ----------------------------->
+
+      ! Import date
 
 ! Pack information to send to ocean model
 
       call cplocn_busou ()
 
-! Performs stepping
+      dayfrac = secs_elapsed*rsid
+      call incdatsd  (datev,cplocn_runstrt_S,dayfrac)
+      call cplocn_send(datev, send, F_stepdriver)
 
-      nstp_st = cplocn_oc_dt/cpl_drv_delt
-      strt_dt = cplocn_oc_dt
-      if (cplocn_oc_dt.lt.cpl_drv_delt) then
-        nstp_st = 1
-        strt_dt = cpl_drv_delt
+      ! reset to zero
+      cplocn_it = 0
+      ocn_busou(:,:,:) = 0.
+
+      if (send < 0) then
+        if (print_L) write(unout,*) 'cplocn_step=0 : error sending'
+        goto 998
       endif
 
-      if (F_stepdriver.eq.0) then
-
-         !*         First exchange for ocean to advance in time
-         !*              0
-         !* (atm)   ----------->
-         !*                    |
-         !*                    |
-         !*                    |
-         !*                    |
-         !*                    |
-         !*                    v
-         !* (oce)              ----------------------------->
-
-         ! Import date
-
-! ddeacu: modification for IAU
-          datev   = cplocn_runstrt_S
-         dayfrac = secs_elapsed*rsid
-         call incdatsd  (datev,cplocn_runstrt_S,dayfrac)
-         date_in = datev
-
-         ! Export date
-         date_ou = datev
-
-         call cplocn_xchng (date_ou, date_in, send, recv, F_stepdriver, err)
-
-         if (err < 0) then
-           if (print_L) &
-            write(unout,*) 'cplocn_step 1: error received from cplocn_xchng'
-           goto 998
-         endif
-
-         if (recv /= 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step 1: After cplocn_xchng recv =',recv, &
-            ' -> Dummy communication step. No update of ocn_busin'
-         endif
-         if (recv == 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step 1: After cplocn_xchng recv =',recv, &
-            ' -> Coupling communication should be dummy: will abort'
-           err = -1
-           goto 998
-         endif
-
-         !*         Second exchange with time offset for full ice-ocean initialization
-         !*         (ocean fields used for the entire first atm sequence based on strt_dt)
-         !*           0        1
-         !* (atm)   ----->----------->
-         !*              ^
-         !*                 -
-         !*                      -
-         !*                          -
-         !*                              -
-         !*                                   -
-         !*
-         !* (oce)     ----------------------------->
-         !*                         1
+      !*         Second exchange with time offset for full ice-ocean initialization
+      !*         (ocean fields used for the entire first atm sequence)
+      !*           0        1
+      !* (atm)   ----->----------->
+      !*              ^
+      !*                 -
+      !*                      -
+      !*                          -
+      !*                              -
+      !*                                   -
+      !*
+      !* (oce)     ----------------------------->
+      !*                         1
 
 
-         ! Import date at end of ocean time step
+      ! Import date at end of ocean time step
 
-! ddeacu: modification for IAU
-          dayfrac = strt_dt*rsid
-         dayfrac = (secs_elapsed + strt_dt)*rsid
-         call incdatsd  (datev,cplocn_runstrt_S,dayfrac)
-         date_in = datev
+      call cplocn_recv(datev, recv, F_stepdriver)
 
-         ! Export date
-         date_ou(1:15) = '00000000.000000'
-
-         call cplocn_xchng (date_ou, date_in, send, recv, F_stepdriver, err)
-
-         if (err < 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step 2: error received from cplocn_xchng'
-           goto 998
-         endif
-
-         if (recv /= 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step 2: After cplocn_xchng recv =',recv, &
-                      ' -> Coupling communication should not be dummy: will abort'
-           err = -1
-           goto 998
-         endif
-         if (recv == 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step 2: After cplocn_xchng recv =',recv, &
-            ' -> Useful communication step. Using ocn_busin'
-         endif
-
-      elseif (F_stepdriver.gt.nstp_st) then
-
-         !*       Two-way main exchange at the end of atm time step
-         !*       NEMO sbc module is called at the beginning of full exchange time step
-         !*       (receive may be dummy)
-         !*
-         !*                       n
-         !*  (atm)             ------->
-         !*                          |^
-         !*                          ||
-         !*                          ||
-         !*                          ||
-         !*                          ||
-         !*                          v|
-         !*  (oce)                   ------------------->
-         !*                                   n
-
-         ! Import date (end of atm time)
-
-! ddeacu: modification for IAU
-!         dayfrac = dble(F_stepdriver)*cpl_drv_delt*rsid
-         dayfrac = secs_elapsed*rsid
-         call incdatsd  (datev,cplocn_runstrt_S,dayfrac)
-         date_in = datev
-
-         ! Export date
-
-         date_ou = date_in
-
-         call cplocn_xchng (date_ou, date_in, send, recv, F_stepdriver, err)
-
-         if (err < 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step: error received from cplocn_xchng'
-           goto 998
-         endif
-
-         if (recv /= 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step: After cplocn_xchng recv =',recv, &
-            ' -> Dummy communication step. Re-using ocn_busin'
-         endif
-         if (recv == 0) then
-           if (print_L) write(unout,*) &
-            'cplocn_step: After cplocn_xchng recv =',recv, &
-            ' -> Useful communication step. Using ocn_busin'
-         endif
-
+      if (recv < 0) then
+        if (print_L) write(unout,*) 'cplocn_step=0 : error receiving'
+        goto 998
       endif
-
-      do ivar = 1, cplocn_n_fldin
-        if ( cplocn_cvin_S(ivar) == 'MCP' ) then
-          do j=1,nj
-          do i=1,ni
-            ! Avoid negative values of tau later - Fred Dupont
-            ocn_busin(i,j,ivar) = min ( max ( ocn_busin(i,j,ivar), 0.), 1.)
-            if ( ocn_mwgt(i,j) .eq. 0 ) ocn_busin(i,j,ivar) = 0.
-               ! only coupling zone but keep fractional part of ocn_busin
-               ! if so
-            if ( cplocn_off_L ) then
-              if (nint(ocn_busin(i,j,ivar)).ne.0) then
-                if (print_L) write(unout,*) &
-                 'cplocn_step - MASK Inconsistent - cplocn_off_L - ABORT -'
-                err = -1
-                goto 998
-              endif
-            endif
-          enddo
-          enddo
-          goto 997
-        endif
-      enddo
-997   continue
 
       goto 999
 
- 998  call handle_error(err,'cplocn_step','Problems')
+ 998  call handle_error(err,'cplocn_step_frst_call','Problems')
  999  continue
 
 !
 !     ________________________________________________________________
 !
       return
-      end subroutine cplocn_step
+      end subroutine cplocn_step_frst_call
+
+      subroutine cplocn_step_recv_call (F_stepcount, F_stepdriver)
+      use rmn_gmm
+      use cpl_mod
+      use cplocn_mod
+      implicit none
+
+      integer, intent(in) :: F_stepcount, F_stepdriver
+
+      integer unout
+      logical print_L
+
+      character(len=16) :: datev,date_in,date_ou
+      logical flag
+      integer err,send,recv
+      integer noffset
+
+      real(kind=8) ::  dayfrac,one,sid,rsid,secs_elapsed
+      parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
+
+      integer, external :: msg_getUnit
+!     ________________________________________________________________
+!
+
+! Performs stepping
+
+      if (F_stepdriver <= 1 .or. mod(F_stepdriver-1,cplocn_rap_dt) /= 0) return
+
+      err = gmm_get(gmmk_ocn_busin_s , ocn_busin)
+
+      noffset = -1
+      secs_elapsed=dble(F_stepcount+noffset)*cpl_drv_delt
+
+      unout   = msg_getUnit(MSG_INFO)
+      print_L = (unout > 0)
+
+
+      !*       Two-way main exchange at the end of atm time step
+      !*       NEMO sbc module is called at the beginning of full exchange time step
+      !*
+      !*                       n
+      !*  (atm)             ------->
+      !*                           ^
+      !*                           |
+      !*                           |
+      !*                           |
+      !*                           |
+      !*                           |
+      !*  (oce)                   ------------------->
+      !*                                   n
+
+      ! Import date (end of atm time)
+
+      dayfrac = secs_elapsed*rsid
+      call incdatsd  (datev,cplocn_runstrt_S,dayfrac)
+
+      call cplocn_recv(datev, recv, F_stepdriver)
+      if (recv < 0) then
+        if (print_L) write(unout,*) 'cplocn_step=',F_stepdriver,' : error receiving'
+        goto 998
+      endif
+
+      goto 999
+
+ 998  call handle_error(err,'cplocn_step_recv_call','Problems')
+ 999  continue
+
+!
+!     ________________________________________________________________
+!
+      return
+      end subroutine cplocn_step_recv_call
+
+      subroutine cplocn_step_send_call (F_stepcount, F_stepdriver, noffset)
+      use rmn_gmm
+      use cpl_mod
+      use cplocn_mod
+      implicit none
+
+      integer, intent(in) :: F_stepcount, F_stepdriver, noffset
+
+#include <rmn/msg.h>
+
+      integer unout
+      logical print_L
+
+      character(len=16) :: datev,date_in,date_ou
+      logical flag
+      integer err,i,j,send,recv
+
+      real(kind=8) ::  dayfrac,one,sid,rsid,secs_elapsed
+      parameter(one=1.0d0, sid=86400.0d0, rsid=one/sid)
+
+      integer, external :: msg_getUnit
+ !     ________________________________________________________________
+ !
+
+      ! Performs stepping
+
+      if (F_stepdriver <  1 .and. cplao_xchg_mode == 1 ) return
+      if (F_stepdriver <= 1 .and. cplao_xchg_mode == 0 ) return
+
+      err = gmm_get(gmmk_ocn_busin_s , ocn_busin)
+
+      secs_elapsed=dble(F_stepcount+noffset)*cpl_drv_delt
+
+      unout   = msg_getUnit(MSG_INFO)
+      print_L = (unout > 0)
+
+
+      call cplocn_busou ()
+
+      !*       Two-way main exchange at the end of atm time step
+      !*       NEMO sbc module is called at the beginning of full exchange time step
+      !*
+      !*                       n
+      !*  (atm)             ------->
+      !*                          |
+      !*                          |
+      !*                          |
+      !*                          |
+      !*                          |
+      !*                          v
+      !*  (oce)                   ------------------->
+      !*                                   n
+
+      ! Import date (end of atm time)
+
+      dayfrac = secs_elapsed*rsid
+      call incdatsd  (datev,cplocn_runstrt_S,dayfrac)
+
+      if ( cplocn_it == 0 .or. F_stepdriver == 0 ) then ! we are ready to do the sending
+
+         call cplocn_send(datev, send, F_stepdriver)
+         if (send < 0) then
+            if (print_L) write(unout,*) 'cplocn_step=',F_stepdriver,' : error sending'
+            goto 998
+         endif
+
+         ! reset array for next averaging
+         ocn_busou(:,:,:) = 0
+         cplocn_it = 0 ! only needed for cplao_xchg_mode=2
+
+      endif ! cplocn_it == 0
+
+      return
+
+ 998  call handle_error(err,'cplocn_step_scnd_step','Problems')
+
+      end subroutine cplocn_step_send_call

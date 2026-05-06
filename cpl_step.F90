@@ -20,11 +20,13 @@ module cpl_step_mod
 
 contains
 
-      subroutine cpl_step (F_stepcount, F_stepdriver)
+      subroutine cpl_step (F_stepcount, F_stepdriver, tag)
+      use cpl_mod
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(in) :: F_stepcount, F_stepdriver
+      character(len=5), intent(in) :: tag
 
 !authors    Francois Roy - Spring 2015
 ! 
@@ -36,43 +38,21 @@ contains
 
 #include <rmn/msg.h>
 
-      include "cpl.cdk"
-
       integer unout
       logical print_L
 
-      logical first
-      integer err
-
-      data first/.true./
-      save first
-
-      integer, external :: msg_getUnit
 !     ________________________________________________________________
 !
 
       if ( (.not. cpl_ocn_L .and. .not. cpl_wav_L) &
            .or. F_stepdriver < 0 .or. cpl_dgflt_H ) return
 
-      unout   = msg_getUnit(MSG_INFO)
-      print_L = (unout > 0)
-
       if ( cpl_ocn_L ) &
-        call cplocn_step (F_stepcount, F_stepdriver)
+        call cplocn_step (F_stepcount, F_stepdriver, tag)
 
 !      if ( cpl_wav_L ) &
 !        call cplwav_step (F_stepcount, F_stepdriver)
 
-      goto 999
-
- 998  call handle_error(err,'cpl_step','Problems')
- 999  continue
-
-      first = .false.
-!
-!     ________________________________________________________________
-!
-      return
       end subroutine cpl_step
 
 end module cpl_step_mod

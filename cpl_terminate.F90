@@ -21,6 +21,8 @@ module cpl_terminate_mod
 contains
 
       subroutine cpl_terminate (F_pcomm_L)
+      use iris_mod
+      use cpl_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -34,11 +36,10 @@ contains
 !Purpose
 ! Terminate coupler
 
-#include "cpl.cdk"
 !     ---------------------------------------------------------------
 !
       if (cpl_ocn_L) then
-         call cplao_terminate (F_pcomm_L)
+          call iris%model_finalize()
       endif
 
 !      if (cpl_wav_L) then

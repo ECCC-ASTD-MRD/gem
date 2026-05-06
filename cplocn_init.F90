@@ -17,7 +17,10 @@
                                     F_z0mtype, F_z0lat, F_z0ttype)
 use iso_c_binding
 use rmn_gmm
-use, intrinsic :: iso_fortran_env
+use cpl_mod
+use cplocn_mod
+use rpn_comm
+use phygridmap, only: phy_yinyang_L, phy_yinyang_S
       implicit none
 #include <arch_specific.hf>
 
@@ -36,30 +39,13 @@ use, intrinsic :: iso_fortran_env
 ! Initialize coupling with ocean
 
 #include <rmn/WhiteBoard.hf>
-      include "thermoconsts.inc"
-      include "cpl.cdk"
-      include "cplocn.cdk"
-      include "mpif.h"
-      include "rpn_comm.inc"
 
-      integer, external :: mgi_init,mgi_open,mgi_write,mgi_read
+      integer ier,err
+      integer :: unf, ios, nrec
 
-      integer i,j,ier,icpl_ou,icpl_in,isnd,nsend,err,cnt,ivar,ibidon
-      integer icplo,icpla
-      parameter (nsend = 51)
-      character(len=512) :: s_send(nsend)
-      logical       l_send(nsend) 
-      integer       i_send(nsend)
-      real          r_send(nsend), Z0TLAT_W(2), Z0TLAT_R(2)
-      character(len=16) :: z0mtype_R,z0ttype_R
-      type(gmm_metadata) :: meta3d_ocn_busin, meta2d_surf0
-      integer, parameter :: n0=0, n1=1
+      character(len=255) :: cplaofnml
 
-      logical :: l_yinyang, l_lam
-      character(len=3) :: yysubgrid_S
-      character(len=2) :: grd_S
-      character(len=7) :: cplocn_R_chan_name,cplocn_W_chan_name
-      character(len=512) :: weightfile_S
+      logical :: l_lam
 !
 !     ---------------------------------------------------------------
 !
@@ -82,235 +68,186 @@ use, intrinsic :: iso_fortran_env
 
       err = 0
 
-      s_send    =''
-      s_send(1) = 'GEMatm'
-      s_send(2) = F_z0mtype
-      s_send(3) = F_z0ttype
+      ! read cplao_settings.nml
+      cplaofnml = trim(F_path_S)//'/MODEL_INPUT/cplao_settings.nml'
+      call read_cplao_nml( cplaofnml, F_unout, F_print_L, F_z0mtype, F_z0lat, F_z0ttype )
 
-      l_send = .false.
-      i_send = 0
-      r_send = 0.0
-
-      do icpl_ou=1, cplocn_n_fldou
-        isnd=3+icpl_ou
-        if (isnd.gt.nsend) then
-          write(F_unout,9900) ' NOT ENOUGH STORAGE FOR s_send'
-          call flush(F_unout)
-          err=-1
-          goto 995
-        endif
-        s_send(isnd)=cplocn_cvou_S(icpl_ou)//'_'//cplocn_cvot_S(icpl_ou)
-      enddo
-
-      do icpl_in=1, cplocn_n_fldin
-        isnd=3+cplocn_n_fldou+icpl_in
-        if (isnd.gt.nsend) then
-          write(F_unout,9900) ' NOT ENOUGH STORAGE FOR s_send'
-          call flush(F_unout)
-          err=-1
-          goto 995
-        endif
-        s_send(isnd)=cplocn_cvin_S(icpl_in)//'_'//cplocn_cvit_S(icpl_in)
-      enddo
-
+      ! set start datestamp of coupling
       call datf2p (cplocn_runstrt_S,F_dateo)
 
-      l_yinyang = .false.
       l_lam = .true.  ! LU or yinyang only now
-      ier = wb_get('model/Hgrid/is_yinyang',l_yinyang)
-      yysubgrid_S=''
-      if (l_yinyang) then 
-        ier = wb_get('model/Hgrid/yysubgrid',yysubgrid_S)
-      endif
 
-      cplocn_dynphy_offset = 0 
-      if (l_lam) cplocn_dynphy_offset = 2
-
-      select case (yysubgrid_S)
-      case('YIN')
-        cplocn_W_chan_name='yin2ocn'
-        cplocn_R_chan_name='ocn2yin'
-        weightfile_S=trim(F_path_S)//'/MODEL_INPUT/cplwgt.fst_YIN'
-      case('YAN')                  
-        cplocn_W_chan_name='yan2ocn'
-        cplocn_R_chan_name='ocn2yan'
-        weightfile_S=trim(F_path_S)//'/MODEL_INPUT/cplwgt.fst_YAN'
-      case default
-        cplocn_W_chan_name='atm2ocn'
-        cplocn_R_chan_name='ocn2atm'
-        weightfile_S=trim(F_path_S)//'/MODEL_INPUT/cplwgt.fst'
-      end select      
-
-      i_send(1) = F_dateo
-      i_send(2) = cplocn_dynphy_offset
-
-      r_send(1) = cpl_drv_delt
-
-      if (F_print_L) then
-        write (F_unout,*) 'CPLOCN_INIT: l_yinyang=', l_yinyang
-        write (F_unout,*) 'CPLOCN_INIT: yysubgrid_S=', yysubgrid_S
-        write (F_unout,*) 'CPLOCN_INIT: cplocn_R_chan_name=', cplocn_R_chan_name
-        write (F_unout,*) 'CPLOCN_INIT: cplocn_W_chan_name=', cplocn_W_chan_name
-
-        write (F_unout,*) 'CPLOCN_INIT: cplocn_dynphy_offset=',cplocn_dynphy_offset
-      endif
-
-      call cplao_init  ( 'GEMatm', trim(F_path_S)//                        &
-                                       '/MODEL_INPUT/cplao_settings.nml',  &
-                          cplocn_myproc.eq.0,                              &
-                          s_send,l_send,i_send,r_send,nsend,               &
-                          cplocn_W_chan,cplocn_W_chan_name,                &
-                          cplocn_R_chan,cplocn_R_chan_name,                &
-                          cpl_drv_gni,cpl_drv_gnj,                         &
-                          cplocn_gni,cplocn_gnj,                           &
-                          cplocn_n_fldin,cplocn_n_fldou,                   &
-                          ibidon, cplocn_atm_nspread, err )
-      if ( err < 0 ) then
-         write (F_unout,9900) 'UNABLE TO INITIALIZE COUPLER'
-         call flush(F_unout)
+      cplocn_it = 0
+      if ( abs( mod( real(cplao_dt), cpl_drv_delt )) > 1e-5) then
+         write(F_unout,*) 'cplao_dt is not dividable by model time step', cplao_dt, cpl_drv_delt
+         err = -1
          goto 995
       endif
-      call RPN_COMM_bcast (cplocn_gni, n1, "MPI_INTEGER", n0,"GRID",ier)
-      call RPN_COMM_bcast (cplocn_gnj, n1, "MPI_INTEGER", n0,"GRID",ier)
-
-      err = 0
-
-      if (cplocn_myproc.eq.0) then
-
-         cplocn_oc_dt   = nint(r_send(1))
-         cplocn_1st_L   = l_send(1)
-         cplocn_off_L   = l_send(2)
-         cplocn_bzone_L = l_send(3)
-         if (cplocn_1st_L.and.cplocn_off_L) then
-            write (F_unout,9900) ' WRONG LOGIC FOR OCEAN COUPLING'
-            call flush(F_unout)
-            err=-1
-            goto 995
-         endif
-
-         if (F_print_L) then
-           write(F_unout,*)  'cplocn_init: cplocn_oc_dt  =',cplocn_oc_dt
-           write(F_unout,*)  'cplocn_init: cplocn_1st_L  =',cplocn_1st_L
-           write(F_unout,*)  'cplocn_init: cplocn_off_L  =',cplocn_off_L
-           write(F_unout,*)  'cplocn_init: cplocn_bzone_L=',cplocn_bzone_L
-         endif
-         if (F_print_L) then
-            if (cplocn_off_L) then
-               write(F_unout,*)  'cplocn_init: WARNING, CPL mode: off ==> ocean model completely bypassed'
-            elseif (cplocn_1st_L) then
-               write(F_unout,*)  'cplocn_init: WARNING, CPL mode: only 1st ocean receive considered'
-            else
-               write(F_unout,*)  'cplocn_init: Normal CPL mode'
-            endif
-         endif
-
-         if (trim(s_send(1)).ne.'NEMoce') then
-            write (F_unout,9900) ' WRONG NAME FOR OTHER MODEL: should be NEMoce'
-            call flush(F_unout)
-            err = -1
-            goto 995
-         endif
-
-         do icpl_in=1, cplocn_n_fldin
-           isnd=3+icpl_in
-           if (trim(s_send(isnd)) /=  &
-               cplocn_cvin_S(icpl_in)//'_'//cplocn_cvit_S(icpl_in)) then
-             write (F_unout,*) 'cplocn_cvin_S(icpl_in)_cplocn_cvit_S(icpl_in)=', &
-                                cplocn_cvin_S(icpl_in)//'_'//cplocn_cvit_S(icpl_in)
-             write (F_unout,*) 's_send(isnd)=', s_send(isnd)
-             write (F_unout,9900) 'ORDER NOT RESPECTED IN COUPLING SEND RECEIVED FIELDS'
-             call flush(F_unout)
-             err = -1
-             goto 995
-           endif
-         enddo
-
-         do icpl_ou=1, cplocn_n_fldou
-           isnd=3+cplocn_n_fldin+icpl_ou
-           if (trim(s_send(isnd)) /=  &
-               cplocn_cvou_S(icpl_ou)//'_'//cplocn_cvot_S(icpl_ou)) then
-             write (F_unout,*) 'cplocn_cvou_S(icpl_ou)_cplocn_cvot_S(icpl_ou)=', &
-                                cplocn_cvou_S(icpl_ou)//'_'//cplocn_cvot_S(icpl_ou)
-             write (F_unout,*) 's_send(isnd)=', s_send(isnd)
-             write (F_unout,9900) 'ORDER NOT RESPECTED IN COUPLING SEND RECEIVED FIELDS'
-             call flush(F_unout)
-             err = -1
-             goto 995
-           endif
-         enddo
-
-         icpla = 1
-         icplo = 0
-         err = mgi_read (cplocn_R_chan, icplo, 1, "I" )
-         err = min ( mgi_write(cplocn_W_chan, icpla, 1, "I" ), err )
-
-         icpla=icplo+icpla
-         if ( icpla /= 2 .or. err < 0 ) then
-            write (F_unout,9900) 'UNABLE TO INITIALIZE COUPLING WITH OCEAN'
-            call flush(F_unout)
-            err = -1
-            goto 995 
-         endif
-
-         Z0TLAT_W(:) = F_z0lat(:)*180./pi
-
-         err = mgi_write(cplocn_W_chan, Z0TLAT_W, 2, 'R')
-         err = min( mgi_read (cplocn_R_chan, Z0TLAT_R, 2, 'R'), err )
-
-         if ( ABS(Z0TLAT_W(1)-Z0TLAT_R(1)) > 0.01 .or. &
-              ABS(Z0TLAT_W(2)-Z0TLAT_R(2)) > 0.01 .or. &
-              err < 0 ) then
-            write (F_unout,*) 'err        =',err
-            write (F_unout,*) 'Z0TLAT_W(1)=',Z0TLAT_W(1)
-            write (F_unout,*) 'Z0TLAT_W(2)=',Z0TLAT_W(2)
-            write (F_unout,*) 'Z0TLAT_R(1)=',Z0TLAT_R(1)
-            write (F_unout,*) 'Z0TLAT_R(2)=',Z0TLAT_R(2)
-            write (F_unout,9900) 'INCONSISTENT Z0TLAT VALUES GEM VS OCEAN'
-            call flush(F_unout)
-            err = -1
-            goto 995
-         endif
-
-         err = 0 
- 
-         z0mtype_R = trim(s_send(2))
-         z0ttype_R = trim(s_send(3))
-
-         write (F_unout,*) 'z0mtype (GEM)   =',F_z0mtype,len(F_z0mtype)
-         write (F_unout,*) 'z0mtype_R (NEMO)  =',z0mtype_R,len(z0mtype_R)
-         write (F_unout,*) 'z0ttype (GEM)   =',F_z0ttype,len(F_z0ttype)
-         write (F_unout,*) 'z0ttype_R (NEMO)  =',z0ttype_R,len(z0ttype_R)
-
-         if (trim(z0mtype_R) /= trim(F_z0mtype)) then
-            write (F_unout,9900) 'INCONSISTENT z0mtype VALUES GEM VS OCEAN'
-            write (F_unout,*) 'z0mtype    =',F_z0mtype
-            write (F_unout,*) 'z0mtype_R  =',z0mtype_R
-            call flush(F_unout)
-            err = -1
-            goto 995
-         endif
-
-         if (trim(z0ttype_R) /= trim(F_z0ttype)) then
-            write (F_unout,9900) 'INCONSISTENT z0ttype VALUES GEM VS OCEAN'
-            write (F_unout,*) 'z0ttype    =',F_z0ttype
-            write (F_unout,*) 'z0ttype_R  =',z0ttype_R
-            call flush(F_unout)
-            err = -1
-            goto 995
-         endif
-
-         if (i_send(1) /= F_dateo) then
-            if (F_print_L) then
-               write (F_unout,9900) 'WARNING: MODEL INITIAL TIME INCONSISTENT'
-               write (F_unout,*) 'i_send(1) (ocean)  =',i_send(1)
-               write (F_unout,*) 'F_dateo   (atmos)  =',F_dateo
-            endif
-         endif
-
+      cplocn_rap_dt = nint( real(cplao_dt) / cpl_drv_delt )
+      if ( cplocn_rap_dt > 1 .and. cplao_xchg_mode == 0 ) then
+         write(F_unout,*) 'cplao_dt =', cplao_dt, 'cpl_drv_delt =', cpl_drv_delt
+         write(F_unout,*) 'cplao_dt has to be the same value as cpl_drv_delt for cplao_xchg_mode = 0'
+         err = -1
+         goto 995
       endif
+
+      ! prepare some arrays
+      call cplocn_init_busou
+      call cplocn_init_busin( F_print_L, F_unout )
+
+      ! prepare iris exchange
+      call cpl_declare_grid_information()
+      call cpl_declare_exchanged_fields()
+
+      if (F_print_L) write(F_unout,2001)
+
+      cplocn_init = 1
+      return
+ 995  call handle_error(err,'cplocn_init','Problems with cplocn_init')
+
+ 2000 format( &
+      /,'INITIALIZATION OF COUPLING INTERFACE S/R cplocn_init', &
+      /,'=====================================================')
+ 2001 format( &
+      /,'INITIALIZATION OF COUPLING INTERFACE ENDED S/R cplocn_init', &
+      /,'===========================================================')
+ 9900 format (/,1x,a)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end function cplocn_init
+
+
+      subroutine cplocn_init_busou
+      use cpl_mod
+      use cplocn_mod
+      implicit none
+      ! locals
+      integer :: ivar, nk, istat
+
+!     ________________________________________________________________
+
+      nk=cpl_drv_gnk-1
 
       allocate ( ocn_busou(cpl_drv_lni,cpl_drv_lnj,cplocn_n_fldou) )
       ocn_busou = 0.
+      cplocn_it = 0
+
+      !* FLUX COUPLING OCEAN BUS OUT
+      !* Ice-Ocean independant
+      !* 1- FB  - SW down                          p
+      !* 2- FI  - LW down                          p
+      !* 3- RT  - Precipitation                    p
+      !* Ocean model flux calculation
+      !* 4- TT  - Air temperature                  d
+      !* 5- UU  - Wind x component                 d
+      !* 6- VV  - Wind y component                 d
+      !* 7- QA  - Specific humidity                d
+      !* 8- PX  - First momentum level pressure    d
+      !* 9- PX  - First thermo   level pressure    d
+      !*10- P0  - Ground level pressure            d
+      !* Atmospheric model flux calculated (DE-ACTIVATED)
+      !*11- SHO - Sensible heat flux over water    ?
+      !*12- SHI - Sensible heat flux over ice      ?
+      !*13- LHO - Latent heat flux over water      ?
+      !*14- LHI - Latent heat flux over ice        ?
+      !*15- TXO - Wind stress x component (water)  ?
+      !*16- TYO - Wind stress y component (water)  ?
+      !*17- TXI - Wind stress x component (ice)    ?
+      !*18- TYI - Wind stress y component (ice)    ?
+
+      DO ivar = 1, cplocn_n_fldou
+
+         SELECT CASE ( cplocn_cvou_S(ivar) )
+
+         CASE ( 'FBA' )
+
+           cplocn_cvou_N(ivar) = 'flusolis'
+           cplocn_cvou_G(ivar) = 'P'
+           cplocn_cvou_K(:,ivar) = (/ 1, 1 /)
+
+         CASE ( 'FIA' )
+
+           cplocn_cvou_N(ivar) = 'fdsi'
+           cplocn_cvou_G(ivar) = 'P'
+           cplocn_cvou_K(:,ivar) = (/ 1, 1 /)
+
+         CASE ( 'RTA' )
+
+           cplocn_cvou_N(ivar) = 'rt'
+           cplocn_cvou_G(ivar) = 'P'
+           cplocn_cvou_K(:,ivar) = (/ 1, 1 /)
+
+         CASE ( 'TTA' )
+
+           cplocn_cvou_N(ivar) = 'PW_TT:P'
+           cplocn_cvou_G(ivar) = 'D'
+           cplocn_cvou_K(:,ivar) = (/ nk, nk /)
+
+         CASE ( 'UUA' )
+
+           cplocn_cvou_N(ivar) = 'PW_UU:P'
+           cplocn_cvou_G(ivar) = 'D'
+           cplocn_cvou_K(:,ivar) = (/ nk, nk /)
+
+         CASE ( 'VVA' )
+
+           cplocn_cvou_N(ivar) = 'PW_VV:P'
+           cplocn_cvou_G(ivar) = 'D'
+           cplocn_cvou_K(:,ivar) = (/ nk, nk /)
+
+         CASE ( 'QQA' )
+
+           cplocn_cvou_N(ivar) = 'TR/HU:P'
+           cplocn_cvou_G(ivar) = 'D'
+           cplocn_cvou_K(:,ivar) = (/ nk, nk /)
+
+         CASE ( 'PMA' )
+
+           cplocn_cvou_N(ivar) = 'PW_PM:P'
+           cplocn_cvou_G(ivar) = 'D'
+           cplocn_cvou_K(:,ivar) = (/ nk, nk /)
+
+         CASE ( 'PTA' )
+
+           cplocn_cvou_N(ivar) = 'PW_PT:P'
+           cplocn_cvou_G(ivar) = 'D'
+           cplocn_cvou_K(:,ivar) = (/ nk, nk /)
+
+         CASE ( 'P0A' )
+
+           cplocn_cvou_N(ivar) = 'PW_P0:P'
+           cplocn_cvou_G(ivar) = 'D'
+           cplocn_cvou_K(:,ivar) = (/ 1, 1 /)
+
+         CASE DEFAULT
+
+           istat=-1
+           call handle_error(istat,'cplocn_init_busou','WRONG NAME TAG')
+
+         END SELECT
+      ENDDO
+!     ________________________________________________________________
+!
+      end subroutine cplocn_init_busou
+
+
+      subroutine cplocn_init_busin( F_print_L, F_unout )
+      use iso_c_binding
+      use rmn_gmm
+      use cpl_mod
+      use cplocn_mod
+      use, intrinsic :: iso_fortran_env
+      implicit none
+
+      logical, intent(in)          :: F_print_L
+      integer, intent(in)          :: F_unout
+
+      ! locals
+      integer :: ivar, ier
+      type(gmm_metadata) :: meta3d_ocn_busin, meta2d_surf0
+
 
       gmmk_ocn_busin_s = 'ocn_busin'
       gmmk_gli_0_s     = 'gli_0'
@@ -397,55 +334,124 @@ use, intrinsic :: iso_fortran_env
          CASE DEFAULT
 
            ier=-1
-           call handle_error(ier,'cplocn_init','WRONG NAME TAG')
+           call handle_error(ier,'cplocn_init_busin','WRONG NAME TAG')
 
          END SELECT
 
       enddo
 
-      call cplocn_distwgt (weightfile_S,F_print_L,F_unout)
+      end subroutine cplocn_init_busin
 
- 995  call handle_error(err,'cplocn_init','Problems with cplocn_init')
 
-      call RPN_COMM_bcast (cplocn_1st_L, n1, "MPI_LOGICAL", n0,"GRID",ier)
-      call RPN_COMM_bcast (cplocn_off_L, n1, "MPI_LOGICAL", n0,"GRID",ier)
-      call RPN_COMM_bcast (cplocn_oc_dt, n1, "MPI_INTEGER", n0,"GRID",ier)
+      subroutine read_cplao_nml (F_nmlf_S, F_unout, F_comproc_L, &
+                                 F_z0mtype, F_z0lat, F_z0ttype)
+      use cpl_mod, only: cpl_drv_delt
+      use cplocn_mod
+      implicit none
 
-      do i = 1, cplocn_n_fldin
-        cnt = len(cplocn_cvin_S(i)) 
-        call RPN_COMM_bcastc(cplocn_cvin_S(i), cnt, "MPI_CHARACTER", n0,"GRID",ier)
-        cnt = len(cplocn_cvit_S(i))
-        call RPN_COMM_bcastc(cplocn_cvit_S(i), cnt, "MPI_CHARACTER", n0,"GRID",ier)
-      enddo
+      character(len=*), intent(in) :: F_nmlf_S
+      integer, intent(in)          :: F_unout
+      logical, intent(in)          :: F_comproc_L
+      character(len=*), intent(in) :: F_z0mtype,F_z0ttype
+      real   , intent(in)          :: F_z0lat(2)
+      integer  fnom
+      external fnom
 
-      do i = 1, cplocn_n_fldou
-        cnt = len(cplocn_cvou_S(i))
-        call RPN_COMM_bcastc(cplocn_cvou_S(i), cnt, "MPI_CHARACTER", n0,"GRID",ier)
-        cnt = len(cplocn_cvot_S(i))
-        call RPN_COMM_bcastc(cplocn_cvot_S(i), cnt, "MPI_CHARACTER", n0,"GRID",ier)
-      enddo
+      integer unf,nrec
 
-      if (cplocn_off_L) then
-         if (F_print_L) then
-            write(F_unout,*) 'cplocn_init: WARNING - cplocn_off_L !!!!'
-            write(F_unout,*) 'resetting CPLOCN to FALSE'
-         endif
-         cplocn_init = 0
-      else
-         cplocn_init = 1
-      endif
+      character(len=16) :: z0mtype,z0ttype
+      real              :: z0tlat(2), z0tlat_w(2)
+
+
+      namelist /cplao_cfgs/ z0mtype, z0ttype, z0tlat
+
+      namelist /cplao_step/   cplao_dt, cplao_xchg_mode
+
 !
-      if (F_print_L) write(F_unout,2001)
+!-------------------------------------------------------------------
+!
+! Defaults values are taken from arguments if not provided in the namelist
+!
+      cplao_dt    = cpl_drv_delt
+      z0tlat_w(:) = F_z0lat(:)*180./3.14159265
+      z0tlat(:)   = z0tlat_w(:)
+      z0mtype     = TRIM(F_z0mtype)
+      z0ttype     = TRIM(F_z0ttype)
+      cplao_xchg_mode = 0
+!
+      if ((F_nmlf_S.eq.'print').or.(F_nmlf_S.eq.'PRINT')) then
+         if (F_unout.ge.0.and.F_comproc_L) write (F_unout,nml=cplao_cfgs)
+         return
+      elseif (F_nmlf_S .ne. '') then
+!
+         unf = 0
+         if (fnom (unf,F_nmlf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110
 
- 2000 format( &
-      /,'INITIALIZATION OF COUPLING INTERFACE S/R cplocn_init', &
-      /,'=====================================================')
- 2001 format( &
-      /,'INITIALIZATION OF COUPLING INTERFACE ENDED S/R cplocn_init', &
-      /,'===========================================================')
+         rewind(unf)
+         read (unf, nml=cplao_cfgs, end = 9120, err=9120)
+         if(F_comproc_L) write( F_unout, cplao_cfgs )
+
+         rewind(unf)
+         read (unf, nml=cplao_step, end = 9121, err=9121)
+         if(F_comproc_L) write( F_unout, cplao_step )
+
+         call fclos (unf)
+
+      endif
+      !
+      ! check consistency of GEM/CPL bulk formula
+      !
+      if ( ABS(z0tlat_w(1)-z0tlat(1)) > 0.01 .or. &
+           ABS(z0tlat_w(2)-z0tlat(2)) > 0.01 ) then
+         write (F_unout,9900) 'INCONSISTENT Z0TLAT VALUES GEM VS CPL'
+         write (F_unout,*) 'GEM Z0TLAT(1)=',z0tlat_w(1)
+         write (F_unout,*) 'GEM Z0TLAT(2)=',z0tlat_w(2)
+         write (F_unout,*) 'CPL Z0TLAT(1)=',z0tlat(1)
+         write (F_unout,*) 'CPL Z0TLAT(2)=',z0tlat(2)
+         write (F_unout, 8000)
+         goto 9998
+      endif
+
+      if (trim(z0mtype) /= trim(F_z0mtype)) then
+         write (F_unout,9900) 'INCONSISTENT z0mtype VALUES GEM VS CPL'
+         write (F_unout,*) 'GEM z0mtype  =',F_z0mtype
+         write (F_unout,*) 'CPL z0mtype  =',z0mtype
+         write (F_unout, 8000)
+         goto 9998
+      endif
+
+      if (trim(z0ttype) /= trim(F_z0ttype)) then
+         write (F_unout,9900) 'INCONSISTENT z0ttype VALUES GEM VS CPL'
+         write (F_unout,*) 'GEM z0ttype  =',F_z0ttype
+         write (F_unout,*) 'CPL z0ttype  =',z0ttype
+         write (F_unout, 8000)
+         goto 9998
+      endif
+
+      ! if all good go to return
+      goto 9999
+!
+ 9110 if (F_comproc_L.and.F_unout.ge.0) write (F_unout, 9050) trim( F_nmlf_S )
+      if (F_comproc_L.and.F_unout.ge.0) write (F_unout, 8000)
+      goto 9998
+!
+ 9120 call fclos (unf)
+      if (F_comproc_L.and.F_unout.ge.0) write (F_unout, 9150) 'cplao_cfgs',trim( F_nmlf_S )
+      if (F_comproc_L.and.F_unout.ge.0) write (F_unout, 8000)
+      goto 9998
+!
+ 9121 call fclos (unf)
+      if (F_comproc_L.and.F_unout.ge.0) write (F_unout, 9150) 'cplao_step',trim( F_nmlf_S )
+      if (F_comproc_L.and.F_unout.ge.0) write (F_unout, 8000)
+      goto 9998
+!
+ 8000 format (/,'========= ABORT IN S/R read_cplao_nml.ft90 ============='/)
+ 9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
+ 9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
  9900 format (/,1x,a)
 !
-!     ---------------------------------------------------------------
+!-------------------------------------------------------------------
 !
-      return
-      end function cplocn_init
+ 9998  call handle_error(-1,'read_cplao_nml','Problems with read_cplao_nml')
+ 9999 return
+      end subroutine read_cplao_nml

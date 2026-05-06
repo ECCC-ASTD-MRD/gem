@@ -6,11 +6,10 @@ module cpl_snapshot_mod
 contains
 
       subroutine cpl_snapshot (F_mode)
+      use cpl_mod
       implicit none
 #include <arch_specific.hf>
       character(len=*), intent(in) :: F_mode
-
-      include "cpl.cdk"
 
       if ( F_mode == 'W' ) cpl_dgflt_H = .true.
       if ( F_mode == 'R' ) cpl_dgflt_H = .false.
