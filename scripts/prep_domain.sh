@@ -201,6 +201,9 @@ if [[ -e ${final_file} ]] ; then
       if [ $(r.fstliste -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
          varname='VT'
       fi
+      if [ $(r.fstliste -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
+         varname='P0'
+      fi
       valid=$(r.fstliste -izfst $i -nomvar ${varname} | head -1 | cut -d ":" -f 11)
       if [ -n "${valid}" ] ; then
          echo $(echo $valid | cut -c1-8).$(echo $valid | cut -c9-14) > ${splitdir}/analysis_validity_date
