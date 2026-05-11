@@ -3,6 +3,7 @@ program gem
    use app
    use iso_fortran_env
 #if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
+   use app_mpmd
    use iris_mod
 #endif
    implicit none
