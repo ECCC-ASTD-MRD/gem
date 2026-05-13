@@ -53,7 +53,7 @@ for file in ${domain_list} ; do
 done
 
 cpl_args=""
-if [[ -n "${MOD_GEM_cpl_expname}" ]] ; then
+if [[ -n "${MOD_GEM_cpl_expname}" && "${MOD_GEM_cpl_coupler}" == "iris" ]] ; then
    cpl_args="-cpl -instancedir ${TASK_OUTPUT}/INSTANCE_DIR -instance ${MOD_GEM_cpl_instance}"
 fi
 
@@ -68,6 +68,7 @@ fi
 # Handle model return status
 if [[ "$_status" == "ABORT" ]] ; then
    # Problem with the integration
+   if [[ -n "${MOD_GEM_cpl_expname}" && "${MOD_GEM_cpl_coupler}" == "gossip"  ]] ; then gclient 4 || true ; fi
    printf "\nProblem with runmod.sh\n\n"
    nodelogger -n ${SEQ_NODE} -s abort -d ${SEQ_DATE} ${SEQ_LOOP_ARGS} -m "Error encountered during model integration"
    exit 1
@@ -124,6 +125,10 @@ fi
 
 if [[ -z "${MOD_GEM_cpl_expname}" ]] ; then
    ${SEQ_BIN}/maestro -n ${SEQ_CONTAINER}/Runmod -s ${action} ${args}
+else
+   if [[ "${MOD_GEM_cpl_coupler}" == "gossip" ]] ; then
+      gclient 4 || true
+   fi
 fi
 
 printf "STATUS_GEMDM=%s\n" ${_status}

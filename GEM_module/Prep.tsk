@@ -59,6 +59,36 @@ if [[ $(find . -name "${abort_prefix}*" | wc -l) -gt 0 ]] ; then
 fi
 printf "\n DONE with Um_upload.sh into ${TASK_OUTPUT}\n\n"
 
+# Generate a MIMD.cfg file from MOD_GEM_server if no file has been provided through MOD_GEM_serverIO
+if [[ "${MOD_GEM_serverIO}" == "<no value>" && "$MOD_GEM_server" != "<no value>" ]] ; then
+ mimdfile=${TASK_OUTPUT}/MIMD.cfg
+ serverlist=$(echo $MOD_GEM_server | tr "," "\n")
+ 
+ for str in $serverlist
+ do
+        svrL=$(echo ${str} | cut -d ":" -f1)
+        svrR=$(echo ${str} | cut -d ":" -f2)
+        if [[ "${svrL}" == "gem" ]]; then
+                line="gem"
+        elif [[ "${svrL}" == "IN" || "${svrL}" == "OUT" ]]; then
+                line="server${svrL} ${svrR}"
+        else
+                line="${svrL} ${svrR}"
+        fi
+        cat >> ${mimdfile}  << EOF
+${line}
+EOF
+ done
+
+ if [[ -f ${mimdfile} ]] ; then
+	 MOD_GEM_serverIO=${mimdfile} 
+ else
+	 "ABORT: MOD_GEM_server content has failed to produce a MIMD.cfg file"
+	 exit 1
+ fi
+
+fi
+
 if [[ "${MOD_GEM_serverIO}" == "<no value>" ]] ; then
 
 ## Check configuration
