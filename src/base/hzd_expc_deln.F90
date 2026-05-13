@@ -54,6 +54,7 @@
          jn = l_nj - pil_n
       end if
 
+
       nu_dif = 0.0d0
       if (F_pwr ==2) then
          nu_dif = pt25*dble(F_lnr)

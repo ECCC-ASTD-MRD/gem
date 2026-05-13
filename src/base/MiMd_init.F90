@@ -12,8 +12,9 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+
       subroutine MiMd_init (F_component_S, F_color, F_nc, F_COMM,&
-                            F_wnum, F_wme, F_cnum, F_cme)
+                            F_cnum, F_cme)
       use ISO_C_BINDING
       use MiMd
       implicit none
@@ -21,7 +22,7 @@
       character(len=*), intent(IN) :: F_component_S
       integer, intent(IN ) :: F_nc
       integer, intent(IN ) :: F_color(F_nc)
-      integer, intent(OUT) :: F_COMM(F_nc), F_wnum, F_wme, F_cnum, F_cme
+      integer, intent(OUT) :: F_COMM(F_nc), F_cnum, F_cme
       
       include 'mpif.h'
 
@@ -40,18 +41,23 @@
 !      required = MPI_THREAD_MULTIPLE
       required = MPI_THREAD_SINGLE
       call MPI_Init_thread (required, provided, ierr)
-      call MPI_COMM_size (MPI_COMM_WORLD,MiMd_Wnumproc,ierr)
-      call MPI_COMM_rank (MPI_COMM_WORLD,MiMd_Wmyproc ,ierr)
-      F_wnum= MiMd_Wnumproc ; F_wme= MiMd_Wmyproc
-      
       if (provided /= required ) then
-         if (MiMd_Wmyproc==0) write (6,'(/3x,a/)') 'FAILED in MPI_Init_thread: your system does NOT support MPI_THREAD_MULTIPLE -ABORT-'
+         if (MiMd_Wmyproc==0) write (6,'(/3x,a/)')&
+         'FAILED in MPI_Init_thread: your system does NOT'//&
+         'support MPI_THREAD_MULTIPLE -ABORT-'
          call MPI_finalize (ierr)
          stop
       endif
+
+      call gem_init_appmpi (F_COMM)
+
+      MiMd_gemworld= F_COMM(1)
+
+      call MPI_COMM_size (MiMd_gemworld,MiMd_Wnumproc,ierr)
+      call MPI_COMM_rank (MiMd_gemworld,MiMd_Wmyproc ,ierr)
       
-      call MPI_Comm_split (MPI_COMM_WORLD, F_color(1), MiMd_Wmyproc, F_COMM(1), ierr)
-      call MPI_barrier(MPI_COMM_WORLD,ierr)
+      call MPI_Comm_split (MiMd_gemworld, F_color(1), MiMd_Wmyproc, F_COMM(1), ierr)
+      call MPI_barrier(MiMd_gemworld,ierr)
 
       allocate (partners(4,MiMd_Wnumproc),names_S(MiMd_Wnumproc))
       
@@ -63,7 +69,7 @@
       if (myproc==0) then
          color=1
       endif
-      call MPI_Comm_split (MPI_COMM_WORLD, color, MiMd_Wmyproc, lcl_comm, ierr)
+      call MPI_Comm_split (MiMd_gemworld, color, MiMd_Wmyproc, lcl_comm, ierr)
       me_color = -99
       if(lcl_comm .ne. MPI_COMM_NULL) then 
          call MPI_COMM_size (lcl_comm,nb_color,ierr)
@@ -74,9 +80,9 @@
       me(2) = MiMd_Wmyproc
       me(3) = myproc
       me(4) = numproc
-      call MPI_barrier(MPI_COMM_WORLD,ierr)
-      call MPI_Allgather(F_component_S,256,MPI_CHARACTER,names_S,256,MPI_CHARACTER,MPI_COMM_WORLD,ierr)
-      call MPI_Allgather(me,4,MPI_INTEGER,partners,4,MPI_INTEGER,MPI_COMM_WORLD,ierr)
+      call MPI_barrier(MiMd_gemworld,ierr)
+      call MPI_Allgather(F_component_S,256,MPI_CHARACTER,names_S,256,MPI_CHARACTER,MiMd_gemworld,ierr)
+      call MPI_Allgather(me,4,MPI_INTEGER,partners,4,MPI_INTEGER,MiMd_gemworld,ierr)
       color=-1 ;  MiMd_ncolors=0
       do i=1, MiMd_Wnumproc
          if ( partners(1,i)/=color) then
@@ -95,7 +101,6 @@
             endif
          enddo
       enddo
-     
       allocate (inter_color_comm(MiMd_ncolors,MiMd_ncolors));inter_color_comm=-99
       if (myproc==0) then
          allocate (inter_connect(MiMd_ncolors)) ; inter_connect=-1
@@ -117,8 +122,8 @@
                   color=1
                   ordinal_in_set=MiMd_Wmyproc
                endif
-               call MPI_Comm_split (MPI_COMM_WORLD, color, ordinal_in_set, comm, ierr)
-               call MPI_barrier(MPI_COMM_WORLD,ierr)
+               call MPI_Comm_split (MiMd_gemworld, color, ordinal_in_set, comm, ierr)
+               call MPI_barrier(MiMd_gemworld,ierr)
                if (comm/=MPI_COMM_NULL) then
                   color= MPI_UNDEFINED ; ordinal_in_set= -1
                   if (myproc==0) then
@@ -165,7 +170,7 @@ contains
       host_list(1,MiMd_Wmyproc) = F_color
       host_list(2,MiMd_Wmyproc) = abs(f_gethostid())
       call MPI_ALLREDUCE ( host_list, glist, 2*MiMd_Wnumproc,&
-                     MPI_INTEGER,MPI_SUM,MPI_COMM_WORLD,err)
+                     MPI_INTEGER,MPI_SUM,MiMd_gemworld,err)
 
       do i=0,MiMd_Wnumproc-1
          if (glist(1,i)==F_color) then

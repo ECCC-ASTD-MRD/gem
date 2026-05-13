@@ -27,11 +27,10 @@
       use HORgrid_options
       use ilmc_lam_array
       use ptopo
+      use omp_lib
 
       use, intrinsic :: iso_fortran_env
       implicit none
-
-#include <arch_specific.hf>
 
       !arguments
       !---------
@@ -54,7 +53,12 @@
       real :: sweep_max(400),sweep_min(400),m_use_max,m_use_min,m_sweep_max,m_sweep_min, &
               o_shoot,u_shoot,ratio_max,ratio_min
 
-      real, pointer, dimension(:,:,:) :: F_ilmc,air_mass_m
+      real, pointer, dimension(:,:,:) :: F_ilmc, air_mass_m
+      
+      type (a_ilmc), dimension(:,:,:,:), pointer :: sweep_rd
+
+      integer np
+      integer :: HLT_start, HLT_end, local_np
 
       logical :: limit_i_L
 
@@ -62,19 +66,25 @@
 !
 !---------------------------------------------------------------------
 !
-!      call gtmg_start (73, 'ILMC_', 38)
-
       !Localize Tracer TIME M requiring ILMC monotonicity
       !--------------------------------------------------
       F_ilmc => Adz_stack(F_ns)%dst
 
-      if (Adz_verbose>0) call ilmc_lam_write (1)
+!!$!$omp single
+!!$      if (Adz_verbose>0) call ilmc_lam_write (1)
+!!$!$omp end single
 
       !Recall AIR MASS at TIME_M
       !-------------------------
       air_mass_m => airm0
 
-      if (Adz_verbose>0) call ilmc_lam_write (2)
+      !Allocation and Define surrounding cells for each sweep
+      !------------------------------------------------------
+      sweep_rd => sweep_rd0
+
+!!$!$omp single
+!!$      if (Adz_verbose>0) call ilmc_lam_write (2)
+!!$!$omp end single
 
       !Horizontal grid: MIN/MAX and [F_i0,F_in] x [F_j0,F_jn]
       !------------------------------------------------------
@@ -107,6 +117,7 @@
       if (.not.l_south) jl = max(jl_,g_j0-offj) 
       if (.not.l_north) jr = min(jr_,g_jn-offj) 
 
+!$omp single
       !Print if Halo needs to be reduced for PE close to W/E/S/N LAM boundary 
       !----------------------------------------------------------------------
       if (.not.done_print_L) then
@@ -133,37 +144,11 @@
 
       done_print_L = .true.
 
-      !Allocation and Define surrounding cells for each sweep
-      !------------------------------------------------------
+      !Define surrounding cells for each sweep
+      !---------------------------------------
       if (.NOT.done_allocate_L) then
 
-!         call gtmg_start (93, 'ALLOC_', 73)
-
-         !Allocation
-         !----------
-         allocate (sweep_rd(Adz_ILMC_sweep_max,il:ir,jl:jr,l_nk))
-
-         do k=1,l_nk
-            do j=jl,jr
-            do i=il,ir
-            do n=1,Adz_ILMC_sweep_max
-
-               w1   = 2*n + 1
-               w2   = w1-2
-               size = 2*(w1**2 + w1*w2 + w2*w2)
-
-               allocate (sweep_rd(n,i,j,k)%i_rd(size))
-               allocate (sweep_rd(n,i,j,k)%j_rd(size))
-               allocate (sweep_rd(n,i,j,k)%k_rd(size))
-
-            end do
-            end do
-            end do
-         end do
-
-         !Define surrounding cells for each sweep
-         !---------------------------------------
-         do k=Adz_k0t,l_nk
+       do k=Adz_k0t,l_nk
 
             kx_m = k ; kx_p = k
 
@@ -211,15 +196,11 @@
             end do
             end do
 
-         end do
+       end do
 
-         done_allocate_L = .true.
+       done_allocate_L=.true.
 
-!         call gtmg_stop  (93)
-
-      end if
-
-!      call gtmg_start (94, 'X_HALO', 73)
+      endif
 
       !Fill Halos of F_ILMC/MIN/MAX/AIR_MASS_M
       !---------------------------------------
@@ -229,23 +210,21 @@
       call rpn_comm_xch_halo (Adz_post(F_ns)%min,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
       call rpn_comm_xch_halo (Adz_post(F_ns)%max,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk,G_halox,G_haloy,.false.,.false.,l_ni,0)
 
-      Adz_set_post_tr = 0
+!$omp end single
 
-!      call gtmg_stop  (94)
+      Adz_set_post_tr = 0
 
       reset = 0 ! Use to accumulate DIAGNOSTICS in LOOP
 
       !-----------------------------------------------------------------------------------
       !LOOP: Compute ILMC solution while preserving mass: USE ELEMENTS inside/outside CORE
       !-----------------------------------------------------------------------------------
-!      call gtmg_start (96, 'LOOP__', 73)
-      call ilmc_lam_loop ()
-!      call gtmg_stop  (96)
 
-!      call gtmg_start (98, 'MINMAX', 73)
+      call ilmc_lam_loop_hlt ()
 
       !Reset Min-Max Monotonicity if requested
       !---------------------------------------
+!$omp single
       if (Adz_ILMC_min_max_L) then
 
          do k=Adz_k0t,l_nk
@@ -272,11 +251,9 @@
 
       end if
 
-!      call gtmg_stop  (98)
+!      if (Adz_verbose>0) call ilmc_lam_write (3)
 
-      if (Adz_verbose>0) call ilmc_lam_write (3)
-
-!      call gtmg_stop  (73)
+!$omp end single
 !
 !---------------------------------------------------------------------
 !
@@ -284,106 +261,106 @@
 
 contains
 
-      include 'ilmc_lam_loop.inc'
-!
-!---------------------------------------------------------------------
-!
-!**s/r ILMC_LAM_write - Write ILMC_LAM diagnostics based on F_numero if verbose is activated
-
-      subroutine ILMC_LAM_write (F_numero)
-
-      use HORgrid_options
-      use lun
-      use tr3d
-
-      implicit none
-
-      !arguments
-      !---------
-      integer, intent(in) :: F_numero
-
-      integer :: err,iprod,l_reset(5),g_reset(5)
-
-      real(kind=REAL64), save :: mass_adv_8
-
-      real(kind=REAL64) :: mass_ilmc_8,ratio_8,mass_deficit_8
-
-      logical :: almost_zero
-
-      character(len=9) :: communicate_S
-!
-!---------------------------------------------------------------------
-!
-      if (F_numero==1.and.Lun_out>0) then
-
-         write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
-         write(Lun_out,*) 'TRACERS: ILMC: Reset Monotonicity without changing Mass of SL advection: ',F_name_S(4:6)
-
-      elseif (F_numero==2) then
-
-         call mass_tr (mass_adv_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0t)
-
-         if (Lun_out>0) then
-
-            write(Lun_out,*)    'TRACERS: ILMC: ILMC_min_max_L          =',Adz_ILMC_min_max_L
-            write(Lun_out,*)    'TRACERS: ILMC: ILMC_sweep_max          =',Adz_ILMC_sweep_max
-            write(Lun_out,1000) 'TRACERS: ILMC: Mass BEFORE ILMC        =',mass_adv_8/Adz_gc_area_8
-
-         end if
-
-      elseif (F_numero==3) then
-
-         !Print Min-Max Monotonicity
-         !--------------------------
-         communicate_S = "GRID"
-         if (Grd_yinyang_L) communicate_S = "MULTIGRID"
-
-         iprod = 1
-         if (Grd_yinyang_L) iprod = 2
-
-         l_reset = 0
-         g_reset = 0
-
-         do k=Adz_k0t,l_nk
-            l_reset(1) = reset(k,1) + l_reset(1)
-            l_reset(2) = reset(k,2) + l_reset(2)
-            l_reset(3) = reset(k,3) + l_reset(3)
-            l_reset(4) = reset(k,4) + l_reset(4)
-            l_reset(5) = reset(k,5) + l_reset(5)
-         end do
-
-         call RPN_COMM_allreduce (l_reset,g_reset,5,"MPI_INTEGER","MPI_SUM",communicate_S,err)
-
-         !Print Masses
-         !------------
-         call mass_tr (mass_ilmc_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0t)
-
-         mass_deficit_8 = mass_ilmc_8 - mass_adv_8
-
-         ratio_8 = 0.
-         if (.not.almost_zero(mass_adv_8)) ratio_8 = mass_deficit_8/mass_adv_8*100.
-
-         if (Lun_out>0) then
-            write(Lun_out,1000) 'TRACERS: ILMC: Mass    END ILMC        =',mass_ilmc_8/Adz_gc_area_8
-            write(Lun_out,*)    'TRACERS: ILMC: # pts OVER/UNDER SHOOT  =',g_reset(5),'over',G_ni*G_nj*l_nk*iprod
-            write(Lun_out,*)    'TRACERS: ILMC: # pts RESET MIN many PE =',g_reset(1)
-            write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MAX many PE =',g_reset(2)
-            if (Adz_ILMC_min_max_L) then
-               write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MIN_ILMC    =',g_reset(3)
-               write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MAX_ILMC    =',g_reset(4)
-            end if
-            write(Lun_out,1001) 'TRACERS: ILMC: Rev. Diff. of ',ratio_8
-         end if
-
-      end if
-!
-!----------------------------------------------------------------
-!
-      return
-
- 1000 format(1X,A40,E20.12)
- 1001 format(1X,A29,E11.4,'%')
-
-      end subroutine ILMC_LAM_write
+      include 'ilmc_lam_loop_hlt.inc'
+!!$!
+!!$!---------------------------------------------------------------------
+!!$!
+!!$!**s/r ILMC_LAM_write - Write ILMC_LAM diagnostics based on F_numero if verbose is activated
+!!$
+!!$      subroutine ILMC_LAM_write (F_numero)
+!!$
+!!$      use HORgrid_options
+!!$      use lun
+!!$      use tr3d
+!!$
+!!$      implicit none
+!!$
+!!$      !arguments
+!!$      !---------
+!!$      integer, intent(in) :: F_numero
+!!$
+!!$      integer :: err,iprod,l_reset(5),g_reset(5)
+!!$
+!!$      real(kind=REAL64), save :: mass_adv_8
+!!$
+!!$      real(kind=REAL64) :: mass_ilmc_8,ratio_8,mass_deficit_8
+!!$
+!!$      logical :: almost_zero
+!!$
+!!$      character(len=9) :: communicate_S
+!!$!
+!!$!---------------------------------------------------------------------
+!!$!
+!!$      if (F_numero==1.and.Lun_out>0) then
+!!$
+!!$         write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+!!$         write(Lun_out,*) 'TRACERS: ILMC: Reset Monotonicity without changing Mass of SL advection: ',F_name_S(4:6)
+!!$
+!!$      elseif (F_numero==2) then
+!!$
+!!$         call mass_tr (mass_adv_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0t)
+!!$
+!!$         if (Lun_out>0) then
+!!$
+!!$            write(Lun_out,*)    'TRACERS: ILMC: ILMC_min_max_L          =',Adz_ILMC_min_max_L
+!!$            write(Lun_out,*)    'TRACERS: ILMC: ILMC_sweep_max          =',Adz_ILMC_sweep_max
+!!$            write(Lun_out,1000) 'TRACERS: ILMC: Mass BEFORE ILMC        =',mass_adv_8/Adz_gc_area_8
+!!$
+!!$         end if
+!!$
+!!$      elseif (F_numero==3) then
+!!$
+!!$         !Print Min-Max Monotonicity
+!!$         !--------------------------
+!!$         communicate_S = "GRID"
+!!$         if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+!!$
+!!$         iprod = 1
+!!$         if (Grd_yinyang_L) iprod = 2
+!!$
+!!$         l_reset = 0
+!!$         g_reset = 0
+!!$
+!!$         do k=Adz_k0t,l_nk
+!!$            l_reset(1) = reset(k,1) + l_reset(1)
+!!$            l_reset(2) = reset(k,2) + l_reset(2)
+!!$            l_reset(3) = reset(k,3) + l_reset(3)
+!!$            l_reset(4) = reset(k,4) + l_reset(4)
+!!$            l_reset(5) = reset(k,5) + l_reset(5)
+!!$         end do
+!!$
+!!$         call RPN_COMM_allreduce (l_reset,g_reset,5,"MPI_INTEGER","MPI_SUM",communicate_S,err)
+!!$
+!!$         !Print Masses
+!!$         !------------
+!!$         call mass_tr (mass_ilmc_8,F_ilmc,air_mass_m,l_minx,l_maxx,l_miny,l_maxy,l_nk,F_i0,F_in,F_j0,F_jn,Adz_k0t)
+!!$
+!!$         mass_deficit_8 = mass_ilmc_8 - mass_adv_8
+!!$
+!!$         ratio_8 = 0.
+!!$         if (.not.almost_zero(mass_adv_8)) ratio_8 = mass_deficit_8/mass_adv_8*100.
+!!$
+!!$         if (Lun_out>0) then
+!!$            write(Lun_out,1000) 'TRACERS: ILMC: Mass    END ILMC        =',mass_ilmc_8/Adz_gc_area_8
+!!$            write(Lun_out,*)    'TRACERS: ILMC: # pts OVER/UNDER SHOOT  =',g_reset(5),'over',G_ni*G_nj*l_nk*iprod
+!!$            write(Lun_out,*)    'TRACERS: ILMC: # pts RESET MIN many PE =',g_reset(1)
+!!$            write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MAX many PE =',g_reset(2)
+!!$            if (Adz_ILMC_min_max_L) then
+!!$               write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MIN_ILMC    =',g_reset(3)
+!!$               write(Lun_out,*)    'TRACERS: ILMC: # pts RESET_MAX_ILMC    =',g_reset(4)
+!!$            end if
+!!$            write(Lun_out,1001) 'TRACERS: ILMC: Rev. Diff. of ',ratio_8
+!!$         end if
+!!$
+!!$      end if
+!!$!
+!!$!----------------------------------------------------------------
+!!$!
+!!$      return
+!!$
+!!$ 1000 format(1X,A40,E20.12)
+!!$ 1001 format(1X,A29,E11.4,'%')
+!!$
+!!$      end subroutine ILMC_LAM_write
 
       end subroutine ILMC_LAM

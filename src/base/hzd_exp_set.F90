@@ -30,18 +30,21 @@
 !
 !     ---------------------------------------------------------------
 !
-
       if (Lun_out > 0) write(Lun_out,1002)
-      ! Constant z diffusion
-         if ( Hzd_pwr_z < 0.) Hzd_pwr_z = 2.
-         if ( Hzd_pwr_theta_z < 0.) Hzd_pwr_theta_z = 2.
-      ! Hybrid diffusion
-      if (hzd_hyb_nk >0) then
-         if ( Hzd_pwr_z < 0.) Hzd_pwr_z = 2.
-         if ( Hzd_pwr_theta_z < 0.) Hzd_pwr_theta_z = 2.
 
-         if ( Hzd_pwr_theta < 0.) Hzd_pwr_theta =  Hzd_pwr_theta_z
-         if ( Hzd_pwr < 0.) Hzd_pwr = Hzd_pwr_z
+      hzd_hyb_top = hzd_hyb_lev(1)
+      hzd_hyb_bot = hzd_hyb_lev(2)
+
+      ! Constant z diffusion
+         if ( Hzd_pwr_z < 0) Hzd_pwr_z = 2
+         if ( Hzd_pwr_theta_z < 0) Hzd_pwr_theta_z = Hzd_pwr_z 
+      ! Hybrid diffusion
+      if (hzd_hyb_bot >0) then
+         if ( Hzd_pwr_z < 0) Hzd_pwr_z = 2
+         if ( Hzd_pwr_theta_z < 0) Hzd_pwr_theta_z = Hzd_pwr_z 
+
+         if ( Hzd_pwr < 0) Hzd_pwr = Hzd_pwr_z
+         if ( Hzd_pwr_theta < 0) Hzd_pwr_theta =  Hzd_pwr_theta_z
 
          if ( Hzd_lnr_theta < 0.) Hzd_lnr_theta = Hzd_lnr_theta_z
          if ( Hzd_lnr < 0.) Hzd_lnr = Hzd_lnr_z
@@ -49,8 +52,9 @@
  
       if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
 
-      if((Hzd_lnr_z > 0.).and.(Hzd_lnr_theta_z > 0.))then
-            if(hzd_hyb_nk >0)then
+         if((Hzd_lnr_z > 0.).and.(Hzd_lnr_theta_z > 0.))then
+
+            if(hzd_hyb_bot >0)then
                if (Lun_out > 0) then
                   write(Lun_out,1005) Hzd_lnr_z,Hzd_lnr_theta_z
                end if

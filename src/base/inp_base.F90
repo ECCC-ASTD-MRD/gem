@@ -198,9 +198,14 @@ contains
             if ( Inp_src_hauteur_L ) then
                if (Inp_src_GZ_L) then
                   nomvar= 'GZ'
-                  if (Inp_kind==21) surface_level= 0.
-                  if (Inp_kind==5 ) surface_level= 1.
-                  call convip ( ip1, surface_level,Inp_kind,1,dumc,.false.)
+                  if (Inp_kind==2) then
+                     nomvar= 'ME'
+                     ip1=0
+                  else
+                     if (Inp_kind==21) surface_level= 0.
+                     if (Inp_kind==5 ) surface_level= 1.
+                     call convip ( ip1, surface_level,Inp_kind,1,dumc,.false.)
+                  endif
                else
                   nomvar= 'ME'
                   ip1=0

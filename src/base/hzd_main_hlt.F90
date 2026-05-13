@@ -41,20 +41,25 @@
       logical xch_UV,xch_TT,xch_TR,xch_WZD
       real, dimension(:,:,:), pointer :: wk
       integer i,ik,j,dim,k,k0,km,n
-      real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_nk) ::  u_tmp, v_tmp, w_tmp, zdt_tmp
+      integer kd0 
+      real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot) ::  u_tmp, v_tmp, w_tmp, zdt_tmp
+      real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_top) ::  u_tmp1, v_tmp1, w_tmp1, zdt_tmp1
+ 
+
 
 !-------------------------------------------------------------------
 !
       call gtmg_start (60, 'HZD_main', 1 )
+!  kd0 given by user      
+      kd0=hzd_hyb_top 
 
-      if (hzd_conserv_th .or. hzd_conserv_tr) then 
+      if (hzd_conserv_th) then 
 !$omp single
-         call get_air_dens_hlt (1)
+         call get_air_density_hlt (1)
 !$omp end single
       endif
 
       if (Lun_debug_L) write (Lun_out,1000)
-
 
       xch_UV = .false.
       xch_TT = .false.
@@ -64,10 +69,10 @@
           xch_UV = .true.
           xch_TT = .true.
       end if
-      switch_on_UVW         = Hzd_lnr         > 0. .and. hzd_hyb_nk < 1
+      switch_on_UVW         = Hzd_lnr         > 0. .and. hzd_hyb_bot < 1
       switch_on_UVW_alh     = Hzd_lnr_z       > 0.
       switch_on_TR          =(Hzd_lnr_tr      > 0.) .and. any(Tr3d_hzd)
-      switch_on_THETA       = Hzd_lnr_theta   > 0. .and. hzd_hyb_nk < 1
+      switch_on_THETA       = Hzd_lnr_theta   > 0. .and. hzd_hyb_bot < 1
       switch_on_THETA_alh   = Hzd_lnr_theta_z > 0.
       switch_on_vrtspng_UVT =(Vspng_nk      >=1 ) .and. (Vspng_niter>0)
       switch_on_vrtspng_W   = switch_on_vrtspng_UVT
@@ -154,10 +159,10 @@
          xch_TT = .true.
          xch_WZD= .true.
          
-         if(hzd_hyb_nk > 0) then 
+         if(hzd_hyb_bot > 0) then 
 u_tmp=0. ; v_tmp =0. ; w_tmp =0. ; zdt_tmp =0.
 !$omp do collapse(2)
-            do ik=1,hzd_hyb_nk
+            do ik=1,hzd_hyb_bot
                do j=1-G_haloy,l_nj+G_haloy
                   do i=1-G_halox,l_ni+G_halox
                      u_tmp   (i,j,ik) = ut1 (i,j,l_nk+1-ik) 
@@ -168,6 +173,21 @@ u_tmp=0. ; v_tmp =0. ; w_tmp =0. ; zdt_tmp =0.
                end do
             end do
 !$omp end do 
+        if(kd0.ne.1) then
+u_tmp1=0. ; v_tmp1 =0. ; w_tmp1 =0. ; zdt_tmp1 =0.
+!$omp do collapse(2)
+            do ik=1,kd0
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox
+                     u_tmp1   (i,j,ik) = ut1 (i,j,ik)
+                     v_tmp1   (i,j,ik) = vt1 (i,j,ik)
+                     w_tmp1   (i,j,ik) = wt1 (i,j,ik)
+                     zdt_tmp1 (i,j,ik) = zdt1(i,j,ik)
+                  end do
+               end do
+            end do
+!$omp end do 
+        endif
 !$omp single
             call hzd_uvwzd_alh(ut1 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,1)
             call hzd_uvwzd_alh(vt1 ,Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,2)
@@ -177,15 +197,15 @@ u_tmp=0. ; v_tmp =0. ; w_tmp =0. ; zdt_tmp =0.
 !$omp end single
 
             call hzd_exp_deln ( u_tmp, Hzd_pwr, Hzd_lnR, wk,&
-                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_bot)
             call hzd_exp_deln ( v_tmp, Hzd_pwr, Hzd_lnR, wk,&
-                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_bot)
             call hzd_exp_deln ( w_tmp, Hzd_pwr, Hzd_lnR, wk,&
-                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_bot)
             call hzd_exp_deln ( zdt_tmp, Hzd_pwr, Hzd_lnR, wk,&
-                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+                          l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_bot)
 !$omp do 
-            do ik=1,hzd_hyb_nk
+            do ik=1,hzd_hyb_bot
                do j=1-G_haloy,l_nj+G_haloy
                   do i=1-G_halox,l_ni+G_halox
                      ut1(i,j,l_nk+1-ik)  = u_tmp (i,j,ik)
@@ -196,6 +216,26 @@ u_tmp=0. ; v_tmp =0. ; w_tmp =0. ; zdt_tmp =0.
                end do
             end do
 !$omp end do 
+        if(kd0.ne.1) then
+            call hzd_exp_deln ( u_tmp1, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,kd0)
+            call hzd_exp_deln ( v_tmp1, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,kd0)
+            call hzd_exp_deln ( w_tmp1, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,kd0)
+            call hzd_exp_deln ( zdt_tmp1, Hzd_pwr, Hzd_lnR, wk,&
+                          l_minx,l_maxx,l_miny,l_maxy,kd0)
+            do ik=1,kd0
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox
+                     ut1(i,j,ik)  = u_tmp1 (i,j,ik)
+                     vt1(i,j,ik)  = v_tmp1 (i,j,ik)
+                     wt1(i,j,ik)  = w_tmp1 (i,j,ik)
+                     zdt1(i,j,ik) = zdt_tmp1 (i,j,ik)
+                  end do
+               end do
+            end do
+         endif
          else
 !$omp single
             call hzd_uvwzd_alh(ut1, Hzd_lnR_z,Hzd_pwr_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,1)

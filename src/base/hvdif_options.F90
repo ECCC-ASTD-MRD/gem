@@ -111,9 +111,9 @@ module hvdif_options
    namelist /hvdif  /  hzd_smago_ALH_L
 
 ! Hybrid diffusion: number of vert level on TFC
-   integer :: hzd_hyb_nk =0
-   namelist /hvdif  / hzd_hyb_nk
-   namelist /hvdif_p/ hzd_hyb_nk 
+   integer :: hzd_hyb_lev(2) =[1 , 0]
+   namelist /hvdif  / hzd_hyb_lev
+   namelist /hvdif_p/ hzd_hyb_lev
 
 ! Conservation of DEl2 Diffusion operator
    logical :: hzd_conserv_th = .false.

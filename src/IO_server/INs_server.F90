@@ -15,6 +15,7 @@
       subroutine INs_server
       use, intrinsic :: iso_fortran_env
       use iso_c_binding
+      use app_mpmd
       use omp_timing
       use IOs
       use INs
@@ -68,6 +69,7 @@
          call clock ( Lun_out, 'TERMINATING IN-server', .true. )
          write(Lun_out,'(80("#")/)')
       endif
+      call App_MPMD_Finalize()
       call MPI_FINALIZE(ierr)
 !     
 !--------------------------------------------------------------------

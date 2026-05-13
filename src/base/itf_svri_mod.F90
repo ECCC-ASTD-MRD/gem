@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
       module svri_mod
       use iso_c_binding
+      use MiMd
       use omp_timing
       use lun
       use, intrinsic :: iso_fortran_env
@@ -79,7 +80,7 @@ contains
 !
 !------------------------------------------------------------------
 !
-      call MPI_COMM_rank (MPI_COMM_WORLD,INs_gmyproc ,err)
+      call MPI_COMM_rank (MiMd_gemworld,INs_gmyproc ,err)
       INs_dimgzH = (l_ni+2*G_halox)*(l_nj+2*G_haloy)
       allocate (INs_Neslist_S(1000),INs_Iaulist_S(1000),INs_Spnlist_S(1000))
       INs_Nes_irecv= MPI_REQUEST_NULL
@@ -251,11 +252,11 @@ contains
             endif
             tag= 11001
             call MPI_irecv ( Rcv_GZr,size(Rcv_GZr),MPI_REAL, INS_pe,&
-                          tag+INs_gmyproc,MPI_COMM_WORLD,INs_Nes_irecv(4),err)
+                          tag+INs_gmyproc,MiMd_gemworld,INs_Nes_irecv(4),err)
 
             tag= 12001
             call MPI_irecv ( Rcv_NDr,size(Rcv_NDr),MPI_REAL, INS_pe,&
-                          tag+INs_gmyproc,MPI_COMM_WORLD,INs_Nes_irecv(5),err)
+                          tag+INs_gmyproc,MiMd_gemworld,INs_Nes_irecv(5),err)
          endif
          if (F_tag==INs_Iau_tag) then
             tag= 20001
@@ -273,7 +274,7 @@ contains
             tag= 22001
             call MPI_irecv ( IAU_recv%RBUF,size(IAU_recv%RBUF),&
                              MPI_REAL, INS_pe,tag+INs_gmyproc ,&
-                             MPI_COMM_WORLD,INs_Iau_irecv(4),err)
+                             MiMd_gemworld,INs_Iau_irecv(4),err)
          endif
          if (F_tag==INs_Spn_tag) then
             tag= 30001
@@ -291,7 +292,7 @@ contains
             tag= 32001
             call MPI_irecv ( SPN_recv%RBUF,size(SPN_recv%RBUF),&
                              MPI_REAL, INS_pe,tag+INs_gmyproc ,&
-                             MPI_COMM_WORLD,INs_Spn_irecv(4),err)
+                             MiMd_gemworld,INs_Spn_irecv(4),err)
          endif
       endif
 !     

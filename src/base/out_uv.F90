@@ -117,6 +117,7 @@
                                 Outd_convadd(pnuu,set),Level_kind_diag,-1,1,&
                                 ind0,1,Outd_nbit(pnuu,set),.false. )
             end if
+            Out_stag_S(3:3)= ' '
          end if
 
          if (pnuv /= 0) then
@@ -143,7 +144,8 @@
                        'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnuv,set),.false. )
             end if
-         end if
+            Out_stag_S(3:3)= ' '
+        end if
          deallocate(indo)
 
       else ! Output on pressure, heights AGL or user levels

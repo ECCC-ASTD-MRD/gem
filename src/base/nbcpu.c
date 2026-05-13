@@ -6,7 +6,7 @@
 #include <string.h>
 #include <limits.h>
 
-int cpu_per_numa() {
+int cpu_per_numa(int f_world_communicator) {
    /* csubich -- 27 July 2021 */
 
    /* To implement the single-transpose solver with the minimum amount of communication,
@@ -38,6 +38,7 @@ int cpu_per_numa() {
 
       Unfortunately, this system call is not conveniently wrapped for us by the glibc
       library, so we must use the direct syscall interface. */
+   MPI_Comm model_comm = MPI_Comm_f2c(f_world_communicator);
    
    int err = 0;
    unsigned cpu, node;
@@ -53,7 +54,7 @@ int cpu_per_numa() {
 
    // Check whether any process has had an error, and if so return an error flag
    int glb_err = 0;
-   MPI_Allreduce(&err,&glb_err,1,MPI_INT,MPI_LOR,MPI_COMM_WORLD);
+   MPI_Allreduce(&err,&glb_err,1,MPI_INT,MPI_LOR,model_comm);
    if (glb_err != 0) {
       return -1;
    }
@@ -64,7 +65,7 @@ int cpu_per_numa() {
       find the maximum numa node over all processes */
 
    int max_node = 0;
-   MPI_Allreduce(&node,&max_node,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
+   MPI_Allreduce(&node,&max_node,1,MPI_INT,MPI_MAX,model_comm);
 
    /* Now, we want to count the number of processes using each NUMA node 
       *per compute node*.  To do this, first create arrays of the potential
@@ -80,9 +81,9 @@ int cpu_per_numa() {
 
    // Split the comm_world MPI communicator into one per host
    int myrank;
-   MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
+   MPI_Comm_rank(model_comm,&myrank);
    MPI_Comm host_comm;
-   MPI_Comm_split_type(MPI_COMM_WORLD,MPI_COMM_TYPE_SHARED,myrank,MPI_INFO_NULL,&host_comm);
+   MPI_Comm_split_type(model_comm,MPI_COMM_TYPE_SHARED,myrank,MPI_INFO_NULL,&host_comm);
 
    int hostrank;
    MPI_Comm_rank(host_comm,&hostrank);
@@ -110,8 +111,8 @@ int cpu_per_numa() {
    /* Finally, reduce over all ranks (globally) to find the global maximum and minimum
       NUMA occupancies */
 
-   MPI_Allreduce(&max_cpu_per_numa_host,&max_cpu_per_numa_global,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
-   MPI_Allreduce(&min_cpu_per_numa_host,&min_cpu_per_numa_global,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
+   MPI_Allreduce(&max_cpu_per_numa_host,&max_cpu_per_numa_global,1,MPI_INT,MPI_MAX,model_comm);
+   MPI_Allreduce(&min_cpu_per_numa_host,&min_cpu_per_numa_global,1,MPI_INT,MPI_MIN,model_comm);
 
    // Deallocate the host communicator to avoid leaking the handle
    MPI_Comm_free(&host_comm);

@@ -29,14 +29,13 @@
       use ptopo
       use step_options
       use stat_mpi, only: statf_dm
+      use omp_timing
 !
       use, intrinsic :: iso_fortran_env
       implicit none
 !
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, NK
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent (inout) :: F_Sol1
-      real(kind=REAL64) deno
-
 
 !author
 !       Abdessamad Qaddouri -  2018
@@ -49,6 +48,7 @@
       real(kind=REAL64)    one,half,zero
       parameter( one=1.0d0,half=0.5d0,zero=0.d0)
       integer  km, kp
+      integer kd0 , k00, k01
       real(kind=REAL64)   Afdg1(l_minx:l_maxx, l_miny:l_maxy,Nk),Afdg2(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64)   Bfdg1(l_minx:l_maxx, l_miny:l_maxy,Nk),Bfdg2(l_minx:l_maxx, l_miny:l_maxy,Nk)
 
@@ -57,9 +57,9 @@
       real(kind=REAL64) bdd_v8(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64) add_v8(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64) cdd_v8(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64) Jx, Jxp
       real(kind=REAL64) cdd_v81(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
       real(kind=REAL64) cdd_v82(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
+      real(kind=REAL64) dcoef
       real  HzdlnR
       real  fdg2_4(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
 
@@ -69,19 +69,14 @@
 !     ---------------------Bfdgi,j---------Ui,j--------------------------------
 !
 !     ---------------------------------------------------------------
-      real(kind=REAL64)  ztht_8(l_minx:l_maxx, l_miny:l_maxy,0:Nk+1)
-      real(kind=REAL64)  dcoef, crit_coef,base_coefT
 
-!
-      do j=1-G_haloy,l_nj+G_haloy
-        do i=1-G_halox,l_ni+G_halox
-          do k=1 ,NK
-           ztht_8(i,j,k)=ver_z_8%t(k)+Cstv_bar1_8*(Ver_b_8%t(k)*fis0(i,j)+Ver_c_8%t(k)*sls(i,j))/grav_8
-          enddo
-            ztht_8(i,j,0)   =   GVM%zmom_8(i,j,0)
-            ztht_8(i,j,Nk+1)=   GVM%zmom_8(i,j,Nk+1)
-        enddo
-      enddo
+      call gtmg_start (68, 'HZD_v_alh', 65)
+!  kd0 given by user      
+      kd0=hzd_hyb_top
+
+      k00=kd0
+      k01=kd0+1
+      if (kd0.ne.1) k01=kd0
 
       if (Hzd_pwr_z==2) then 
          dcoef = 0.25*HzdlnR*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
@@ -111,357 +106,189 @@
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 ! aplly gradient
 ! gradient component along X
-      k=1
+      k=k00
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e
-!Dz/Dzeta M-level k on Vi,j position
-               Jzpi =(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1)) !Dz/Dzeta M-level k
-               Jz   =(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1)) !Dz/Dzeta M-level k
-               ski= (Jzpi+Jz)*half                                                             !Dz/Dzeta M-level k
-!Dz/Dzeta M-level k on Vi+1,j position
-               Jzpi =(ztht_8(i+1,j+1,k)-ztht_8(i+1,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1)) !Dz/Dzeta M-level k
-               Jz   =(ztht_8(i+1  ,j,k)-ztht_8(i+1  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1)) !Dz/Dzeta M-level k
-               skpi= (Jzpi+Jz)*half                                                                !Dz/Dzeta M-level k  
-! Jx on M K+1 level and Vi,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i,j,k+1)+GVM%mc_Jx_8(i,j+1,k+1)) &
-                  + half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i-1,j+1,k+1)))
-! Jx on M K level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)) &
-                  + half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i-1,j+1,k)))
-
-! (D(jx*V)/Dzeta)  on T-level k and Vij position
-               C= (Jxp*fdg2_4(i,j,k+1)-Jx*fdg2_4(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k))         
-! Jx on M K+1 level and Vi+1,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i+1,j,k+1)+GVM%mc_Jx_8(i+1,j+1,k+1)) &
-                  + half*(GVM%mc_Jx_8(i,j,k+1)+GVM%mc_Jx_8(i,j+1,k+1)))
-! Jx on M K level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i+1,j,k)+GVM%mc_Jx_8(i+1,j+1,k)) &
-                  + half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)))
-! (D(jx*V)/Dzeta)  on T-level k and Vi+1j position
-               C2_8= (Jxp*fdg2_4(i+1,j,k+1)-Jx*fdg2_4(i+1,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k))     
-! (D(jx*V)/Dzeta)  on T-level k and Aij position
-               C2_8= half*( C+ C2_8)
-! (D(jx*V)/Dzeta)  on M-level k and Aij position! zero upper condition
-               C2_8= Ver_wp_8%m(k)*C2_8 + Ver_wm_8%m(k) *zero                    
 ! D(J_zeta*V)/Dx-(D(jx*V)/Dzeta) on  M-level k and phi,j position
-           Afdg1(i,j,k) =dcoef*((skpi*fdg2_4(i+1,j,k) -ski*fdg2_4(i,j,k))*geomh_invDXv_8(j)- C2_8 )
-           Afdg2(i,j,k) =dcoef*((skpi*fdg2_4(i+1,j,k) -ski*fdg2_4(i,j,k))*geomh_invDXv_8(j)- zero )
-
+           Afdg1(i,j,k) =dcoef*((skpv(i,j,k,1)*fdg2_4(i+1,j,k) -skv(i,j,k,1)*fdg2_4(i,j,k))*geomh_invDXv_8(j))
+           Afdg2(i,j,k) =dcoef*((skpv(i,j,k,1)*fdg2_4(i+1,j,k) -skv(i,j,k,1)*fdg2_4(i,j,k))*geomh_invDXv_8(j))
           enddo
         enddo
 !
       k= NK
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e
-!Dz/Dzeta M-level k on Vi,j position
-               Jzpi =(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               ski= (Jzpi+Jz)*half
-!!Dz/Dzeta M-level k on Vi+1,j position
-               Jzpi =(ztht_8(i+1,j+1,k)-ztht_8(i+1,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i+1  ,j,k)-ztht_8(i+1  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               skpi= (Jzpi+Jz)*half
-! Jx on M K level and Vi,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)) &
-                   +half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i-1,j+1,k)))
-! Jx on M K-1 level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i,j,k-1)+GVM%mc_Jx_8(i,j+1,k-1))&
-                  + half*(GVM%mc_Jx_8(i-1,j,k-1)+GVM%mc_Jx_8(i-1,j+1,k-1)))
-
 ! (D(jx*V)/Dzeta)  on T-level k and Vij position
-               C= (Jxp*fdg2_4(i,j,k)-Jx*fdg2_4(i,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
+               C= (Jxp(i,j,k,1)*fdg2_4(i,j,k)-Jx(i,j,k,1)*fdg2_4(i,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
 ! Jx on M K level and Vi+1,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i+1,j,k)+GVM%mc_Jx_8(i+1,j+1,k)) &
-                  +  half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)))
-! Jx on M K-1 level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i+1,j,k-1)+GVM%mc_Jx_8(i+1,j+1,k-1)) &
-                  + half*(GVM%mc_Jx_8(i,j,k-1)+GVM%mc_Jx_8(i,j+1,k-1)))
 ! (D(jx*V)/Dzeta)  on T-level k and Vi+1j position
-               C2_8= (Jxp*fdg2_4(i+1,j,k)-Jx*fdg2_4(i+1,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
+               C2_8= (Jxp(i,j,k,2)*fdg2_4(i+1,j,k)-Jx(i,j,k,2)*fdg2_4(i+1,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
 ! (D(jx*V)/Dzeta)  on T-level k-1 and Aij position
                C2_8= half*( C+ C2_8)
 ! (D(jx*V)/Dzeta)  on M-level k and Aij position! zero lower condition
                C2_8= Ver_wp_8%m(k)*zero + Ver_wm_8%m(k) * C2_8          
 ! D(J_zeta*V)/Dx-(D(jx*V)/Dzeta) on  M-level k and phi,j position
-              Afdg1(i,j,k) =dcoef*((skpi*fdg2_4(i+1,j,k) -ski*fdg2_4(i,j,k)) *geomh_invDXv_8(j)-C2_8)
-              Afdg2(i,j,k) =dcoef*((skpi*fdg2_4(i+1,j,k) -ski*fdg2_4(i,j,k)) *geomh_invDXv_8(j)-zero)
-
+              Afdg1(i,j,k) =dcoef*((skpv(i,j,k,1)*fdg2_4(i+1,j,k) -skv(i,j,k,1)*fdg2_4(i,j,k)) *geomh_invDXv_8(j)-C2_8)
+              Afdg2(i,j,k) =dcoef*((skpv(i,j,k,1)*fdg2_4(i+1,j,k) -skv(i,j,k,1)*fdg2_4(i,j,k)) *geomh_invDXv_8(j))
           enddo
         enddo
 !       
-      do k = 2,Nk-1
+      do k = k01,Nk-1
          km=min(k-1,1)
          kp = max(k+1,NK)
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e
-!Dz/Dzeta M-level k on Vi,j position
-               Jzpi =(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               ski= (Jzpi+Jz)*half
-!Dz/Dzeta M-level k on Vi+1,j position
-               Jzpi =(ztht_8(i+1,j+1,k)-ztht_8(i+1,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i+1  ,j,k)-ztht_8(i+1  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               skpi= (Jzpi+Jz)*half
-! Jx on M K level and Vi,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)) &
-                   +half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i-1,j+1,k)))
-! Jx on M K-1 level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i,j,k-1)+GVM%mc_Jx_8(i,j+1,k-1))&
-                  + half*(GVM%mc_Jx_8(i-1,j,k-1)+GVM%mc_Jx_8(i-1,j+1,k-1)))
-
 ! (D(jx*V)/Dzeta)  on T-level k and Vij position
-               C= (Jxp*fdg2_4(i,j,k)-Jx*fdg2_4(i,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
-! Jx on M K level and Vi+1,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i+1,j,k)+GVM%mc_Jx_8(i+1,j+1,k)) &
-                  +  half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)))
-! Jx on M K-1 level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i+1,j,k-1)+GVM%mc_Jx_8(i+1,j+1,k-1)) &
-                  + half*(GVM%mc_Jx_8(i,j,k-1)+GVM%mc_Jx_8(i,j+1,k-1)))
+               C= (Jxp(i,j,k,1)*fdg2_4(i,j,k)-Jx(i,j,k,1)*fdg2_4(i,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
 ! (D(jx*V)/Dzeta)  on T-level k and Vi+1j position
-               C2_8= (Jxp*fdg2_4(i+1,j,k)-Jx*fdg2_4(i+1,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
+               C2_8= (Jxp(i,j,k,2)*fdg2_4(i+1,j,k)-Jx(i,j,k,2)*fdg2_4(i+1,j,k-1))/(Ver_z_8%m(k)-Ver_z_8%m(k-1))
 ! (D(jx*V)/Dzeta)  on T-level k-1 and Aij position
                C1_8= half*( C+ C2_8)
-! Jx on M K+1 level and Vi,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i,j,k+1)+GVM%mc_Jx_8(i,j+1,k+1)) &
-                  + half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i-1,j+1,k+1)))
-! Jx on M K level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)) &
-                  + half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i-1,j+1,k)))
 ! (D(jx*V)/Dzeta)  on T-level k and Vij position
-               C= (Jxp*fdg2_4(i,j,k+1)-Jx*fdg2_4(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k))
-! Jx on M K+1 level and Vi+1,j 
-               Jxp= half*(half*(GVM%mc_Jx_8(i+1,j,k+1)+GVM%mc_Jx_8(i+1,j+1,k+1)) &
-                  + half*(GVM%mc_Jx_8(i,j,k+1)+GVM%mc_Jx_8(i,j+1,k+1)))
-! Jx on M K level and Vi,j 
-               Jx= half*(half*(GVM%mc_Jx_8(i+1,j,k)+GVM%mc_Jx_8(i+1,j+1,k)) &
-                  + half*(GVM%mc_Jx_8(i,j,k)+GVM%mc_Jx_8(i,j+1,k)))
+               C= (Jxp(i,j,k,3)*fdg2_4(i,j,k+1)-Jx(i,j,k,3)*fdg2_4(i,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k))
 ! (D(jx*V)/Dzeta)  on T-level k and Vi+1j position
-               C2_8= (Jxp*fdg2_4(i+1,j,k+1)-Jx*fdg2_4(i+1,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k))
+               C2_8= (Jxp(i,j,k,4)*fdg2_4(i+1,j,k+1)-Jx(i,j,k,4)*fdg2_4(i+1,j,k))/(Ver_z_8%m(k+1)-Ver_z_8%m(k))
 ! (D(jx*V)/Dzeta)  on T-level k and Aij position
                C2_8= half*( C+ C2_8)
 
 ! (D(jx*V)/Dzeta)  on M-level k and Vij position
                C2_8  = Ver_wp_8%m(k)*C2_8+Ver_wm_8%m(k)* C1_8
 ! D(J_zeta*V)/Dx-(D(jx*V)/Dzeta) on  M-level k and phi,j position
-              Afdg1(i,j,k) =dcoef*((skpi*fdg2_4(i+1,j,k) -ski*fdg2_4(i,j,k))*geomh_invDXv_8(j)-C2_8)
-              Afdg2(i,j,k) =dcoef*((skpi*fdg2_4(i+1,j,k) -ski*fdg2_4(i,j,k))*geomh_invDXv_8(j)-zero)
+              Afdg1(i,j,k) =dcoef*((skpv(i,j,k,1)*fdg2_4(i+1,j,k) -skv(i,j,k,1)*fdg2_4(i,j,k))*geomh_invDXv_8(j)-C2_8)
+              Afdg2(i,j,k) =dcoef*((skpv(i,j,k,1)*fdg2_4(i+1,j,k) -skv(i,j,k,1)*fdg2_4(i,j,k))*geomh_invDXv_8(j))
             enddo
          enddo
          enddo
 ! Gradient component Along Y
-         k=1
+         k=k00
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w, l_ni-pil_e
-!Dz/Dzeta M-level k on Vi,j position
-               Jzpi =(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               skpi= (Jzpi+Jz)*half
-!Dz/Dzeta M-level k on Vi,j-1 position
-               Jzpi =(ztht_8(i,j,k)-ztht_8(i,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j-1,k)-ztht_8(i  ,j-1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               ski = (Jzpi+Jz)*half
-! (D(jy*V)/Dzeta)  on T-level k and Vij position and Vi,j-1 position >>>> Bij position
-               C2_8= (GVM%mc_Jy_8(i,j,k+1)*fdg2_4(i,j,k+1)-GVM%mc_Jy_8(i,j,k)*fdg2_4(i,j,k))&
-                            /(Ver_z_8%m(k+1)-Ver_z_8%m(k))
-               C3_8= (GVM%mc_Jy_8(i,j-1,k+1)*fdg2_4(i,j-1,k+1)-GVM%mc_Jy_8(i,j-1,k)*fdg2_4(i,j-1,k))&
-                            /(Ver_z_8%m(k+1)-Ver_z_8%m(k))
-               C= half*(C2_8+C3_8)
-! (D(jy*V)/Dzeta)  on M-level k and Bij position. upper BD condition
-               C2_8= Ver_wp_8%m(k)*C + Ver_wm_8%m(k)* zero
-! D(J_zeta*V)/Dy-(D(jy*V)/Dzeta) on  M-level k and Bi,j=phi,j position
- !          Bfdg1(i,j,k) =dcoef*((skpi*fdg2_4(i,j,k) -ski*fdg2_4(i,j-1,k))* geomh_invDYM_8(j) - C2_8)
-            Bfdg1(i,j,k) =dcoef*((skpi*fdg2_4(i,j,k) -ski*fdg2_4(i,j-1,k))* geomh_invDY_8 - C2_8)
-            Bfdg2(i,j,k) =dcoef*((skpi*fdg2_4(i,j,k) -ski*fdg2_4(i,j-1,k))* geomh_invDY_8 - zero)
+            Bfdg1(i,j,k) =dcoef*((skpv(i,j,k,2)*fdg2_4(i,j,k) -skv(i,j,k,2)*fdg2_4(i,j-1,k))* geomh_invDY_8)
+            Bfdg2(i,j,k) =dcoef*((skpv(i,j,k,2)*fdg2_4(i,j,k) -skv(i,j,k,2)*fdg2_4(i,j-1,k))* geomh_invDY_8)
           enddo
         enddo
-!
       k= NK
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w, l_ni-pil_e
-!Dz/Dzeta M-level k on Vi,j position
-               Jzpi =(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               skpi= (Jzpi+Jz)*half
-!Dz/Dzeta M-level k on Vi,j-1 position
-               Jzpi =(ztht_8(i,j,k)-ztht_8(i,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j-1,k)-ztht_8(i  ,j-1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               ski = (Jzpi+Jz)*half
 ! (D(jy*V)/Dzeta)  on T-level k-1 and Bij position
-               C2_8= (GVM%mc_Jy_8(i,j,k)*fdg2_4(i,j,k)-GVM%mc_Jy_8(i,j,k-1)*fdg2_4(i,j,k-1))&
-                            /(Ver_z_8%m(k)-Ver_z_8%m(k-1))
-               C3_8= (GVM%mc_Jy_8(i,j-1,k)*fdg2_4(i,j-1,k)-GVM%mc_Jy_8(i,j-1,k-1)*fdg2_4(i,j-1,k-1))&
-                            /(Ver_z_8%m(k)-Ver_z_8%m(k-1))
+               C2_8= (GVM%mc_Jy_8(i,j,k)*fdg2_4(i,j,k)-GVM%mc_Jy_8(i,j,k-1)*fdg2_4(i,j,k-1))*Ver_idz_8%t(k-1)
+               C3_8= (GVM%mc_Jy_8(i,j-1,k)*fdg2_4(i,j-1,k)-GVM%mc_Jy_8(i,j-1,k-1)*fdg2_4(i,j-1,k-1))*Ver_idz_8%t(k-1)
                C= half*(C2_8+C3_8)
 ! (D(jy*V)/Dzeta)  on M-level k and Bij position. lower BD condition
                C2_8= Ver_wp_8%m(k)*zero +Ver_wm_8%m(k)*C
 ! D(J_zeta*V)/Dy-(D(jy*V)/Dzeta) on  M-level k and Bi,j position
-           Bfdg1(i,j,k) =dcoef*((skpi*fdg2_4(i,j,k) -ski*fdg2_4(i,j-1,k))* geomh_invDY_8 - C2_8)
-           Bfdg2(i,j,k) =dcoef*((skpi*fdg2_4(i,j,k) -ski*fdg2_4(i,j-1,k))* geomh_invDY_8 - zero)
-
-!
+            Bfdg1(i,j,k) =dcoef*((skpv(i,j,k,2)*fdg2_4(i,j,k) -skv(i,j,k,2)*fdg2_4(i,j-1,k))* geomh_invDY_8 - C2_8)
+            Bfdg2(i,j,k) =dcoef*((skpv(i,j,k,2)*fdg2_4(i,j,k) -skv(i,j,k,2)*fdg2_4(i,j-1,k))* geomh_invDY_8 )
           enddo
         enddo
 
 
-      do k = 2,Nk-1
+      do k = k01,Nk-1
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w, l_ni-pil_e
-!Dz/Dzeta M-level k on Vi,j position
-               Jzpi =(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               skpi= (Jzpi+Jz)*half
-!
-!Dz/Dzeta M-level k on Vi,j-1 position
-               Jzpi =(ztht_8(i,j,k)-ztht_8(i,j,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               Jz   =(ztht_8(i  ,j-1,k)-ztht_8(i  ,j-1,k-1))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-               ski = (Jzpi+Jz)*half
 ! (D(jy*V)/Dzeta)  on T-level k-1 and Bij position
-               C2_8= (GVM%mc_Jy_8(i,j,k)*fdg2_4(i,j,k)-GVM%mc_Jy_8(i,j,k-1)*fdg2_4(i,j,k-1))&
-                            /(Ver_z_8%m(k)-Ver_z_8%m(k-1))
-               C3_8= (GVM%mc_Jy_8(i,j-1,k)*fdg2_4(i,j-1,k)-GVM%mc_Jy_8(i,j-1,k-1)*fdg2_4(i,j-1,k-1))&
-                            /(Ver_z_8%m(k)-Ver_z_8%m(k-1))
-               C= half*(C2_8+C3_8)
-
+               C= half*((GVM%mc_Jy_8(i,j,k  )*fdg2_4(i,j,k  )-GVM%mc_Jy_8(i,j,k-1)*fdg2_4(i,j,k-1   )) +&
+                        (GVM%mc_Jy_8(i,j-1,k)*fdg2_4(i,j-1,k)-GVM%mc_Jy_8(i,j-1,k-1)*fdg2_4(i,j-1,k-1)))&
+                            *Ver_idz_8%t(k-1)
 ! (D(jy*V)/Dzeta)  on T-level k and Bij position
-               C2_8= (GVM%mc_Jy_8(i,j,k+1)*fdg2_4(i,j,k+1)-GVM%mc_Jy_8(i,j,k)*fdg2_4(i,j,k))&
-                            /(Ver_z_8%m(k+1)-Ver_z_8%m(k))
-               C3_8= (GVM%mc_Jy_8(i,j-1,k+1)*fdg2_4(i,j-1,k+1)-GVM%mc_Jy_8(i,j-1,k)*fdg2_4(i,j-1,k))&
-                            /(Ver_z_8%m(k+1)-Ver_z_8%m(k))
-               C3_8= half*(C2_8+C3_8)
+               C3_8= half*( (GVM%mc_Jy_8(i,j,k+1)*fdg2_4(i,j,k+1)-GVM%mc_Jy_8(i,j,k)*fdg2_4(i,j,k)) +&
+                            (GVM%mc_Jy_8(i,j-1,k+1)*fdg2_4(i,j-1,k+1)-GVM%mc_Jy_8(i,j-1,k)*fdg2_4(i,j-1,k)) )&
+                            *Ver_idz_8%t(k)
 ! (D(jy*V)/Dzeta)  on M-level k and Bij position
                C2_8= Ver_wp_8%m(k)*C3_8+Ver_wm_8%m(k)*C
 ! D(J_zeta*V)/Dy-(D(jy*V)/Dzeta) on  M-level k and Bi,j position
-           Bfdg1(i,j,k) =dcoef*((skpi*fdg2_4(i,j,k) -ski*fdg2_4(i,j-1,k))* geomh_invDY_8- C2_8)
-           Bfdg2(i,j,k) =dcoef*((skpi*fdg2_4(i,j,k) -ski*fdg2_4(i,j-1,k))* geomh_invDY_8- zero)
-!
+            Bfdg1(i,j,k) =dcoef*((skpv(i,j,k,2)*fdg2_4(i,j,k) -skv(i,j,k,2)*fdg2_4(i,j-1,k))* geomh_invDY_8 - C2_8)
+            Bfdg2(i,j,k) =dcoef*((skpv(i,j,k,2)*fdg2_4(i,j,k) -skv(i,j,k,2)*fdg2_4(i,j-1,k))* geomh_invDY_8)
             enddo
          enddo
          enddo
-!
-
 ! Apply divergence
-      do k = 1, nk
+      do k = k00, nk
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
-! Dzeta/Dz^-1  on  k M-level and Vi,j position
-         C    =  ((Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i,j+1,k  )-ztht_8(i,j+1,k-1)))
-         deno =  ((Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i,j,k  )-ztht_8(i,j,k-1)))
-         deno =  half*(deno+C)               ! Dzeta/Dz 
 !X-divergence (Dz/Dzeta)^-1*DAfdg/Dx on  k M-level and Vi,j position
-         add_v8(i,j,k) =    deno*  (Afdg1 (i,j,k)-Afdg1 (i-1,j,k))*geomh_invDXv_8(j)
+               add_v8(i,j,k) = xfactv(i,j,k)* (Afdg1 (i,j,k)-Afdg1 (i-1,j,k))*geomh_invDXv_8(j)
             enddo
          enddo
       enddo
-      do k = 1, nk
+      do k = k00, nk
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
-! Dzeta/Dz^-1  on  k M-level and Vi,j position
-         C    =  ((Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i,j+1,k  )-ztht_8(i,j+1,k-1)))
-         deno =  ((Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i,j,k  )-ztht_8(i,j,k-1)))
-         deno =  half*(deno+C)               ! Dzeta/Dz
-!Y-divergence (Dz/Dzeta)^-1*DBfdg/Dy on  k M-level and Vi,j position
-!         bdd_v8(i,j,k) =    deno* (Bfdg1 (i,j+1,k)*geomh_cy_8(j+1)-Bfdg1 (i,j,k)*geomh_cy_8(j))*geomh_invDY_8*geomh_invcy_8(j)
-          bdd_v8(i,j,k) =    deno* (Bfdg1 (i,j+1,k)*geomh_cy_8(j+1)-Bfdg1 (i,j,k)*geomh_cy_8(j))*geomh_invDYM_8 (j)
+          bdd_v8(i,j,k) = xfactv(i,j,k)*(Bfdg1 (i,j+1,k)*geomh_cy_8(j+1)-Bfdg1 (i,j,k)*geomh_cy_8(j))*geomh_invDYM_8 (j)
             enddo
          enddo
       enddo
 !  flux
 ! start at pil_w and finish at l_nj-pil_n+1 ! important pour le calcul de sol a la fin
-      do k = 2,Nk
+      do k = k00+1,Nk
          do j=1+pil_s, l_nj-pil_n+1
             do i=pil_w, l_ni-pil_e
-! Dz(jx/Jz A)
-!Dz/Dzeta M-level k on Vi,j position
-               Jz   = (Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1))
-               Jzpi  =(Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i  ,j+1,k)-ztht_8(i  ,j+1,k-1))
-               Jz= half*(Jz+Jzpi)
-!Dz/Dzeta M-level k on Vi+1,j position
-               Jzm   =(Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i+1  ,j,k)-ztht_8(i+1  ,j,k-1))
-               Jzpi  =(Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i+1  ,j+1,k)-ztht_8(i+1  ,j+1,k-1))
-               Jzpi= half*(Jzm+Jzpi)
-!Dz/Dzeta M-level k on Ai,j position
-               Jz = half*(Jz + Jzpi) ! Jz on M-level k on Aij point
-! Dz/Dzeta M-level k-1 on Vi,j position
-               Jzm   =(Ver_z_8%t(k-1)-Ver_z_8%t(k-2))/(ztht_8(i  ,j,k-1)-ztht_8(i  ,j,k-2))
-               Jzpi  =(Ver_z_8%t(k-1)-Ver_z_8%t(k-2))/(ztht_8(i  ,j+1,k-1)-ztht_8(i  ,j+1,k-2))
-               Jzm= half*(Jzm+Jzpi)
-!Dz/Dzeta M-level k-1 on Vi+1,j position
-               Jzmpi =(Ver_z_8%t(k-1)-Ver_z_8%t(k-2))/(ztht_8(i+1  ,j,k-1)-ztht_8(i+1  ,j,k-2))
-               Jzpi  =(Ver_z_8%t(k-1)-Ver_z_8%t(k-2))/(ztht_8(i+1  ,j+1,k-1)-ztht_8(i+1  ,j+1,k-2))
-               Jzpi= half*(Jzmpi+Jzpi)
-!Dz/Dzeta M-level k-1 on Ai,j position
-               Jzm = half*(Jzm + Jzpi) ! Jz on M-level k-1 on Aij point
-
-               C=  half*(GVM%mc_Jx_8(i,j,k) +GVM%mc_Jx_8(i,j+1,k)) *Afdg2(i,j,k)*Jz -&
-                      half*(GVM%mc_Jx_8(i,j,k-1) +GVM%mc_Jx_8(i,j+1,k-1)) *Afdg2(i,j,k-1)*Jzm
-!               C=  half*(GVM%mc_Jx_8(i,j,k) +GVM%mc_Jx_8(i,j+1,k)) *Afdg1(i,j,k)*Jz -&
-!                      half*(GVM%mc_Jx_8(i,j,k-1) +GVM%mc_Jx_8(i,j+1,k-1)) *Afdg1(i,j,k-1)*Jzm
-
-!   Dz(Jx/Jz A) on T-level K-1 and position Ai,j
-               C=  C/(Ver_z_8%m(k)-Ver_z_8%m(k-1)) !Dz(Jx/Jz A) on T-level K-1 and position Ai,j
-                cdd_v81(i,j,k-1)=C
-!Dz(Jy/Jz B)
-!Jz on M-level k on Bij point
-               Jz   =(Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i  ,j,k)-ztht_8(i  ,j,k-1)) 
-!Jz on M-level k-1 on Bij point
-               Jzm   =(Ver_z_8%t(k-1)-Ver_z_8%t(k-2))/(ztht_8(i  ,j,k-1)-ztht_8(i  ,j,k-2))
+               cdd_v81(i,j,k-1)=  half*((GVM%mc_Jx_8(i,j,k) +GVM%mc_Jx_8(i,j+1,k)) *Afdg2(i,j,k)*Jzv(i,j,k,1) -&
+                      (GVM%mc_Jx_8(i,j,k-1) +GVM%mc_Jx_8(i,j+1,k-1)) *Afdg2(i,j,k-1)*Jzvm(i,j,k,1))*Ver_idz_8%t(k-1)
 !   Dz(Jy/Jz B) on T-level K-1 and position Bi,j
-               C=  half*(GVM%mc_Jy_8(i,j,k) +GVM%mc_Jy_8(i,j-1,k)) *Bfdg2(i,j,k)*Jz -&
-                      half*(GVM%mc_Jy_8(i,j,k-1) +GVM%mc_Jy_8(i,j-1,k-1)) *Bfdg2(i,j,k-1)*Jzm
-
-!               C=  half*(GVM%mc_Jy_8(i,j,k) +GVM%mc_Jy_8(i,j-1,k)) *Bfdg1(i,j,k)*Jz -&
-!                      half*(GVM%mc_Jy_8(i,j,k-1) +GVM%mc_Jy_8(i,j-1,k-1)) *Bfdg1(i,j,k-1)*Jzm
-               C=  C/(Ver_z_8%m(k)-Ver_z_8%m(k-1)) 
-               cdd_v82(i,j,k-1)=C
-!
+               cdd_v82(i,j,k-1)=  half* ((GVM%mc_Jy_8(i,j,k) +GVM%mc_Jy_8(i,j-1,k)) *Bfdg2(i,j,k)*Jzv(i,j,k,2) -&
+                      (GVM%mc_Jy_8(i,j,k-1) +GVM%mc_Jy_8(i,j-1,k-1)) *Bfdg2(i,j,k-1)*Jzvm(i,j,k,2))*Ver_idz_8%t(k-1)
            enddo
          enddo
         enddo
-          do k=1,NK
+
+      k=k00  
+      do j=1+pil_s, l_nj-pil_n
+         do i=1+pil_w, l_ni-pil_e
+               F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k))
+         enddo
+      enddo
+      do k=k00+1,NK-1
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
-         if (k==1) then 
-             cdd_v8(i,j,k) = zero 
-         else
-! Dz/Dzeta M-level k on Vi,j position
-            Jz= (Ver_z_8%t(k-1)-Ver_z_8%t(k-2))/(ztht_8(i,j,k)-ztht_8(i,j,k-1))
-            Jzpi= (Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i,j+1,k)-ztht_8(i,j+1,k-1))
-            Jz = half*(Jz+Jzpi)
 ! Dz/Dzeta^-1* Dz(Jx/Jz A+ Jy/Jz B) on M-level K and position Bi,j
-            C1_8= half *( (Ver_wp_8%m(k)*cdd_v81(i,j,k)+Ver_wm_8%m(k)* cdd_v81(i,j,k-1))+&  
-                   (Ver_wp_8%m(k)*cdd_v81(i+1,j,k)+Ver_wm_8%m(k)* cdd_v81(i+1,j,k-1)) )
-            C2_8= half*((Ver_wp_8%m(k)*cdd_v82(i,j,k)+Ver_wm_8%m(k)* cdd_v82(i,j,k-1)) +&
-                   (Ver_wp_8%m(k)*cdd_v82(i,j+1,k)+Ver_wm_8%m(k)* cdd_v82(i,j+1,k-1)))
-            C= (C1_8+C2_8/geomh_cyv_8(j)) *Jz
-            cdd_v8(i,j,k)= C
-! boundary condition
-      if (k==NK) then
-       cdd_v8(i,j,k)= (one-(ver_z_8%m(Nk)-ver_z_8%m(Nk-1))/(ver_z_8%m(Nk+1)-ver_z_8%m(Nk-1)))*&
-                        cdd_v8(i,j,Nk-1)
-      endif
-      endif
-            F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-cdd_v8(i,j,k))
-             enddo
-             enddo
-          enddo
+               cdd_v8(i,j,k)=Jzv(i,j,k,3)*(  &
+                           half *( ( (Ver_wp_8%m(k)*cdd_v81(i,j,k)+Ver_wm_8%m(k)* cdd_v81(i,j,k-1))+&  
+                          (Ver_wp_8%m(k)*cdd_v81(i+1,j,k)+Ver_wm_8%m(k)* cdd_v81(i+1,j,k-1)) ) + &
+                          ((Ver_wp_8%m(k)*cdd_v82(i,j,k)+Ver_wm_8%m(k)* cdd_v82(i,j,k-1)) +&
+                          (Ver_wp_8%m(k)*cdd_v82(i,j+1,k)+Ver_wm_8%m(k)* cdd_v82(i,j+1,k-1)))/geomh_cyv_8(j)) )
+               F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-cdd_v8(i,j,k))
+            enddo
+         enddo
+      enddo
 
+      k=Nk  
+      do j=1+pil_s, l_nj-pil_n
+         do i=1+pil_w, l_ni-pil_e
+            !cdd_v8(i,j,k)= (one-(ver_z_8%m(Nk)-ver_z_8%m(Nk-1))/(ver_z_8%m(Nk+1)-ver_z_8%m(Nk-1)))*&
+            !cdd_v8(i,j,k)= rv*&
+            !            cdd_v8(i,j,Nk-1)
+            !F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-cdd_v8(i,j,k))
+            F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-rv*cdd_v8(i,j,k-1))
+         enddo
+      enddo
+
+! Implicit v
       do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
-              do k = 2 , Nk
+              do k = k00+1 , Nk
                 F_sol1(i,j,k) = F_sol1(i,j,k) - W_v(i,j,k) * F_sol1(i,j,k- 1)
               enddo
                  F_sol1(i,j,Nk) = F_sol1(i,j,Nk) / b_v(i,j,Nk)
-                  do  k = Nk-1, 1, -1
+                  do  k = Nk-1, k00, -1
                   F_sol1(i,j,k) = (F_sol1(i,j,k) - c_v(i,j,k) * F_sol1(i,j,k + 1)) / b_v(i,j,k)
                   enddo
              enddo
           enddo
 
-
-
-      ! Hybrid diffusion if hzd_hyb_nk >0
-      if(hzd_hyb_nk > 0) then
-         do k = nk-hzd_hyb_nk+1, nk
+      ! Hybrid diffusion if hzd_hyb_bot >0
+      if(hzd_hyb_bot > 0) then
+         do k = nk-hzd_hyb_bot+1, nk
+            do j=1+pil_s-1, l_nj-pil_n+1
+               do i=1+pil_w-1, l_ni-pil_e+1
+                  F_sol1(i,j,k) = fdg2_4(i,j,k )
+               enddo
+            enddo
+         enddo
+      endif
+! hybrid difusion for first kd0+1 level
+      if (kd0.ne.1) then
+          do k = 1, kd0 
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
                   F_sol1(i,j,k) = fdg2_4(i,j,k )
@@ -470,6 +297,8 @@
          enddo
       endif
 
+
+       call gtmg_stop (68)
 
       return
       end

@@ -16,7 +16,7 @@
 !**s/r get_air_dens - Evaluez la densite reduite de l'air:
 !                                                    densite*jacobien
 
-      subroutine get_air_dens_hlt (F_time)
+      subroutine get_air_density_hlt (F_time)
 
       use dyn_fisl_options
       use geomh
@@ -122,4 +122,4 @@
 !---------------------------------------------------------------------
 !
       return
-      end subroutine get_air_dens_hlt
+      end subroutine get_air_density_hlt

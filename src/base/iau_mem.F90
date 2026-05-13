@@ -20,12 +20,11 @@ module mem_iau
    public
    save
 
-      character(len=16) :: Iau_datev, Iau_last_S
+      character(len=16) :: Iau_datev, Iau_last_S, IAU_now
       character(len=4), dimension(1000) :: Iau_trname= ' '
       character(len=1 ) :: Iau_levtype_S
       integer, dimension(1000) :: Iau_trindx
-      integer :: Iau_ntr
-      real(kind=REAL64) :: IAU_previous=0, IAU_now
+      integer :: Iau_ntr, IAU_ubstp=-1
       
       real, pointer, dimension (:,:,:) :: iau_u      => null()
       real, pointer, dimension (:,:,:) :: iau_v      => null()
