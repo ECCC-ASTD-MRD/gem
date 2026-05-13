@@ -320,9 +320,9 @@
             enddo
          enddo
 
-      ! Hybrid diffusion if hzd_hyb_nk >0
-      if(hzd_hyb_nk >0) then
-         do k = nk-hzd_hyb_nk+1, nk
+      ! Hybrid diffusion if hzd_hyb_bot >0
+      if(hzd_hyb_bot >0) then
+         do k = nk-hzd_hyb_bot+1, nk
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
                   F_sol1(i,j,k) = fdg2_4(i,j,k )

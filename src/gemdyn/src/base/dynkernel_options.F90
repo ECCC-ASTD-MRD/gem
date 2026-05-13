@@ -36,7 +36,7 @@ module dynkernel_options
    !# False-> Simplified approach (allows both direct and iterative solvers)
    logical :: FISLH_LHS_metric_L = .false.
 
-   logical :: Dynamics_hauteur_L, Dynamics_FISL_L, Dynamics_autobar_L
+   logical :: Dynamics_hauteur_L, Dynamics_FISL_L
 
 contains
 

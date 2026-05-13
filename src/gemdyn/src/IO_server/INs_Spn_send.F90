@@ -18,6 +18,7 @@
       subroutine INs_Spn_send (F_ND,Minx,Maxx,Miny,Maxy,F_err)
       use, intrinsic :: iso_fortran_env
       use iso_c_binding
+      use MiMd
       use omp_timing
       use IOs
       use INs
@@ -86,7 +87,7 @@
          clients= clients+1
          cnt= ubound(Spnbuf,1)
          call MPI_isend ( Spnbuf(1,n),cnt,MPI_REAL,n,tag3+n,&
-                          MPI_COMM_WORLD,INs_Spn_isend(clients),err)
+                          MiMd_gemworld,INs_Spn_isend(clients),err)
       end do
 
       if (Lun_out>0) call clock ( Lun_out, 'SPN SEND_completed2', .false. )

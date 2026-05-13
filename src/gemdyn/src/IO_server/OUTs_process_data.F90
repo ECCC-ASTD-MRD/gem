@@ -54,7 +54,7 @@
       do n=client_pestart,client_peend
          tag= 1001
          call MPI_recv ( dataH(1,n), dim, MPI_REAL, n, &
-                         tag, MPI_COMM_WORLD, MPI_STATUSES_IGNORE, err)
+                         tag, MiMd_gemworld, MPI_STATUSES_IGNORE, err)
       end do
       call gtmg_stop ( 20 )
       if (Lun_out>0) call clock (Lun_out, 'Recieving ... DONE', .false.)

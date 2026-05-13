@@ -146,7 +146,7 @@ contains
          call MPI_bcast ( F_services, size(F_services), MPI_INTEGER,0,&
                           COMM_multigrid, err )       
 
-         call MPI_comm_rank (MPI_COMM_WORLD,myproc,err)
+         call MPI_comm_rank (MiMd_gemworld,myproc,err)
          do i=1,F_rank
             if ( (myproc>=F_services(2,i)) .and. &
                  (myproc<=F_services(3,i)) ) then

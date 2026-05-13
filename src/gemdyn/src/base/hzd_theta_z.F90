@@ -31,21 +31,20 @@
       implicit none
 
       integer i,j,k,ik,dim,dim1
-      real, parameter :: p_naught=100000., eps=1.0e-5
-      real, dimension(:,:,:), pointer :: pres_t, th, th0, tmp, tmp1, wk
+      real, parameter :: p_naught=100000.
+      real, dimension(:,:,:), pointer :: pres_t, th, th0, tmp, tmp1, tmp2, wk
 !
 !-------------------------------------------------------------------
 !
-      dim1=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*hzd_hyb_nk
+      dim1=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(max(hzd_hyb_bot,hzd_hyb_top))
       dim= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       pres_t (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(      1:)
       th     (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(  dim+1:)
       th0    (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(2*dim+1:)
       wk     (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(3*dim+1:)
-      tmp    (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_nk) => WS1(4*dim+1:)
-      tmp1   (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_nk) => WS1(4*dim+dim1+1:)
-
-      Hzd_lnr_theta_z= min(max(0.,Hzd_lnr_theta_z),0.9999999)
+      tmp    (l_minx:l_maxx,l_miny:l_maxy,1:max(hzd_hyb_bot,hzd_hyb_top)) => WS1(4*dim+1:)
+      tmp1   (l_minx:l_maxx,l_miny:l_maxy,1:max(hzd_hyb_bot,hzd_hyb_top)) => WS1(4*dim+dim1+1:)
+      tmp2   (l_minx:l_maxx,l_miny:l_maxy,1:max(hzd_hyb_bot,hzd_hyb_top)) => WS1(4*dim+2*dim1+1:)
 
 !$omp do collapse(2)
       do k=1,G_nk
@@ -59,38 +58,32 @@
       end do
 !$omp end do
 
-      !Hybrid diffusion if hzd_hyb_nk >0
-      if(hzd_hyb_nk > 0) then 
+      !Hybrid diffusion if hzd_hyb_bot >0
+      ! Diffusion on constant z for levels hzd_hyb_bot->hzd_hyb_top
+      if(hzd_hyb_bot > 0) then 
 !$omp do 
-         do ik=1,hzd_hyb_nk
+         do ik=1,max(hzd_hyb_bot,hzd_hyb_top )
             do j=1-G_haloy,l_nj+G_haloy
                do i=1-G_halox,l_ni+G_halox
                   tmp (i,j,ik) = th(i,j,l_nk+1-ik) 
                   tmp1(i,j,ik) = air_dens(i,j,l_nk+1-ik)
+                  tmp2(i,j,ik) = th(i,j,ik)
                end do
             end do
          end do
 !$omp end do
          if (hzd_conserv_th) then
 !$omp single
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z, &
+                              l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
 !$omp end single
 !$omp single
-!if(ptopo_myproc==0 .and. ptopo_couleur==0) print*,'============BEFORE hzd_expc_deln'
-            call hzd_expc_deln ( tmp,tmp1, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
-                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_nk )
-!if(ptopo_myproc==0 .and. ptopo_couleur==0) print*,'============AFTER hzd_expc_deln'
+            call hzd_expc_deln ( tmp ,tmp1, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
+                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_bot )
 !$omp end single
-         else
-!$omp single
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
 
-!$omp end single
-            call hzd_exp_deln ( tmp, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
-                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_nk )
-         endif
 !$omp do collapse(2)
-         do ik=1,hzd_hyb_nk
+         do ik=1,hzd_hyb_bot
             do j=1-G_haloy,l_nj+G_haloy
                do i=1-G_halox,l_ni+G_halox
                   th(i,j,l_nk+1-ik) = tmp (i,j,ik)
@@ -98,19 +91,62 @@
             end do
          end do
 !$omp end do
+
+     if(hzd_hyb_top.ne.1 ) then
+         do ik=1,hzd_hyb_top
+            do j=1-G_haloy,l_nj+G_haloy
+               do i=1-G_halox,l_ni+G_halox
+                  tmp1(i,j,ik) = air_dens(i,j,ik)
+               end do
+            end do
+         end do
+!$omp single
+            call hzd_expc_deln ( tmp2,tmp1, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
+                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_top )
+!$omp end single
+
+!$omp do collapse(2)
+         do ik=1,hzd_hyb_top
+            do j=1-G_haloy,l_nj+G_haloy
+               do i=1-G_halox,l_ni+G_halox
+                  th(i,j,ik) = tmp2 (i,j,ik)
+               end do
+            end do
+         end do
+!$omp end do
+
+      endif
+
+         else
+!$omp single
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
+                                l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+
+!$omp end single
+            call hzd_exp_deln ( tmp, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
+                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_bot )
+!         endif
+!$omp do collapse(2)
+         do ik=1,hzd_hyb_bot
+            do j=1-G_haloy,l_nj+G_haloy
+               do i=1-G_halox,l_ni+G_halox
+                  th(i,j,l_nk+1-ik) = tmp (i,j,ik)
+               end do
+            end do
+         end do
+!$omp end do
+      endif
       else
       ! Diffusion on constant z 
          if (hzd_conserv_th) then
 !$omp single
-            !call hzd_theta_cons_alh (th,Hzd_lnr_theta_z,l_minx,l_maxx,l_miny,l_maxy, &
-            !                         G_nk,hzd_Theta_ALH_it)
-!print*,'====== constant z hzd_conserv  BEFORE  hzd_uvwzd_alh   '
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
-!print*,'====== constant z hzd_conserv  AFTER  hzd_uvwzd_alh   '
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
+                               l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
 !$omp end single
          else
 !$omp single
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
+            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
+                                l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
 !$omp end single
          endif
       endif

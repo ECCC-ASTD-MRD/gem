@@ -154,6 +154,7 @@
             enddo
          enddo
 
+!goto 100
          beta_imp=beta_imp*Cstv_dt_8
          k=1
          do j=1+pil_s, l_nj-pil_n
@@ -187,13 +188,6 @@
                enddo
             enddo
          enddo
-
-            do j=1+pil_s, l_nj-pil_n
-               do i=1+pil_w, l_ni-pil_e
-                  do k=1,l_nk
-                  enddo
-            enddo
-        enddo
 
       deallocate(vsten)
       return

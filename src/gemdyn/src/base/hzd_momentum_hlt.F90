@@ -31,11 +31,11 @@
 
       logical switch_on_UVW, switch_on_UVW_alh
       integer i,j,k,ik,dim
-      real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_nk) :: u_tmp, v_tmp, zdt_tmp
+      real, dimension (l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot) :: u_tmp, v_tmp, zdt_tmp
 !
 !-------------------------------------------------------------------
 !
-      switch_on_UVW         = Hzd_lnr   > 0. .and. hzd_hyb_nk < 1
+      switch_on_UVW         = Hzd_lnr   > 0. .and. hzd_hyb_bot < 1
       switch_on_UVW_alh     = Hzd_lnr_z > 0.
 
       if (Schm_hzdadw_L) then
@@ -45,9 +45,9 @@
             call hzd_exp_deln (zdt0, Hzd_pwr, Hzd_lnR, WS1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
          endif
          if (switch_on_UVW_alh) then
-            if(hzd_hyb_nk > 0) then 
+            if(hzd_hyb_bot > 0) then 
 !$omp do collapse(2)
-      	       do ik=1,hzd_hyb_nk
+      	       do ik=1,hzd_hyb_bot
                   do j=1-G_haloy,l_nj+G_haloy
                      do i=1-G_halox,l_ni+G_halox
                         u_tmp   (i,j,ik) = ut0 (i,j,l_nk+1-ik) 
@@ -65,12 +65,12 @@
 
 !$omp end single
 
-               call hzd_exp_deln ( u_tmp  , Hzd_pwr, Hzd_lnR, WS1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
-               call hzd_exp_deln ( v_tmp  , Hzd_pwr, Hzd_lnR, WS1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
-               call hzd_exp_deln ( zdt_tmp, Hzd_pwr, Hzd_lnR, WS1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_nk)
+               call hzd_exp_deln ( u_tmp  , Hzd_pwr, Hzd_lnR, WS1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_bot)
+               call hzd_exp_deln ( v_tmp  , Hzd_pwr, Hzd_lnR, WS1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_bot)
+               call hzd_exp_deln ( zdt_tmp, Hzd_pwr, Hzd_lnR, WS1,l_minx,l_maxx,l_miny,l_maxy,hzd_hyb_bot)
 
 !$omp do collapse(2)
-               do ik=1,hzd_hyb_nk
+               do ik=1,hzd_hyb_bot
                   do j=1-G_haloy,l_nj+G_haloy
                      do i=1-G_halox,l_ni+G_halox
                         ut0 (i,j,l_nk+1-ik)  = u_tmp (i,j,ik)

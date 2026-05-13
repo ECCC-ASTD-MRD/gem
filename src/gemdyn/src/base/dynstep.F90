@@ -20,6 +20,7 @@
       use dyn_fisl_options
       use gem_options
       use sol_options
+      use spn_options
       use gmm_vt1
       use gmm_pw
       use adz_mem
@@ -65,7 +66,7 @@
       if (Hzd_alh_L) then
          if (.not. init_done) then
 !$omp parallel
-            call hzd_init ()
+            call hzd_init_theta_cons ()
             call hzd_init_u ()
             call hzd_init_v ()
             call hzd_init_zdt ()
@@ -104,20 +105,20 @@
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
 !$omp parallel
-      call adz_tracers (.true.)
+      call adz_tracers_interp ()
 
       call psadj_hlt ( Step_kount )
 
-      call adz_tracers (.false.)
+      call adz_tracers_massfixing ()
 !$omp end parallel
 
       call t02t1()
 
 !$omp parallel
       call HOR_bndry ()
-!$omp end parallel
 
-      call spn_main ()
+      if (Spn_ON_L) call spn_main ()
+!$omp end parallel
 
       call canonical_cases ("VRD")
 

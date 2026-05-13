@@ -58,9 +58,11 @@
       if (F_GYLU_S == 'GY') dayfrac = Spn_yy_nudge_data_freq*rsid
       ib=(Tr3d_hu-1)*G_nk+1
       apply_L= .true.
-      
+
+!$omp single      
       if ( (.not.associated(nest_now)) .and. (F_GYLU_S == 'LU') )&
                                          call nest_set_mem (G_nk)
+!$omp end single      
 
       call gtmg_start (90, 'NEST_input', 20)
 

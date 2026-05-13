@@ -31,7 +31,7 @@
 !
 !----------------------------------------------------------------------
 !
-      if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) goto 999
+      if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) return
 
       using_qt1 = ( .not. Dynamics_hydro_L ) .or. Dynamics_hauteur_L
 
@@ -98,12 +98,6 @@
       enddo
       enddo
 !$omp end do
-
- 999  continue
-
-!$omp single
-      call spn_main()
-!$omp end single
 !
 !----------------------------------------------------------------------
 !

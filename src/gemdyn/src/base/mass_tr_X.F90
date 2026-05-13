@@ -23,13 +23,14 @@
       use dynkernel_options
       use omp_timing
       use geomh
+      use masshlt
+      use mem_tstp
       use HORgrid_options
       use ptopo
+      use omp_lib
 
       use, intrinsic :: iso_fortran_env
       implicit none
-
-#include <arch_specific.hf>
 
       !arguments
       !---------
@@ -50,18 +51,19 @@
 
       include 'mpif.h'
       include 'rpn_comm.inc'
-      integer :: n,i,j,k,err,comm
-      real(kind=REAL64), dimension(F_ntr_bc) :: c_mass_8,gc_mass_8
+      integer :: n,i,j,k,err,comm,dim
+      real(kind=REAL64), dimension(F_ntr_bc) :: c_mass_8
       real, pointer, dimension(:,:,:) :: F_tr_X
       real(kind=REAL64) :: gathV(F_ntr_bc,Ptopo_numproc*Ptopo_ncolors)
+      real(kind=REAL64), dimension(:), pointer :: gc_mass_8
 !
 !---------------------------------------------------------------------
 !
-!      call gtmg_start (15, 'MASS__', 74)
+      OMP_max_threads=OMP_get_max_threads()
+      thread_sum(1:F_ntr_bc,0:OMP_max_threads-1) => WS1_8(1:) ; dim= OMP_max_threads*F_ntr_bc
+      gc_mass_8(1:F_ntr_bc) => WS1_8(dim+1:) ; dim= dim+F_ntr_bc
 
       c_mass_8 = 0.0d0
-
-!      call gtmg_start (18, 'SOMME_', 15)
 
       do n=1,F_ntr_bc
 
@@ -72,14 +74,18 @@
          !-------------------
          if (Schm_autobar_L) then
 
+!$omp do
             do j=F_j0,F_jn
                do i=F_i0,F_in
                   c_mass_8(n) = c_mass_8(n) + F_tr_X(i,j,1) * geomh_area_mask_8(i,j)
                end do
             end do
+!$omp end do nowait
+            thread_sum(n,OMP_get_thread_num())=c_mass_8(n)
 
          else
 
+!$omp do collapse(2)
             do k=F_k0,F_nk
                do j=F_j0,F_jn
                   do i=F_i0,F_in
@@ -87,32 +93,32 @@
                   end do
                end do
             end do
+!$omp end do nowait
+            thread_sum(n,OMP_get_thread_num())=c_mass_8(n)
 
          end if
 
       end do
 
-!      call gtmg_stop  (18)
-
-!      call gtmg_start (19, 'REDUCE', 15)
-
-      comm = RPN_COMM_comm ('MULTIGRID')
+      comm = COMM_multigrid
 
       !Evaluate Global Mass
       !----------------------------------------
+!$OMP BARRIER
+!$omp single
+      do n=1,F_ntr_bc
+      c_mass_8(n)=sum(thread_sum(n,:))
+      enddo
       call MPI_Allgather(c_mass_8,F_ntr_bc,MPI_DOUBLE_PRECISION,gathV,F_ntr_bc,MPI_DOUBLE_PRECISION,comm,err)
 
       do i=1,F_ntr_bc
 
-         gc_mass_8(i) = sum(gathV(i,:))
+          gc_mass_8(i) = sum(gathV(i,:))
 
       end do
+!$omp end single
 
       F_mass_X_8 = gc_mass_8
-
-!      call gtmg_stop (19)
-
-!      call gtmg_stop (15)
 !
 !---------------------------------------------------------------------
 !
