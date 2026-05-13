@@ -41,7 +41,11 @@ module sfc_options
    !                                                           (1)  (2)    (3)   (4)  (5)   (6)   (7)   (8)    (9)  (10)  (11)   (12)  (13)
     real, dimension(NB_TEB_SNOWPAR):: TEB_SNROOF_DEFAULT =  (/ 1.0, 0.04, 0.50, 0.85, 100., 750., 0.01, 1.00, 0.01, 0.0, 0.001, 0.0001, 1.0 /)
     real, dimension(NB_TEB_SNOWPAR):: TEB_SNROAD_DEFAULT =  (/ 1.0, 0.08, 0.20, 0.85, 100., 750., 0.10, 1.00, 0.01, 1.0, 0.001, 0.0001, 0.7 /)
-   !#----------------------------------
+   !
+   integer, parameter :: NB_TEB_HYDROPAR = 2    !  number of parameters for hydrology in TEB
+   ! values of (1) WS_ROOF_MAX,(2) WS_ROAD_MAX
+    real, dimension(NB_TEB_HYDROPAR):: TEB_HYDROPAR_DEFAULT =  (/ 1.0, 1.0 /)
+    !#----------------------------------
 
    real, parameter :: CRITEXTURE = 0.1
    real, parameter :: CRITLAC    = 0.01
@@ -101,7 +105,11 @@ module sfc_options
    !# chi_min parameter: the minimal efficiency factor for phase change in the soil_freezing scheme (the same concept as in Surfex and described in Pitman et al., 1991, Slater et al., 1998.
    real              :: chi_min    = 0.6
    namelist /surface_cfgs/ chi_min
-        
+   
+   !# CSLM: maximum number of lake layers 
+   integer           :: cslm_nlakmax   = 20
+   namelist /surface_cfgs/ cslm_nlakmax
+       
    !# Diurnal SST scheme
    !# * 'NIL    ' : No Diurnal SST scheme
    !# * 'FAIRALL' : #TODO: define
@@ -329,8 +337,8 @@ module sfc_options
    
    !# If .true., field capacity for bare ground evaporation is calculated with respect to 
    !             liquid water using modified porosity in presence of frozen soil
-   logical           :: isba_lwfcliq = .false.
-   namelist /surface_cfgs/ isba_lwfcliq
+   logical           :: isba_modwsat_ice = .false.
+   namelist /surface_cfgs/ isba_modwsat_ice
 
    !# If .true. apply temporary fix to ISBA
    !# * timestep dependent KCOEF
@@ -445,10 +453,10 @@ module sfc_options
    logical           :: lphase_change_eff_svs1 = .true.
    namelist /surface_cfgs/ lphase_change_eff_svs1 
 
-   !#  (SVS1) If .true., field capacity for bare ground evaporation is calculated with respect to 
-   !          liquid water using modified porosity in presence of frozen soil
-   logical           :: lwfcliq_svs1 = .false.
-   namelist /surface_cfgs/ lwfcliq_svs1
+   !#  (SVS1) If .true., field capacity for bare ground evaporation and wilting point for bare ground albedo are 
+   !              calculated with respect to liquid water using a modified porosity in presence of frozen soil
+   logical           :: lmodwsat_ice_svs1 = .false.
+   namelist /surface_cfgs/ lmodwsat_ice_svs1
    
    !# (SVS2) If .true., SVS2 simulates interception of snow by canopy, sublimation and inloading of intercepted snow
    logical           :: lsnow_interception_svs2 = .false.
@@ -488,11 +496,15 @@ module sfc_options
    !# (coupling) fluxes over ocean are taken from ocean model if .true.
    logical           :: owflux      = .false.
    namelist /surface_cfgs/ owflux
-
+   
+   !# (CSLM) read-in light extinction coef. for CSLM  if .true.
+   logical           :: read_blak_cslm     = .false.
+   namelist /surface_cfgs/ read_blak_cslm
+   
    !# read-in land surface emissivity if .true.
    logical           :: read_emis     = .false.
    namelist /surface_cfgs/ read_emis
-
+   
    !# (SVS2) read-in height of polar low vegetation for SVS2 if .true.
    logical           :: read_hveglpol     = .false.
    namelist /surface_cfgs/ read_hveglpol
@@ -823,6 +835,17 @@ module sfc_options
         'LA23  ', &
         'AR25  '  &
         /)
+
+   ! Parameters used in the param. of snow cover fraction LA23 when VF_TYPE is set to CCILC_WE
+   !# z0min_la23 is the minimal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.01 m
+   !# z0max_la23 is the maximal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.15 m
+   !# z0exp_la23 is the exponent used in the power law giving the roughness parameter as a function of Z0VL
+   real              :: z0min_la23    = 0.01
+   namelist /surface_cfgs/ z0min_la23   
+   real              :: z0max_la23    = 0.02
+   namelist /surface_cfgs/ z0max_la23   
+   real              :: z0exp_la23    = 6.
+   namelist /surface_cfgs/ z0exp_la23   
 
    !# Computation of snow albedo in SVS1
    !# * 'NIL'   : Legacy approach implemented in SVS (Leonardini et al., 2021)
@@ -1159,6 +1182,7 @@ module sfc_options
    real              :: zu = 10.
    namelist /surface_cfgs/ zu
 
+
    !# New urban surface parameters within SVS only (not used in TEB)
    logical           :: svs_urban_params = .false.
    namelist /surface_cfgs/ svs_urban_params
@@ -1189,6 +1213,21 @@ module sfc_options
    real :: teb_snroad(NB_TEB_SNOWPAR) = -1.0
    namelist /surface_cfgs/ teb_snroof
    namelist /surface_cfgs/ teb_snroad
+
+  !# (TEB) Options for parameters governing the hydrology evolution on roofs nd roads
+   !# * 'MA00'   :  Default Masson 2000
+   !# * 'CUSTOM'   :    opt for customization 
+   character(len=6) :: teb_hydro    = 'MA00  '
+   namelist /surface_cfgs/ teb_hydro
+   character(len=*), parameter :: TEB_HYDRO_OPT(2) = (/ &
+        'MA00  ',  &
+        'CUSTOM' &
+        /)
+
+  !# read the TEB hydro parameters (if schmsol=TEB and teb_hydro=custom)
+   real :: teb_hydropar(NB_TEB_HYDROPAR) = -1.0
+   namelist /surface_cfgs/ teb_hydropar
+
 
 contains
 

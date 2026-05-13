@@ -304,6 +304,7 @@
    MKPTR1D(zqdiagec, qdiagec, pvars)
    MKPTR1D(zqdiagstn, qdiagstn, pvars)
    MKPTR1D(zqdiagstnv, qdiagstnv, pvars)
+   MKPTR1DK(zqdiag_urb, qdiagtyp, indx_urb, pvars)
    MKPTR2D(zqdiagtyp2, qdiagtyp2, pvars)   
    MKPTR2Dm1(zqdifv, qdifv, pvars)
    MKPTR2Dm1(zqdifvm, qdifvm, pvars)

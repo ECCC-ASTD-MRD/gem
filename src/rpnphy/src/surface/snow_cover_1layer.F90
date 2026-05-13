@@ -26,7 +26,8 @@ contains
                                  PTG,PABS_SW, PLW1, PLW2,                  &
                                  PTA, PQA, PVMOD, PPS, PRHOA, PSR,         &
                                  PZREF, PUREF,                             &
-                                 PRNSNOW, PHSNOW, PLESNOW, PGSNOW, PMELT   )
+                                 PRNSNOW, PHSNOW, PLESNOW, PGSNOW, PMELT   &
+                                 ,PWKSNOW)
 !   ##########################################################################
 !
 !!****  *SNOW_COVER_1LAYER*  
@@ -114,6 +115,7 @@ REAL, DIMENSION(:), INTENT(INOUT) :: PASNOW   ! snow albedo
 REAL, DIMENSION(:), INTENT(INOUT) :: PRSNOW   ! snow density
 REAL, DIMENSION(:), INTENT(INOUT) :: PTS_SNOW ! snow surface temperature
 REAL, DIMENSION(:), INTENT(INOUT) :: PESNOW   ! snow emissivity
+REAL, DIMENSION(:), INTENT(INOUT) :: PWKSNOW  ! snow additional reservoir (accumulation)
 REAL, DIMENSION(:), INTENT(IN)    :: PTG      ! underlying ground temperature
 REAL, DIMENSION(:), INTENT(IN)    :: PABS_SW  ! absorbed SW energy (Wm-2)
 REAL, DIMENSION(:), INTENT(IN)    :: PLW1     ! LW coef independant of TSNOW
@@ -495,6 +497,7 @@ PLESNOW(:) = MIN( PLESNOW(:), XLSTT*PWSNOW/PTSTEP )
 !
 PWSNOW(:)  = MAX( PWSNOW(:) - PTSTEP * PLESNOW(:)/XLSTT , 0.)
 !
+WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:)
 WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 !*      6.3    melting
@@ -504,6 +507,7 @@ PMELT(:) = MIN( PMELT(:), PWSNOW/PTSTEP )
 !
 PWSNOW(:)= MAX( PWSNOW(:) - PTSTEP * PMELT(:) , 0.)
 !
+WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:)
 WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 WHERE(PWSNOW(:)==0.) PGSNOW(:) = MAX ( PGSNOW(:), - PMELT(:)*XLMTT )
@@ -514,7 +518,8 @@ WHERE(PWSNOW(:)==0.) PGSNOW(:) = MAX ( PGSNOW(:), - PMELT(:)*XLMTT )
 !
 IF (PDRAIN_TIME>0.) THEN
   WHERE ( PWSNOW(:)>0.)
-    PWSNOW(:) = PWSNOW(:) * EXP(-PTSTEP/PDRAIN_TIME/XDAY)
+  PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:) - PWSNOW(:) * EXP(-PTSTEP/PDRAIN_TIME/XDAY)
+  PWSNOW(:) = PWSNOW(:) * EXP(-PTSTEP/PDRAIN_TIME/XDAY)
   END WHERE
 END IF
 !
@@ -523,9 +528,11 @@ END IF
 !
 WHERE ( PWSNOW(:)<ZWSNOW_MIN .AND. PMELT(:)>0. .AND. PSR(:)==0. )
   PMELT(:) = PMELT(:) + PWSNOW(:) / PTSTEP
+  PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:) 
   PWSNOW(:)=0.
 END WHERE
 !
+WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:) 
 WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 !-------------------------------------------------------------------------------

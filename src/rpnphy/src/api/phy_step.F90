@@ -123,7 +123,15 @@ contains
     if (istat /= WB_OK) call msg(MSG_ERROR,'(phy_step)')
 
 #ifdef HAVE_NEMO
+    call timing_start1(420, 'cpl_step', 46)
+#ifdef HAVE_GOSSIP
     call cpl_step(F_stepcount, F_stepdriver)
+#else
+    call cpl_step(F_stepcount, F_stepdriver, 'first' ) ! F_stepdriver=0 coupled operations (cplao_xcnh_mode=0,1)
+    call cpl_step(F_stepcount, F_stepdriver, 'ssend' ) ! send step of coupled operations (cplao_xcnh_mode=0)
+    call cpl_step(F_stepcount, F_stepdriver, 'srecv' ) ! receive step of coupled operations
+#endif
+    call timing_stop1(420)
 #endif
 
 !$omp parallel
@@ -141,6 +149,14 @@ contains
     call phystats1(F_stepcount, delt)
     call timing_stop1(460)
     if (phy_error_L) return
+
+#ifdef HAVE_NEMO
+#ifndef HAVE_GOSSIP
+    call timing_start1(420, 'cpl_step', 46)
+    call cpl_step(F_stepcount, F_stepdriver, 'esend' ) ! send step of coupled operations (cplao_xcnh_mode=1,2)
+    call timing_stop1(420)
+#endif
+#endif
 
     F_istat = RMN_OK
     !---------------------------------------------------------------

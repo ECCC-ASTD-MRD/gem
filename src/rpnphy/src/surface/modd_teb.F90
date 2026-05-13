@@ -59,6 +59,7 @@ XWSNOW_ROOF,  XTSNOW_ROOF, XRSNOW_ROOF,&
 XASNOW_ROOF, XESNOW_ROOF, XTSSNOW_ROOF,&
 XWSNOW_ROAD,  XTSNOW_ROAD, XRSNOW_ROAD,&
 XASNOW_ROAD, XESNOW_ROAD, XTSSNOW_ROAD,&
+XWKSNOW_ROAD, XWKSNOW_ROOF,     &
 XTSTEP,XOUT_TSTEP,              &
 LCOVER,NROOF_LAYER,NROAD_LAYER,NWALL_LAYER
 !$OMP THREADPRIVATE(/tttd/)
@@ -154,6 +155,9 @@ REAL, POINTER, DIMENSION(:)   :: XRSNOW_ROAD ! snow layers density
 REAL, POINTER, DIMENSION(:)   :: XASNOW_ROAD ! snow albedo
 REAL, POINTER, DIMENSION(:)   :: XESNOW_ROAD ! snow emissivity
 REAL, POINTER, DIMENSION(:)   :: XTSSNOW_ROAD! snow surface temperature           (K)
+REAL, POINTER, DIMENSION(:)   :: XWKSNOW_ROOF ! snow excedent reservoir              (kg/m2)
+REAL, POINTER, DIMENSION(:)   :: XWKSNOW_ROAD ! snow excedent reservoir              (kg/m2)
+
 !
 ! Time-step:
 !

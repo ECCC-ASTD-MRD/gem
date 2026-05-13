@@ -129,6 +129,9 @@ contains
       end do
 
       zsroof_wsnow  (i) =  zsroof_wsnowen (i) 
+!      zsroof_wstok (i) =  zsroof_wstoken (i)
+      zsroof_wstok  (i) =  0.0
+
       if(zsroof_wsnow(i) .lt. critsnow ) then
          zsroof_wsnow  (i) = 0.0
          zsroof_t      (i) = undef
@@ -145,6 +148,9 @@ contains
       endif
 
       zsroad_wsnow  (i) =  zsroad_wsnowen (i) 
+!      zsroad_wstok (i) =  zsroad_wstoken (i)
+      zsroad_wstok  (i) =  0.0
+
       if( zsroad_wsnow (i) .lt. critsnow ) then
          zsroad_wsnow  (i) =  0.0 
          zsroad_t      (i) = undef
@@ -184,12 +190,14 @@ contains
          zt_canyon     (i) = undef
          zq_canyon     (i) = undef
          zsroof_wsnow  (i) = undef
+         zsroof_wstok  (i) = undef
          zsroof_t      (i) = undef
          zsroof_rho    (i) = undef
          zsroof_alb    (i) = undef
          zsroof_emis   (i) = undef
          zsroof_ts     (i) = undef
          zsroad_wsnow  (i) = undef
+         zsroad_wstok  (i) = undef
          zsroad_t      (i) = undef
          zsroad_rho    (i) = undef
          zsroad_alb    (i) = undef

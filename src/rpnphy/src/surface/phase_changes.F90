@@ -263,7 +263,7 @@ contains
 
                               ! Liquid water in forest litter should not be below a chosen threshol of 0.01 mm
                               IF(WFLT(I) < 0.01)THEN
-                                    EXCESS_FL(I) = (0.01 - WFLT(I)) / DT
+                                    EXCESS_FL(I) = MIN((0.01 - WFLT(I)) / DT, WFL_ICE(I) / DT )
                                     WFLT(I) = 0.01
                                     WFL_ICE(I) = WFL_ICE(I) - DT * EXCESS_FL(I)
                                     TFLT(I) = TFLT(I) - DT / PFLHCAP(I) * CHLF * EXCESS_FL(I)

@@ -327,16 +327,6 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
       zvdiag = zvdiag * vmod0 / vmod
    endif
       
-   ! Fill surface type-specific diagnostic values
-   zqdiagtyp = zqdiag
-   ztdiagtyp = ztdiag
-   zudiagtyp = zudiag
-   zvdiagtyp = zvdiag
-   zqdiagtypv = zqdiag
-   ztdiagtypv = ztdiag
-   zudiagtypv = zudiag
-   zvdiagtypv = zvdiag
-
    ! Also compute the air density at a chosen height (for now, the chosen height is
    ! at the screen level, i.e. at zt = 1.5m)
 
@@ -448,6 +438,16 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    endif
 #endif
 
+
+   ! Fill surface type-specific diagnostic values
+   zqdiagtyp = zqdiag
+   ztdiagtyp = ztdiag
+   zudiagtyp = zudiag
+   zvdiagtyp = zvdiag
+   zqdiagtypv = zqdiag
+   ztdiagtypv = ztdiag
+   zudiagtypv = zudiag
+   zvdiagtypv = zvdiag
 
    ! 5.     Prognostic evolution of SST (based on Zeng and Beljaars; GRL 2005)
    ! -------------------------------------------------------------------------

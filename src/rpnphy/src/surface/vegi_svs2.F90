@@ -20,10 +20,11 @@ contains
       SUBROUTINE VEGI_SVS2 ( RG, T, TVEG, HU, PS, &
            WD , RGL, LAI, LAI_VH, LAI_VL, HVEGLPOL, RSMIN, GAMMA, WWILT, WFC, &
            SUNCOS, DRZ, D50, D95, PSNGRVL, VEGH, VEGL, Z0MVH,  &
-           VGH_HEIGHT,VGH_DENS, SNCMA, WR_VH, WFL_ICE, DZ_FL, &
+           VGH_HEIGHT,VGH_DENS, SNCMA, WR_VH, WFL, WFL_ICE, DZ_FL, &
            RS, SKYVIEW,  &
            SKYVIEWA, VTR, VTRA, &
-           FCD, ACROOT, WRMAX_VL, WRMAX_VH, WRMAX_FL, PHM_CAN, HVEGAPOL, SCAP, N  )
+           FCD, ACROOT, WRMAX_VL, WRMAX_VH, WRMAX_FL, PHM_CAN, HVEGAPOL,     &
+           SCAP, SCAP_MIN,  N  )
 !
         use tdpack
         use svs_configs
@@ -43,7 +44,7 @@ contains
       REAL D50(N), D95(N), ACROOT(N,NL_SVS) , WRMAX_VL(N),  WRMAX_VH(N)
       REAL HVEGLPOL(N), HVEGAPOL(N), SNCMA(N)
       REAL Z0MVH(N),  VGH_HEIGHT(N), VGH_DENS(N), PHM_CAN(N)
-      REAL SCAP(N), WR_VH(N), WRMAX_FL(N), WFL_ICE(N), DZ_FL(N)
+      REAL SCAP(N), SCAP_MIN(N), WR_VH(N), WRMAX_FL(N),  WFL(N), WFL_ICE(N), DZ_FL(N)
 !
 !Author
 !          Vionnet al. (2017-2024)
@@ -87,7 +88,6 @@ contains
 ! CLUMPING coefficient to convert LAI to effective LAI
 ! SNCMA    mass of intercepted snow in the canopy [kg/m2]
 ! WR_VH    Water retained by high vegetation [kg/m2]
-! WFL_ICE  Frozen water in the forest litter layer [kg/m2]
 ! DZ_FL    Thickness of the forest litter layer [m]
 !
 !          - Input/Output -
@@ -108,6 +108,9 @@ contains
 ! HVEGAPOL   Polar mean vegetation height (including bare soil)
 ! PHM_CAN    Heat mass for the high vegetation layer (J K-1 m-2)
 ! SCAP       Vegetation layer snow capacities (kg m-2)
+! SCAP_MIN   Baseline Vegetation layer snow capacities (kg m-2)
+! WFL_ICE  Frozen water in the forest litter layer [kg/m2]
+! WFL      Liquid water in the forest litter layer [kg/m2]
 !
       INTEGER I, K
       REAL CSHAPE, f2_k(nl_svs)
@@ -290,6 +293,18 @@ contains
             ! For forest litter layer
              IF (LFORLIT) THEN
                WRMAX_FL(I) = 0.12 * DZ_FL(I) * RHOW - WFL_ICE(I)
+
+               if (WRMAX_FL(I) < 0.) then
+                  ! When DZ changes, WRMAX_FL changes, and WRMAX_FL can be negative if WFL_ICE is high (based on previous WRMAX_FL)
+                  ! In that case, WFL_ICE is limited to WRMAX_FL, and the excess is put as liquid water that will infiltrate into the soil.
+                  ! This conserves mass
+                  WRMAX_FL(I) = 0.12 * DZ_FL(I) * RHOW 
+                  WFL(I) = WFL(I) + WFL_ICE(I) - WRMAX_FL(I)
+                  WFL_ICE(I) = WRMAX_FL(I)
+               endif
+               
+             ELSE
+               WRMAX_FL(I) = 0.
              ENDIF
 
 !
@@ -302,12 +317,18 @@ contains
             !SCAP(I) =  CVAI *LAI_VH(I)
             
            ! Compute Canopy interception, check Andreadis et al. (2009)
+            ! 
+            ! Baseline interception capacity without considering temperature effects
+            ! Used to compute FCANS
+            SCAP_MIN(I)   =  m_scap * LAI_VH(I) * VGH_DENS(I)
+
+            ! Include effect of temperature for interception 
            IF ((T(I)-273.15) .GT. -1) THEN
-              SCAP(I) = 4* m_scap * LAI_VH(I) * VGH_DENS(I)
+               SCAP(I) = 4. * SCAP_MIN(I)
            ELSE IF (((T(I)-273.15) .GT. -3) .AND.  ((T(I)-273.15) .LE. -1)) THEN
-              SCAP(I) = (1.5*(T(I)-273.15) + 5.5) * m_scap *LAI_VH(I) * VGH_DENS(I)
+               SCAP(I) = (1.5*(T(I)-273.15) + 5.5) * SCAP_MIN(I)
            ELSE
-              SCAP(I) = m_scap * LAI_VH(I) * VGH_DENS(I)
+               SCAP(I) = SCAP_MIN(I)
            ENDIF
 !
 !
@@ -369,6 +390,7 @@ contains
              VGH_DENS(I)   = 0.
              PHM_CAN(I)  = 0.
              SCAP(I) = 0.
+             SCAP_MIN(I) = 0.
           ENDIF
        ENDDO
 !

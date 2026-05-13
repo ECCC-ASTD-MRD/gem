@@ -168,7 +168,7 @@ contains
             BETA_EVPG(I) = 0.  ! Initialize default value to zero (variable not used by "alpha" methods)
       END DO
 
-      IF(LWFCLIQ_SVS1) THEN              
+      IF(LMODWSAT_ICE_SVS1) THEN              
          DO I=1,N
             !Adjust wsat for presence of ice as in hydro_svs
             WSATC(I)= MAX((WSAT(I,1)-WF(I,1)-0.00001), CRITWATER)

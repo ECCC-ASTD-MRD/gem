@@ -589,7 +589,9 @@ subroutine svs(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 		   bus(x(wfcdp   ,1,1)), bus(x(watflow ,1,1)),&
 		   bus(x(latflw  ,1,1)), &
 		   bus(x(runofftot ,1,indx_soil)), bus(x(watpond ,1,1)),&
-		   bus(x(grkmod_a,1,1)), BUS(x(agrifrac,1,1)), N)
+		   bus(x(grkmod_a,1,1)), BUS(x(agrifrac,1,1)), &
+           bus(x(wunfrz ,1,1)), bus(x(frzdepth ,1,1)), &
+           bus(x(frzthick ,1,1)), bus(x(thwdepth ,1,1)), N)
 
 
       IF( USE_PHOTO ) THEN

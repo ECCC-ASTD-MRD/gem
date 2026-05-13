@@ -475,7 +475,7 @@ contains
       endif
 
       ! Estimate standard deviation of subgrid-scale saturation deficit
-      if (kount == 0) then
+      if (kount == 0 .and. fluvert == 'RPNINT') then
          if (mp_lwc(lwc, pvars) /= PHY_OK .or. &
               mp_iwc(iwc, pvars) /= PHY_OK) then
             call physeterror('phystepinit', 'Cannot compute condensate contents')

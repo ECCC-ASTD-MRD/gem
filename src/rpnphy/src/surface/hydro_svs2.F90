@@ -22,12 +22,14 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
      WSAT, KSAT, PSISAT, BCOEF, FBCOF, WFCINT, GRKEF, &
      WD, WDT, WF, WFT, &
      KSATC, KHC, PSI, GRKSAT, WFCDP, &
-     F, LATFLW, RUNOFF,WATPND, MAXPND, N)
+     F, LATFLW, RUNOFF,WATPND, MAXPND, &
+     FRZDEPTH, FRZTHICK, THWDEPTH, N)
   !
   use sfc_options
   use svs_configs
   use svs2_tile_configs
   use soil_ksatc_mod, only: soil_ksatc
+  use soil_frzdepth_svs2_mod, only: soil_frzdepth_svs2
   use watdrn_svs_mod, only: watdrn_svs
   use soil_fluxes_mod, only: soil_fluxes
 
@@ -43,7 +45,7 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
   !    0: Default param:
   !    1: New param:  - in case of vertical redistribution, liquid water that flows to the next layer is limited by 
   !                       the effective porosity. Any water in excess is added to the lateral flow
-  !                   - harmonic mean of the hydraulic conductivity  
+  !                   - harmonic mean of the hydraulic conductivity
 
   ! input
   real, dimension(n)        ::  impervu, pg
@@ -60,6 +62,7 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
   real, dimension(n,nl_svs) :: latflw
   real, dimension(n)        :: runoff
   real, dimension(n)        :: watpnd, maxpnd
+  real, dimension(n)        :: frzdepth, frzthick, thwdepth
 
   !
   !Author
@@ -129,6 +132,11 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
   ! F(NL_SVS+1)    water flux between soil layers and through bottom (in meters, converted to mm at the end ) [kg/m2/dt]
   ! LATFLW(NL_SVS) lateral flow (interflow) (in meters in calculation, converted to mm at the end) per layer [kg/m2/dt]
   ! RUNOFF         surface runoff [kg/m2/dt]
+  !
+  !          ---  frozen ground variables ---
+  ! FRZDEPTH       depth of frozen ground [m]
+  ! FRZTHICK       thickness of frozen ground [m]
+  ! THWDEPTH       depth of thawed ground [m]
   !
   !          -  DIMENSIONS  -
   !
@@ -500,6 +508,14 @@ SUBROUTINE HYDRO_SVS2 ( DT, &
      !
 
   END DO
+
+  !---------------------------------------------------
+  !          9.   Calculate the depth of frozen ground (FRZD), the frozen thickness (FRZT) and the thawing depth (THWD)   
+  !               -----------------------------------------------------------------------------------------------------
+  !
+  CALL SOIL_FRZDEPTH_SVS2(WDT, WFT, DL_SVS, DELZ, FRZDEPTH, FRZTHICK, THWDEPTH, N, NL_SVS)
+
+  
   !--------------------------------------------------------
   !--------------------------------------------------
   ! CALCULATE DIAGNOSTICS, CONVERT UNITS, AND ACCUMULATORS 

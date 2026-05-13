@@ -93,7 +93,7 @@ subroutine inicover_svs2(pvars, kount, ni)
       REAL LAIDAT(NCLASS), VEGDAT(NCLASS),EMISDAT(NCLASS) 
       REAL CVDAT(NCLASS), RGLDAT(NCLASS), GAMMADAT(NCLASS)
       REAL Z0MDAT(NCLASS), MAXPDAT(NCLASS), HVEGPOLDAT(NCLASS)
-      REAL SKINCONDAT(NCLASS)
+      REAL SKINCONDAT(NCLASS), DZ_FL_DAT(NCLASS), RHO_FL_DAT(NCLASS)
 !
       DATA ALDAT/ &
                      0.13   , 0.70   , 0.13   , 0.14   , 0.12   , &
@@ -212,6 +212,22 @@ subroutine inicover_svs2(pvars, kount, ni)
                      10.   , 10.   , 10.   , 10.   , 10.   , & 
                      10.   , 10.    , 10.   , 15.   , 10.   , & 
                      10.   / 
+      ! Values for forest litter at taken from Hanes et al. (2022) Table A4: 'Mapping organic layer thickness and fuel load of the boreal forest in Alberta, Canada'
+      DATA DZ_FL_DAT/ &
+                     0.0   , 0.0   , 0.0    , 0.0815  , 0.0825 , & 
+                     0.0815, 0.0825 , 0.0825  , 0.0825 , 0.0825 , & 
+                     0.0    , 0.0    , 0.0   ,  0.0    , 0.0    , & 
+                     0.0    , 0.0    , 0.0   ,  0.0    , 0.0    , & 
+                     0.0    , 0.0    , 0.0   ,  0.0    , 0.0    , & 
+                     0.0   / 
+
+      DATA RHO_FL_DAT/ &
+                     0.0   , 0.0   , 0.0    , 74.  , 121.   , & 
+                     74.   , 121.  , 121.   , 121. , 121.   , & 
+                     0.0   , 0.0   , 0.0   ,  0.0   , 0.0   , & 
+                     0.0   , 0.0   , 0.0   ,  0.0   , 0.0   , & 
+                     0.0   , 0.0   , 0.0   ,  0.0   , 0.0   , & 
+                     0.0   / 
 !
 !
 
@@ -445,6 +461,12 @@ subroutine inicover_svs2(pvars, kount, ni)
            PTR1D(dlat), ni, nclass)
       call aggveghigh(PTR1D(vegf), cvdat, cvdat, PTR1D(cvh), &
            PTR1D(dlat), ni, nclass)
+      IF (LFORLIT) THEN
+          call aggveghigh(PTR1D(vegf), dz_fl_dat, dz_fl_dat , PTR1D(dz_fl), &
+               PTR1D(dlat), ni, nclass)
+          call aggveghigh(PTR1D(vegf), rho_fl_dat, rho_fl_dat , PTR1D(rho_fl), &
+               PTR1D(dlat), ni, nclass)
+      ENDIF
 !
 !         aggregate logs ...
 !

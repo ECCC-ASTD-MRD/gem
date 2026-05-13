@@ -220,6 +220,7 @@ SUBROUTINE WATSURF_BUDGET_SVS2 ( DT, ESUBSNC, SUBSNC_CUM, &
          RVEG_FL(I) =  MAX(0., (WFLT(I) - WRMAX_FL(I)) / DT )
 
          WFLT(I) = MIN(WFLT(I), WRMAX_FL(I))
+         EGV(I) = 0. ! Prevents evaporation from the ground in ebudget_svs2
       ELSE
          RVEG_FL(I) = 0.
          WFLT(I) = 0.

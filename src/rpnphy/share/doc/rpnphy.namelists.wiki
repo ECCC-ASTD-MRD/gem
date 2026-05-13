@@ -716,6 +716,16 @@ For predicting the liquid fraction of mixed-phase particles in microphysics (P3)
 | .false. || logical
 
 |-
+| p3_mixratio ||
+assume P3 works with mixing ratios instead of specififc mass
+| .true. || logical
+
+|-
+| p3_msecons ||
+apply temperature-tendency adjustment in P3 to improve energy conservation
+| .false. || logical
+
+|-
 | p3_ncat ||
 Number of ice-phase hydrometeor categories to use in the P3 microphysics
 scheme (currently limited to <5)
@@ -1017,6 +1027,14 @@ rad_anu(3) : anu for cldfrac <= rad_anu(1)
 rad_anu(4) : anu for rad_anu(1) < cldfrac < rad_anu(2)
 rad_anu(5) : anu for cldfrac >= rad_anu(2)
 |  || 
+
+|-
+| rad_anuexp ||
+modify anu if clouds are mostly explicit - strfr>threshold
+rad_anuexp(1) : threshold value of strfr(e.g. 0.99)
+rad_anuexp(2) : anu value used above threshold strfr
+-1. values means is not used
+| (/ -1., -1./) || real
 
 |-
 | rad_atmpath ||
@@ -1380,6 +1398,11 @@ chi_min parameter: the minimal efficiency factor for phase change in the soil_fr
 | 0.6 || real
 
 |-
+| cslm_nlakmax ||
+CSLM: maximum number of lake layers
+| 20 || integer
+
+|-
 | diusst ||
 Diurnal SST scheme
 * 'NIL    ' : No Diurnal SST scheme
@@ -1543,15 +1566,15 @@ Specify the typical soil resistance for hrsurf computation (only used by BETA_EC
 | 50. || real
 
 |-
-| isba_lwfcliq ||
-
-| .false. || logical
-
-|-
 | isba_melting_fix ||
 If .true. apply temporary fix to ISBA
 * timestep dependent KCOEF
 * No PSN factor for meting and freezing
+| .false. || logical
+
+|-
+| isba_modwsat_ice ||
+
 | .false. || logical
 
 |-
@@ -1650,6 +1673,11 @@ over sea-ice and glacier if .true.
 | .false. || logical
 
 |-
+| lmodwsat_ice_svs1 ||
+
+| .false. || logical
+
+|-
 | lphase_change_eff_svs1 ||
 (SVS1) If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme
 | .true. || logical
@@ -1690,11 +1718,6 @@ If .true., SVS1 or SVS2 simulates water ponding at the surface
 | .false. || logical
 
 |-
-| lwfcliq_svs1 ||
-
-| .false. || logical
-
-|-
 | mp_alpha ||
 mp_alpha parameter in the macropore activation option (based on a sensitivity analysis)
 | 0.55 || real
@@ -1708,6 +1731,11 @@ In Crocus it refers to the maximal number of snow layers
 |-
 | owflux ||
 (coupling) fluxes over ocean are taken from ocean model if .true.
+| .false. || logical
+
+|-
+| read_blak_cslm ||
+(CSLM) read-in light extinction coef. for CSLM  if .true.
 | .false. || logical
 
 |-
@@ -2238,6 +2266,18 @@ Set tdiaglim lapse rate (K/m) in surface layer if .true.
 | 0.2 || real
 
 |-
+| teb_hydro ||
+(TEB) Options for parameters governing the hydrology evolution on roofs nd roads
+* 'MA00'   :  Default Masson 2000
+* 'CUSTOM'   :    opt for customization
+| 'MA00  ' || character(len=6)
+
+|-
+| teb_hydropar ||
+read the TEB hydro parameters (if schmsol=TEB and teb_hydro=custom)
+| -1.0 || real
+
+|-
 | teb_snow ||
 (TEB) Options for parameters governing the snow evolution on roofs nd roads
 * 'MA00'   :  Default Masson 2000
@@ -2299,15 +2339,32 @@ Use directional roughness length if .true.
 | .false. || logical
 
 |-
+| z0exp_la23 ||
+
+| 6. || real
+
+|-
 | z0hcon ||
 Constant value of thermal roughness length (m) applied over water within
 latitudinal band defined by z0tlat
 | 4.0e-5 || real
 
 |-
+| z0max_la23 ||
+
+| 0.02 || real
+
+|-
 | z0min ||
 Minimum value of momentum roughness length (m)
 | 1.5e-5 || real
+
+|-
+| z0min_la23 ||
+z0min_la23 is the minimal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.01 m
+z0max_la23 is the maximal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.15 m
+z0exp_la23 is the exponent used in the power law giving the roughness parameter as a function of Z0VL
+| 0.01 || real
 
 |-
 | z0mtype ||

@@ -40,6 +40,8 @@
       real, pointer, dimension(:) :: zsroad_tsen
       real, pointer, dimension(:) :: zsroad_wsnow
       real, pointer, dimension(:) :: zsroad_wsnowen
+      real, pointer, dimension(:) :: zsroad_wstok
+!      real, pointer, dimension(:) :: zsroad_wstoken
       real, pointer, dimension(:) :: zsroof_alb
       real, pointer, dimension(:) :: zsroof_alben
       real, pointer, dimension(:) :: zsroof_emis
@@ -52,6 +54,8 @@
       real, pointer, dimension(:) :: zsroof_tsen
       real, pointer, dimension(:) :: zsroof_wsnow
       real, pointer, dimension(:) :: zsroof_wsnowen
+      real, pointer, dimension(:) :: zsroof_wstok
+!      real, pointer, dimension(:) :: zsroof_wstoken
       real, pointer, dimension(:) :: zsvf_road
       real, pointer, dimension(:) :: zsvf_wall
       real, pointer, dimension(:) :: zt_canyon

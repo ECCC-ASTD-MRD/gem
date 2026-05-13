@@ -256,8 +256,13 @@ contains
       phy_lcl_jn = phy_lcl_j0 + phy_lcl_nj - 1
 
       if (F_drv_glb_S /= 'NULL') then
+         ! Getting back l_i0, l_j0 in drv_glb_i0, drv_glb_j0 from the gemdyn
+         ! somewhat abusing the local grid as explained in the comments above
+         ! the corresponding hgrid_wb_put call.
          ier = hgrid_wb_get(F_drv_glb_S, drv_glb_gid, &
-              F_lni=drv_glb_ni, F_lnj=drv_glb_nj)
+              F_i0=drv_glb_i0, F_j0=drv_glb_j0, &
+              F_lni=drv_glb_ni, F_lnj=drv_glb_nj, &
+              F_hx=drv_glb_hx, F_hy=drv_glb_hy)
          if (.not.RMN_IS_OK(ier)) then
             call msg_toall(MSG_ERROR, '(phy_init) Unable to retrieve grid info for '&
                  //trim(F_drv_glb_S))
@@ -521,6 +526,13 @@ contains
          endif
       endif IF_INPUTIO
       call collect_error(F_istat)
+
+#ifdef HAVE_NEMO
+      ier = wb_get('model/Hgrid/is_yinyang',phy_yinyang_L)
+      if (phy_yinyang_L) then
+        ier = wb_get('model/Hgrid/yysubgrid',phy_yinyang_S)
+      endif
+#endif
 
       if (RMN_IS_OK(F_istat)) &
            F_istat = itf_cpl_init(F_path_S, print_L, unout, F_dateo, F_dt)

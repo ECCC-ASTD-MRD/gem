@@ -192,7 +192,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
                           CSZ, DEGLAT, DEGLON, ZDIAGM, ZDIAGH,           &
                           SUNOTHER1, SUNOTHER2, SUNOTHER3, SUNOTHER4
       REAL,DIMENSION(N) :: ASVDAT, ASIDAT                 ! assigned snow albedos - not used
-      REAL,DIMENSION(NLAKMAX) :: TLAK0
+      REAL,DIMENSION(CSLM_NLAKMAX) :: TLAK0
       REAL   FLS   (N),  HCPSNO(N),  ZSNOW (N), ALBW  (N),  ALBI  (N)
       REAL   ALVSSN(N),  ALIRSN(N),  ALVSSC(N), ALIRSC(N),               &
              ALVSG (N),  ALIRG (N),  TRSNOWC(N),ALVSL (N),  ALIRL (N)
@@ -242,12 +242,12 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! ----* LAKE MODEL VARIABLES *----------------------------------------
 !
       INTEGER,DIMENSION(N) :: NLAK
-      REAL,DIMENSION(N) :: HLAK, LLAK, BLAK, RC1, RC2, RUNFRAC
+      REAL,DIMENSION(N) :: HLAK, LLAK, RC1, RC2, RUNFRAC
       REAL,DIMENSION(N) :: VPD, TADP, PADRY, RHOAIR, RHOSNI, R,TR,S,TS,    &
                            RRATE, SRATE, PCPIN
-      REAL,DIMENSION(N,NLAKMAX) :: QFLX, FFLX
+      REAL,DIMENSION(N,CSLM_NLAKMAX) :: QFLX, FFLX
  
-      real,pointer,dimension(:) ::  T0, TKE, HDPTH,LKICEH,SNICEH,        &
+      real,pointer,dimension(:) ::  T0, BLAK, TKE, HDPTH,LKICEH,SNICEH,        &
            EXPW,DTEMP,DELU,GRED,RHOMIX,TSED,ROFICEH, SNO, RHOSNO, TSNOW, ALBSNO, WSNOW, &
            QSENS, QEVAP, ALVS, QSURF, HLAKSIL, ZROFINLAK, ZLAKEFR, ZLAKD, FICE, &
            ZLAKEAREA, ZDXDY
@@ -321,7 +321,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    RHOMIX   (1:n) => bus( x(rhomix,1,1)       : )  !mean density of mixed layer (kg/m3)
    TSED     (1:n) => bus( x(tsed,1,1)         : )  !temp of sediment layer (K)
    ROFICEH  (1:n) => bus( x(roficeh,1,1)      : )  !lake ice thickness from snowmelt runoff (m) TURNED OFF FOR NOW
-   TLAK     (1:n,1:NLAKMAX) => bus( x(tlak,1,1) : )!lake temp profile
+   TLAK     (1:n,1:CSLM_NLAKMAX) => bus( x(tlak,1,1) : )!lake temp profile
    ZROFINLAK (1:n) => bus( x(rofinlak,1,1)      : ) !runoff input to lake water balance based on lake fraction (mm or kg/m2)
    FICE     (1:n) => bus( x(ficl,1,1)          : ) !fractional lake ice cover
    LSTD     (1:n) => bus( x(lstd,1,1)          : ) !lake initial water storage (kg/m2)
@@ -363,6 +363,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    ZLAKEAREA(1:n) => bus( x(lakearea,1,1)     : )         !Lake surface area (km2)
    ZLAKD(1:n)     => bus( x(lakd,1,1)         : )         !Lake depth (average in grid cell) (m)
    ZLAKEFR  (1:n) => bus( x(lakefr,1,1)     : )           !Fraction of grid cell covered by lakes
+   BLAK (1:n) => bus( x(blak,1,1)     : )           ! Light extinction coeff.
 ! Output variables
    QSENS    (1:n) => bus( x(fc,1,indx_sfc)    : )  !Lake average sensible heat flux (inc. ice,snow)
    QEVAP    (1:n) => bus( x(fv,1,indx_sfc)    : )  !Lake average latent heat flux (inc. ice,snow)
@@ -411,8 +412,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
         ELSE
           LLAK(I)=SQRT(ZLAKEAREA(I)*1000000.0) ! Lake fetch length scale (square-root of lake surface area in m2)
         ENDIF
-        BLAK(I)=BLAKCON
-        NLAK(I)=MIN(NLAKMAX, NINT(HLAK(I)/DELZLK))
+        !BLAK(I)=BLAKCON   
+        NLAK(I)=MIN(CSLM_NLAKMAX, NINT(HLAK(I)/DELZLK))
         NLAK(I)=MAX(NLAKMIN,NLAK(I))
         RC1 (I)=RC1CON
         RC2 (I)=RC2CON
@@ -635,7 +636,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !     * STARTING "GROUND ALBEDOS" FOR ROUTINE SNOALBA.
 !
       DO 145 I=1,N
-        ALBW(I)=0.045/MAX(CSZ(I),0.1)          !std value for water
+!        ALBW(I)=0.045/MAX(CSZ(I),0.1)          !std value for water
+        ALBW(I)=0.09/MAX(CSZ(I),0.1)          !std value for water - from Ouranos'
 !
         ALBI(I)=0.08+0.44*(LKICEH(I))**0.28    !thin ice albedo (Vavrus et al 1996)
         ALBI(I)=MIN(ALBI(I),0.44)
@@ -904,7 +906,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !     * COMPUTE WATER EXTINCTION COEFFICIENTS
 !----------------------------------------------------------------------------------------
 !  - include skin layer if no ice is present       (Sept 2, 2011 M MacKay)
-      CALL FREECONV(LKICEH,T0,TLAK,RHOIW,NLAK,NLAKMAX,ILG,IL1,IL2)
+      CALL FREECONV(LKICEH,T0,TLAK,RHOIW,NLAK,CSLM_NLAKMAX,ILG,IL1,IL2)
 !
       CALL LKTRANS (CQ1A,CQ1B,CQ2A,CQ2B,CQ3A,CQ3B,BLAK,IL1,IL2,ILG,   &
                     CQ1BI,CQ2BI,CQ3BI)
@@ -919,7 +921,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
                   GZEROSL,QTRANSL,HTCL,FLS,FICE,ALBW,ALBI,       &
                   CQ1A,CQ1B,CQ2A,CQ2B,CQ3A,CQ3B,                 &
                   CQ1BI,CQ2BI,CQ3BI,G0,                          &
-                  NLAKMAX,ILG,IL1,IL2   )
+                  CSLM_NLAKMAX,ILG,IL1,IL2   )
  
 !----------------------------------------------------------------------------------------
 ! 8.  * COMPUTE SOLAR FLUX (QFLX) FOR CURRENT TIMESTEP

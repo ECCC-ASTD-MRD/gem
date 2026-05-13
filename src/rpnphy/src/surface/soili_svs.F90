@@ -34,7 +34,8 @@ contains
          !
         use tdpack_const, only: PI
         use svs_configs
-        use sfc_options, only: read_emis, svs_urban_params, soil_cond, svs_snowfrac_ground, svs_cg_depth, svs_cg_ice
+        use sfc_options, only: read_emis, svs_urban_params, soil_cond, svs_snowfrac_ground, svs_cg_depth, svs_cg_ice, &
+                               vf_type, z0min_la23, z0max_la23, z0exp_la23, critwater, lmodwsat_ice_svs1
      implicit none
 !!!#include <arch_specific.hf>
 
@@ -150,9 +151,11 @@ include "isbapar.cdk"
       REAL LAM_ZERO, k_min, k_air, k_ice 
       REAL SATDEG, KERSTEN
       REAL C_ICE
+
+      REAL COEF1,COEF2
 !
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
-           zcs, zcsv, z0_snow_low, sd_opn, sd_for
+           zcs, zcsv, z0_snow_low, sd_opn, sd_for, z0vl_frac, wsatc, wwilt_eff
 
       real, dimension(n,nl_svs) :: cgk
 
@@ -161,6 +164,12 @@ include "isbapar.cdk"
       IF (SVS_URBAN_PARAMS) THEN
          CVAMIN = 0.3E-5   ! matches value of CVDAT(21) reset in inicover_svs.F90
       ENDIF
+
+      IF(SVS_SNOWFRAC_GROUND=='LA23' .AND.  VF_TYPE .eq. 'CCILC_WE') THEN
+         COEF1 = (Z0MAX_LA23-Z0MIN_LA23)/(0.15**Z0EXP_LA23 - 0.01**Z0EXP_LA23)
+         COEF2 = Z0MIN_LA23 - COEF1 * 0.01**Z0EXP_LA23
+      ENDIF
+
 !
 !***********************************************************************
 !
@@ -260,14 +269,34 @@ include "isbapar.cdk"
 
                PSNGRVL(I) = MIN( SNM(I) / (SNM(I) + RHOS(I)* 5000.* z0_snow_low(i) ) , 1.0)
 
+
              ELSE IF(SVS_SNOWFRAC_GROUND=='LA23') THEN 
 
                ! Snow depth in open terrain [m]      
                SD_OPN(I) = SNM(I) / (RHOS(I)*1000.)
 
-               ! Roughness parameter accounting for the fraction of low veg. 
-               Z0_SNOW_LOW(I) = EXP (  (  (1-VEGH(I) -VEGL(I)) * LOG(Z0BG_LA23) &
-                                  +  VEGL(I) * LOG(Z0LV_LA23)) / ( 1 - VEGH(I) ) )
+
+               ! Roughness parameter used in the snow cover fraction 
+               !   - with VF_TYPE = 'CCILC_WE' it depends on the momentum roughness length for low vegetation (Z0MVL)
+               !        parameters Z0MIN_LA23, Z0MAX_LA23 and Z0EXP_LA23  can be set in namelist
+               !   - with VF_TYPE != 'CCILC_WE', it depends on the fraction of open terrain covered by low vegtation VS bare ground
+               !        to be consistent with the inital approach used in SVS (see NIL above) to account for the effect of the presence of low 
+               !        vegetation on the snow cover fraction. 
+               IF( VF_TYPE .eq. 'CCILC_WE') THEN
+                   ! Value of Z0MVL(I)> 0.5 corresponds to values without low vegetation (only bare ground)
+                   ! Used a default value of 0.01 m (consistent with the minimal value for Z0MVL in CCILC_WE
+                   IF(Z0MVL(I)> 0.5) THEN
+                       Z0VL_FRAC(I) = 0.01 
+                   ELSE
+                       Z0VL_FRAC(I) = Z0MVL(I)
+                   ENDIF
+               
+                   Z0_SNOW_LOW(I) = MAX(Z0MIN_LA23, MIN(COEF1*Z0VL_FRAC(I)**Z0EXP_LA23 +COEF2, Z0MAX_LA23))
+               ELSE
+                   ! Roughness parameter accounting for the fraction of low veg. 
+                   Z0_SNOW_LOW(I) = EXP (  (  (1-VEGH(I) -VEGL(I)) * LOG(Z0BG_LA23) &
+                                 +  VEGL(I) * LOG(Z0LV_LA23)) / ( 1 - VEGH(I) ) )
+               ENDIF
 
                ! Snow cover fraction accounting for sugbrid topography as in Lalande et al. (2023)
                PSNGRVL(I) = MIN(1.0, TANH(SD_OPN(I)/                                          &
@@ -523,6 +552,21 @@ include "isbapar.cdk"
 !                       database unto model layer, use 1st layer texture from 
 !                       database as is here... 
 !
+
+      IF(LMODWSAT_ICE_SVS1) THEN              
+         DO I=1,N
+            !Adjust wsat for presence of ice as
+            WSATC(I)= MAX((WSAT(I,1)-WF(I,1)-0.00001), CRITWATER)
+            !Wilting point with respect to the liquid water using modified soil porosity
+            WWILT_EFF(I) = WWILT(I,1) * WSATC(I)/WSAT(I,1)
+         END DO
+      ELSE
+         DO I=1,N
+            WSATC(I) = WSAT(I,1)
+            WWILT_EFF(I) = WWILT(I,1) 
+         END DO
+      ENDIF
+      
       DO I=1,N
 !        A few constraints
 !	     Take the texture of the surface soil layer 
@@ -534,8 +578,8 @@ include "isbapar.cdk"
 !                      If  superficial soil layer dryer than wilting point
 !                      set it to wilting points ...and so get 0.0 for B(I)
 !
-         IF((WSAT(I,1)-WWILT(I,1)).gt.0.0.and.WD(I,1).ge.WWILT(I,1)) THEN         
-            B(I) = ( WD(I,1) - WWILT(I,1) ) / ( WSAT(I,1) - WWILT(I,1))
+         IF((WSATC(I)-WWILT_EFF(I)).gt.0.0.and.WD(I,1).ge.WWILT_EFF(I)) THEN         
+            B(I) = ( WD(I,1) - WWILT_EFF(I) ) / ( WSATC(I) - WWILT_EFF(I))
          ELSE
             B(I) = 0.0 
          ENDIF

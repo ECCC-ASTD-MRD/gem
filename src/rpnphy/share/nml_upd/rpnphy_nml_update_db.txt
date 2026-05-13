@@ -825,3 +825,19 @@ rm:  surface_cfgs/svs_read_d95crops
 #New:  surface_cfgs/svs_read_d95veg15
 #New:  surface_cfgs/svs_read_d95veg16
 #New:  surface_cfgs/svs_read_gexpveg
+#------
+fileVersion: 6.3.0-a22 > 6.3.0-a23
+#New:  physics_cfgs/p3_mixratio
+#New:  physics_cfgs/p3_msecons
+#New:  physics_cfgs/rad_anuexp
+#New:  surface_cfgs/cslm_nlakmax
+rm:  surface_cfgs/isba_lwfcliq
+#New:  surface_cfgs/isba_modwsat_ice
+#New:  surface_cfgs/lmodwsat_ice_svs1
+rm:  surface_cfgs/lwfcliq_svs1
+#New:  surface_cfgs/read_blak_cslm
+#New:  surface_cfgs/teb_hydro
+#New:  surface_cfgs/teb_hydropar
+#New:  surface_cfgs/z0exp_la23
+#New:  surface_cfgs/z0max_la23
+#New:  surface_cfgs/z0min_la23

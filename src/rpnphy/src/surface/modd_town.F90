@@ -48,7 +48,9 @@ XUTCIC_OUTSHADE,XUTCIC_RFSUN,          &
 XUTCIC_RFSHADE,                        &
 XTRFZT,XTRDZT,XURDZU,                  &
 XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,           &
-XQ8,XQ9,XQ10,XQ11,XQ12,XQ13
+XQ8,XQ9,XQ10,XQ11,XQ12,XQ13,           &
+XDSNOW_ROOF,XDSNOW_ROAD,               &
+XFSNOW_ROOF,XFSNOW_ROAD
 
 !$OMP THREADPRIVATE(/ttte/)
 !
@@ -158,6 +160,6 @@ REAL, DIMENSION(:)  , POINTER :: XDSNOW_ROOF     ! Snow Depth/Height over roofs
 REAL, DIMENSION(:)  , POINTER :: XFSNOW_ROOF     ! Snow cover/fraction over roofs
 REAL, DIMENSION(:)  , POINTER :: XDSNOW_ROAD     ! Snow Depth/Height over roads
 REAL, DIMENSION(:)  , POINTER :: XFSNOW_ROAD     ! Snow cover/fraction over roads
+REAL, DIMENSION(:)  , POINTER :: XMLTSNOW_TOWN   ! melted snow kg/m2 of town during timestep 
 !
-REAL, DIMENSION(:)  , POINTER :: XTEMP          ! temp
 END MODULE MODD_TOWN

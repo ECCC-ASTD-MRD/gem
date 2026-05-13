@@ -351,6 +351,16 @@ module phy_options
    namelist /physics_cfgs/ p3_resfact
    namelist /physics_cfgs_p/ p3_resfact
 
+   !# assume P3 works with mixing ratios instead of specififc mass
+   logical         :: p3_mixratio = .true.
+   namelist /physics_cfgs/ p3_mixratio
+   namelist /physics_cfgs_p/ p3_mixratio
+
+   !# apply temperature-tendency adjustment in P3 to improve energy conservation
+   logical         :: p3_msecons = .false.
+   namelist /physics_cfgs/ p3_msecons
+   namelist /physics_cfgs_p/ p3_msecons
+
    !# Semi-Lagrangian Sedimentation for microphysics Thompson
    logical :: thompson_sedi_semilag_L = .true.
    namelist /physics_cfgs/ thompson_sedi_semilag_L
@@ -952,6 +962,14 @@ module phy_options
    real, dimension(5) :: rad_anu = (/ 0.9, 1.0, 1.0, 2.0, 4.0 /)
    namelist /physics_cfgs/ rad_anu
    namelist /physics_cfgs_p/ rad_anu
+
+   !# modify anu if clouds are mostly explicit - strfr>threshold
+   !#    rad_anuexp(1) : threshold value of strfr(e.g. 0.99)
+   !#    rad_anuexp(2) : anu value used above threshold strfr
+   !# -1. values means is not used
+   real              :: rad_anuexp(2) = (/ -1., -1./)
+   namelist /physics_cfgs/ rad_anuexp
+   namelist /physics_cfgs_p/ rad_anuexp
 
    !# Radiation scheme
    !# * 'NIL      ': no radiation scheme

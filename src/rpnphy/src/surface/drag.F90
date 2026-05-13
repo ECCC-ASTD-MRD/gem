@@ -155,7 +155,7 @@ subroutine drag7(TS, WG, WR, THETAA, VMOD, VDIR, HU, &
       BETA_EVPG(I) = 0.  ! Initialize default value to zero (variable not used by "alpha" methods)
    end do
 
-   IF(ISBA_LWFCLIQ) THEN              
+   IF(ISBA_MODWSAT_ICE) THEN              
       DO I=1,N
          !Adjust wsat for presence of ice as in hydro_svs
          WSATC(I)= MAX((WSAT(I)-WF(I)-0.00001), CRITWATER)

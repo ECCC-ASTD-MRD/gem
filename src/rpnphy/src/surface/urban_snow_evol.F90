@@ -38,7 +38,8 @@ contains
                      PMELT_ROOF,                                              &
                      PRNSNOW_ROAD, PHSNOW_ROAD, PLESNOW_ROAD, PGSNOW_ROAD,    &
                      PMELT_ROAD,                                              &
-                     PLW_S_TO_N                                               )
+                     PLW_S_TO_N                                               &
+                     ,PWKSNOW_ROOF, PWKSNOW_ROAD                              )
 !   ##########################################################################
 !
 !!****  *URBAN_SNOW_EVOL*  
@@ -114,6 +115,8 @@ REAL, DIMENSION(:), INTENT(INOUT) :: PRSNOW_ROAD ! snow layers density
 REAL, DIMENSION(:),   INTENT(INOUT) :: PASNOW_ROAD ! snow albedo
 REAL, DIMENSION(:),   INTENT(INOUT) :: PESNOW_ROAD ! snow emissivity
 REAL, DIMENSION(:),   INTENT(INOUT) :: PTSSNOW_ROAD! snow surface temperature
+REAL, DIMENSION(:), INTENT(INOUT) :: PWKSNOW_ROOF ! snow additionnal reservoir
+REAL, DIMENSION(:), INTENT(INOUT) :: PWKSNOW_ROAD ! snow additionnal reservoir
 
 REAL, DIMENSION(:), INTENT(IN)    :: PPS      ! pressure at the surface
 REAL, DIMENSION(:), INTENT(IN)    :: PTA      ! temperature at the lowest level
@@ -239,6 +242,7 @@ IF ( GSNOW_ROOF ) THEN
 !
  
   WHERE (PDN_ROOF(:)>0.) PWSNOW_ROOF(:) = PWSNOW_ROOF(:) / PDN_ROOF(:)
+  WHERE (PDN_ROOF(:)>0.) PWKSNOW_ROOF(:) = PWKSNOW_ROOF(:) / PDN_ROOF(:)
  
   ZSR_ROOF=0.
   WHERE (PDN_ROOF(:)>0.) ZSR_ROOF   (:) = PSR   (:) / PDN_ROOF(:)
@@ -321,13 +325,15 @@ IF ( GSNOW_ROOF ) THEN
                          ZLW1_ROOF, ZLW2_ROOF,                                &
                          PTA, PQA, PVMOD, PPS, PRHOA, ZSR_ROOF, PZREF, PUREF, &
                          PRNSNOW_ROOF, PHSNOW_ROOF, PLESNOW_ROOF, PGSNOW_ROOF,&
-                         PMELT_ROOF                                           )
+                         PMELT_ROOF                                           &
+                         ,PWKSNOW_ROOF                                        )
 !
 !* The global amount of snow on roofs is reported to total roof surface.
 !
   
   PWSNOW_ROOF(:) = PWSNOW_ROOF(:) * PDN_ROOF(:)
-  
+  PWKSNOW_ROOF(:) = PWKSNOW_ROOF(:) * PDN_ROOF(:)
+
 !           
 END IF
 !
@@ -362,6 +368,7 @@ IF ( GSNOW_ROAD ) THEN
 !
   
   WHERE (PDN_ROAD(:)>0.) PWSNOW_ROAD(:) = PWSNOW_ROAD(:) / PDN_ROAD(:)
+  WHERE (PDN_ROAD(:)>0.) PWKSNOW_ROAD(:) = PWKSNOW_ROAD(:) / PDN_ROAD(:)
   
   ZSR_ROAD=0.
   WHERE (PDN_ROAD(:)>0.) ZSR_ROAD   (:) = PSR   (:) / PDN_ROAD(:)
@@ -447,11 +454,13 @@ END IF
                          PT_CANYON, PQ_CANYON,UCAN_MOD, PPS, PRHOA,         &
                          ZSR_ROAD, PBLD_HEIGHT/2., PBLD_HEIGHT/2.,            &
                          PRNSNOW_ROAD, PHSNOW_ROAD, PLESNOW_ROAD, PGSNOW_ROAD,&
-                         PMELT_ROAD                                           )
+                         PMELT_ROAD                                           &
+                         ,PWKSNOW_ROAD                                        )
 !
 !* The global amount of snow on roads is reported to total road surface.
 !
   PWSNOW_ROAD(:) = PWSNOW_ROAD(:) * PDN_ROAD(:)
+  PWKSNOW_ROAD(:) = PWKSNOW_ROAD(:) * PDN_ROAD(:)
 !
 END IF
 !
