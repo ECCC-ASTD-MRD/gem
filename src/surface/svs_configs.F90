@@ -222,9 +222,12 @@ module svs_configs
   REAL, PARAMETER ::  ANSMAX_CLASS  = 0.84 ! Maximum snow albedo [-]
 
 ! Parameters for snow cover fraction (adjusted approach of Lalande et al., 2023)
+  ! Parameters used when VF_TYPE .is not set to 'CCILC_WE'
   REAL, PARAMETER ::  Z0BG_LA23 = 0.01  ! [m] Roughness coefficient used for bare ground 
   REAL, PARAMETER ::  Z0LV_LA23 = 0.015 ! [m] Roughness coefficient used for low vegetation
-  REAL, PARAMETER ::  Z0HV_LA23 = 0.015 ! [m] Roughness coefficient used for ground below high-vegetation
+
+  ! Parameters used in LA23 for all VF_TYPE
+  REAL, PARAMETER ::  Z0HV_LA23 = 0.015  ! [m] Roughness coefficient used for ground below high-vegetation
   REAL, PARAMETER ::  MFAC_LA23 = 1.6   ! [-]  Adjusted value for SVS  
   REAL, PARAMETER ::  NFAC_LA23 = 3.    ! [-]
   REAL, PARAMETER ::  RHON_LA23 = 50.   ! [kg m-3] 

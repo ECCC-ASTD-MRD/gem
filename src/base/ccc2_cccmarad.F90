@@ -137,6 +137,7 @@ contains
       
       real, target :: dummy1d(ni)
 
+
 #define PHYPTRDCL
 #include "cccmarad_ptr.hf"
 
@@ -147,6 +148,7 @@ contains
 
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'ccc2_cccmarad [BEGIN]')
+
 
 #undef PHYPTRDCL
 #include "cccmarad_ptr.hf"
@@ -250,6 +252,7 @@ contains
       zfctb = 0.0
       zfcdb = 0.0
       zfcfb = 0.0
+      if (associated(zstrfr)) zstrfr = 0.0
 
       ! is this or next step a radiation timestep?
       thisstepisraduv = ((kntraduv_S /= '') .and. &
@@ -289,7 +292,6 @@ contains
              zgztherm, cldfrac, &
              temp, sig, ps, trnch, &
              ni, nkm1, nk)
-
 
       csec_in_day  = 8640000
       timestep     =  nint(tau*100.)
@@ -493,7 +495,7 @@ contains
                  qq, co2, zch4,  &
                  o2, rmu0, r0r, salb, taucs, &
                  omcs, gcs, &
-                 cldfrac, tauae, exta, exoma, exomga, &
+                 cldfrac, zstrfr, tauae, exta, exoma, exomga, &
                  fa, zmrk2, &
                  ni, nkm1, nk)
 
@@ -520,7 +522,7 @@ contains
               qq, co2, zch4, zn2o, zcf11, &
               zcf12, f113, f114, o2, zcosas, r0r, salb, zemisr, taucs, &
               omcs, gcs, taucl, omcl, gcl, &
-              cldfrac, tauae, exta, exoma, exomga, &
+              cldfrac, zstrfr, tauae, exta, exoma, exomga, &
               fa, absa, rad_sw, rad_lw, zmrk2, .not.DO_UV_ONLY, &
               ni, nkm1, nk)
 

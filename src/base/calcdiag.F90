@@ -297,6 +297,8 @@ contains
                return
             endif
 
+            if (ik == indx_urb) zqdiagtyp2(:,ik) = zqdiag_urb(:)*sldmask(:)
+
             call mhuaes3(esdiagst, zqdiagtyp2(:,ik), ztdiagtyp2(:,ik), zpplus, .false., ni, 1, ni)
             do i=1,ni
                if (sldmask(i) < WGTMIN) cycle

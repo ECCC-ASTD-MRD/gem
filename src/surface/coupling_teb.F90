@@ -63,7 +63,8 @@ contains
            XALB_ROOF, XEMIS_ROOF, XHC_ROOF,XTC_ROOF, XD_ROOF,      &
            XALB_ROAD, XEMIS_ROAD, XHC_ROAD,XTC_ROAD, XD_ROAD,      &
            XALB_WALL, XEMIS_WALL, XHC_WALL,XTC_WALL, XD_WALL,      &
-           XSVF_ROAD, XSVF_WALL
+           XSVF_ROAD, XSVF_WALL, &
+           XWKSNOW_ROOF, XWKSNOW_ROAD
 
       use MODD_TOWN,       only : &
            XTOWN,                                                  &
@@ -245,7 +246,8 @@ contains
            XWBGT_OUTSUN, XWBGT_OUTSHADE, XWBGT_RFSUN, XWBGT_RFSHADE,          &
            XUTCIC_IN,XUTCIC_OUTSUN,XUTCIC_OUTSHADE,XUTCIC_RFSUN,XUTCIC_RFSHADE &
            ,XTRFZT,XTRDZT,XURDZU &
-           ,XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,XQ8,XQ9,XQ10,XQ11,XQ12,XQ13   )
+           ,XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,XQ8,XQ9,XQ10,XQ11,XQ12,XQ13 &
+           ,XWKSNOW_ROOF, XWKSNOW_ROAD   )
 
 
       !-------------------------------------------------------------------------

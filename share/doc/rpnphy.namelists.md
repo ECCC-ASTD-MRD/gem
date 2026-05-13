@@ -127,6 +127,8 @@
 | p3_dtmax | Maximum time step (s) to be taken by the microphysics (P3), with time-splitting<br>used to reduce step to below this value if necessary | 60. | real |
 | p3_freq3ddiag | frequency (min) for calculating 3D diagnostic output in microphysics (P3) | 60. | real |
 | p3_liqfrac | For predicting the liquid fraction of mixed-phase particles in microphysics (P3) | .false. | logical |
+| p3_mixratio | assume P3 works with mixing ratios instead of specififc mass | .true. | logical |
+| p3_msecons | apply temperature-tendency adjustment in P3 to improve energy conservation | .false. | logical |
 | p3_ncat | Number of ice-phase hydrometeor categories to use in the P3 microphysics<br>scheme (currently limited to <5) | 1 | integer |
 | p3_pfrac | precipitation fraction factor used by SCPF in microphysics (P3) | 1.0 | real |
 | p3_resfact | model resolution factor used by SCPF in microphysics (P3) | 1.0 | real |
@@ -178,6 +180,7 @@
 | qco2 | CO2 bckgrnd atmospheric concentration (PPMV) | -1. | real |
 | qn2o | N2O bckgrnd atmospheric concentration (PPMV) | -1. | real |
 | rad_anu | Cloud internal homogeneity (ANU) factor : Set ANU as a fonction of cloud fraction (ccc_cldifm.F90)<br>Default below will reproduce pre gem5.3.0-a21 hard coded values<br>Higher anu implies more homogeneous clouds<br>rad_anu(1) : first boundary in cldfrac<br>rad_anu(2) : second boundary in cldfrac<br>rad_anu(3) : anu for cldfrac <= rad_anu(1)<br>rad_anu(4) : anu for rad_anu(1) < cldfrac < rad_anu(2)<br>rad_anu(5) : anu for cldfrac >= rad_anu(2) |  |  |
+| rad_anuexp | modify anu if clouds are mostly explicit - strfr>threshold<br>rad_anuexp(1) : threshold value of strfr(e.g. 0.99)<br>rad_anuexp(2) : anu value used above threshold strfr<br>-1. values means is not used | (/ -1., -1./) | real |
 | rad_atmpath | Atmospheric path length for solar radiation<br>- 'RODGERS67' : Formulation used by Li and Barker (2005)<br>- 'LI06' : Estimate of  Li and Shibata (2006) | 'RODGERS67' | character(len=16) |
 | rad_cond_rei |  | -1. | real |
 | rad_cond_rew |  | -1. | real |
@@ -261,6 +264,7 @@
 | beta | Prandtl number for neutral stability (initialized by SL module) | 0. | real |
 | cano_ref_forcing | (SVS2) Options for transfer of the forcing in the canopy module of SVS2<br>- 'FOR'   :  forcing is below the canopy<br>- 'O2F'   :  met forcing is below canopy height in the open and is transfered below canopy<br>- 'ABV'   :  met forcing is above canopy | 'ABV' | character(len=3) |
 | chi_min | chi_min parameter: the minimal efficiency factor for phase change in the soil_freezing scheme (the same concept as in Surfex and described in Pitman et al., 1991, Slater et al., 1998. | 0.6 | real |
+| cslm_nlakmax | CSLM: maximum number of lake layers | 20 | integer |
 | diusst | Diurnal SST scheme<br>- 'NIL    ' : No Diurnal SST scheme<br>- 'FAIRALL' : #TODO: define | 'NIL' | character(len=16) |
 | diusst_lakes | Diurnal SST scheme active over freshwater lakes if .true. | .true. | logical |
 | diusst_ocean | Diurnal SST scheme active over ocean if .true. | .true. | logical |
@@ -283,8 +287,8 @@
 | isba_hrsurf_method | Specify which method is used to compute hrsurf<br>- ALPHA_JN90  : (default) [pending description]<br>- BETA_ECMWF12: [pending description] | 'ALPHA_JN90' | character(len=16) |
 | isba_hrsurf_power | Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method) | 1. | real |
 | isba_hrsurf_rs | Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m] | 50. | real |
-| isba_lwfcliq |  | .false. | logical |
 | isba_melting_fix | If .true. apply temporary fix to ISBA<br>- timestep dependent KCOEF<br>- No PSN factor for meting and freezing | .false. | logical |
+| isba_modwsat_ice |  | .false. | logical |
 | isba_snow_melt_t2veg | Snow melt/freeze under vegetation impact T2 instead of TST | .false. | logical |
 | isba_snow_z0veg | Use the vegetation-only roughness length to compute vegetation snow fraction | .false. | logical |
 | isba_snowfrac_bare | Computation of bare ground snow fraction<br>- 'NIL'   : Legacy approach implemented in ISBA (Belair et al. 003)<br>- 'PHY98' : Use the same definition as in Physics 1998 documentation, Douville 1995 and Pitman 1991<br>- 'SVS1'  : Use the same definition as in SVS1 | 'NIL' | character(len=16) |
@@ -301,6 +305,7 @@
 | lforlit | (SVS2) activate forest litter in SVS2 if .true. | .false. | logical |
 | limsnodp | Limit snow depth to 10 cm for calculation of heat conductivity of snow<br>over sea-ice and glacier if .true. | .false. | logical |
 | lmacropores_svs | (SVS1) If .true., macropores are activated and enhance infiltration in a frozen soil | .false. | logical |
+| lmodwsat_ice_svs1 |  | .false. | logical |
 | lphase_change_eff_svs1 | (SVS1) If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme | .true. | logical |
 | lsfclayer_crocus_svs2 | (SVS2) If .true., SVS2 uses the aerodynamic resistance from sfc_layer | .false. | logical |
 | lsnow_interception_svs2 | (SVS2) If .true., SVS2 simulates interception of snow by canopy, sublimation and inloading of intercepted snow | .false. | logical |
@@ -309,10 +314,10 @@
 | lsoil_freezing_svs1 | If .true., SVS1 simulates soil freezing and thawing and its impact on hydrology | .false. | logical |
 | lunique_profile_svs2 | (SVS2) If .true., SVS2 uses only a unique column for the soil | .true. | logical |
 | lwater_ponding_svs | If .true., SVS1 or SVS2 simulates water ponding at the surface | .false. | logical |
-| lwfcliq_svs1 |  | .false. | logical |
 | mp_alpha | mp_alpha parameter in the macropore activation option (based on a sensitivity analysis) | 0.55 | real |
 | nsl | (SVS2) Number of snow layers in multi-layer snowpack scheme:<br>In Crocus it refers to the maximal number of snow layers | 12 | integer |
 | owflux | (coupling) fluxes over ocean are taken from ocean model if .true. | .false. | logical |
+| read_blak_cslm | (CSLM) read-in light extinction coef. for CSLM  if .true. | .false. | logical |
 | read_emis | read-in land surface emissivity if .true. | .false. | logical |
 | read_hveglpol | (SVS2) read-in height of polar low vegetation for SVS2 if .true. | .false. | logical |
 | read_oc | (SVS2) read-in organic content for SVS2 if .true. | .false. | logical |
@@ -407,6 +412,8 @@
 | svs_z0mdat | Values (1:NCLASS) used for the lookup table Z0MDAT if svs_read_z0mdat=.T. | -999. | real |
 | tdiaglim | Limit temperature inversions to dlrate in surface layer if .true. | .false. | logical |
 | tdlrate | Set tdiaglim lapse rate (K/m) in surface layer if .true. | 0.2 | real |
+| teb_hydro | (TEB) Options for parameters governing the hydrology evolution on roofs nd roads<br>- 'MA00'   :  Default Masson 2000<br>- 'CUSTOM'   :    opt for customization | 'MA00  ' | character(len=6) |
+| teb_hydropar | read the TEB hydro parameters (if schmsol=TEB and teb_hydro=custom) | -1.0 | real |
 | teb_snow | (TEB) Options for parameters governing the snow evolution on roofs nd roads<br>- 'MA00'   :  Default Masson 2000<br>- 'JA14'   :    opt Järvi et al 2014<br>- 'LE10'   :    opt Lemonsu et al 2010 | 'MA00  ' | character(len=6) |
 | teb_snroad |  |  |  |
 | teb_snroof |  | -1.0 | real |
@@ -418,8 +425,11 @@
 | vf_type | VF definitions and mapping in SVS<br>- 'CLASSIC' : Same VF definitions as ISBA<br>- 'CCILCECO' : New VF definitions used in SVS only<br>with geo. fields generated using CCILC 2015 + Ecobiomes | 'CLASSIC' | character(len=16) |
 | water_emiss |  | -1. | real |
 | z0dir | Use directional roughness length if .true. | .false. | logical |
+| z0exp_la23 |  | 6. | real |
 | z0hcon | Constant value of thermal roughness length (m) applied over water within<br>latitudinal band defined by z0tlat | 4.0e-5 | real |
+| z0max_la23 |  | 0.02 | real |
 | z0min | Minimum value of momentum roughness length (m) | 1.5e-5 | real |
+| z0min_la23 | z0min_la23 is the minimal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.01 m<br>z0max_la23 is the maximal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.15 m<br>z0exp_la23 is the exponent used in the power law giving the roughness parameter as a function of Z0VL | 0.01 | real |
 | z0mtype | Momentum roughness length formulation over water<br>- 'CHARNOCK' : Standard Charnock clipped at high wind speed<br>- 'BELJAARS' : #TODO: define<br>- 'WRF1'     : ISFTCFLX=1 from WRF (Green and Zhang 2013)<br>- 'WRF2'     : ISFTCFLX=2 from WRF (Green and Zhang 2013) | 'CHARNOCK' | character(len=16) |
 | z0seaice | Roughness length for sea ice | 1.6e-4 | real |
 | z0snow_svs2 |  |  |  |

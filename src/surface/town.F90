@@ -51,7 +51,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
         xq1,xq2,xq3,xq4,xq5,xq6,xq7,           &
         xq8,xq9,xq10,xq11,xq12,xq13,           &
         xdsnow_roof,xdsnow_road,xfsnow_roof,   &
-        xfsnow_road,xtemp
+        xfsnow_road,xmltsnow_town
 
    use modd_teb,       only : xzs, xbld, xbld_height, xz0_town,      &
         xz0_roof,xz0_road,                     &
@@ -72,7 +72,8 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
         xwsnow_roof,  xtsnow_roof, xrsnow_roof,&
         xasnow_roof, xesnow_roof, xtssnow_roof,&
         xwsnow_road,  xtsnow_road, xrsnow_road,&
-        xasnow_road, xesnow_road, xtssnow_road
+        xasnow_road, xesnow_road, xtssnow_road,&
+        xwksnow_roof, xwksnow_road
    use modd_csts
    use modi_coupling_teb2, only: coupling_teb2
    use modi_sunpos
@@ -127,7 +128,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    
    real    :: julien
 
-   integer,dimension (63) :: alloc_status
+   integer,dimension (20) :: alloc_status
    integer                :: kyear       ! current year
    integer                :: kmonth      ! current month
    integer                :: kday        ! current day
@@ -145,12 +146,13 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    real,          dimension(n)     :: ptrad       ! radiative temperature
    real,          dimension(n,1)   :: pdir_alb    ! direct albedo for each band
    real,          dimension(n,1)   :: psca_alb    ! diffuse albedo for each band
-   real,          dimension(n,1)   :: zdir_sw    ! direct sw for each band
-   real,          dimension(n,1)   :: zsca_sw    ! diffuse sw for each band
+   real,          dimension(n,1)   :: zdir_sw     ! direct sw for each band
+   real,          dimension(n,1)   :: zsca_sw     ! diffuse sw for each band
    real,          dimension(n)     :: zvdir       ! direction of the wind
    real,          dimension(n)     :: zvmod       ! module of the wind
    real,          dimension(n)     :: lat,lon     ! latitude and longitude
    real,          dimension(n)     :: zuzu
+   real,          dimension(n)     :: ztemp       ! snow-free fraction not output 
    real, target, dimension(n) ::  zday, zheure, zmin
 !!$LOGICAL diagwind_interp
 !!$diagwind_interp=.FALSE.
@@ -190,7 +192,6 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    allocate( xch          (n)             , stat=alloc_status(18) )
    allocate( xri          (n)             , stat=alloc_status(19) )
    allocate( xustar       (n)             , stat=alloc_status(20) )
-   allocate( xtemp        (n)             , stat=alloc_status(21) )
 
 ! Initialization of local pointers
    xq_town         = xundef
@@ -213,7 +214,6 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
    xch             = xundef
    xri             = xundef
    xustar          = xundef
-   xtemp           = xundef
 
    call ini_csts
 
@@ -289,6 +289,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       xd_wall  (1:n,1:nwall_layer) => bus(x(d_wall  ,1,1) : )
       xt_wall  (1:n,1:nwall_layer) => bus(x(t_wall  ,1,1) : )
 !     5. Snow variables :
+      xwksnow_roof(1:n) => bus(x(sroof_wstok,1,1) : )
       xwsnow_roof (1:n) => bus(x(sroof_wsnow,1,1) : )
       xtsnow_roof (1:n) => bus(x(sroof_t    ,1,1) : )
       xrsnow_roof (1:n) => bus(x(sroof_rho  ,1,1) : )
@@ -297,6 +298,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       xesnow_roof (1:n) => bus(x(sroof_emis ,1,1) : )
       xtssnow_roof(1:n) => bus(x(sroof_ts   ,1,1) : )
       xfsnow_roof (1:n) => bus(x(sroof_psn  ,1,1) : )
+      xwksnow_road(1:n) => bus(x(sroad_wstok,1,1) : )
       xwsnow_road (1:n) => bus(x(sroad_wsnow,1,1) : )
       xtsnow_road (1:n) => bus(x(sroad_t    ,1,1) : )
       xrsnow_road (1:n) => bus(x(sroad_rho  ,1,1) : )
@@ -305,6 +307,7 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       xesnow_road (1:n) => bus(x(sroad_emis ,1,1) : )
       xfsnow_road (1:n) => bus(x(sroad_psn  ,1,1) : )
       xtssnow_road(1:n) => bus(x(sroad_ts   ,1,1) : )
+      xmltsnow_town(1:n)=> bus(x(stown_melt,1,1) : )
 !     6. Diagnostic variables :
       xu_canyon   (1:n) => bus(x( u_canyon,1,1)  : )
       xrn         (1:n) => bus(x( rn_town ,1,1)  : )
@@ -324,6 +327,9 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       xle_wall    (1:n) => bus(x( le_wall ,1,1)  : )
       xgflux_wall (1:n) => bus(x( g_wall  ,1,1)  : )
 !     7. Heat-stress variables :
+      xtrfzt   (1:n) => bus( x( ytrfzt,1,1)         : )
+      xtrdzt   (1:n) => bus( x( ytrdzt,1,1)         : )
+      xurdzu   (1:n) => bus( x( yurdzu,1,1)         : )
       IF_THERMAL_STRESS: if ( thermal_stress ) then
       xtrad_sun      (1:n) => bus( x( yradsun,1,indx_urb)        : )
       xtrad_shade    (1:n) => bus( x( yradshade,1,indx_urb)      : )
@@ -358,9 +364,6 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
       xtglobe_rfsun    (1:n) => bus( x( ytglbrfsun,1,1)         : )
       xtglobe_rfshade   (1:n) => bus( x( ytglbrfshade,1,1)         : )
       xtwetb_roof   (1:n) => bus( x( ytwetbrf,1,1)         : )
-      xtrfzt   (1:n) => bus( x( ytrfzt,1,1)         : )
-      xtrdzt   (1:n) => bus( x( ytrdzt,1,1)         : )
-      xurdzu   (1:n) => bus( x( yurdzu,1,1)         : )
       xQ8   (1:n) => bus( x( yQ8,1,1)         : )
       xQ9   (1:n) => bus( x( yQ9,1,1)         : )
       xQ10  (1:n) => bus( x( yQ10,1,1)        : )
@@ -411,10 +414,10 @@ subroutine town2(bus, bussiz, ptsurf, ptsurfsiz, dt, kount, n, m, nk)
 
 ! Snow-covered roof and road surfaces relative Fractions (at current time-step)
 !       ----------------------------------------
-call snow_frac_road(xwsnow_road(:),psnow(:)>0.,xfsnow_road,xtemp)
-call snow_frac_roof(xwsnow_roof(:),psnow(:)>0.,xfsnow_roof,xtemp)
+call snow_frac_road(xwsnow_road(:),psnow(:)>0.,xfsnow_road(:),ztemp(:))
+call snow_frac_roof(xwsnow_roof(:),psnow(:)>0.,xfsnow_roof(:),ztemp(:))
 
-      do i=1,n
+        do i=1,n
 !       Post-process for bus output of local town variables
 !       -------------------
         zemtw (i)     = pemis   (i)
@@ -422,6 +425,8 @@ call snow_frac_roof(xwsnow_roof(:),psnow(:)>0.,xfsnow_roof,xtemp)
         ! Snow depth / Height over roof and road surfaces
         xdsnow_roof(i) = xwsnow_roof(i)/xrsnow_roof(i)
         xdsnow_road(i) = xwsnow_road(i)/xrsnow_road(i)
+        ! Snow melt, in kg/m2
+        xmltsnow_town (i) = (xmelt_roof(i)*xbld(i)+ xmelt_road(i)*(1. -xbld(i))) * dt
 !
 !       Variables a agreger
 !       -------------------
@@ -559,7 +564,6 @@ call snow_frac_roof(xwsnow_roof(:),psnow(:)>0.,xfsnow_roof,xtemp)
       deallocate( xch               , stat=alloc_status(18) )
       deallocate( xri               , stat=alloc_status(19) )
       deallocate( xustar            , stat=alloc_status(20) )
-      deallocate( xtemp             , stat=alloc_status(21) )
 
       !--------------------------------------------------------------------
    return

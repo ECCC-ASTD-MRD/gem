@@ -632,6 +632,9 @@ PT_CANYON(:) = (  PT_ROAD    (:,1) * PAC_ROAD(:) * ZDF(:)             &
                 + PH_TRAFFIC (:)   / (1.-PBLD(:)) / PRHOA(:) / XCPD   &
                 + PHSNOW_ROAD(:)   * ZDN(:)       / PRHOA(:) / XCPD  )&
                / ZSAC_T(:)
+
+!! patch to prevent numerical instability
+WHERE( (PT_CANYON(:)-PTA(:)) > 15) PT_CANYON(:) = PTA(:) + 10. 
 !
 !-------------------------------------------------------------------------------
 !
@@ -669,6 +672,9 @@ zqsat(:) = QSAT(PT_CANYON(:),PPS(:))
 WHERE(PQ_CANYON(:) > zqsat(:)) PQ_CANYON(:) = zqsat(:)
 
 !
+! If canyon specific humidity gets too small or even negative                                                                                                                                                       
+WHERE(PQ_CANYON(:) <= 1.e-6) PQ_CANYON(:) = PQA(:)                                                                                                                                                                  
+
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ROAD_WALL_LAYER_E_BUDGET

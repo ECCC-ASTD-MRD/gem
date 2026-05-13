@@ -889,7 +889,7 @@ contains
     fngauss(1:n,1)  = 0.
 
     if (.not.pbl_cldnk_l) then
-       sigmas(1:n,nk)   = 0.
+       ! sigmas(1:n,nk)   = 0.
        q1(1:n,nk)       = 0.
        frac(1:n,nk)     = 0.
        fnn(1:n,nk)      = 0.

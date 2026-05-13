@@ -20,8 +20,8 @@ contains
 
       SUBROUTINE SNOW_INTERCEPTION_SVS2 (DT, TVEG, T, HU, PS, WIND_TOP, ISWR,  RHOA,            &
                      RR, SR, SNCMA, WRMAX_VH, SKYVIEW, ESUBSNC,SUBSNC_CUM, LAIVH, WTG, HM_CAN,  &
-                     VGH_DENS, SCAP, WR_VH, RR_VEG, SR_VEG,UNL_RATE,UNL_CUM, DRP_RATE, DRP_CUM, &
-                     INT_RATE, INT_CUM,MF_RATE, MF_CUM, FCANS, N)
+                     VGH_DENS, SCAP, SCAP_MIN, WR_VH, RR_VEG, SR_VEG,UNL_RATE,UNL_CUM,          &
+                     DRP_RATE, DRP_CUM, INT_RATE, INT_CUM,MF_RATE, MF_CUM, FCANS, N)
 
 
       use tdpack
@@ -40,7 +40,7 @@ contains
       REAL SNCMA(N), RR(N), SR(N),  RR_VEG(N), SR_VEG(N), UN_RATE(N), ISWR(N)
       REAL PS(N), RHOA(N), HU(N), WTG(N, svs2_tilesp1), SKYVIEW(N)
       REAL LAIVH(N), TVEG(N), WIND_TOP(N),VGH_DENS(N), T(N)
-      REAL ESUBSNC(N), SUBSNC_CUM(N), SCAP(N), FCANS(N), HM_CAN(N)
+      REAL ESUBSNC(N), SUBSNC_CUM(N), SCAP(N), SCAP_MIN(N), FCANS(N), HM_CAN(N)
       REAL DT, SNCMA_INI(N), WRMAX_VH(N), WR_VH(N) 
       REAL UNL_RATE(N), UNL_CUM(N), DRP_RATE(N), DRP_CUM(N),INT_RATE(N), INT_CUM(N)
       REAL MF_RATE(N), MF_CUM(N)
@@ -79,8 +79,9 @@ contains
 ! LAIVH       Vegetation leaf area index for HIGH vegetation only [m2/m2]
 ! VGH_DENS    tree cover density in  HIGH vegetation [0-1]
 ! SCAP       Vegetation layer snow capacities (kg m-2)
+! SCAP_MIN    Baseline vegetation layer snow capacities (kg m-2)
 ! HM_CAN    Heat mass for the high vegetation layer (J K-1 m-2)
-! WRMAX_VH          max water content retained on hihj vegetation [kg/m2]
+! WRMAX_VH    Max water content retained on high vegetation [kg/m2]
 !
 !             - Input-Output
 ! WR_VH          water content retained by high vegetation canopy [kg/m2]
@@ -277,10 +278,10 @@ contains
 
                   ! Compute the intercepted snow exposure coefficient
                   !
-                  IF ((SNCMA(I)/SCAP(I)) .LE.  0.0) THEN
+                  IF ((SNCMA(I)/SCAP_MIN(I)) .LE.  0.0) THEN
                      CE = 0.07
                   ELSE
-                    CE = KS * (SNCMA(I)/SCAP(I))**(-1.0*FRACT)
+                    CE = KS * (MIN(SNCMA(I)/SCAP_MIN(I),1.))**(-1.0*FRACT)
                   ENDIF
 
                   ! Calculate 'potential' canopy sublimation [s-1]
@@ -330,7 +331,7 @@ contains
 
                   IF(TVEG(I) .GT. 273.15) THEN ! Melting of intercepted snow
 
-                     MELT = 5.56E-6 * DT * (SNCMA(I)/SCAP(I)) * (TVEG(I) - 273.15)
+                     MELT = 5.56E-6 * DT * MIN((SNCMA(I)/SCAP_MIN(I)),1.) * (TVEG(I) - 273.15)
 
                      IF (MELT .GT. SNCMA(I)) THEN
                         MELT = SNCMA(I)
@@ -349,7 +350,7 @@ contains
                   ELSE !Refreezing of intercepted liquid water
                      ! Boone et al. (2017) Eq. 83 still uses SNCMA for refreezing of liquid water, so not working if there is no intercepted snow
 
-                     REFREEZE = 5.56E-6 * DT * (WR_VH(I)/WRMAX_VH(I)) * (TVEG(I) - 273.15)  ! < 0
+                     REFREEZE = 5.56E-6 * DT * MIN((WR_VH(I)/WRMAX_VH(I)),1.) * (TVEG(I) - 273.15)  ! < 0
                      
                      IF (ABS(REFREEZE) .GT. WR_VH(I)) THEN
                         REFREEZE = -WR_VH(I)
@@ -395,7 +396,7 @@ contains
 
                ! Canopy layer snowcover fractions Boone
                IF (CANO_REF_FORCING .EQ.'ABV') THEN
-                  FCANS(I) = (SNCMA(I)/SCAP(I))**0.67
+                  FCANS(I) = MAX(0., MIN((SNCMA(I)/SCAP_MIN(I))**0.67,1.))
                   ! Update canopy heat mass with new intercepted snow
                   HM_CAN(I) = HM_CAN_INI(I) + CPI * SNCMA(I) + CPW *WR_VH(I)
                ELSE

@@ -8,7 +8,7 @@ endif()
 file(GLOB F_FILES main/*.F90 api/*.F90 base/*.F90 base/thompson/*.F90 series/*.F90 surface/*.F90 surface/from_surfex/*.F90 utils/*.F90 ${MACH_FILES})
 list(FILTER F_FILES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/rpnphy/main/main*")
 if(WITH_NEMO)
-  file(GLOB CPLOCN_SOURCES ${CPLOCN_GLOB})
+  file(GLOB CPLOCN_SOURCES CONFIGURE_DEPENDS ${CPLOCN_GLOB})
   list(APPEND F_FILES ${CPLOCN_SOURCES})
 endif()
 
@@ -25,6 +25,15 @@ if (WITH_MACH)
 endif()
 if(WITH_NEMO)
   target_compile_definitions(rpnphy PUBLIC HAVE_NEMO)
+  if(WITH_GOSSIP)
+    target_compile_definitions(rpnphy PUBLIC HAVE_GOSSIP)
+    string(REPLACE ":" ";" LIBRARY_PATH_AS_LIST $ENV{LIBRARY_PATH})
+    list(APPEND CMAKE_LIBRARY_PATH ${LIBRARY_PATH_AS_LIST})
+    find_library(LIBCPLGEMNEMO cplgemnemo REQUIRED)
+    target_link_libraries(rpnphy PUBLIC ${LIBCPLGEMNEMO})
+  else()
+    target_link_libraries(rpnphy PUBLIC iris::iris)
+  endif()
   message(STATUS "(EC) rpnphy compile definition: HAVE_NEMO")
 endif()
 
@@ -46,13 +55,6 @@ target_link_libraries(rpnphy PUBLIC
   tdpack::tdpack
   modelutils
   )
-
-if(WITH_NEMO)
-  string(REPLACE ":" ";" LIBRARY_PATH_AS_LIST $ENV{LIBRARY_PATH})
-  list(APPEND CMAKE_LIBRARY_PATH ${LIBRARY_PATH_AS_LIST})
-  find_library(LIBCPLGEMNEMO cplgemnemo REQUIRED)
-  target_link_libraries(rpnphy PUBLIC ${LIBCPLGEMNEMO})
-endif()
 
 set_target_properties(rpnphy PROPERTIES VERSION ${PROJECT_VERSION})
 add_dependencies(rpnphy ${PROJECT_NAME}_build_info)
