@@ -407,7 +407,6 @@ findtopo:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -426,7 +425,6 @@ findtopo:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -453,7 +451,6 @@ CANO_W7cascP_intel:
   allow_failure: true
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   script:
     - set +e
     - . ./.eccc_setup_intel_2025.1.0
@@ -478,7 +475,6 @@ CANO_dcmip163r100_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -504,7 +500,6 @@ CANO_wil7_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -530,7 +525,6 @@ GEM_cfgs_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -556,7 +550,6 @@ GEM_GY_FISL_P_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -582,7 +575,6 @@ GEM_GY_FISL_H_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -608,7 +600,6 @@ GEM_GY_spnGC_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -634,7 +625,6 @@ GEM_LU_FISL_H_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -660,7 +650,6 @@ GEM_LU_OFFC_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -686,7 +675,6 @@ GEM_LU_EXP_P_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -712,7 +700,6 @@ GEM_LU_MoSA_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -738,7 +725,6 @@ GEM_LU_TEB_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -764,7 +750,6 @@ GEM_LU_THM_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -790,7 +775,6 @@ IOSVR_GY_H_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -816,7 +800,6 @@ IOSVR_LU_H_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -842,7 +825,6 @@ OPS_GYens_ic4_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -868,7 +850,6 @@ OPS_GY_ic4_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -894,7 +875,6 @@ OPS_LU_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -920,7 +900,6 @@ PTOPO_GYH_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -946,7 +925,6 @@ PTOPO_LUP_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -972,7 +950,6 @@ RSTRT_GYP_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -998,7 +975,6 @@ THEO_bubbleG_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1020,7 +996,6 @@ THEO_schar_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1043,7 +1018,6 @@ THEO_schar_intel:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1069,7 +1043,6 @@ CANO_W7cascP_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1095,7 +1068,6 @@ CANO_dcmip163r100_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1121,7 +1093,6 @@ CANO_wil7_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1147,7 +1118,6 @@ GEM_cfgs_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1173,7 +1143,6 @@ GEM_GY_FISL_P_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1199,7 +1168,6 @@ GEM_GY_FISL_H_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1225,7 +1193,6 @@ GEM_GY_spnGC_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1251,7 +1218,6 @@ GEM_LU_FISL_H_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1277,7 +1243,6 @@ GEM_LU_OFFC_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1303,7 +1268,6 @@ GEM_LU_EXP_P_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1329,7 +1293,6 @@ GEM_LU_MoSA_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1355,7 +1318,6 @@ GEM_LU_TEB_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1381,7 +1343,6 @@ GEM_LU_THM_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1407,7 +1368,6 @@ IOSVR_LU_H_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1433,7 +1393,6 @@ IOSVR_GY_H_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1459,7 +1418,6 @@ OPS_GYens_ic4_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1485,7 +1443,6 @@ OPS_GY_ic4_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1511,7 +1468,6 @@ OPS_LU_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1537,7 +1493,6 @@ PTOPO_GYH_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1563,7 +1518,6 @@ PTOPO_LUP_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1589,7 +1543,6 @@ RSTRT_GYP_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1615,7 +1568,6 @@ THEO_bubbleG_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1637,7 +1589,6 @@ THEO_schar_gnu:
   when: always
   only:
   - /^dev_5\.[0-9]$/
-  - tags
   allow_failure: true
   script:
     - set +e
@@ -1663,7 +1614,6 @@ GEM_GY_FISL_H_gnu_15:
   when: always
   only:
   - /^dev_5\.[0-9].*$/
-  - tags
   allow_failure: true
   script:
     - set +e
