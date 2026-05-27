@@ -1,5 +1,5 @@
 NAME       : gem
-VERSION    : 5.3.0-a23
+VERSION    : 5.3.0-b01
 MACH_VERSION : 3.3.0-a22
 BUILD      : RelWithDebInfo
 DESCRIPTION: ECCC-MRD Global Environmental Multi-scale model - GEM
@@ -9,8 +9,8 @@ URL        : https://gitlab.science.gc.ca/MIG/gem
 
 # Components
 modelutils = 1.8.0-a22
-rpnphy = 6.3.0-a23
-gemdyn = 5.3.0-a23
+rpnphy = 6.3.0-b01
+gemdyn = 5.3.0-b01
 mach = 3.3.0-a22
 cplocn = v6.0.1
 cplocn-gossip = v5.2.1
