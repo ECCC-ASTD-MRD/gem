@@ -1640,6 +1640,11 @@ Tile Drains generally located between 90 and 200 cm deep.
 | -1 || integer
 
 |-
+| lake_icefrac_legacy_l ||
+Use legacy calculation for lake ice fraction
+| .true. || logical
+
+|-
 | lake_leadfrac ||
 Lead fraction for ice-covered lakes
 | 0. || real

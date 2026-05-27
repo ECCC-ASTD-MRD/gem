@@ -119,7 +119,11 @@ subroutine lacs4(pvars, F_climat_L, ni)
               any('vegf'==phyinread_list_s(1:phyinread_n))) then
             if (zglsea(i) > 0.50) then
                zicedp (i)  = max(0.30, zicedp(i))
-               zglsea (i)  = 1.00 - lake_leadfrac
+               if (lake_icefrac_legacy_L) then
+                  zglsea(i) = 1.00 - lake_leadfrac
+               else
+                  zglsea(i) = max(0., min(zglsea(i), 1.00 - lake_leadfrac))
+               endif
             else
                zicedp (i)  = 0.60 * zglsea(i)
             end if
