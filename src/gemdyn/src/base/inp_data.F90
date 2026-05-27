@@ -27,6 +27,7 @@
                           inp_src_levels,inp_dst_levels
       use inp_mod
       use glb_ld
+      use lam_options
       use lun
       use tr3d
       use ver
@@ -123,10 +124,9 @@
          deb= (n-1)*l_nk+1
          if (trim(vname) /= 'HU') then
             err = inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t, Sp0_q,Slsp0_q,&
-                            Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,&
-                            F_tracers(l_minx,l_miny,deb),&
-                            l_minx,l_maxx,l_miny,l_maxy,G_nk        ,&
-                            F_inttype_S=Inp_vertintype_tracers_S )
+              Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_tracers(l_minx,l_miny,deb),&
+              l_minx,l_maxx,l_miny,l_maxy,G_nk, F_Hinttype_S=Lam_hint_S     ,&
+              F_Vinttype_S=Inp_vertintype_tracers_S )
             if (err == 0) then
                NTR_Tr3d_ntr= NTR_Tr3d_ntr + 1
                NTR_Tr3d_name_S(NTR_Tr3d_ntr) = trim(vname)

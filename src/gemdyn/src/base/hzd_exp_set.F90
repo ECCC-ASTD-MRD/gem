@@ -50,7 +50,7 @@
          if ( Hzd_lnr < 0.) Hzd_lnr = Hzd_lnr_z
       endif
  
-      if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
+     ! if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
 
          if((Hzd_lnr_z > 0.).and.(Hzd_lnr_theta_z > 0.))then
 

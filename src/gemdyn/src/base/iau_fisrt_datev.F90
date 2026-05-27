@@ -86,6 +86,7 @@
           goto 55
           
  33       if (found_L) err_code= 0
+          if (unf > 0) err= fclos(unf)
        endif
 
        call gem_error ( err_code, 'iau_fisrt_datev', &

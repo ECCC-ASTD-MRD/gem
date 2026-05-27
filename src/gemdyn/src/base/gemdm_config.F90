@@ -45,6 +45,7 @@
       use wb_itf_mod
       use mem_iau
       use ptopo
+      use omp_lib
       use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -183,6 +184,14 @@
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S = dumc_S
+
+      if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
+
+      if(hzd_alh_L .and. OMP_get_max_threads() >1) then
+         if(lun_out>0) write (Lun_out, &
+         '(/"   ====> OpenMP is temporarily not allowed when hybrid or constant z diffusion is used")' )
+         return
+      endif
 
       if (Hzd_smago_lnr(1) > 0.) then
          if (Hzd_smago_lnr(2)<0.) Hzd_smago_lnr(2)=Hzd_smago_lnr(1)
