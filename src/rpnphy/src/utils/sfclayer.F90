@@ -919,6 +919,7 @@ contains
           qz(j) = 0.
           uz(j) = 0.
           vz(j) = 0.
+          ribr(j) = 0.
           cycle
        endif
        

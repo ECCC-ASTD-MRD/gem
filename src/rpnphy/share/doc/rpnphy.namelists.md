@@ -299,6 +299,7 @@
 | kntveg_s | Vegetation field update frequency (units D,H,M,S,P) | '' | character(len=16) |
 | kplough | Last/Deepest soil layer where ploughing has an effet<br>when activating the option "svs_tdrains_plough".<br>Ploughing generally affects soils down to 20/40 cm | -1 | integer |
 | ktdrains | Number of the soil layer containing the Tile Drains,<br>when activating the option "svs_tdrains_plough".<br>Tile Drains generally located between 90 and 200 cm deep.<br>(generally 90/100cm in Canada, sometimes deeper in the US). | -1 | integer |
+| lake_icefrac_legacy_l | Use legacy calculation for lake ice fraction | .true. | logical |
 | lake_leadfrac | Lead fraction for ice-covered lakes | 0. | real |
 | lbcheat_svs2 | (SVS2) Lower boundary conditions for heat equation in SVS2<br>- 'TPERM'   :  prescribed temperature at bottom of the soil column<br>- '0FLUX'   :  assumes heat flux at the bottom of the soil column is negligible | 'TPERM' | character(len=5) |
 | leadfrac | Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac) | 0.03 | real |

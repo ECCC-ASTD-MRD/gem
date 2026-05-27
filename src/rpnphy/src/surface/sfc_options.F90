@@ -421,6 +421,10 @@ module sfc_options
    !# Lead fraction for ice-covered lakes
    real              :: lake_leadfrac = 0.
    namelist /surface_cfgs/ lake_leadfrac
+   
+   !# Use legacy calculation for lake ice fraction
+   logical           :: lake_icefrac_legacy_L = .true.
+   namelist /surface_cfgs/ lake_icefrac_legacy_L
 
    !# (SVS2) Lower boundary conditions for heat equation in SVS2
    !# * 'TPERM'   :  prescribed temperature at bottom of the soil column 
