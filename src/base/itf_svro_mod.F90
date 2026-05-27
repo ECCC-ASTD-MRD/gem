@@ -54,12 +54,13 @@ contains
 !     
 !------------------------------------------------------------------
 !
-      OUTs_nplans =5000
+      OUTs_nplans = 10000
       if (OUTs_server_L) then
          ruge = .95*huge(1)
          rmax = real(Out_Hmaxdim)*real(OUTs_nplans)
          if(rmax > ruge)then
-            if(lun_out > 0)write(*,"(a,i8)",advance="no")'Warning : OUTs_nplans will be reset from ',OUTs_nplans
+            if(lun_out > 0)write(*,"(a,i8)",advance="no")&
+            'Warning : OUTs_nplans will be reset from ',OUTs_nplans
             OUTs_nplans = int(ruge/real(Out_Hmaxdim))
             if(lun_out > 0)print*,'to ',OUTs_nplans
          endif
@@ -75,7 +76,7 @@ contains
                !        The server don't have to read these set from user_vgrid* files.
                !        Therefore it is not put in the count_usr_lev sum.
                count_usr_lev=count_usr_lev+1
-               err=vgd_print(Level_vgrid_usr(i)%vgd)
+             !  err=vgd_print(Level_vgrid_usr(i)%vgd)
             endif
          end do
          ! Count user defined horizontal grids
@@ -345,7 +346,7 @@ contains
             write(Lun_out,&
             '("IOS_data buffer not large enough for VAR= ",&
             a,"   requested=",i6,5x,"reserved=",i6)')&
-                 nomvar(1:4),Out_nplans+1+nk_o,OUTs_nplans
+                 nomvar(1:4),Out_nplans+nk_o,OUTs_nplans
          end if
          return
       endif
