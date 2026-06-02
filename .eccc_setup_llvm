@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# For internal use at ECCC
+
+# Source this file to:
+# - Load profile and code-tools for llvm
+# - Load a script for common setup to all compilers
+
+unset SSMUSE_LD_PREPEND
+
+# Check name of the script called, to export corresponding nvhpc compiler version
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
+
+case ${SETUP_SCRIPT_NAME} in
+    .eccc_setup_llvm)
+        export COMPILER_VERSION=22.1.3
+        ;;
+    .eccc_setup_llvm_22.1.3)
+        export COMPILER_VERSION=22.1.3
+        ;;
+esac
+
+# Load code-tools 
+. r.load.dot rpn/code-tools/test/env/exp/rhel-9-amd64-64@llvm-${COMPILER_VERSION}
+
+# Load latest version of RPNPY
+. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
+
+# Check and tell if maestro is loaded
+if [ -z "${MAESTRO_VERSION}" ]; then
+    echo ""
+    echo "Maestro is not loaded: GEM task setup scripts will be used instead of maestro scripts."
+else
+    echo "Maestro ${MAESTRO_VERSION} scripts will be used"
+fi
+
+# Call common setup file
+export COMPILER_SUITE=llvm
+export GOAS_SCRIPT_MODE=TRUE
+. ./.common_setup ${COMPILER_SUITE}
+
+# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
+export WITH_SYSTEM_RPN=FALSE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}
