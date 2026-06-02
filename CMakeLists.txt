@@ -102,9 +102,10 @@ elseif("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU")
   endif()
 endif()
 
-if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "NVHPC"))
+if(("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "NVHPC"  OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "LLVMFlang"))
   find_package(LAPACK)
   find_package(BLAS)
+  add_link_options(-Wl,-zexecstack)
 endif()
 
 if((DEFINED ENV{EC_ARCH}) AND ("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM"))
