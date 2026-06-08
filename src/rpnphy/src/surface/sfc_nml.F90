@@ -819,6 +819,29 @@ contains
             enddo
          endif
 
+         if (.not.any(teb_hydro == TEB_HYDRO_OPT)) then
+               call str_concat(msg_S, TEB_HYDRO_OPT, ', ')
+               call msg(MSG_ERROR, '(sfc_nml_check) teb_hydro = '//trim(teb_hydro)//&
+                    ' : Should be one of: '//trim(msg_S))
+               return
+            endif
+        if (teb_hydro == 'MA00  ') then
+            do k=1, nb_teb_hydropar
+                  teb_hydropar = TEB_HYDROPAR_DEFAULT
+            enddo
+        endif
+
+        if (teb_hydro == 'CUSTOM') then
+            do k=1, nb_teb_hydropar
+             if (teb_hydropar(k) == -1) then
+                 call msg(MSG_INFO,'(sfc_nml_check) TEB hydrological parameters over ROOF and ROAD '//&
+                 ' NOT SPECIFIED by user, will use DEFAULT VALUE')
+                  teb_hydropar = TEB_HYDROPAR_DEFAULT
+                  EXIT
+             endif
+            enddo
+         endif
+
       endif IF_TEB
 
 

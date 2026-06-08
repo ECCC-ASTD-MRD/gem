@@ -6,31 +6,44 @@
 
 
 module calcdiag
+   use, intrinsic :: iso_fortran_env, only: REAL64
+   use debug_mod, only: init2nan
+   use tdpack_const, only: CHLC, CPD, GRAV, TCDK, RAUW, CAPPA
+   use integrals, only: int_profile, INT_OK
+   use pbl_utils, only: blheight
+   use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
+   use phy_options
+   use phybusidx, except=>znt
+   use phymem, only: phyvar
+   use phybudget, only: pb_compute, pb_residual
+   use phy_status, only: PHY_OK, physeterror
+   use timing_omp
+   use vinterp_mod, only: vte_intvertx3, VINTERP_DIAG_CUBIC
+   use lightning_mod, only: lightning2
+   use refractivity_mod, only: refractivity2
+   use bourge_mod, only: bourge2, bourge1_3d
    implicit none
    private
    public :: calcdiag1
 
-contains
+   real, parameter :: EC_Z0M_GRASS=0.03             !Threshold "flat grass" roughness for ECMWF diagnostics
+   real, parameter :: EC_Z0T_GRASS=0.003            !Grass thermodynamic roughness for ECMWF diagnostics
+   real, parameter :: EC_Z0T_MIN=1E-6               !Minimum value (epsilon) for Z0T
+   real, parameter :: EC_Z_ROUGH=40.                !Fixed height for ECMWF diagnostics in rough terrain
+   real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
+   real, parameter :: WGTMIN=1.e-3                  !Minimum weight for a surface type
+
+   character(len=*), parameter :: EC_INTERP = VINTERP_DIAG_CUBIC  !Type of vertical interpolation for ECMWF diagnostics
+   character(len=4), parameter :: REFRACVAR(12) = (/ &
+        'DCBH', 'DCNB', 'DCLL', 'DC1M', 'DC1I', 'DCMR', &
+        'DC2M', 'DC2I', 'DCST', 'DCTH', 'DC3M', 'DC3I' &
+        /)
+
+   contains
 
    !/@*
    subroutine calcdiag1(pvars, dt, kount, ni, nk)
       !@Object Calculates averages and accumulators of tendencies and diagnostics
-      use, intrinsic :: iso_fortran_env, only: REAL64
-      use debug_mod, only: init2nan
-      use tdpack_const, only: CHLC, CPD, GRAV, TCDK, RAUW, CAPPA
-      use integrals, only: int_profile, INT_OK
-      use pbl_utils, only: blheight
-      use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
-      use phy_options
-      use phybusidx, except=>znt
-      use phymem, only: phyvar
-      use phybudget, only: pb_compute, pb_residual
-      use phy_status, only: PHY_OK, physeterror
-      use timing_omp
-      use vinterp_mod, only: vte_intvertx3, VINTERP_DIAG_CUBIC
-      use lightning_mod, only: lightning2
-      use refractivity_mod, only: refractivity2
-      use bourge_mod, only: bourge2, bourge1_3d
       implicit none
 !!!#include <arch_specific.hf>
       !@Arguments
@@ -55,18 +68,6 @@ contains
       include "surface.cdk"
       include "physteps.cdk"
       include "phyinput.inc"
-
-      real, parameter :: EC_Z0M_GRASS=0.03             !Threshold "flat grass" roughness for ECMWF diagnostics
-      real, parameter :: EC_Z0T_GRASS=0.003            !Grass thermodynamic roughness for ECMWF diagnostics
-      real, parameter :: EC_Z0T_MIN=1E-6               !Minimum value (epsilon) for Z0T
-      real, parameter :: EC_Z_ROUGH=40.                !Fixed height for ECMWF diagnostics in rough terrain
-      real, parameter :: EC_MIN_LAND=0.1               !Minimum land fraction for soil-only ECMWF diagnostics
-      real, parameter :: WGTMIN=1.e-3                  !Minimum weight for a surface type
-      character(len=*), parameter :: EC_INTERP = VINTERP_DIAG_CUBIC  !Type of vertical interpolation for ECMWF diagnostics
-      character(len=4), parameter :: REFRACVAR(12) = (/ &
-              'DCBH', 'DCNB', 'DCLL', 'DC1M', 'DC1I', 'DCMR', &
-              'DC2M', 'DC2I', 'DCST', 'DCTH', 'DC3M', 'DC3I' &
-           /)
       
       logical :: lmoyhr, laccum, lreset, lavg, lkount0, lacchr, is_mp, is_consun, &
            is_pcptype_nil, is_pcptype_sps, is_pcptype_b3d, is_fluvert_nil, is_fluvert_sfc, is_hrl, is_hrli
@@ -75,7 +76,7 @@ contains
       real :: w1, w2, w_p3v5, w_my2, w_reset
       real, dimension(ni) :: uvs, vmod, vdir, th_air, hblendm, ublend, &
            vblend, z0m_ec, z0t_ec, esdiagec, tsurfec, qsurfec, zrtrauw, &
-           esdiagst, sldmask , z0t2eps
+           esdiagst, sldmask , z0teps
       real(REAL64), dimension(ni) :: en0, pw0, en1, pw1
       real, target :: zero2d(ni,nk)
       real, dimension(ni,nk) :: rtmp2d, presinv
@@ -138,19 +139,19 @@ contains
       !# Final PBL height
       !#TODO: could this be optional? (if it's not diag but needed for next step, moved elsewhere...
       istat = blheight(zhpbl,ztplus,zhuplus,zuplus,zvplus,zgzmom,zgztherm,zsigt, &
-           ztsurf,zqsurf,zpplus,zz0_ag,zz0t_ag,zdlat,zfcor,ni,nk-1)
+           ztsurf_ag,zqsurf_ag,zpmoins,zz0_ag,zz0t_ag,zdlat,zfcor,ni,nk-1)
 
       ! Compute winds at the lowest thermodynamic level
       COMPUTE_SLT_WINDS: if (slt_winds) then         
          istat = sl_prelim(ztplus(:,nkm1),zhuplus(:,nkm1),zuplus(:,nkm1),zvplus(:,nkm1), &
-              zpplus,zgzmom(:,nkm1),spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
+              zpmoins,zgzmom(:,nkm1),spd_air=vmod,dir_air=vdir,min_wind_speed=VAMIN)
          if (istat /= SL_OK) then
             call physeterror('calcdiag', 'Problem preparing surface layer calculations')
             return
          endif
          th_air = ztplus(:,nkm1)*zsigt(:,nkm1)**(-CAPPA)
          istat = sl_sfclayer(th_air,zhuplus(:,nkm1),vmod,vdir,zgzmom(:,nkm1), &
-              zgztherm(:,nkm1),ztsurf,zqsurf,zz0_ag,zz0t_ag,zdlat,zfcor, &
+              zgztherm(:,nkm1),ztsurf_ag,zqsurf_ag,zz0_ag,zz0t_ag,zdlat,zfcor, &
               hghtm_diag_row=zgztherm(:,nkm1),u_diag=zuslt,v_diag=zvslt)
          if (istat /= SL_OK) then
             call physeterror('calcdiag', 'Problem with surface layer wind diagnostic')
@@ -188,24 +189,24 @@ contains
          ! Clip the screen level relative humidity to a range from 0-1
          if (ISREQSTEP("RH") .or. ISREQOUTL((/"HRMX","HRMN"/))) then
             if (.not.ISPHYIN("rhdiag")) &
-                 call mfohr4(zrhdiag, zqdiag, ztdiag, zpplus, ni, 1, ni ,satuco)
+                 call mfohr4(zrhdiag, zqdiag, ztdiag, zpmoins, ni, 1, ni ,satuco)
             zrhdiag(1:ni) = max(min(zrhdiag(1:ni), 1.0), 0.)
          endif
 
          ! Screen level dewpoint depression
          if (ISREQSTEP("TDK") .and. .not.ISPHYIN("tdew")) then
-            call mhuaes3(esdiagec, zqdiag, ztdiag, zpplus, .false., ni, 1, ni)
+            call mhuaes3(esdiagec, zqdiag, ztdiag, zpmoins, .false., ni, 1, ni)
             ztdew(1:ni) = ztdiag(1:ni) - max(esdiagec(1:ni),0.)
          endif
 
          if (ISREQSTEP("TDS") .and. .not.ISPHYIN("tddiagstn")) then
-            call mhuaes3(esdiagec, zqdiagstn, ztdiagstn, zpplus, .false., ni, 1, ni)
+            call mhuaes3(esdiagec, zqdiagstn, ztdiagstn, zpmoins, .false., ni, 1, ni)
             ztddiagstn(1:ni) = ztdiagstn(1:ni) - max(esdiagec(1:ni),0.)
          endif
 
          if (ISREQSTEPL((/"ED  ","TDSV"/))) then
             if (.not.ISPHYIN("esdiag")) &
-                 call mhuaes3(zesdiag, zqdiagstnv, ztdiagstnv, zpplus, .false., ni, 1, ni)
+                 call mhuaes3(zesdiag, zqdiagstnv, ztdiagstnv, zpmoins, .false., ni, 1, ni)
             zesdiag(1:ni) = max(zesdiag(1:ni),0.)
 
             if (ISREQSTEP("TDSV") .and. .not.ISPHYIN("tddiagstnv")) &
@@ -227,18 +228,18 @@ contains
             z0m_ec(:) = zz0_ag(:)
             z0t_ec(:) = min(zz0t_ag(:),EC_Z0T_GRASS)
          endwhere
-         where (zsfcwgt_soil(:) > .1)
-            tsurfec(:) = ztsurf_soil(:)
-            qsurfec(:) = zqsurf_soil(:)
+         where (zsfcwgt(:,indx_soil) > .1)
+            tsurfec(:) = ztsurf(:,indx_soil)
+            qsurfec(:) = zqsurf(:,indx_soil)
          elsewhere
-            tsurfec(:) = ztsurf(:)
-            qsurfec(:) = zqsurf(:)
+            tsurfec(:) = ztsurf_ag(:)
+            qsurfec(:) = zqsurf_ag(:)
          endwhere
 
          ! Anemometer-level winds computed using the ECMWF formulation
          call vte_intvertx3(ublend, zuplus, zgzmom, hblendm, ni, nk, 1, 'UU', EC_INTERP)
          call vte_intvertx3(vblend, zvplus, zgzmom, hblendm, ni, nk, 1, 'VV', EC_INTERP)
-         if ( sl_prelim(ztplus(:,nkm1), zhuplus(:,nkm1), ublend, vblend, zpplus, hblendm,  &
+         if ( sl_prelim(ztplus(:,nkm1), zhuplus(:,nkm1), ublend, vblend, zpmoins, hblendm,  &
               spd_air=vmod, dir_air=vdir, min_wind_speed=VAMIN) /= SL_OK ) then
             call physeterror('calcdiag', 'Problem preparing EC screen-level calculations')
             return
@@ -252,72 +253,17 @@ contains
             return
          endif
          if (ISREQSTEP('TDEC')) then
-            call mhuaes3(esdiagec, zqdiagec, ztdiagec, zpplus, .false., ni, 1, ni)
+            call mhuaes3(esdiagec, zqdiagec, ztdiagec, zpmoins, .false., ni, 1, ni)
             ztddiagec = ztdiagec - max(esdiagec, 0.)
          endif
 
       endif ECMWF_SCREEN
 
       ! Final-state (FS) screen-level calculations performed on request
-      FS_SCREEN: if (fsdiag) then 
-         ! Prepare atmospheric final-state inputs
-         if (sl_prelim(ztplus(:,nkm1), zhuplus(:,nkm1), zuplus(:,nkm1), zvplus(:,nkm1), &
-              zpplus, zgzmom(:,nkm1), spd_air=vmod, dir_air=vdir, &
-              min_wind_speed=VAMIN) /= SL_OK) then
-            call physeterror('calcdiag', 'Problem preparing fsdiag calculations')
-            return
-         endif
-         th_air(:) = ztplus(:,nkm1)*zsigt(:,nkm1)**(-CAPPA)
+      call priv_fsdiag(ztdiagtyp2, zqdiagtyp2, ztddiagtyp2, zudiagtyp2, zvdiagtyp2, zribf, zribr, &
+           ztplus, zhuplus, zuplus, zvplus, zpmoins, zgzmom, zgztherm, zsigt, zsfcwgt, ztsurf, zqsurf, &
+           zqdiagtyp, zz0, zz0t, zdlat, zfcor, ni, nkm1)
 
-         ! Loop over surface-types and aggregate
-                      
-         ztdiagtyp2  = 0.
-         zqdiagtyp2  = 0.
-         ztddiagtyp2 = 0.
-         zudiagtyp2  = 0.
-         zvdiagtyp2  = 0.
-         zribf       = 0.
-         zribr       = 0.
-
-         DO_ISFC: do ik = 1,nagrege
-            if (ik == indx_agrege) cycle
-
-            sldmask(:) = max(0., min(1., zsfcwgt2(:,ik)))
-            where (sldmask < WGTMIN) sldmask = 0.
-            z0t2eps = max(EC_Z0T_MIN, zz0t2(:,ik))  !#Note: prevent divison by zero in sfclayer
-
-            if (sl_sfclayer(th_air, zhuplus(:,nkm1), vmod, vdir, zgzmom(:,nkm1), zgztherm(:,nkm1),  &
-                 ztsurf2(:,ik), zqsurf2(:,ik), zz02(:,ik), z0t2eps, &
-                 zdlat, zfcor, hghtt_diag=zt, hghtm_diag=zu, &
-                 rib=zribf(:,ik), ribr=zribr(:,ik), &
-                 t_diag=ztdiagtyp2(:,ik), q_diag=zqdiagtyp2(:,ik), &
-                 u_diag=zudiagtyp2(:,ik), v_diag=zvdiagtyp2(:,ik), &
-                 L_min=sl_Lmin_type(ik), sl_mask=sldmask ) /= SL_OK)  then
-               call physeterror('calcdiag', 'Problem with FS screen-level diagnostic')
-               return
-            endif
-
-            call mhuaes3(esdiagst, zqdiagtyp2(:,ik), ztdiagtyp2(:,ik), zpplus, .false., ni, 1, ni)
-            do i=1,ni
-               if (sldmask(i) < WGTMIN) cycle
-               ztddiagtyp2(i,ik) = ztdiagtyp2(i,ik) - max(esdiagst(i), 0.)
-               ztdiagtyp2(i,indx_agrege) = ztdiagtyp2(i,indx_agrege) + sldmask(i)*ztdiagtyp2(i,ik)
-               zqdiagtyp2(i,indx_agrege) = zqdiagtyp2(i,indx_agrege) + sldmask(i)*zqdiagtyp2(i,ik)
-               zudiagtyp2(i,indx_agrege) = zudiagtyp2(i,indx_agrege) + sldmask(i)*zudiagtyp2(i,ik)
-               zvdiagtyp2(i,indx_agrege) = zvdiagtyp2(i,indx_agrege) + sldmask(i)*zvdiagtyp2(i,ik)
-
-               zribf(i,indx_agrege) = zribf(i,indx_agrege) + sldmask(i)*zribf(i,ik)
-               zribr(i,indx_agrege) = zribr(i,indx_agrege) + sldmask(i)*zribr(i,ik)
-            enddo
-
-         enddo DO_ISFC
-
-         call mhuaes3(esdiagst, zqdiagtyp2(:,indx_agrege), ztdiagtyp2(:,indx_agrege), zpplus, .false., ni, 1, ni)
-         ztddiagtyp2(:,indx_agrege) = ztdiagtyp2(:,indx_agrege) - max(esdiagst(:), 0.)
-
-      endif FS_SCREEN
-
-      
       !****************************************************************
       !     PRECIPITATION RATES AND ACCUMULATIONS
       !     -------------------------------------
@@ -333,9 +279,9 @@ contains
          if (pcptype == 'BOURGE' .or. (is_mp .and. is_pcptype_nil)) then
             !Note: 'bourge2' is always called if microphysics scheme is used and pcptyp=nil,
             !       but it is only applied to implicit (convection) precipitation
-            call bourge2(zfneige1d, zfip1d, ztplus, zsigw, zpplus, ni, nk-1)
+            call bourge2(zfneige1d, zfip1d, ztplus, zsigw, zpmoins, ni, nk-1)
          else if (is_pcptype_b3d) then
-            call bourge1_3d(zfneige2d, zfip2d, ztplus, zsigw, zpplus, ni, nk-1)
+            call bourge1_3d(zfneige2d, zfip2d, ztplus, zsigw, zpmoins, ni, nk-1)
             zfneige1d(1:ni) => zfneige2d(:,nk)
             zfip1d(1:ni)    => zfip2d(:,nk)
          endif
@@ -532,7 +478,7 @@ contains
             call refractivity2(zdct_bh, zdct_count, zdct_lvl, zdct_lvlmax, &
                  zdct_lvlmin, zdct_sndmax, zdct_sndmin, zdct_str, zdct_thick, &
                  zdct_trdmax, zdct_trdmin, zdct_moref, &
-                 zpplus, zgztherm, zsigm, ztplus, zhuplus, ni, nk)
+                 zpmoins, zgztherm, zsigm, ztplus, zhuplus, ni, nk)
          endif
       endif
 
@@ -569,7 +515,7 @@ contains
          istat = INT_OK ; istat1 = INT_OK
          if (associated(zt2i) .or. associated(ztii)) then
             do k=1,nk
-               presinv(:,nk-(k-1)) = zpplus(:)*zsigt(:,k)
+               presinv(:,nk-(k-1)) = zpmoins(:)*zsigt(:,k)
             enddo
          endif
          if (associated(zt2i)) then
@@ -653,17 +599,17 @@ contains
       is_hrli = (hrli > 0 .and. ISREQSTEP('HRLI'))
       if (is_hrl .or. is_hrli) then
          do k=1,nkm1
-            prest(:,k) = zpplus(:) * zsigt(:,k) 
+            prest(:,k) = zpmoins(:) * zsigt(:,k) 
          enddo
          ! Calculate HRL (liquid), including diag level nk
          if (is_hrl) then
             call mfohr4(zhrl, zhuplus, ztplus, prest, ni, nkm1, ni, .false.)
-            call mfohr4(zhrl(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.false.)
+            call mfohr4(zhrl(:,nk), zqdiag, ztdiag, zpmoins, ni, 1, ni ,.false.)
          endif
          ! Calculate HRI or HRL (ice or liquid), including diag level nk
          if (is_hrli) then
             call mfohr4(zhrli, zhuplus, ztplus, prest, ni, nkm1, ni, .true.)
-            call mfohr4(zhrli(:,nk), zqdiag, ztdiag, zpplus, ni, 1, ni ,.true.)
+            call mfohr4(zhrli(:,nk), zqdiag, ztdiag, zpmoins, ni, 1, ni ,.true.)
          endif
       endif
 
@@ -700,7 +646,7 @@ contains
 
          DO_AVG(zhusavg,   zqdiag, moyhri, w_reset)
          DO_AVG(ztdiagavg, ztdiag, moyhri, w_reset)
-         DO_AVG(zp0avg,    zpplus, moyhri, w_reset)
+         DO_AVG(zp0avg,    zpmoins, moyhri, w_reset)
          DO_AVG(zuvsavg,   uvs,    moyhri, w_reset)
 
          DO_AVG(zflwm,   zflw,   moyhri, w_reset)
@@ -952,4 +898,90 @@ contains
       return
    end subroutine calcdiag1
 
+   
+   subroutine priv_fsdiag(ztdiagtyp2, zqdiagtyp2, ztddiagtyp2, zudiagtyp2, zvdiagtyp2, zribf, zribr, &
+           ztplus, zhuplus, zuplus, zvplus, zpmoins, zgzmom, zgztherm, zsigt, zsfcwgt, ztsurf, zqsurf, &
+           zqdiagtyp, zz0, zz0t, zdlat, zfcor, ni, nkm1)
+      implicit none
+      integer, intent(in) :: ni, nkm1
+      real, pointer, dimension(:) :: zpmoins, zdlat, zfcor
+      real, pointer, dimension(:,:) :: ztdiagtyp2, zqdiagtyp2, ztddiagtyp2, zudiagtyp2, &
+           zvdiagtyp2, zribf, zribr, ztplus, zhuplus, zuplus, zvplus, zgzmom, &
+           zgztherm, zsigt, zsfcwgt, ztsurf, zqsurf, zqdiagtyp, zz0, zz0t
+      include "surface.cdk"
+
+      real, parameter :: EC_Z0T_MIN=1E-6  !Minimum value (epsilon) for Z0T
+      real, parameter :: WGTMIN=1.e-3     !Minimum weight for a surface type
+
+      integer :: i, ik
+      real, dimension(ni) :: vmod, vdir, th_air, esdiagst, sldmask , z0teps
+      !----------------------------------------------------------------
+
+      ! Final-state (FS) screen-level calculations performed on request
+      if (.not.fsdiag) return
+
+      call init2nan(vmod, vdir, th_air, esdiagst, sldmask , z0teps)
+
+      ! Prepare atmospheric final-state inputs
+      if (sl_prelim(ztplus(:,nkm1), zhuplus(:,nkm1), zuplus(:,nkm1), zvplus(:,nkm1), &
+           zpmoins, zgzmom(:,nkm1), spd_air=vmod, dir_air=vdir, &
+           min_wind_speed=VAMIN) /= SL_OK) then
+         call physeterror('calcdiag', 'Problem preparing fsdiag calculations')
+         return
+      endif
+      th_air(:) = ztplus(:,nkm1)*zsigt(:,nkm1)**(-CAPPA)
+
+      ! Loop over surface-types and aggregate
+
+      ztdiagtyp2  = 0.
+      zqdiagtyp2  = 0.
+      ztddiagtyp2 = 0.
+      zudiagtyp2  = 0.
+      zvdiagtyp2  = 0.
+      zribf       = 0.
+      zribr       = 0.
+
+      DO_ISFC: do ik = 1,nagrege
+         if (ik == indx_agrege) cycle
+
+         sldmask(:) = max(0., min(1., zsfcwgt(:,ik)))
+         where (sldmask < WGTMIN) sldmask = 0.
+         z0teps = max(EC_Z0T_MIN, zz0t(:,ik))  !#Note: prevent divison by zero in sfclayer
+
+         if (sl_sfclayer(th_air, zhuplus(:,nkm1), vmod, vdir, zgzmom(:,nkm1), zgztherm(:,nkm1),  &
+              ztsurf(:,ik), zqsurf(:,ik), zz0(:,ik), z0teps, &
+              zdlat, zfcor, hghtt_diag=zt, hghtm_diag=zu, &
+              rib=zribf(:,ik), ribr=zribr(:,ik), &
+              t_diag=ztdiagtyp2(:,ik), q_diag=zqdiagtyp2(:,ik), &
+              u_diag=zudiagtyp2(:,ik), v_diag=zvdiagtyp2(:,ik), &
+              L_min=sl_Lmin_type(ik), sl_mask=sldmask ) /= SL_OK)  then
+            call physeterror('calcdiag', 'Problem with FS screen-level diagnostic')
+            return
+         endif
+
+         if (ik == indx_urb) zqdiagtyp2(:,ik) = zqdiagtyp(:,indx_urb)*sldmask(:)
+
+         call mhuaes3(esdiagst, zqdiagtyp2(:,ik), ztdiagtyp2(:,ik), zpmoins, .false., ni, 1, ni)
+         do i=1,ni
+            if (sldmask(i) < WGTMIN) cycle
+            ztddiagtyp2(i,ik) = ztdiagtyp2(i,ik) - max(esdiagst(i), 0.)
+            ztdiagtyp2(i,indx_agrege) = ztdiagtyp2(i,indx_agrege) + sldmask(i)*ztdiagtyp2(i,ik)
+            zqdiagtyp2(i,indx_agrege) = zqdiagtyp2(i,indx_agrege) + sldmask(i)*zqdiagtyp2(i,ik)
+            zudiagtyp2(i,indx_agrege) = zudiagtyp2(i,indx_agrege) + sldmask(i)*zudiagtyp2(i,ik)
+            zvdiagtyp2(i,indx_agrege) = zvdiagtyp2(i,indx_agrege) + sldmask(i)*zvdiagtyp2(i,ik)
+
+            zribf(i,indx_agrege) = zribf(i,indx_agrege) + sldmask(i)*zribf(i,ik)
+            zribr(i,indx_agrege) = zribr(i,indx_agrege) + sldmask(i)*zribr(i,ik)
+         enddo
+
+      enddo DO_ISFC
+
+      call mhuaes3(esdiagst, zqdiagtyp2(:,indx_agrege), ztdiagtyp2(:,indx_agrege), zpmoins, .false., ni, 1, ni)
+      ztddiagtyp2(:,indx_agrege) = ztdiagtyp2(:,indx_agrege) - max(esdiagst(:), 0.)
+
+      return
+      !----------------------------------------------------------------
+   end subroutine priv_fsdiag
+
+   
 end module calcdiag

@@ -8,6 +8,11 @@ if (MPI_FOUND)
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MPI_COMPILER_FLAGS}")
 endif()
 
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM") AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2025))
+  # link with libgcc_s to get a traceback
+  set(GCC_S gcc_s)
+endif()
+
 add_executable(checkdmpart maincheckdmpart.F90)
 target_link_libraries(checkdmpart
    gemdyn
@@ -23,6 +28,7 @@ target_link_libraries(checkdmpart
    ${FFTW}
    ${FFTW_DOUBLE_LIB}
    ${LAPACK_LIBRARIES}
+   ${GCC_S}
 )
 
 add_executable(gemgrid maingemgrid.F90)
@@ -37,6 +43,7 @@ target_link_libraries(gemgrid
    rmn::rmn-ompi
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
+   ${GCC_S}
 )
 
 add_executable(prgemnml prgemnml.F90 mainprgemnml.F90)
@@ -45,6 +52,7 @@ target_link_libraries(prgemnml
    modelutils
    modelutils_tmg_stubs
    rmn::rmn
+   ${GCC_S}
 )
 
 add_executable(serverOUT mainserverout.F90)
@@ -59,6 +67,7 @@ target_link_libraries(serverOUT
   OpenMP::OpenMP_C
   MPI::MPI_Fortran
   MPI::MPI_C
+  ${GCC_S}
   )
 
 add_executable(serverIN mainserverIN.F90)
@@ -73,11 +82,13 @@ target_link_libraries(serverIN
   OpenMP::OpenMP_C
   MPI::MPI_Fortran
   MPI::MPI_C
+  ${GCC_S}
   )
 
 add_executable(check_usr_int_dic main_check_usr_int_dic.F90)
 target_link_libraries(check_usr_int_dic
   gemdyn
+  ${GCC_S}
   )
 
 install(TARGETS checkdmpart gemgrid prgemnml serverOUT serverIN RUNTIME DESTINATION bin)

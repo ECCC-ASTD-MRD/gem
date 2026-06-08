@@ -23,9 +23,11 @@
       use lam_options
       use step_options
       use init_options
+      use mem_iau
       use spn_options
       use glb_ld
       use ctrl
+      use cstv
       use gmm_geof
       use svri_mod
       use mem_nest
@@ -40,7 +42,7 @@
 !     Beginning of the integration. This subroutine
 !     reads the data and performs initialization if required.
 !     It then initiates the forward intergration of the model.
-      character(len=16) :: Next_pilot_S
+      character(len=16) :: Next_pilot_S, datev
       logical :: rstrt_L= .false.
       real(kind=REAL64) :: dayfrac
       real(kind=REAL64), parameter :: one=1.0d0, &
@@ -63,8 +65,10 @@
             call itf_Iserv_request (Step_runstrt_S,INs_Spnlist_S,&
                                     INs_Spn_tag,INs_Spn_nrequests)
          endif
-         if (Iau_indyn_L .and. Ctrl_iau_L) then                
-            call itf_Iserv_request (Step_runstrt_S,INs_Iaulist_S,&
+         if (INs_server_L .and. Ctrl_iau_L) then
+            call iau_fisrt_datev (datev,IAU_ubstp,1)
+            IAU_ubstp= -1
+            call itf_Iserv_request (datev,INs_Iaulist_S,&
                                     INs_Iau_tag,INs_Iau_nrequests)
          endif
          call indata()

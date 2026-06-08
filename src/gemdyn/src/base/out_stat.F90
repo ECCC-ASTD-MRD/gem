@@ -16,6 +16,7 @@
 !**s/r out_stat
 
       subroutine out_stat
+      use lun
       use out_mod
       use svro_mod
       implicit none
@@ -23,8 +24,14 @@
 !--------------------------------------------------------------------
 !
       if (OUTs_server_L) then
-         print*, 'IOS REPORT max_meta : ',max_meta  , size(OUTs_meta)
-         print*, 'IOS REPORT max_data : ',max_nplans, OUTs_nplans
+         write(Lun_out,&
+            '("Output_data buffer: max # planes",&
+              "   requested=",i6,5x,"reserved=",i6)')&
+             max_nplans,OUTs_nplans
+         write(Lun_out,&
+            '("Output_meta buffer: max size",&
+              "   requested=",i6,5x,"reserved=",i6)')&
+             max_meta  , size(OUTs_meta)
       else
          print*, 'OUTPUT_STAT: stack size: ', out_stk_size
          print*, 'OUTPUT_STAT: full stack called: ',out_stk_full,' times'

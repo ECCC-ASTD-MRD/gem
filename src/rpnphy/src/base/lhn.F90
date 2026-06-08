@@ -89,9 +89,9 @@ contains
      real    :: this_radar_pr, this_radar_qi, this_model_pr
      real    :: pr_ratio, scale_fact, r, temp_at_obs_height
      real, dimension(ni,nk)        :: pres_pa, es, qvs_old, qvs_new, rh
-     real, pointer, dimension(:,:), contiguous :: tinc, ttend, temp_k, heights_agl, sigma, qv, zlhm
-     real, pointer, dimension(:), contiguous   :: zlhnr, ztree, psp, zlhs, ztdmaskxdt
-     real, pointer, dimension(:), contiguous   :: radar_pr, radar_qi, model_rt
+     real, pointer, dimension(:,:), contiguous :: ztlhn, ztcond_smt, ztplus, zgzterm, zsigt, zhuplus, zlhm
+     real, pointer, dimension(:), contiguous   :: zlhnr, ztree, zpmoins, zlhs, ztdmaskxdt
+     real, pointer, dimension(:), contiguous   :: zrdpr_smt, zrdqi_smt, zrt_smt
      
      !do nothing if LHN not in use
      if (lhn /= 'IRPCP') return
@@ -140,43 +140,43 @@ contains
      MKPTR1D(zlhs, tlhs, pvars)
      zlhs  = 0.
      !temperature tendencies due to Latent Heat Nudging
-     MKPTR2D(tinc, tlhn, pvars)
-     tinc  = 0.
+     MKPTR2D(ztlhn, tlhn, pvars)
+     ztlhn  = 0.
 
      !Model variables
      !
      !temperature
-     MKPTR2D(temp_k, tplus, pvars)
+     MKPTR2D(ztplus, tplus, pvars)
      !AGL heights (m) on thermo levels
-     MKPTR2D(heights_agl, gztherm, pvars)
+     MKPTR2D(zgzterm, gztherm, pvars)
      !vapor mixing ratio
-     MKPTR2D(qv, huplus, pvars)
+     MKPTR2D(zhuplus, huplus, pvars)
      !model surface pressure
-     MKPTR1D(psp, pmoins, pvars)
+     MKPTR1D(zpmoins, pmoins, pvars)
      !model level
-     MKPTR2D(sigma, sigt, pvars)
+     MKPTR2D(zsigt, sigt, pvars)
 
      MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
      
      !Horizontally smoothed quantities
      !
      !temperature tendencies due to latent heat release
-     MKPTR2D(ttend, tcond_smt, pvars)
+     MKPTR2D(ztcond_smt, tcond_smt, pvars)
      !modeled precip rate
-     MKPTR1D(model_rt, rt_smt, pvars)
+     MKPTR1D(zrt_smt, rt_smt, pvars)
      !observed precip rate
-     MKPTR1D(radar_pr, rdpr_smt, pvars)
+     MKPTR1D(zrdpr_smt, rdpr_smt, pvars)
      !observation quality index
-     MKPTR1D(radar_qi, rdqi_smt, pvars)
+     MKPTR1D(zrdqi_smt, rdqi_smt, pvars)
 
   
      !record relative humidity and temperature before LHN
      do k = 1,nk
         do i = 1,ni
-           pres_pa(i,k) = sigma(i,k)*psp(i)             !air pressure [Pa]     formulation from cnv_main.F90  
-           es(i,k)   = YAUA*exp(-1.*YAUB/temp_k(i,k))   !saturation vapor pressure [Pa]   Eq. 2.12 of R&Y
+           pres_pa(i,k) = zsigt(i,k)*zpmoins(i)             !air pressure [Pa]     formulation from cnv_main.F90  
+           es(i,k)   = YAUA*exp(-1.*YAUB/ztplus(i,k))   !saturation vapor pressure [Pa]   Eq. 2.12 of R&Y
            qvs_old(i,k)  = EPSIL*es(i,k)/pres_pa(i,k)   !satturation mixing ratio [kg/kg] Eq. 2.18 of R&Y
-           rh(i,k)   = qv(i,k)/qvs_old(i,k)
+           rh(i,k)   = zhuplus(i,k)/qvs_old(i,k)
         enddo
      enddo
 
@@ -186,7 +186,7 @@ contains
 
         !
         !check if observation quality is good enough to apply LHN
-        this_radar_qi = radar_qi(i)
+        this_radar_qi = zrdqi_smt(i)
         if (this_radar_qi <= 0.) then
            !radar quality is poor -> do nothing and move on to next point
            ztree(i) = 5.
@@ -198,14 +198,14 @@ contains
         !
         !first interpolate temperature at an altitude of 1km AGL
         do k=nk,1,-1
-            if (heights_agl(i,k) > OBSV_HEIGHT) exit
+            if (zgzterm(i,k) > OBSV_HEIGHT) exit
         enddo
         !   at this point,
         !   k is index of first level (starting from the ground) above obsv_height 
         !   k+1 is index of level just below obsv_height
         !   (   height(k) - obsv_height    ) / (               delta h               )
-        r = (heights_agl(i,k) - OBSV_HEIGHT) / (heights_agl(i,k) - heights_agl(i,k+1))
-        temp_at_obs_height =  (1.-r)*temp_k(i,k) + r*temp_k(i,k+1)
+        r = (zgzterm(i,k) - OBSV_HEIGHT) / (zgzterm(i,k) - zgzterm(i,k+1))
+        temp_at_obs_height =  (1.-r)*ztplus(i,k) + r*ztplus(i,k+1)
         !
         !second, set modulation from 0. to 1 in the interval between 0 and 5 degC (273-278 degK)
         if (temp_at_obs_height <= 273.) then
@@ -228,8 +228,8 @@ contains
         modulation_factor = lhn_weight*temperature_modulation*time_modulation*this_radar_qi
   
         !convert model precip rate in m/s to mm/h
-        this_model_pr = model_rt(i)*3.6e6
-        this_radar_pr = radar_pr(i) !already in mm/h
+        this_model_pr = zrt_smt(i)*3.6e6
+        this_radar_pr = zrdpr_smt(i) !already in mm/h
   
         !
         !walk down the LHN tree
@@ -255,9 +255,9 @@ contains
                scale_fact = modulation_factor*(pr_ratio - 1.)
                do k=1,nk
                   !only modify LHR profiles where +ve
-                  if (ttend(i,k) > 0.) then
+                  if (ztcond_smt(i,k) > 0.) then
                       !temperature increment due to LHN
-                      tinc(i,k) = scale_fact*ttend(i,k)
+                      ztlhn(i,k) = scale_fact*ztcond_smt(i,k)
                   endif
                enddo
                zlhnr(i) = scale_fact
@@ -266,7 +266,7 @@ contains
                !model has NO precip
                !in this case, use predefined typical profile
                call use_avg_profile(this_radar_pr, pres_pa, modulation_factor, i, ni, nk, &
-                                    tinc, ztree(i) )
+                                    ztlhn, ztree(i) )
             endif
         else
             !radar has NO precip
@@ -274,9 +274,9 @@ contains
                !model has precip
                scale_fact = modulation_factor*(MIN_RATIO - 1.)
                do k=1,nk
-                  if (ttend(i,k) > 0.) then
+                  if (ztcond_smt(i,k) > 0.) then
                       !cool existing profile for less precip
-                      tinc(i,k) = scale_fact*ttend(i,k)  
+                      ztlhn(i,k) = scale_fact*ztcond_smt(i,k)  
                   endif
                enddo
                zlhnr(i) = scale_fact
@@ -287,22 +287,22 @@ contains
             endif
         endif
      enddo
-  
-     call apply_tendencies(temp_k, tinc, ztdmaskxdt, ni, nk)
+
+     call apply_tendencies(ztplus, ztlhn, ztdmaskxdt, ni, nk)
   
      !compute increments to humidity to conserve RH
      do k = 1,nk
         do i = 1,ni
   
            !adjust moisture only where temperature has changed
-           if (abs(tinc(i,k)*dt) >= 1e-3) then
+           if (abs(ztlhn(i,k)*dt) >= 1e-3) then
                
-               es(i,k)   = YAUA*exp(-1.*YAUB/temp_k(i,k))     !saturation vapor pressure  [Pa] Eq. 2.12 of R&Y
+               es(i,k)   = YAUA*exp(-1.*YAUB/ztplus(i,k))     !saturation vapor pressure  [Pa] Eq. 2.12 of R&Y
                qvs_new(i,k)  = EPSIL*es(i,k)/pres_pa(i,k)     !saturation mixing ratio [kg/kg] Eq. 2.18 of R&Y
   
                !increment to moisture      
                !     want = have + increment -> increment = want - have
-               zlhm(i,k) = rh(i,k)*qvs_new(i,k) - qv(i,k)
+               zlhm(i,k) = rh(i,k)*qvs_new(i,k) - zhuplus(i,k)
   
                !output diagnostic
                zlhs(i) =  zlhs(i) + zlhm(i,k)
@@ -313,11 +313,11 @@ contains
   
      !change increment into a tendency
      zlhm = zlhm/dt
-     call apply_tendencies(qv, zlhm, ztdmaskxdt, ni, nk)
+     call apply_tendencies(zhuplus, zlhm, ztdmaskxdt, ni, nk)
      
   end subroutine lhn2
-
-
+  
+  
   !/@*
   subroutine use_avg_profile(radar_pr, model_pres_pa, modulation_factor, i, ni, nk, &
                              lhn_profile, stat) 

@@ -71,7 +71,7 @@ module adz_mem
          real, dimension(:,:,:), pointer :: src,dst,pil
       end type Adz_pntr_stack
 
-      type(Adz_pntr_stack), pointer, dimension(:) :: Adz_stack
+      type(Adz_pntr_stack), pointer, dimension(:) :: pnt_stack,Adz_stack
 
       real, allocatable, target, dimension(:,:,:,:) :: Adz_o,Adz_i
 

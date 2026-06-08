@@ -56,10 +56,14 @@ subroutine sfc_businit(moyhr,ni,nk)
         sroad_alb, sroad_alben, sroad_depth, sroad_emis, sroad_emisen, &
         sroad_psn, sroad_rho, &
         sroad_rhoen, sroad_t, sroad_ten, sroad_ts, sroad_tsen, &
-        sroad_wsnow, sroad_wsnowen, sroof_alb, sroof_alben, sroof_depth, &
+        sroad_wsnow, sroad_wsnowen, sroad_wstok,   &
+       ! sroad_wstoken, &
+        sroof_alb, sroof_alben, sroof_depth, &
         sroof_emis, sroof_emisen, sroof_psn, sroof_rho, sroof_rhoen, &
         sroof_t, &
-        sroof_ten, sroof_ts, sroof_tsen, sroof_wsnow, sroof_wsnowen, &
+        sroof_ten, sroof_ts, sroof_tsen, sroof_wsnow, sroof_wsnowen, sroof_wstok,  &
+        !sroof_wstoken, &
+        stown_melt, &
         svf_road, svf_wall, t_canyon, t_canyonen, t_road, t_roaden, t_roof, &
         t_roofen, t_wall, t_wallen, tc_road, tc_roaden, tc_roof, tc_roofen, &
         tc_wall, tc_wallen, ti_bld, ti_blden, ti_road, ti_roaden, tsun, &
@@ -90,7 +94,7 @@ subroutine sfc_businit(moyhr,ni,nk)
    !--------   FOR CSLM -----------------
    integer :: tke, hdpth, lkiceh, sniceh, expw, dtemp, delu, gred, rhomix, tsed, roficeh, &
               snol, rhosnol, tsnowl, albsnol, wsnowl, tlak, lst, hlaksil, &
-              ficl, lakd, lfxi, lfxo, lstd, lstf, lakearea, lakefr, riverfr, evlak
+              ficl, lakd, lfxi, lfxo, lstd, lstf, lakearea, lakefr, riverfr, evlak, blak, blaken
    
    character(len=2) :: nlklv
    !--------   FOR SVS and SVS2 -----------------
@@ -99,7 +103,7 @@ subroutine sfc_businit(moyhr,ni,nk)
         clayen, co2i1, cvh, cvl, d50, d95, &
         deciduous, draindens, eg, emis, emisgr, emistg, emistgen, emisvh, emisvl, &
         er, etr, evergreen, &
-        fbcof, frootd, frootdyn, gamvh, gamvl, grkef, grksat, gwsol, &
+        fbcof, frootd, frootdyn, frzdepth, frzthick, gamvh, gamvl, grkef, grksat, gwsol, &
         hfluxsa, hfluxsv, hrsurfgr, impervu, &
         khc, ksat, ksatc, laictem, laideci, laiva, laivf26, laivh, laivl, &
         lesv, psi, psisat, psngrvl, psnvh, psnvha, &
@@ -107,7 +111,7 @@ subroutine sfc_businit(moyhr,ni,nk)
         rnetsa, rnetsv, rsnowsa, &
         rsnowsv, rveg, sanden, skyview, slop, snodpl, snval, &
         snvden,  snvdp, snvma,  snvro, stomrvh, stomrvl, svs_wta, &
-        tground, tsa, tsnavg, tsnow, tsnowveg, &
+        tground, thwdepth, tsa, tsnavg, tsnow, tsnowveg, &
         tsvavg, tvege,  vegh, vegl, vegtrans, vgctem, &
         wsoilm, wfcdp, wfcint, wsnv, &
         z0ha, z0hbg, z0hvg, z0mland, z0mlanden, z0mvg, z0mvh, z0mvhen, z0mvl, &
@@ -127,15 +131,15 @@ subroutine sfc_businit(moyhr,ni,nk)
         emisgrv,egv,  legv,    &
         hpsa,hpsv, husurfgv, husurffl, hv_vl, hv_vh, &
         hveglpol,hveglpolen,hvegapol, &
-        gfluxsa, gfluxsv,      &
-        esnc,esncaf,intsnc,intsncaf,  &
+        gfluxsa, gfluxsv, dz_fl,      &
+        esnc,esncaf,flcond,intsnc,intsncaf,  &
         ler_vl, ler_vh, letr_vl, letr_vh, levl, levh,  & 
         lfluxsa, lfluxsv, lwca, lwnetsa, lwnetsv,        &
         mfsnc,mfsncaf,                                &
         er_vl, er_vh, esa, esv, etr_vl, etr_vh, qca, &
         qgr, qgv, qveg, rainrate_vgh, resagrv,  &
         resa_vl, resa_vh, bulksoilen, ocen, &
-        rsnows_acc, rsnowsv_acc, psurfvha, skincond_vl, skyviewa, &
+        rsnows_acc, rsnowsv_acc, rho_fl, psurfvha, skincond_vl, skyviewa, &
         sncma, snoage_svs, snoagev_svs,  &
         snodiamopt_svs, snodiamoptv_svs, &
         snospheri_svs, snospheriv_svs,   &
@@ -154,16 +158,16 @@ subroutine sfc_businit(moyhr,ni,nk)
         vgh_dens, vgh_densen, &
         wveg_vl, wveg_vh, wfl, wfl_ice,  &       
         wsnow_svs,wsnowv_svs, &
-        z0hgv,z0hvl, z0hvh , flcond
+        z0hgv,z0hvl, z0hvh 
 
    integer :: phasef, phasem, phasefv, phasemv, deltat, deltatv, appheatcap, appheatcapv, tmax, tmaxv  
 
    !---------------------------------------------------------------------
    
-   include "cslm.cdk"
+   !include "cslm.cdk"
    if (schmlake == 'CSLM') then
       !  nlklv is the maximum number of lake levels
-      write(nlklv,'(i2)') nlakmax
+      write(nlklv,'(i2)') cslm_nlakmax
    endif
 
    
@@ -239,7 +243,6 @@ subroutine sfc_businit(moyhr,ni,nk)
    PHYVAR2D1(glsea0,       'VN=glsea0       ;ON=GY  ;VD=sea ice fraction (unmodified)                                        ;VB=p1;IN=LG  ;MIN=0')
    PHYVAR2D1(icedp,        'VN=icedp        ;ON=I8  ;VD=sea ice thickness                                                    ;VB=p1        ;MIN=0')
    PHYVAR2D1(iceline,      'VN=iceline      ;ON=ICEL;VD=ice line                                                             ;VB=p'//iicel)
-   PHYVAR3D1(qdiagtyp,     "VN=qdiagtyp     ;ON=DQST;VD=screen level specific humidity for each sfc type   ; MIN=0 ; VS=A*"//nagg//" ; VB=v0")
    PHYVAR3D1(qdiagtypv,    "VN=qdiagtypv    ;ON=DQSZ;VD=qdiagtyp for z0 vegetation-only ; MIN=0 ; VS=A*"//nagg//" ; VB=v0")
    PHYVAR2D1(skin_depth,   'VN=skin_depth   ;ON=SDEP;VD=sea surface cold skin depth                                          ;VB=p0')
    PHYVAR2D1(skin_inc,     'VN=skin_inc     ;ON=SINC;VD=sea surface cold skin SST increment                                  ;VB=p0')
@@ -396,6 +399,8 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR3D1(fbcof,        'VN=fbcof        ;ON=3G  ;VD=parameter derived from bcoef                   ;VS=A*'//ngl//'  ;VB=p0')
       PHYVAR3D1(frootd,       'VN=frootd       ;ON=FRTD;VD=deep soil layer root density                   ;VS=A*'//ngl//'  ;VB=p0')
       PHYVAR3D1(frootdyn,     'VN=frootdyn     ;ON=FRDY;VD=dynamic soil layer root density                  ;VS=A*'//ngl//'  ;VB=v0')
+      PHYVAR2D1(frzdepth,     'VN=frzdepth     ;ON=FRZD;VD=depth of frozen ground [m]                                        ;VB=v0')
+      PHYVAR2D1(frzthick,     'VN=frzthick     ;ON=FRZT;VD=thickness of frozen ground [m]                                    ;VB=v0')
       PHYVAR2D1(fvapliq,      'VN=fvapliq      ;ON=HFLQ;VD=surf. evaporation (kg/m2 or mm)                                   ;VB=p0')
       PHYVAR2D1(fvapliqaf,    'VN=fvapliqaf    ;ON=AHFL;VD=accum. surf. evaporation (HFLQ) (kg/m2 or mm)                     ;VB=p0')
       PHYVAR2D1(gamvh,        'VN=gamvh        ;ON=GGVH;VD=stomatal resistance parameter for high veg                        ;VB=p0')
@@ -478,6 +483,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(stomrvl,      'VN=stomrvl      ;ON=RSVL;VD=min. stomatal resistance for low vegetation                       ;VB=p0')
       PHYVAR3D1(svs_wta,      'VN=svs_wta      ;ON=SVSW;VD=weight for svs used in aggregation **FROM SPACE;VS=A*5            ;VB=p0')
       PHYVAR3D1(tground,      'VN=tground      ;ON=TGR ;VD=skin and mean ground temp.                     ;VS=A*2            ;VB=p1')
+      PHYVAR2D1(thwdepth,     'VN=thwdepth     ;ON=THWD;VD=depth of thawed ground [m]                                        ;VB=v0')
       PHYVAR2D1(tsa,          'VN=tsa          ;ON=TSA ;VD=skin temp. of land surface as seen from atm                       ;VB=p0')
       PHYVAR2D1(tsnavg,       'VN=tsnavg       ;ON=ATSN;VD=snow-low-veg/bare-grnd avg temp. for melt/freez                   ;VB=p0')
       PHYVAR3D1(tsnow,        'VN=tsnow        ;ON=TSN ;VD=snow-low-veg/bare-grnd skin and mean temp.     ;VS=A*2            ;VB=p1')
@@ -557,6 +563,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(cvl,          'VN=cvl          ;ON=CVL ;VD=thermal coefficient for canopy of low veg                         ;VB=p0')
       PHYVAR2D1(d50,          'VN=d50          ;ON=d50 ;VD=depth[m] above which 50% of roots are located                     ;VB=p0')
       PHYVAR2D1(d95,          'VN=d95          ;ON=d95 ;VD=depth[m] above which 95% of roots are located                     ;VB=p0')
+      PHYVAR2D1(dz_fl,        'VN=dz_fl        ;ON=DZFL ;VD=thickness[m] of the forest litter                               ;VB=p0')
       PHYVAR2D1(deciduous,    'VN=deciduous    ;ON=DECI;VD=frac. of high veg. that is deciduous.                             ;VB=p0')
       PHYVAR3D1(drain,        'VN=drain        ;ON=DR  ;VD=water drainage in deep soil layers             ;VS=A*'//ngl//'  ;VB=p0')
       PHYVAR2D1(drainaf,      'VN=drainaf      ;ON=O1  ;VD=accum. of base drainage                                           ;VB=p0')
@@ -574,7 +581,6 @@ subroutine sfc_businit(moyhr,ni,nk)
            PHYVAR2D1(emistgen,     'VN=emistgen     ;ON=ETG1;VD=avg. emissivity land surface with no snow (E)       ;VB=e1;IN=EMIB;MIN=0')
       PHYVAR2D1(emisvh,       'VN=emisvh       ;ON=EMVH;VD=emissivity of high vegetation                                     ;VB=p0')
       PHYVAR2D1(emisvl,       'VN=emisvl       ;ON=EMVL;VD=emissivity of low vegetation                                      ;VB=p0')
-      PHYVAR2D1(skincond_vl,  'VN=skincond_vl       ;ON=CONVL;VD=skin thermal conductivity of low vegetation                ;VB=p0')
       PHYVAR2D1(er_vl,       'VN=er_vl         ;ON=ERVL;VD=evapo rate from low veg leaves (no frac)                          ;VB=v0')
       PHYVAR2D1(er_vh,       'VN=er_vh         ;ON=ERVH;VD=evapo rate from high veg leaves (no frac)                         ;VB=v0')
       PHYVAR2D1(etr_vl,      'VN=etr_vl        ;ON=ETRL;VD=evapotranspiration rate from low veg  (no frac)                   ;VB=v0')
@@ -585,6 +591,8 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR3D1(fbcof,        'VN=fbcof        ;ON=3G  ;VD=parameter derived from bcoef                   ;VS=A*'//ngl//'  ;VB=p0')
       PHYVAR2D1(flcond,        'VN=flcond      ;ON=FLCO  ;VD= Thermal conductivity of forest litter                                  ;VB=v0')
       PHYVAR3D1(frootd,       'VN=frootd       ;ON=FRTD;VD=deep soil layer root density                   ;VS=A*'//ngl//'  ;VB=p0')
+      PHYVAR2D1(frzdepth,     'VN=frzdepth     ;ON=FRZD;VD=depth of frozen ground [m]                                        ;VB=v0')
+      PHYVAR2D1(frzthick,     'VN=frzthick     ;ON=FRZT;VD=thickness of frozen ground [m]                                    ;VB=v0')
       PHYVAR2D1(fvapliq,      'VN=fvapliq      ;ON=HFLQ;VD=surf. evaporation (kg/m2 or mm)                                   ;VB=p0')
       PHYVAR2D1(fvapliqaf,    'VN=fvapliqaf    ;ON=AHFL;VD=accum. surf. evaporation (HFLQ) (kg/m2 or mm)                     ;VB=p0')
       PHYVAR3D1(fvom,         'VN=fvom         ;ON=fvom ;VD=fraction vol. of soil organic content               ;VS=A*'//ngl//'    ;VB=p0')
@@ -669,6 +677,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(resasa,       'VN=resasa       ;ON=RSSA;VD=aerodynamic resistance for snow on bg/low veg                     ;VB=p0')
       PHYVAR2D1(resasv,       'VN=resasv       ;ON=RSSV;VD=aerodynamic resistance for snow under high veg                    ;VB=p0')
       PHYVAR2D1(resaef,       'VN=resaef       ;ON=RSEF;VD=effective aerodynamic resistance for SVS land tile                ;VB=p0')
+      PHYVAR2D1(rho_fl,       'VN=rho_fl       ;ON=RFL   ;VD=density[kg/m3] of the forest litter                                ;VB=p0')
       PHYVAR3D1(rhosoil,      'VN=rhosoil      ;ON=RHSL;VD=soil dry density                               ;VS=A*'//ngl//'  ;VB=p0') 
       PHYVAR3D1(bulksoil,     'VN=bulksoil     ;ON=J4  ;VD= bulk soil density                           ;VS=A*'//nstpl//';VB=p0        ;MIN=0')
       if(read_oc) &      
@@ -689,6 +698,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(rveg,         'VN=rveg         ;ON=RVG ;VD=runoff from the vegetation (mm/s)                                 ;VB=p0')
       PHYVAR3D1(sand,         'VN=sand         ;ON=J1  ;VD=percentage of sand in soil                     ;VS=A*'//nstpl//'  ;VB=p0')
       PHYVAR3D1(sanden,       'VN=sanden       ;ON=2G  ;VD=perc. of sand in soil (E)                      ;VS=A*'//nstel//'  ;VB=e1;IN=J1  ;')
+      PHYVAR2D1(skincond_vl,  'VN=skincond_vl   ;ON=CONVL;VD=skin thermal conductivity of low vegetation                ;VB=p0')
       PHYVAR2D1(skyview,      'VN=skyview      ;ON=SVF ;VD=sky view factor for tall vegetation                               ;VB=p0')
       PHYVAR2D1(skyviewa,     'VN=skyviewa     ;ON=SVFA ;VD=sky view factor for av. vegetation                               ;VB=p0')
       PHYVAR2D1(slop,         'VN=slop         ;ON=SLOP;VD=average maximum subgrid-scale topo slope (nil)                    ;VB=p1')
@@ -734,6 +744,7 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(tfl,          'VN=tfl          ;ON=TFL;VD= forest litter temp.                                               ;VB=p'//iforlit//'')
       PHYVAR2D1(tground,      'VN=tground      ;ON=TGR ;VD=skin exposed bare ground temp.                 ;                  ;VB=p1')
       PHYVAR2D1(tgroundv,     'VN=tgroundv     ;ON=TSGV ;VD=skin shaded ground temp.                            ;            ;VB=p1')
+      PHYVAR2D1(thwdepth,     'VN=thwdepth     ;ON=THWD;VD=depth of thawed ground [m]                                        ;VB=v0')
       PHYVAR2D1(tperm,        'VN=tperm        ;ON=TPRD;VD=constant deep soil temperature                                    ;VB=p0')
       PHYVAR3D1(tpsoil,       'VN=tpsoil       ;ON=TGRD;VD=soil temperature profil                        ;VS=A*'//ngl//'  ;VB=p1')
       !PHYVAR3D1(tpsoilv,      'VN=tpsoilv      ;ON=TGRV;VD=soil under veg temperature profil              ;VS=A*'//ngl//'  ;VB=p1')
@@ -845,6 +856,9 @@ subroutine sfc_businit(moyhr,ni,nk)
       PHYVAR2D1(gred,         'VN=gred         ;ON=GREDL   ;VD=red. grav. across lake m.l.                                   ;VB=p0')
       PHYVAR2D1(rhomix,       'VN=rhomix       ;ON=RHOMIXL ;VD=lake mix. layer density                                       ;VB=p0')
       PHYVAR2D1(roficeh,      'VN=roficeh      ;ON=ROFICEHL ;VD=lake ice from snow melt                                      ;VB=p0')
+      PHYVAR2D1(blak,         'VN=blak         ;ON=BLAK;   ;VD=Short wave extinction coefficient (m-1)                       ;VB=p0')
+      if (read_blak_cslm) &
+           PHYVAR2D1(blaken,       'VN=blaken       ;ON=CSL1;   ;VD=Short wave extinction coefficient (m-1) (E)             ;VB=e1; IN=BLAK')
    endif IF_LAKES
 
    IF_RIVERS: if (schmriver /= 'NIL') then
@@ -930,6 +944,8 @@ subroutine sfc_businit(moyhr,ni,nk)
    PHYVAR2D1(sroad_tsen,   'VN=sroad_tsen   ;ON=2MEN; VD=Snow surface temp for roads (E)                          ;VB=e1 ;IN=SSRD;')
    PHYVAR2D1(sroad_wsnow,  'VN=sroad_wsnow  ;ON=SWRD;VD=water and snow content for roads                          ;VB=p0')
    PHYVAR2D1(sroad_wsnowen,'VN=sroad_wsnowen;ON=6ZEN; VD=water/snow content for roads (E)                         ;VB=e1 ;IN=SWRD;')
+   PHYVAR2D1(sroad_wstok,  'VN=sroad_wstok  ;ON=SKRD; VD= Stock for snow content for roads                        ;VB=p0')
+!   PHYVAR2D1(sroad_wstoken,'VN=sroad_wstoken;ON=8ZEN; VD= Stock for snow content for roads (E)                    ;VB=e1 ;IN=SKRD;')
    PHYVAR2D1(sroof_alb,    'VN=sroof_alb    ;ON=SARF;VD=snow albedo for roofs                                     ;VB=p0         ;MIN=0')
    PHYVAR2D1(sroof_alben,  'VN=sroof_alben  ;ON=1ZEN; VD=snow albedo for roofs (E)                                ;VB=e1 ;IN=SARF;MIN=0')
    PHYVAR2D1(sroof_depth,  'VN=sroof_depth  ;ON=SHRF;VD=snow depth/height over roofs                              ;VB=p0         ;MIN=0')
@@ -944,6 +960,9 @@ subroutine sfc_businit(moyhr,ni,nk)
    PHYVAR2D1(sroof_tsen,   'VN=sroof_tsen   ;ON=3ZEN; VD=Snow surface temp for roofs (E)                          ;VB=e1 ;IN=SSRF;')
    PHYVAR2D1(sroof_wsnow,  'VN=sroof_wsnow  ;ON=SWRF;VD=water and snow content for roofs                          ;VB=p0')
    PHYVAR2D1(sroof_wsnowen,'VN=sroof_wsnowen;ON=7YEN; VD=water/snow content for roofs (E)                         ;VB=e1 ;IN=SWRF;')
+   PHYVAR2D1(sroof_wstok,  'VN=sroof_wstok  ;ON=SKRF; VD= Stock for snow content for roofs                        ;VB=p0')
+   !   PHYVAR2D1(sroof_wstoken,'VN=sroof_wstoken;ON=7ZEN; VD= Stock for snow content for roofs (E)                    ;VB=e1 ;IN=SKRF;')
+   PHYVAR2D1(stown_melt,   'VN=stown_melt   ;ON=SMTW; VD= Built-up melted snow in kg/m2 - last timestep           ;VB=p0')
    PHYVAR2D1(svf_road,     'VN=svf_road     ;ON=SVRD;VD=road sky-view factor                                      ;VB=p0')
    PHYVAR2D1(svf_wall,     'VN=svf_wall     ;ON=SVWL;VD=wall sky-view factor                                      ;VB=p0')
    PHYVAR2D1(t_canyon,     'VN=t_canyon     ;ON=TCAN;VD=air temperature inside the canyon                         ;VB=p0')
@@ -973,6 +992,9 @@ subroutine sfc_businit(moyhr,ni,nk)
    PHYVAR2D1(ws_roaden,    'VN=ws_roaden    ;ON=4QEN; VD=road water reservoir (E)                                 ;VB=e1 ;IN=WSRD;MIN=0')
    PHYVAR2D1(ws_roof,      'VN=ws_roof      ;ON=WSRF;VD=water content of roof reservoir                           ;VB=p0         ;MIN=0')
    PHYVAR2D1(ws_roofen,    'VN=ws_roofen    ;ON=3QEN; VD=roof water reservoir (E)                                 ;VB=e1 ;IN=WSRF;MIN=0')
+   PHYVAR2D1(ytrfzt,       'VN=ytrfzt       ;ON=T2RF;VD=Temperature at zt above the roof                          ;VB=p0')
+   PHYVAR2D1(ytrdzt,       'VN=ytrdzt       ;ON=T2RD;VD=Temperature at zt above the ground                        ;VB=p0')
+   PHYVAR2D1(yurdzu,       'VN=yurdzu       ;ON=UVRD;VD=wind speed at zu above the ground (m/s)                   ;VB=p0')
 
    PHYVAR2DC(yradin,       'VN=yradin       ;ON=RTIN;VD=MRT inside building  (K)                                  ;VB=v0', thermal_stress)
    PHYVAR2DC(yradrfsun,    'VN=yradrfsun    ;ON=RTFS;VD=MRT on the exposed sunny roof (K)                         ;VB=v0', thermal_stress)
@@ -980,9 +1002,6 @@ subroutine sfc_businit(moyhr,ni,nk)
    PHYVAR2DC(yutciin,      'VN=yutciin      ;ON=DXIN;VD=UTCI inside building  (C)                                 ;VB=v0', thermal_stress)
    PHYVAR2DC(yutcirfsun,   'VN=yutcirfsun   ;ON=DXFS;VD=UTCI on the exposed sunny roof (C)                        ;VB=v0', thermal_stress)
    PHYVAR2DC(yutcirfshade, 'VN=yutcirfshade ;ON=DXFD;VD=UTCI on the shaded roof (C)                               ;VB=v0', thermal_stress)
-   PHYVAR2DC(ytrfzt,       'VN=ytrfzt       ;ON=T2RF;VD=Temperature at zt above the roof                          ;VB=v0', thermal_stress)
-   PHYVAR2DC(ytrdzt,       'VN=ytrdzt       ;ON=T2RD;VD=Temperature at zt above the ground                        ;VB=v0', thermal_stress)
-   PHYVAR2DC(yurdzu,       'VN=yurdzu       ;ON=UVRD;VD=wind speed at zu above the ground (m/s)                   ;VB=v0', thermal_stress)
    PHYVAR2DC(ywbgtrfsun,   'VN=ywbgtrfsun   ;ON=GXFS;VD=WBGT on the exposed sunny roof (C)                        ;VB=v0', thermal_stress)
    PHYVAR2DC(ywbgtrfshade, 'VN=ywbgtrfshade ;ON=GXFD;VD=WBGT on the shaded roof (C)                               ;VB=v0', thermal_stress)
    PHYVAR2DC(yutcicin,     'VN=yutcicin     ;ON=DCIN;VD=cumulative UTCI inside building  (C)                      ;VB=v0', thermal_stress)

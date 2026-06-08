@@ -25,6 +25,7 @@ module MiMd
       type (component) :: MiMd_world(100)
       
       character(len=256), dimension(:), allocatable :: names_S
+      integer :: MiMd_gemworld, Mimd_gemIris
       integer :: MiMd_Wmyproc, MiMd_Wnumproc, MiMd_ncolors
       integer, dimension(:,:), allocatable :: partners
       

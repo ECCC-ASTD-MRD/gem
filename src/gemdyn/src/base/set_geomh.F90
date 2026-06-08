@@ -253,8 +253,13 @@
       end if
 
 
+      ! We are abusing the global grid to pass l_i0, l_j0 to rpnphy
+      ! it would have been better to put them in 'model/Hgrid/local'
+      ! but the F_i0, F_j0 parameters of this object are already used
+      ! indirectly because of something having to do with DIEZE grids.
       istat= hgrid_wb_put ('model/Hgrid/global', Grd_global_gid  , &
-                            F_lni=G_ni, F_lnj=G_nj, F_rewrite_L=.true.)
+                            F_i0=l_i0, F_j0=l_j0, F_lni=G_ni, F_lnj=G_nj, &
+                            F_hx=G_halox, F_hy=G_haloy, F_rewrite_L=.true.)
       istat= hgrid_wb_put ('model/Hgrid/local', Grd_local_gid   , &
                             F_lni=l_ni, F_lnj=l_nj, F_rewrite_L=.true.)
       istat= hgrid_wb_put ('model/Hgrid/lclcore', Grd_lclcore_gid , &

@@ -1,0 +1,3 @@
+FRONTEND = ppp8
+BACKEND = conrad
+SEQ_DEFAULT_MACHINE = ppp8

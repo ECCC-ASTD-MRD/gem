@@ -54,7 +54,7 @@
 !     
 !--------------------------------------------------------------------
 !
-      COMM_world= F_COMMs(1) ; 
+      COMM_world= F_COMMs(1)
       call RPN_COMM_world_set (COMM_world)
       OUTs_COMM=F_COMMs(2) ; INs_COMM=F_COMMs(3)
 

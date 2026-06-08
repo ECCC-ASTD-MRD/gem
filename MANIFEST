@@ -1,5 +1,5 @@
 NAME       : gem
-VERSION    : 5.3.0-a22
+VERSION    : 5.3.0-b01
 MACH_VERSION : 3.3.0-a22
 BUILD      : RelWithDebInfo
 DESCRIPTION: ECCC-MRD Global Environmental Multi-scale model - GEM
@@ -9,15 +9,16 @@ URL        : https://github.com/ECCC-ASTD-MRD/gem
 
 # Components
 modelutils = 1.8.0-a22
-rpnphy = 6.3.0-a22
-gemdyn = 5.3.0-a22
+rpnphy = 6.3.0-b01
+gemdyn = 5.3.0-b01
 mach = 3.3.0-a22
-cplocn = v5.2.1
+cplocn = v6.0.1
+cplocn-gossip = v5.2.1
 
 # Dependencies 
 #    =,<,<=,>,>= : Version rules
 #    ~           : Optional
-rmn  >= 20.1.0-b7
+rmn  >= 20.1.0-b8
 tdpack >= 1.6.4.1
 vgrid >= 6.9.11.1
 rpncomm >= 4.6.14

@@ -11,7 +11,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
      qq, co2, ch4, &
      o2, rmu, r0r, salb, taucs, &
      omcs, gcs, &
-     cldfrac, tauae, exta, exoma, exomga, &
+     cldfrac, strfr, tauae, exta, exoma, exomga, &
      fa, mrk2, &
      ni, lay, lev)
    use tdpack_const
@@ -40,6 +40,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
 
    real taucs(ni,lay,nbs), omcs(ni,lay,nbs), gcs(ni,lay,nbs), &
         cldfrac(ni,lay)
+   real, pointer, dimension(:,:) :: strfr
 
    real, dimension(ni, ens_nc2d) :: mrk2
 
@@ -353,7 +354,7 @@ include "nocld.cdk"
 
    call ccc_cldifm1 (cldm, tauomgc, anu, a1, ncd, &
         ncu, inptg, nct, ncum, ncdm, &
-        cldfrac, pfull, mrk2, lev1, cut, maxc, &
+        cldfrac, strfr, pfull, mrk2, lev1, cut, maxc, &
         1, ni, ni, lay, lev)
 
 

@@ -15,6 +15,7 @@
 
       subroutine OUTs_server
       use iso_c_binding
+      use app_mpmd
       use omp_timing
       use IOs
       use OUTs
@@ -132,6 +133,7 @@
          call clock ( Lun_out, 'TERMINATING OUT-server', .true. )
          write(Lun_out,'(80("#")/)')
       endif
+      call App_MPMD_Finalize()
       call MPI_FINALIZE(ierr)
 !     
 !--------------------------------------------------------------------

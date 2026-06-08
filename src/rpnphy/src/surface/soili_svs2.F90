@@ -20,7 +20,7 @@ contains
       SUBROUTINE SOILI_SVS2 (WD, &
            WF, SNM, SVM, RHOS, RHOSV, &
            VEGH, VEGL, &
-           CGSAT, WSAT, WWILT, WFL, WFL_ICE, BCOEF, &
+           CGSAT, WSAT, WWILT, WFL, WFL_ICE, TFL,BCOEF, &
            CVH, CVL, ALVH, ALVL,  &
            EMISVH, EMISVL, ETG, RGLVH , RGLVL, STOMRVH, STOMRVL,  &
            GAMVH,GAMVL, &
@@ -42,9 +42,9 @@ contains
 
 !
       INTEGER N 
-      REAL WD(N,NL_SVS),WF(N,NL_SVS)
+      REAL WD(N,NL_SVS),WF(N,NL_SVS), theta, P
 
-      REAL SNM(N), RHOS(N)
+      REAL SNM(N), RHOS(N), TFL(N)
       REAL RHOSV(N), Z0MVH(N), VEGH(N), VEGL(N), SVM(N)
       REAL CGSAT(N), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
       REAL Z0(N), WFL(N), WFL_ICE(N)
@@ -604,17 +604,17 @@ include "isbapar.cdk"
 
             IF (VEGH(I).GE.EPSILON_SVS) THEN
 
-               IF (SVM(I) .GE. 5.0) THEN ! There is snow in the forest
-                  DZ_FL(I) = 0.01
-                  RHO_FL(I) = 150.
-               ELSE
-                  DZ_FL(I) = 0.03  ! Napoly et al (2017)
-                  RHO_FL(I) = 50. ! Napoly et al (2017)
-               ENDIF
-
-
                !                      Thermal conductivity of forest litter layer (W/m/K)
-               PFLCOND(I) = 0.1 + 0.03 * (WFL(I)/(RHOW * DZ_FL(I)))
+
+               P = 0.91 ! Porosity
+               IF (TFL(I) < 273.15) THEN
+                  theta = WFL_ICE(I)/(RHOI * DZ_FL(I))
+                  PFLCOND(I) = (5.57 * theta**0.8 + P) / (10**(2.34*(P+0.5))) * 100.
+                  PFLCOND(I) = PFLCOND(I) * (3.5 + 4.3*theta*(6.3+theta) - 2.8 * P - 61.9*theta*P*(1.4 - P))
+               ELSE
+                  theta = WFL(I)/(RHOW * DZ_FL(I))
+                  PFLCOND(I) = (5.57 * theta**0.8 + P) / (10**(2.34*(P+0.5))) * 100.
+               ENDIF
 
                !                      Forest litter heat capacity [J/m2/K] 
                PFLHCAP(I) = CFL_dry * RHO_FL(I) * DZ_FL(I) + WFL(I) * CWAT &

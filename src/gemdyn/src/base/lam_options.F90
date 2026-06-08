@@ -44,10 +44,10 @@ module lam_options
    namelist /lam_p/ Lam_ctebcs_L
 
    !# Type of horizontal interpolation to model grid
-   !# * 'CUB_LAG'
+   !# * 'CUBIC'
    !# * 'LINEAR'
    !# * 'NEAREST'
-   character(len=16) :: Lam_hint_S = 'CUB_LAG'
+   character(len=16) :: Lam_hint_S = 'CUBIC'
    namelist /lam  / Lam_hint_S
    namelist /lam_p/ Lam_hint_S
 

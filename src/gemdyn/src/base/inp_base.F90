@@ -43,12 +43,12 @@ contains
       integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1         ,&
                          F_sfc_src, F_sfcLS_src, F_sfc_dst, F_sfcLS_dst,&
                          F_gz, F_GZ_ip1, F_dest , Minx,Maxx,Miny,Maxy  ,&
-                         F_nk, F_inttype_S, F_quiet_L, F_type_S )
+                         F_nk, F_Hinttype_S, F_Vinttype_S, F_quiet_L, F_type_S)
 
       implicit none
 
       character(len=*)          , intent(in) :: F_var_S,F_hgrid_S
-      character(len=*), optional, intent(in) :: F_inttype_S
+      character(len=*), optional, intent(in) :: F_Hinttype_S,F_Vinttype_S
       logical         , optional, intent(in) :: F_quiet_L
       character(len=1), optional,intent(in)  :: F_type_S
       integer                   , intent(in) :: Minx,Maxx,Miny,Maxy, F_nk
@@ -75,11 +75,15 @@ contains
       nullify (ip1_list, wrkr)
       quiet_L=.false.
       if (present(F_quiet_L)) quiet_L= F_quiet_L
+
       typ= ' '
       if (present(F_type_S)) typ= F_type_S
+
+      inttype= 'CUBIC'
+      if (present(F_Hinttype_S)) inttype= F_Hinttype_S
       
-      inp_get= inp_read_mt ( F_var_S, F_hgrid_S, wrkr, 1, &
-           ip1_list, nka, F_quiet_L=quiet_L, F_type_S=typ )
+      inp_get= inp_read_mt ( F_var_S, F_hgrid_S, wrkr, 1, ip1_list,&
+                          nka, F_hint_S=inttype, F_quiet_L=quiet_L, F_type_S=typ)
 
       if (inp_get < 0) then
          if (associated(ip1_list)) deallocate (ip1_list)
@@ -97,7 +101,7 @@ contains
                             F_sfc_dst, F_sfcLS_dst, F_nk )
 
       inttype= 'cubic'
-      if (present(F_inttype_S)) inttype= F_inttype_S
+      if (present(F_Vinttype_S)) inttype= F_Vinttype_S
       call vertint2 ( F_dest,dstlev,F_nk, wrkr,srclev,nka           ,&
                       l_minx,l_maxx,l_miny,l_maxy                   ,&
                       1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
@@ -198,9 +202,14 @@ contains
             if ( Inp_src_hauteur_L ) then
                if (Inp_src_GZ_L) then
                   nomvar= 'GZ'
-                  if (Inp_kind==21) surface_level= 0.
-                  if (Inp_kind==5 ) surface_level= 1.
-                  call convip ( ip1, surface_level,Inp_kind,1,dumc,.false.)
+                  if (Inp_kind==2) then
+                     nomvar= 'ME'
+                     ip1=0
+                  else
+                     if (Inp_kind==21) surface_level= 0.
+                     if (Inp_kind==5 ) surface_level= 1.
+                     call convip ( ip1, surface_level,Inp_kind,1,dumc,.false.)
+                  endif
                else
                   nomvar= 'ME'
                   ip1=0

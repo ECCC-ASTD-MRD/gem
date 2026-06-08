@@ -1,0 +1,39 @@
+grid=1,model;
+
+ levels=1,eta,-1;
+
+ steps=1,hour,-3.,0.,9.,12.,21.,24.;
+
+ sortie_p([DX,LA,LO,LU15,MT,ME]                 , grid, 1, levels, 1, steps, 1)
+ sortie_p([Z0,LURA]                             , grid, 1, levels, 1, steps, 1)
+
+ sortie([PN,P0]                                 , grid, 1, levels, 1, steps, 1)
+ sortie([TT,GZ,ES,UU,VV,WW]                     , grid, 1, levels, 1, steps, 1)
+ sortie([QC,HU,HR]                              , grid, 1, levels, 1, steps, 1)
+
+ sortie_p([H,FB,PR,RT,PC,A3,A4,FC,TJ,DQ,NT]     , grid, 1, levels, 1, steps, 1)
+ sortie_p([SD,UE,RD,RS,IO,J8]                   , grid, 1, levels, 1, steps, 1)
+ sortie_p([EI,EV,FI,AL]                         , grid, 1, levels, 1, steps, 1)
+
+ sortie_p([KT,KTN,FN,RHO]                       , grid, 1, levels, 1, steps, 1)
+
+ sortie([TA2,TA3,TALD,TARO,TC38,TCO,TETH,TH22,THCH,THN3,THN4,THO2,THON,TISO,TMGL,TN25,TNH3,TNO2,TNO3,TNO,TO3,TOH]   , grid, 1, levels, 1, steps, 1)
+ sortie([TPAN,TRO2,TROO,TSO2,TTOL,TSU1,TSS1,TOC1,TNI1,TAM1,TCM1,TEC1,TPC1,TSU2,TSS2,TOC2,TNI2,TAM2,TCM2,TEC2,TPC2]  , grid, 1, levels, 1, steps, 1)
+ sortie([TBZO,TCR1,TCR2,TCRE,TDIA,TMC3,TMEK,TO,TOSD,TR22,TR2N,TR2R,TRN3,TSO4]                                       , grid, 1, levels, 1, steps, 1)
+
+ sortie_p([VO3,O3RB,O3RC,VNO2,N2RB,N2RC,VNO,NORB,NORC,VSO2,S2RB,S2RC,VAF,VACF,VNH3,VHCH,VHN3,VPAN,VRN3]             , grid, 1, levels, 1, steps, 1)
+ sortie_p([DSO2,DNO,DNO2,DO3,DHN3,DHNO,DPAN,DRN3,DNH3,DH22,DHCH,DSU,DNI,DAM,DCM,DEC,DPOM,DSOM,DSS,DSO4,DNOY]        , grid, 1, levels, 1, steps, 1)
+ sortie_p([WSO3,WSO4,WNO3,WNH4,WCM,WEC,WPOM,WSOM,WSS,WH22,WROO,WH2O]                                                , grid, 1, levels, 1, steps, 1)
+ sortie_p([ENO,ENO2,ESNO,EWNO,BPAA,BPAE,BPIO,BPNO]                                                                  , grid, 1, levels, 1, steps, 1)
+
+ filtre([ TT, GZ, PN ], coef, 0.5, pass, 2)
+ filtre([ WW, QQ, QR ], coef, 0.5, pass, 3)
+ filtre([ ES         ], coef, 0.1, pass, 1)
+
+ xnbit([ Z0,   MX                                                         ], bits, 24)
+ xnbit([ DSO2, DNO,  DNO2, DO3,  DHN3, DHNO, DPAN, DRN3, DNH3, DH22, DHCH ], bits, 32)
+ xnbit([ DSU,  DNI,  DAM,  DCM,  DEC,  DPOM, DSOM, DSS, DSO4, DNOY        ], bits, 32)
+ xnbit([ WSO3, WSO4, WNO3, WNH4, WCM,  WEC,  WPOM, WSOM, WSS,  WH22, WROO ], bits, 32)
+ xnbit([ WH2O, PR,   RT,   VG                                             ], bits, 32)
+
+

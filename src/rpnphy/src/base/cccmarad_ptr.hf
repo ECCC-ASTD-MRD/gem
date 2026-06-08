@@ -79,6 +79,7 @@
       MKPTR1D(zlfb, lfb, pvars)
       MKPTR1D(zsfb, sfb, pvars)
       MKPTR1D(znfb, nfb, pvars)
+      MKPTR2Dm1(zstrfr, strfr, pvars)
  
 ! Pointers to busvol
       MKPTR1D(zap, ap, pvars)

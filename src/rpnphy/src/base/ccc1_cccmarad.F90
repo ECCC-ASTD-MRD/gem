@@ -202,6 +202,7 @@ contains
       zfctb = 0.0
       zfcdb = 0.0
       zfcfb = 0.0
+      if (associated(zstrfr)) zstrfr = 0.0
 
 
       ! calculate the variation of solar constant
@@ -405,7 +406,7 @@ contains
               tfull, temp, ztsrad, zo3s,zoztoit, &
               qq, zcosas, r0r, salb, zemisr, taucs, &
               omcs, gcs, taucl, omcl, gcl, &
-              cldfrac, tauae, exta, exoma, exomga, &
+              cldfrac, zstrfr, tauae, exta, exoma, exomga, &
               fa, absa, lcsw, lclw, zmrk2, &
               il1, il2, ni, nkm1, nk)
 

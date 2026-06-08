@@ -39,9 +39,9 @@
       integer, intent(in) :: F_kount
       
       include 'mpif.h'
-      character(len=16) :: datev, previous_S, next_S, date_n, last
+      character(len=16) :: datev, date_n, next_S
       integer :: n,i,j,k,yy,mo,dd,hh,mm,ss,dum,ivar,dim,&
-                 i0,in,j0,jn,istep,err
+                 i0,in,j0,jn,err
       real, pointer, dimension(:,:,:) :: hu,vt
       real(kind=REAL64) :: dayfrac,tx,a,b,weight
       real(kind=REAL64), parameter :: one=1.0d0, &
@@ -57,16 +57,19 @@
       call gtmg_start(50, 'IAU', 1)
       dayfrac = dble(Step_kount) * Cstv_dt_8 * rsid
       call incdatsd  (date_n, Step_runstrt_S, dayfrac)
-      
-      n= int(Iau_interval/Cstv_dt_8)/2
-      istep= (Step_kount-1)/n
-      istep= (istep+1)/2
-      dayfrac = istep*Iau_interval*rsid
-      call incdatsd (datev, Step_runstrt_S, dayfrac)
-      call prsdate  (yy,mo,dd,hh,mm,ss,dum,datev)
-      call pdfjdate2 (IAU_now,yy,mo,dd,hh,mm,ss)
 
-      if (IAU_now > IAU_previous) then
+      if (Step_kount > IAU_ubstp) then
+         if (IAU_ubstp < 0) then
+            call iau_fisrt_datev (datev,IAU_ubstp,Step_kount)
+            IAU_now= datev
+         else
+            n       = Iau_interval/Cstv_dt_8
+            dayfrac = Iau_interval*rsid
+            call incdatsd (datev, IAU_now, dayfrac)
+            IAU_now  = datev
+            IAU_ubstp= IAU_ubstp+n
+         endif
+         
          if (INs_server_L) then
             call gtmg_start ( 51, 'INs_wait', 50)
             call gemtime (Lun_out, 'Input-svr: wait for IAU data', .false.)
@@ -81,15 +84,14 @@
                             COMM_multigrid, err)         
             call MPI_bcast (IAU_recv%VGD,size(IAU_recv%VGD),MPI_DOUBLE_PRECISION, 0,&
                             COMM_multigrid, err)         
-            dayfrac = (istep+1)*Iau_interval*rsid
-            call incdatsd (next_S, Step_runstrt_S, dayfrac)
+            dayfrac = Iau_interval*rsid
+            call incdatsd (next_S, IAU_now, dayfrac)
             if ( next_S < IAU_last_S ) then
                call itf_Iserv_request (next_S,INs_Iaulist_S,&
                                INs_Iau_tag,INs_Iau_nrequests)
             endif
          endif
-         call iau_data  (datev)
-         IAU_previous = IAU_now
+         call iau_data (datev)
       endif
 
       call gtmg_start(56, 'IAU_increments', 50)
@@ -99,7 +101,7 @@
       j0= 1+pil_s ; jn= l_nj-pil_n
       
       if (Lun_out > 0) write(6,'(a,i6,a,1x,a,f15.12/20("#"))') &
-         'IAU_increments: ',Step_kount,date_n,datev,weight
+         'IAU_increments: ',Step_kount,date_n,IAU_now,weight
       hu=> tracers_P(Tr3d_hu)%pntr
       pw_tt_plus(i0:in,j0:jn,:) = &
                     pw_tt_plus(i0:in,j0:jn,:) + weight * iau_t(i0:in,j0:jn,:)

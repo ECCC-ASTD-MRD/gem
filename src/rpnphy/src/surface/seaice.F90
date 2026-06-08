@@ -979,16 +979,6 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
          zvdiag = zvdiag * vmod0 / vmod
       endif
       
-      ! Fill surface type-specific diagnostic values
-      zqdiagtyp = zqdiag
-      ztdiagtyp = ztdiag
-      zudiagtyp = zudiag
-      zvdiagtyp = zvdiag
-      zqdiagtypv = zqdiag
-      ztdiagtypv = ztdiag
-      zudiagtypv = zudiag
-      zvdiagtypv = zvdiag
-
 #ifdef HAVE_NEMO
       if (cplocn) then
          ! Update with fluxes and diagnostic variables from ocean model
@@ -1049,6 +1039,16 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
          endif
       endif
 #endif
+
+      ! Fill surface type-specific diagnostic values
+      zqdiagtyp = zqdiag
+      ztdiagtyp = ztdiag
+      zudiagtyp = zudiag
+      zvdiagtyp = zvdiag
+      zqdiagtypv = zqdiag
+      ztdiagtypv = ztdiag
+      zudiagtypv = zudiag
+      zvdiagtypv = zvdiag
 
       !--------------------------------------
       !   8.     Heat Stress Indices

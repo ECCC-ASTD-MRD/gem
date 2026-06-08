@@ -18,6 +18,7 @@
       subroutine INs_Nes_send (F_GZ,F_ND,Minx,Maxx,Miny,Maxy,F_err)
       use, intrinsic :: iso_fortran_env
       use iso_c_binding
+      use MiMd
       use omp_timing
       use IOs
       use INs
@@ -98,7 +99,7 @@
          clients= clients+1
          cnt= ubound(GZbuf,1)
          call MPI_isend ( GZbuf(1,n),cnt,MPI_REAL,n,tag2+n,&
-                          MPI_COMM_WORLD,INs_Nes_isend(clients),err )
+                          MiMd_gemworld,INs_Nes_isend(clients),err )
          cnt=0
          do k=1,INs_nplans
          do j=model_gindx(3,offs)-G_haloy,model_gindx(4,offs)+G_haloy
@@ -111,7 +112,7 @@
          clients= clients+1
          cnt= ubound(Nesbuf,1)
          call MPI_isend ( Nesbuf(1,n),cnt,MPI_REAL,n,tag3+n,&
-                          MPI_COMM_WORLD,INs_Nes_isend(clients),err)
+                          MiMd_gemworld,INs_Nes_isend(clients),err)
       end do
       if (Lun_out>0) call clock ( Lun_out, 'SEND_completed2', .false. )
 !     

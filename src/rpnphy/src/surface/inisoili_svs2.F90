@@ -180,7 +180,7 @@ subroutine inisoili_svs2(pvars, ni)
 
 !        Soil dry conductivity:
          conddry_geo(i,k) = (0.135*rhosoil_geo(i,k) + 64.7) / &
-                        (2700. - 0.947*rhosoil_geo(i,k))   
+                        (rho_sms_geo(i,k) - 0.947*rhosoil_geo(i,k))   
 
 !        Soil volumetric heat capacity
          if ((zsand(i,k)+zclay(i,k)) .gt. epsilon_svs) then

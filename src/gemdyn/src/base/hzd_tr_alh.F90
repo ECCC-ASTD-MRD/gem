@@ -69,7 +69,7 @@
       real(kind=REAL64)  crit_coef, base_coefT,cdelta2,cdelta,Creal
       real F_s (l_minx:l_maxx, l_miny:l_maxy,Nk),cs
       real(kind=REAL64) F_coef_8(1:NK)
-      real(kind=REAL64), dimension (:,:,:,:), allocatable :: stencil_V
+      real(kind=REAL64), dimension (:,:,:,:), allocatable :: stencilv
       real(kind=REAL64) a(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64) b(l_minx:l_maxx, l_miny:l_maxy,Nk)
       real(kind=REAL64) d(l_minx:l_maxx, l_miny:l_maxy,Nk),W,beta_imp,beta_exp
@@ -369,8 +369,8 @@
          enddo
 !
 ! stencilV
-         allocate(stencil_V(l_minx:l_maxx, l_miny:l_maxy,3,Nk))
-         stencil_V=zero
+         allocate(stencilv(l_minx:l_maxx, l_miny:l_maxy,3,Nk))
+         stencilv=zero
 
          do k=1,NK
             do j=1+pil_s, l_nj-pil_n
@@ -379,16 +379,16 @@
                   Jz  =(Ver_z_8%t(k+1)-Ver_z_8%t(k))/(ztht_8(i  ,j,k+1  )-ztht_8(i  ,j,k))
                   Jzm =(Ver_z_8%t(k)-Ver_z_8%t(k-1))/(ztht_8(i  ,j,k  )-ztht_8(i  ,j,k-1))
                   if ((k /= 1).and.(k /= NK)) then
-                     stencil_V(i,j,3,k)= one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
+                     stencilv(i,j,3,k)= one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
                      half*(GVM%mc_Jyt_8(i,j,k+1)+GVM%mc_Jyt_8(i,j-1,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
           	     one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
           	     half*(GVM%mc_Jxt_8(i,j,k+1)+GVM%mc_Jxt_8(i-1,j,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
-         	     stencil_V(i,j,2,k)= one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+         	     stencilv(i,j,2,k)= one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
          	     half*(GVM%mc_Jyt_8(i,j,k-1)+GVM%mc_Jyt_8(i,j-1,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
          	     one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
          	     half*(GVM%mc_Jxt_8(i,j,k-1)+GVM%mc_Jxt_8(i-1,j,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-    	             stencil_V(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+    	             stencilv(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
         	                       half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
         	                       -one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
         	                       half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
@@ -397,23 +397,23 @@
                                        - one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
                                        half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-        	     stencil_V(i,j,3,k)=Jzpi *stencil_V(i,j,3,k)
-        	     stencil_V(i,j,2,k)=Jzpi *stencil_V(i,j,2,k)
-        	     stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
+        	     stencilv(i,j,3,k)=Jzpi *stencilv(i,j,3,k)
+        	     stencilv(i,j,2,k)=Jzpi *stencilv(i,j,2,k)
+        	     stencilv(i,j,1,k)=Jzpi *stencilv(i,j,1,k)
 ! expilicit cflux computation
-      		     c1flux_8(i,j,k)=-stencil_V(i,j,1,k)* fdg2_4(i,j,k)- &
-                                   stencil_V(i,j,2,k)* fdg2_4(i,j,k-1)&
-                                   -stencil_V(i,j,3,k)* fdg2_4(i,j,k+1)
+      		     c1flux_8(i,j,k)=-stencilv(i,j,1,k)* fdg2_4(i,j,k)- &
+                                   stencilv(i,j,2,k)* fdg2_4(i,j,k-1)&
+                                   -stencilv(i,j,3,k)* fdg2_4(i,j,k+1)
                   endif
                   if (k == Nk) then
-                     stencil_V(i,j,2,k)= one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+                     stencilv(i,j,2,k)= one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
                      half*(GVM%mc_Jyt_8(i,j,k-1)+GVM%mc_Jyt_8(i,j-1,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
                      one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
                      half*(GVM%mc_Jxt_8(i,j,k-1)+GVM%mc_Jxt_8(i-1,j,k-1)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
                      Jxx=zero
                      Jyy=zero
-                     stencil_V(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+                     stencilv(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
                      half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
                      - one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
                      half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
@@ -422,21 +422,21 @@
                      - one* F_coef_8(k)*Jz*half*(Jxx+Jxx)*(&
                      half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-                     stencil_V(i,j,2,k)=Jzpi *stencil_V(i,j,2,k)
-                     stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
+                     stencilv(i,j,2,k)=Jzpi *stencilv(i,j,2,k)
+                     stencilv(i,j,1,k)=Jzpi *stencilv(i,j,1,k)
 
 ! expilicit cflux computation
-                    c1flux_8(i,j,k)=-stencil_V(i,j,1,k)* fdg2_4(i,j,k)- &
-                                   stencil_V(i,j,2,k)* fdg2_4(i,j,k-1)
+                    c1flux_8(i,j,k)=-stencilv(i,j,1,k)* fdg2_4(i,j,k)- &
+                                   stencilv(i,j,2,k)* fdg2_4(i,j,k-1)
                   endif
 
                   if (k == 1) then
-      		     stencil_V(i,j,3,k)= one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
+      		     stencilv(i,j,3,k)= one* F_coef_8(k)*Jz*half*(GVM%mc_Jy_8(i,j-1,k+1)+GVM%mc_Jy_8(i,j,k+1))*(&
                      half*(GVM%mc_Jyt_8(i,j,k+1)+GVM%mc_Jyt_8(i,j-1,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))+&
                      one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
                      half*(GVM%mc_Jxt_8(i,j,k+1)+GVM%mc_Jxt_8(i-1,j,k+1)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-		     stencil_V(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
+		     stencilv(i,j,1,k)=- one* F_coef_8(k)*Jzm*half*(GVM%mc_Jy_8(i,j-1,k)+GVM%mc_Jy_8(i,j,k))*(&
                      half*(GVM%mc_Jyt_8(i,j,k)+GVM%mc_Jyt_8(i,j-1,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
      		     - one* F_coef_8(k)*Jzm*half*(GVM%mc_Jx_8(i-1,j,k)+GVM%mc_Jx_8(i,j,k))*(&
                      half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k)-Ver_z_8%t(k-1))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))&
@@ -445,23 +445,23 @@
                      - one* F_coef_8(k)*Jz*half*(GVM%mc_Jx_8(i-1,j,k+1)+GVM%mc_Jx_8(i,j,k+1))*(&
                      half*(GVM%mc_Jxt_8(i,j,k)+GVM%mc_Jxt_8(i-1,j,k)) /((Ver_z_8%t(k+1)-Ver_z_8%t(k))*(Ver_z_8%m(k+1)-Ver_z_8%m(k))))
 
-       		     stencil_V(i,j,3,k)=Jzpi *stencil_V(i,j,3,k)
-                     stencil_V(i,j,1,k)=Jzpi *stencil_V(i,j,1,k)
+       		     stencilv(i,j,3,k)=Jzpi *stencilv(i,j,3,k)
+                     stencilv(i,j,1,k)=Jzpi *stencilv(i,j,1,k)
 
 ! expilicit  cflux computation
-                     c1flux_8(i,j,k)=-stencil_V(i,j,1,k)* fdg2_4(i,j,k)- &
-                                  stencil_V(i,j,3,k)* fdg2_4(i,j,k+1)
+                     c1flux_8(i,j,k)=-stencilv(i,j,1,k)* fdg2_4(i,j,k)- &
+                                  stencilv(i,j,3,k)* fdg2_4(i,j,k+1)
                   endif
                   if (k==NK) then
                      c1flux_8(i,j,Nk)= (one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))*&
-                                     (-stencil_V(i,j,1,Nk-1)* fdg2_4(i,j,Nk-1)-  stencil_V(i,j,2,Nk-1)* fdg2_4(i,j,Nk-2)&
-                                     -stencil_V(i,j,3,Nk-1)* fdg2_4(i,j,Nk))
+                                     (-stencilv(i,j,1,Nk-1)* fdg2_4(i,j,Nk-1)-  stencilv(i,j,2,Nk-1)* fdg2_4(i,j,Nk-2)&
+                                     -stencilv(i,j,3,Nk-1)* fdg2_4(i,j,Nk))
 ! stencill de NK pour inclure la condition frontiere
                   endif
                   if (k==NK) then
-          	     stencil_V(i,j,2,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  * stencil_V(i,j,2,k-1 )
-                                        stencil_V(i,j,1,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  *(stencil_V(i,j,1,k-1 )+&
-                                        stencil_V(i,j,3,k-1 ))
+          	     stencilv(i,j,2,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  * stencilv(i,j,2,k-1 )
+                                        stencilv(i,j,1,k )=(one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))  *(stencilv(i,j,1,k-1 )+&
+                                        stencilv(i,j,3,k-1 ))
                   endif
                enddo
             enddo
@@ -472,29 +472,29 @@
 
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
-                d(i,j,k)= -beta_imp*stencil_V(i,j,3,k )
-                b(i,j,k)=one-beta_imp*stencil_V(i,j,1,k)
+                d(i,j,k)= -beta_imp*stencilv(i,j,3,k )
+                b(i,j,k)=one-beta_imp*stencilv(i,j,1,k)
             enddo
          enddo
          do k=2,Nk-1
             do j=1+pil_s, l_nj-pil_n
                do i=1+pil_w, l_ni-pil_e
-                  a(i,j,k)= -beta_imp*stencil_V(i,j,2,k)
-                  b(i,j,k)=one-beta_imp*stencil_V(i,j,1,k)
-                  d(i,j,k)=-beta_imp*stencil_V(i,j,3,k)
+                  a(i,j,k)= -beta_imp*stencilv(i,j,2,k)
+                  b(i,j,k)=one-beta_imp*stencilv(i,j,1,k)
+                  d(i,j,k)=-beta_imp*stencilv(i,j,3,k)
                enddo
             enddo
          enddo
          k=Nk
             do j=1+pil_s, l_nj-pil_n
                do i=1+pil_w, l_ni-pil_e
-                  a(i,j,k)= -beta_imp*stencil_V(i,j,2,k)
-                  b(i,j,k)= one-beta_imp*stencil_V(i,j,1,k)
+                  a(i,j,k)= -beta_imp*stencilv(i,j,2,k)
+                  b(i,j,k)= one-beta_imp*stencilv(i,j,1,k)
 
                enddo
             enddo
 
-         deallocate (stencil_V)
+         deallocate (stencilv)
 
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e

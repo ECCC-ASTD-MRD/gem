@@ -21,13 +21,13 @@
       use adz_mem
       use dynkernel_options
       use geomh
+      use masshlt
+      use omp_lib
       use HORgrid_options
       use ptopo
 
       use, intrinsic :: iso_fortran_env
       implicit none
-
-#include <arch_specific.hf>
 
       !arguments
       !---------
@@ -46,25 +46,28 @@
       include 'mpif.h'
       include 'rpn_comm.inc'
       integer :: i,j,k,err,comm
-      real(kind=REAL64) :: c_mass_8
+      real(kind=REAL64) :: c_mass_8, c_avg_8
       real(kind=REAL64) :: gathS(Ptopo_numproc*Ptopo_ncolors)
 !
 !---------------------------------------------------------------------
-!
+!     
       c_mass_8 = 0.0d0
 
       !Evaluate Local Mass
       !-------------------
       if (Schm_autobar_L) then
-
+      
+!$omp do
          do j=F_j0,F_jn
             do i=F_i0,F_in
                c_mass_8 = c_mass_8 + F_tracer(i,j,1) * geomh_area_mask_8(i,j)
             end do
          end do
+!$omp enddo nowait
 
       else
 
+!$omp do collapse(2)
          do k=F_k0,F_nk
             do j=F_j0,F_jn
                do i=F_i0,F_in
@@ -72,16 +75,24 @@
                end do
             end do
          end do
+!$omp enddo nowait 
 
       end if
+      thread_sum(1,OMP_get_thread_num()) = c_mass_8
 
       comm = RPN_COMM_comm ('MULTIGRID')
+!$OMP BARRIER
 
       !Evaluate Global Mass
       !----------------------------------------
-      call MPI_Allgather(c_mass_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
+!$omp single
+      c_avg_8=sum(thread_sum(1,:))
+      call MPI_Allgather(c_avg_8,1,MPI_DOUBLE_PRECISION,gathS,1,MPI_DOUBLE_PRECISION,comm,err)
 
-      F_mass_tracer_8 = sum(gathS) 
+      g_avg_8(1) = sum(gathS) 
+!$omp end single
+
+      F_mass_tracer_8 = g_avg_8(1)
 !
 !---------------------------------------------------------------------
 !

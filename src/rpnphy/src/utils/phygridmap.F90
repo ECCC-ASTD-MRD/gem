@@ -15,6 +15,14 @@ module phygridmap
    integer, save, public :: drv_glb_gid = 0
    integer, save, public :: drv_glb_ni = 0
    integer, save, public :: drv_glb_nj = 0
+   integer, save, public :: drv_glb_hx = 0
+   integer, save, public :: drv_glb_hy = 0
+
+   ! Possibly inappropriate names for indices that won't be the same
+   ! for all PE's but since we used the global grid 'model/Hgrid/global'
+   ! to pass them, that is the name that was chosen.
+   integer, save, public :: drv_glb_i0 = 0
+   integer, save, public :: drv_glb_j0 = 0
 
    integer, save, public :: drv_lcl_gid = 0
    integer, save, public :: drv_lcl_ni = 0
@@ -35,6 +43,11 @@ module phygridmap
    integer, save, public :: phy_glbcore_gid = -1
    integer, save, public :: phy_comm_io_id = -1
 
+#ifdef HAVE_NEMO
+   character(len=3), save, public :: phy_yinyang_S = ''
+   logical         , save, public :: phy_yinyang_L = .false.
+#endif
+   
    integer, pointer, save, public :: ijdrv_mod(:,:,:) => NULL()
    integer, pointer, save, public :: ijdrv_phy(:,:,:)  => NULL()
    integer, pointer, save, public :: ijphy(:,:,:) => NULL()

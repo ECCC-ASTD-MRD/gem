@@ -20,6 +20,7 @@
       use gem_options
       use HORgrid_options
       use step_options
+      use spn_options
       use theo_options
       use omp_timing
       use gmm_pw
@@ -52,18 +53,17 @@
 
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
-      call adz_tracers (.true.) ! Mass fixing NOT done yet
+      call adz_tracers_interp ()
 
       call psadj_hlt ( Step_kount )
 
-      call adz_tracers (.false.)
+      call adz_tracers_massfixing ()
 
       call t02t1()
 
       call HOR_bndry ()
-!$omp single
-      call spn_main ()
-!$omp end single
+
+      if (spn_ON_L) call spn_main ()
 
       call canonical_cases ("VRD")
 

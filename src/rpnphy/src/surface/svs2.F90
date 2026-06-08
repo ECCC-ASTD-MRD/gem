@@ -187,13 +187,12 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
    real,dimension(n) :: zz0nat, zz0hnat ! Local variables for grid box average roughness length
    real,dimension(n) :: phm_can   ! Heat mass for the high vegetation layer (J K-1 m-2)
    real,dimension(n) :: pscap     ! Vegetation layer snow capacities (kg m-2)
+   real,dimension(n) :: pscap_min ! Baseline vegetation layer snow capacities (kg m-2)
    real,dimension(n) :: pfcans    ! Canopy layer snowcover fractions from FSM2
    real,dimension(n) :: pres_snca ! Resistance for intercepted snow in high canopy
    real,dimension(n) ::  eg_grid ! evaporation rate over bare ground and bare ground below high veg (grid box average) [kg/m2/s]
    real,dimension(n) ::  HVSN_VH !Halstead coefficient of the high vegetation canopy accounting for intercepted snow
    real,dimension(n) ::  WRMAX_FL  ! Maximum water holding capacity in forest litter layer (jg/m2)
-   real,dimension(n) ::  DZ_FL     ! Thickness of the forest litter layer (m)
-   real,dimension(n) ::  RHO_FL  ! Density of forest litter (kg/m3)
 
      ! NL_SVS VARIABLES
    real, dimension(n,nl_svs) ::  pd_g, pdzg
@@ -408,6 +407,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
              PHVEGAPOL_V(I) = 0. ! Effect of basal vegetation on snowpack properties are not taken into account in high vegetation. 
              PFCANS(I) = 0.
              PSCAP(I) = 0.
+             PSCAP_MIN(I) = 0.
              PRES_SNCA(I) = 0.
 
             ! TO BE CHECKED======================
@@ -515,7 +515,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            BUS(x(VEGH   ,1,1)), &
            BUS(x(VEGL   ,1,1)), BUS(x(CGSAT  ,1,1)), &
            BUS(x(WSAT   ,1,1)), BUS(x(WWILT  ,1,1)), &
-           BUS(x(WFL    ,1,1)), BUS(x(WFL_ICE  ,1,1)), &
+           BUS(x(WFL    ,1,1)), BUS(x(WFL_ICE  ,1,1)), BUS(x(TFL  ,1,1)), &
            BUS(x(BCOEF  ,1,1)), &
            BUS(x(CVH    ,1,1)), BUS(x(CVL    ,1,1)), &
            BUS(x(ALVH   ,1,1)), BUS(x(ALVL   ,1,1)), &
@@ -541,7 +541,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            ALVA, BUS(x(LAIVA  ,1,1)), CVPA, EVA, BUS(x(Z0HA ,1,1)),&
            BUS(x(Z0MVG,1,1)), RGLA, STOMRA,   &
            GAMVA,bus(x(CONDSLD    ,1,1)) , bus(x(CONDDRY   ,1,1)), &
-           bus(x(FLCOND   ,1,1)), bus(x(FLHCAP   ,1,1)), DZ_FL, RHO_FL, N)
+           bus(x(FLCOND   ,1,1)), bus(x(FLHCAP   ,1,1)),  bus(x(DZ_FL,1,1)), bus(x(RHO_FL,1,1)), N)
 !
       ! Update vegetation temperature with average of low and high vegetation.
       ! VV TO BE MODIFIED: Intermediate step during developement.
@@ -568,11 +568,11 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(D95   ,1,1)),  BUS(x(PSNGRVL,1,1)), &
            BUS(x(VEGH   ,1,1)), BUS(x(VEGL   ,1,1)), &
            BUS(x(Z0MVH  ,1,1)), bus(x(VGH_HEIGHT   ,1,1)),bus(x(VGH_DENS,1,1)), &
-           bus(x(SNCMA     ,1,1)), bus(x(WVEG_VH,1,1)),bus(x(WFL_ICE,1,1)), DZ_FL, bus(x(RST,1,1)),     &
+           bus(x(SNCMA     ,1,1)), bus(x(WVEG_VH,1,1)),bus(x(WFL,1,1)), bus(x(WFL_ICE,1,1)), bus(x(DZ_FL,1,1)), bus(x(RST,1,1)),     &
            bus(x(SKYVIEW ,1,1)), bus(x(SKYVIEWA ,1,1)), &
            bus(x(VEGTRANS,1,1)), bus(x(VEGTRANSA,1,1)),   &
            bus(x(frootd   ,1,1)), bus(x(acroot ,1,1)), WRMAX_VL, &
-           WRMAX_VH,  WRMAX_FL, PHM_CAN,BUS(x(HVEGAPOL,1,1)), PSCAP, N)
+           WRMAX_VH,  WRMAX_FL, PHM_CAN,BUS(x(HVEGAPOL,1,1)), PSCAP, PSCAP_MIN,  N)
 
       If ( (.not.atm_external) .AND. (kount.EQ.0) ) then
          ! GEM first timestep
@@ -628,7 +628,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
          CALL SNOW_INTERCEPTION_SVS2(DT,bus(x(TVEGEH,1,1)), tt, hu, ps, PWIND_TOP,zfsolis,RHOA,           &
                            rainrate_mm,snowrate_mm, bus(x(SNCMA     ,1,1)), wrmax_vh, bus(x(SKYVIEW,1,1)),&
                            bus(x(ESNC     ,1,1)), bus(x(ESNCAF     ,1,1)),  BUS(x(LAIVH  ,1,1)),          &
-                           BUS(x(SVS_WTG,1,1)),PHM_CAN, BUS(x(VGH_DENS   ,1,1)), PSCAP,                   &
+                           BUS(x(SVS_WTG,1,1)),PHM_CAN, BUS(x(VGH_DENS   ,1,1)), PSCAP, PSCAP_MIN,        &
                            bus(x(wveg_vh  ,1,1)), rainrate_mm_veg, snowrate_mm_veg, bus(x(UNLSNC,1,1)),   &
                            bus(x(UNLSNCAF,1,1)), bus(x(DRPSNC,1,1)), bus(x(DRPSNCAF,1,1)),                &
                            bus(x(INTSNC,1,1)), bus(x(INTSNCAF,1,1)),bus(x(MFSNC,1,1)),                    &
@@ -840,7 +840,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
                   bus(x(TSNOWV_SVS ,1,1)) , PHM_CAN,  bus(x(SNCMA     ,1,1)), &
                   bus(x(VGH_HEIGHT   ,1,1)),  &
                   bus(x(SKYVIEW   ,1,1)), bus(x(SKYVIEWA   ,1,1)),  PFCANS, &
-                  bus(x(SOILHCAPZ ,1,1)) ,bus(x(SOILCONDZ,1,1)),  DZ_FL, &
+                  bus(x(SOILHCAPZ ,1,1)) ,bus(x(SOILCONDZ,1,1)),  bus(x(DZ_FL,1,1)), &
                   rainrate_mm,bus(x(WVEG_VL,1,1)),bus(x(WVEG_VH,1,1)), &
                   bus(x(snoma,1,1)), bus(x(snvma,1,1)),&
                   bus(x(VEGTRANSA  ,1,1)) , bus(x(ALVIS,1,indx_soil)),     &
@@ -918,7 +918,8 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
            bus(x(wfcdp   ,1,1)), bus(x(watflow ,1,1)),&
            bus(x(latflw  ,1,1)),bus(x(runofftot ,1,indx_soil)), &
            bus(x(watpond ,1,1)),bus(x(maxpond ,1,1)), &
-           N)
+           bus(x(frzdepth ,1,1)), bus(x(frzthick ,1,1)), &
+           bus(x(thwdepth ,1,1)), N)
 
       IF( USE_PHOTO ) THEN
 
@@ -961,7 +962,7 @@ subroutine svs2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, DT, KOUNT, TRNCH, N, M, NK)
 !
 !     Phase change for the soil column
 !
-      CALL PHASE_CHANGES (DT, BUS(x(SVS_WTG,1,1)), bus(x(LAIVA  ,1,1)), BUS(x(SOILHCAPZ,1,1)),  DZ_FL, &
+      CALL PHASE_CHANGES (DT, BUS(x(SVS_WTG,1,1)), bus(x(LAIVA  ,1,1)), BUS(x(SOILHCAPZ,1,1)),  bus(x(DZ_FL,1,1)), &
                       bus(x(WSAT   ,1,1)), bus(x(PSISAT  ,1,1)), bus(x(BCOEF  ,1,1)), &
                       bus(x(TPSOIL ,1,1)), bus(x(ISOIL  ,1,1)),  &
                       bus(x(WFL_ICE  ,1,1)), WFLT, WRMAX_FL, bus(x(TFL ,1,1)),bus(x(FLHCAP ,1,1)),&

@@ -24,11 +24,13 @@ SUBROUTINE HYDRO_SVS ( DT, &
      WSAT, KSAT, KSATNAT, PSISAT, BCOEF, FBCOF, WFCINT, &
      GRKEF, SNM, SVM, WR, WRT, WD, WDT, WF, WFT,        &
      KSATC, KSATNATC, MAXPND, KHC, PSI, GRKSAT, WFCDP,  &
-     F, LATFLW, RUNOFF, WATPND, GRKSAT_MOD_A, AGFRAC, N)
+     F, LATFLW, RUNOFF, WATPND, GRKSAT_MOD_A, AGFRAC,   &
+     WUNFRZ, FRZDEPTH, FRZTHICK, THWDEPTH, N)
   !
   use sfc_options
   use svs_configs
   use soil_ksatc_mod, only: soil_ksatc
+  use soil_frzdepth_svs_mod, only: soil_frzdepth_svs
   use watdrn_svs_mod, only: watdrn_svs
   use soil_fluxes_mod, only: soil_fluxes
   
@@ -50,7 +52,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n)        :: eg, er, etr, rr, impervu
   real, dimension(n)        :: psn, psnvh, vegh, vegl
   real, dimension(n,nl_svs) :: bcoef, fbcof, acroot, ksat, ksatnat
-  real, dimension(n,nl_svs) :: psisat, wfcint, wsat
+  real, dimension(n,nl_svs) :: psisat, wfcint, wsat, wunfrz
   real, dimension(n)        :: grkef, rsnow, rsnowv, wrmax, snm, svm 
   real, dimension(n)        :: grksat_mod_a
   real, dimension(n)        :: agfrac
@@ -66,6 +68,8 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n,nl_svs) :: latflw
   real, dimension(n)        :: runoff
   real, dimension(n)        :: watpnd, maxpnd
+  real, dimension(n)        :: frzdepth, frzthick, thwdepth
+
   
   !
   !Author
@@ -116,6 +120,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !          --- Soil characteristics ---
   !
   ! WSAT  (NL_SVS) volumetric water content at soil saturation per layer [m3/m3]
+  ! WUNFRZ(NL_SVS) unfrozen residual water content [m3/m3]
   ! KSAT  (NL_SVS) vertical hydraulic conductivity at saturation per layer [m/s]
   ! KSATNAT (NL_SVS) vertical hydraulic conductivity at saturation per layer [m/s], before modification for effect of ploughing
   ! PSISAT(NL_SVS) value of soil water suction at air-entry (near saturation) per layer [m]
@@ -161,6 +166,11 @@ SUBROUTINE HYDRO_SVS ( DT, &
   ! LATFLW(NL_SVS) lateral flow (interflow) (in meters in calculation, converted to mm at the end) per layer [kg/m2/dt]
   ! RUNOFF         surface runoff [kg/m2/dt]
   !
+  !          ---  frozen ground variables ---
+  ! FRZDEPTH       depth of frozen ground [m]
+  ! FRZTHICK       thickness of frozen ground [m]
+  ! THWDEPTH       depth of thawed ground [m]
+  !
   !          -  DIMENSIONS  -
   !
   ! N              number of grid cells
@@ -184,6 +194,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n,nl_svs)   :: wd_rk1, wd_rk2, wd_rk3, wd_rk4, dwd_rk1, dwd_rk2, dwd_rk3, dwd_rk4
   real, dimension(n,nl_svs)   :: over_rk1, over_rk2, over_rk3, over_rk4
   real, dimension(n,nl_svs+1) :: f_rk
+
 
   !***********************************************************************
   !
@@ -740,6 +751,13 @@ SUBROUTINE HYDRO_SVS ( DT, &
      !
 
   END DO
+
+  !---------------------------------------------------
+  !          9.   Calculate the depth of frozen ground (FRZD), the frozen thickness (FRZT) and the thawing depth (THWD)   
+  !               -----------------------------------------------------------------------------------------------------
+  !
+  CALL SOIL_FRZDEPTH_SVS(WFT, WUNFRZ, WSAT, DL_SVS, DELZ, FRZDEPTH, FRZTHICK, THWDEPTH, N, NL_SVS)
+
   !--------------------------------------------------------
   !--------------------------------------------------
   ! CALCULATE DIAGNOSTICS, CONVERT UNITS, AND ACCUMULATORS 

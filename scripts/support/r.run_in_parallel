@@ -525,7 +525,7 @@ expand_node_spec() {
       rm -rf ${tmpdir}
       exit 1
    fi
-
+   
    nprocs=$npe_total
    if [[ $nprocs -eq 0 ]]; then
       nprocs=$((nhosts*MaxCores))
@@ -780,8 +780,9 @@ wait_for() {
 #Version="2.1.1 2024/11/25"    # Fixes for IOserver
 #Version="2.2.0"               # Check for unknown state nodes to count the down nodes
 #Version="2.2.1"               # Changed default stack from unlimited to 4G
+#Version="2.3.0"               # Added darshan profiler and moved -jio to the profiler flag options
 true
-Version="2.3.0"    # Added darshan profiler and moved -jio to the profiler flag options
+Version="2.3.1"              # More robust single world management
 
 MY_NODEFILE=${PARALLEL_NODEFILE:-${GECOSHEP_PNET_HOSTFILE:-${LOADL_HOSTFILE:-${PBS_NODEFILE:-${HOME}/.NODEFILE}}}}
 #SLURM uses SLURM_JOB_NODELIST env variable
@@ -956,7 +957,6 @@ if [[ "$hostos" == Linux ]] ; then
    # Give non HT core count, unless -smt 2 is specified
    if [[ ${HTActive} == 1 && ${smt}!=2 ]]; then
       CoresPerNode=$((CoresPerNode/2))
-      CoresPerSocket=$((CoresPerSocket/2))
    fi
 fi
 if [[ "$hostos" == CLE ]] ; then
@@ -1017,97 +1017,104 @@ log_print INFO "Cores for job: ${TotalCoresAvail}, Cores per Node: $CoresPerNode
 # do we have co-running master/slave instances ?
 log_print DEBUG "instancedir=${instancedir}"
 log_print DEBUG "instances=${instances}"
-if [[ -d "${instancedir}" && -n "${instances}" ]] ; then
-   # We have co-running instances only if both are defined
-   slaves=$(echo ${instances} | wc -w)   # if 1 it is a slave, if > 1 it is the master
-   if ((slaves > 1)) ; then
-      log_print DEBUG "Master mode"
-      # The master instance, there is MORE THAN ONE item  in instances
-      log_print INFO "(master) START of ${slaves} slaves '${instances}' "
-      # Wait for all slaves to submit their resource needs
-      wait_for creation ${timeout} ${instancedir} ${instances}
-      Status=$?
-      if [ ${Status} = 1 ]; then
-         log_print ERROR "(master) did not receive all slave resources before timeout"
-         exit ${Status}
-      fi
+if [[ -n "${instancedir}" && -n "${instances}" ]] ; then
+   if [[ -d "${instancedir}" ]] ; then
+      # We have co-running instances only if both are defined
+      slaves=$(echo ${instances} | wc -w)   # if 1 it is a slave, if > 1 it is the master
+      if ((slaves > 1)) ; then
+         log_print DEBUG "Master mode"
+         # The master instance, there is MORE THAN ONE item  in instances
+         log_print INFO "(master) START of ${slaves} slaves '${instances}' "
+         # Wait for all slaves to submit their resource needs
+         wait_for creation ${timeout} ${instancedir} ${instances}
+         Status=$?
+         if [ ${Status} = 1 ]; then
+            log_print ERROR "(master) did not receive all slave resources before timeout"
+            exit ${Status}
+         fi
 
-      # Build compound launch parameters using ${instancedir}/${instances} files
-      for i in ${instances} ; do
-         log_print INFO "(master) creating ${instancedir}/${i}.ACK"
-         # Acknowledge reception of slave task requirements
-         touch ${instancedir}/${i}.ACK
-         [[ -n ${sync} ]] && sync ${instancedir}/${i}.ACK
-      done
-      sleep 2
+         # Build compound launch parameters using ${instancedir}/${instances} files
+         for i in ${instances} ; do
+            log_print INFO "(master) creating ${instancedir}/${i}.ACK"
+            # Acknowledge reception of slave task requirements
+            touch ${instancedir}/${i}.ACK
+            [[ -n ${sync} ]] && sync ${instancedir}/${i}.ACK
+         done
+         sleep 2
 
-      #   execute MPI tasks on behalf of slaves
-      #   -instances   : used, not passed on
-      #   -instancedir : used and passed on (for per-slave -args and -env processing)
-      #   -pgm : put after pgm(s) from slaves
-      #   -args -env : ignored, cannot be used in this context
-      #   -npex -npey -processorder -tmpdir -tag -spliteo -nocleanup -geometry -singleworld: passthrough
-      #   -outp -errp -preexec -packoutput -offset -mpiargs -dryrun -minstdout -splittmp : passthrough
-      #   -mpirun -coremap -nodemap -openmpi -mpich -verbose -debug -bind : passthrough
-      #   all other arguments : ignored
+         #   execute MPI tasks on behalf of slaves
+         #   -instances   : used, not passed on
+         #   -instancedir : used and passed on (for per-slave -args and -env processing)
+         #   -pgm : put after pgm(s) from slaves
+         #   -args -env : ignored, cannot be used in this context
+         #   -npex -npey -processorder -tmpdir -tag -spliteo -nocleanup -geometry -singleworld: passthrough
+         #   -outp -errp -preexec -packoutput -offset -mpiargs -dryrun -minstdout -splittmp : passthrough
+         #   -mpirun -coremap -nodemap -openmpi -mpich -verbose -debug -bind : passthrough
+         #   all other arguments : ignored
 
-      unset PARALLEL_INSTANCES_DIR
-      MasterPgm="%%${OMP_NUM_THREADS} ::${npex}x${npey} /./$(pwd -P) ${pgm}"
-      [[ "$pgm" == NoNe ]] && MasterPgm=""
-      log_print DEBUG "MasterPgm=${MasterPgm}"
-      set -x
-      ${0} -npex ${pes:-${npex}} -npey 1 -processorder "${processorder}" -tmpdir "${tmpdir}" -minstdout ${minstdout} \
-            -coremap "${coremap}" -nodemap "${nodemap}" -verbose "${verbose}" -debug "${debug}" -bind "${bind}" \
-            -tag "${tag}" -spliteo "${spliteo}" -splittmp "${splittmp}" -nodepack "${nodepack}" -nodespec "${nodespec}" -nocleanup "${nocleanup}" -geometry "${geometry}" \
-            -outp "${outp}" -errp "${errp}" -preexec "${preexec}" -prerun "${prerun}" -packoutput "${packoutput}" -dryrun "${dryrun}" \
-            -offset "${offset}" -mpiargs "${mpiargs}" -selftest "${selftest}" \
-            -mpirun "${mpirun}" -mpiflavour "${mpiflavour}" -singleworld "${singleworld}" -instancedir "${instancedir}" \
-            -pgm $(cd ${instancedir} ; cat ${instances} | xargs) ${MasterPgm}
-      StAtUs=$?
-      set +x
-      echo ""
-      for i in ${instances} ; do
-         mv ${instancedir}/${i} ${instancedir}/${i}.DONE      # remove slave work requests
-         # Acknowledge completion of all slave tasks by creating DONE and then deleting ACK
-         rm ${instancedir}/${i}.ACK                  # remove acknowledge flag
-         log_print INFO "(master) ${instancedir}/${i}.DONE"
-      done
-      log_print INFO "(master) END of ${slaves} slave(s) '${instances}'"
-      exit  ${StAtUs}                                        # master job done
-   else
-      log_print DEBUG "Slave mode"
-      # a slave instance, there is ONE AND ONLY ONE item in instances
-
-      #   -instances -instancedir : used, not passed on
-      #   -npex -npey -pgm -args -env : massaged and passed on to master
-      #   all other arguments : ignored
-
-      if [[ -n "${env}" ]]; then
-	      rm -f ${instancedir}/${instances}.env
-         for var in ${env}; do
-            echo "export ${var}=\"$(printenv ${var})\"" >> ${instancedir}/${instances}.env
-	      done
-      fi
-      (( 1 == $(echo ${pgm} | wc -w) )) && pgm=" ${pgm} 0 1 $((npe_total-1)) "     # transform -pgm name  into -pgm name first increment last
-      echo "~~${instances} %%${OMP_NUM_THREADS} /./$(pwd -P) ::${npex}x${npey} ${pgm} @@ " >${instancedir}/${instances}.tmp || exit 1
-      mv ${instancedir}/${instances}.tmp ${instancedir}/${instances} || exit 1
-      [[ -n "${args}" ]] && echo "${args}" > ${instancedir}/${instances}.args
-      log_print INFO "START of slave instance ${instances}"
-      if wait_for creation ${timeout} ${instancedir} ${instances}.ACK # wait for master to acknowledge resources (ACK created)
-      then
-         wait_for deletion 2000000000 ${instancedir} ${instances}.ACK  # wait for master to signal job done (infinite timeout)
-         wait_for creation ${timeout} ${instancedir} ${instances}.DONE # done is signalled by creating DONE and then deleting ACK
-         rm ${instancedir}/${instances}.DONE
-         rm -f ${instancedir}/${instances}.args
-	      rm -f ${instancedir}/${instances}.env
-         log_print INFO "(slave ${instances}) ${instances}.DONE received"
-         log_print INFO "END of slave instance ${instances}"
-         exit $?     # slave job done
+         unset PARALLEL_INSTANCES_DIR
+         MasterPgm="%%${OMP_NUM_THREADS} ::${npex}x${npey} /./$(pwd -P) ${pgm}"
+         [[ "$pgm" == NoNe ]] && MasterPgm=""
+         log_print DEBUG "MasterPgm=${MasterPgm}"
+         set -x
+         ${0} -npex ${pes:-${npex}} -npey 1 -processorder "${processorder}" -tmpdir "${tmpdir}" -minstdout ${minstdout} \
+               -coremap "${coremap}" -nodemap "${nodemap}" -verbose "${verbose}" -debug "${debug}" -bind "${bind}" \
+               -tag "${tag}" -spliteo "${spliteo}" -splittmp "${splittmp}" -nodepack "${nodepack}" -nodespec "${nodespec}" -nocleanup "${nocleanup}" -geometry "${geometry}" \
+               -outp "${outp}" -errp "${errp}" -preexec "${preexec}" -prerun "${prerun}" -packoutput "${packoutput}" -dryrun "${dryrun}" \
+               -offset "${offset}" -mpiargs "${mpiargs}" -selftest "${selftest}" \
+               -mpirun "${mpirun}" -mpiflavour "${mpiflavour}" -singleworld "${singleworld}" -instancedir "${instancedir}" \
+               -pgm $(cd ${instancedir} ; { cat ${instances} || exit 1; }  | xargs) ${MasterPgm}
+         StAtUs=$?
+         set +x
+         echo ""
+         for i in ${instances} ; do
+            mv ${instancedir}/${i} ${instancedir}/${i}.DONE      # remove slave work requests
+            # Acknowledge completion of all slave tasks by creating DONE and then deleting ACK
+            rm ${instancedir}/${i}.ACK                  # remove acknowledge flag
+            log_print INFO "(master) ${instancedir}/${i}.DONE"
+         done
+         log_print INFO "(master) END of ${slaves} slave(s) '${instances}'"
+         exit  ${StAtUs}                                        # master job done
       else
-         log_print ERROR "Instance ${instances} never found ${instances}.ACK"
-         exit 1
-      fi
-   fi # master or slave instance
+         log_print DEBUG "Slave mode"
+         # a slave instance, there is ONE AND ONLY ONE item in instances
+
+         #   -instances -instancedir : used, not passed on
+         #   -npex -npey -pgm -args -env : massaged and passed on to master
+         #   all other arguments : ignored
+
+         if [[ -n "${env}" ]]; then
+                 rm -f ${instancedir}/${instances}.env
+            for var in ${env}; do
+               echo "export ${var}=\"$(printenv ${var})\"" >> ${instancedir}/${instances}.env
+                 done
+         fi
+         (( 1 == $(echo ${pgm} | wc -w) )) && pgm=" ${pgm} 0 1 $((npe_total-1)) "     # transform -pgm name  into -pgm name first increment last
+         echo "~~${instances} %%${OMP_NUM_THREADS} /./$(pwd -P) ::${npex}x${npey} ${pgm} @@ " >${instancedir}/${instances}.tmp || exit 1
+         mv ${instancedir}/${instances}.tmp ${instancedir}/${instances} || exit 1
+         [[ -n "${args}" ]] && echo "${args}" > ${instancedir}/${instances}.args
+         log_print INFO "START of slave instance ${instances}"
+         if wait_for creation ${timeout} ${instancedir} ${instances}.ACK # wait for master to acknowledge resources (ACK created)
+         then
+            wait_for deletion 2000000000 ${instancedir} ${instances}.ACK  # wait for master to signal job done (infinite timeout)
+            wait_for creation ${timeout} ${instancedir} ${instances}.DONE # done is signalled by creating DONE and then deleting ACK
+            if [[ -z "${nocleanup}" ]]; then
+               rm ${instancedir}/${instances}.DONE
+               rm -f ${instancedir}/${instances}.args
+               rm -f ${instancedir}/${instances}.env
+            fi
+            log_print INFO "(slave ${instances}) ${instances}.DONE received"
+            log_print INFO "END of slave instance ${instances}"
+            exit $?     # slave job done
+         else
+            log_print ERROR "Instance ${instances} never found ${instances}.ACK"
+            exit 1
+         fi
+      fi # master or slave instance
+   else
+      log_print ERROR "instancedir ${instancedir} is not a directory"
+      exit 1
+   fi
 fi  # co-running
 #################################################################################################################################
 #            end of co-running instances processing
@@ -1233,7 +1240,7 @@ touch ${ParallelScript}.0
 [[ ! -r ${ParallelScript}.0 ]] && log_print ERROR "${tmpdir} not a writable directory" 1>&2 && log_end -1
 
 # stdout and stderr redirection
-export RedirectStdout="1>\${MP_SeqNum}/stdout.\${MP_Tag}"   # will be expanded at run time in ParallelScript
+export RedirectStdout="\${MP_SeqNum}/stdout.\${MP_Tag}"   # will be expanded at run time in ParallelScript
 export RedirectStderr="2>\${MP_SeqNum}/stderr"   # will be expanded at run time in ParallelScript
 [[ "${spliteo}" == no ]] && RedirectStderr="2>&1"
 [[ -z ${processorder} ]] && RedirectStderr="" && RedirectStdout=""
@@ -1505,7 +1512,16 @@ if [[ ! -s \$script ]]; then
    exit 1
 fi
 
-source \$script ${RedirectStdout} ${RedirectStderr}
+if [[ -z "${processorder}" ]]; then
+    source \$script
+else
+    if [[ \${MP_CHILD} -eq 0 ]]; then
+        [[ -z "${nosep}" ]] && echo ""
+        source \$script ${RedirectStderr} | $CMD_tee ${RedirectStdout} | $CMD_sed "s/^/${Prefix2}\${MP_Tag}: /"
+    else
+        source \$script > ${RedirectStdout:-/dev/null} ${RedirectStderr}
+    fi
+fi
 
 [[ -n "${processorder}" ]] || exit 0     # no listings to process, exit
 cd ${tmpdir}
@@ -1524,10 +1540,16 @@ for dir in \${MP_SeqNum%??}?? ; do
     ((lines<${minstdout})) && \
     $CMD_rm \${the_file} && \
     continue                   # remove stdout files shorter than minimum
-  [ -f \${the_file} ] && \
-    { [[ -z "${nosep}" ]] && echo "" ; \
-      $CMD_cat \${the_file} | $CMD_sed "s/^/${Prefix2}\${MP_Tag}: /" ; \
-    } >>\${MP_SeqNum}/stdout
+
+    echo \${MP_Tag} | grep -sqE '^0+-0+$'
+    grep_status=\$?  ## If 'grep_status=0' then, it is 'MP_Tag=00000-00000'
+    if [ "\${grep_status}" -ne 0 ]; then ## we already put the stdout of 'MP_Tag=00000-00000' in the listing while the program is running
+      [ -f \${the_file} ] && \
+        { [[ -z "${nosep}" ]] && echo "" ; \
+            $CMD_cat \${the_file} | $CMD_sed "s/^/${Prefix2}\${MP_Tag}: /" ; \
+        } >>\${MP_SeqNum}/stdout
+    fi
+
   [ -f \${the_file%/*}/stderr ] && \
     { [[ -z "${nosep}" ]] && echo "" ; \
       [[ -z "${nosep}" ]] && echo "${Prefix3}\${MP_Tag}: ============== stderr \${MP_Tag} ==============" ; \

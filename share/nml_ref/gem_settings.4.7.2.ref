@@ -1,0 +1,144 @@
+ &grid
+  Grd_typ_S       = 'GY'      , Grd_nj          = 31
+ /
+
+ &grid_GU
+  Grd_typ_S       = 'GU'      ,
+  Grd_ni          = 40        , Grd_nj          = 20
+ /
+
+ &grid_LU
+  Grd_typ_S  = 'LU'    ,
+  Grd_ni     = 80      ,     Grd_nj    = 60
+  Grd_dx     = 0.5     ,     Grd_dy    = 0.5
+  Grd_iref   = 40      ,     Grd_jref  = 30
+  Grd_lonr   = 180.0   ,     Grd_latr  = 2.75
+  Grd_xlon1  = -100.00 ,     Grd_xlat1 = 53.00
+  Grd_xlon2  =  -85.00 ,     Grd_xlat2 = 50.00
+  Grd_maxcfl = 4
+/
+
+ &gement
+ Pil_bmf_L=.false.
+/
+
+ &step
+  Step_runstrt_S = "20090427.000000"
+  Fcst_nesdt_S   = '12'
+  Fcst_end_S     = "6h"
+  Fcst_gstat_s   = '1p'
+  Step_dt        = 1800.
+/
+
+ &gem_cfgs
+
+  hyb=
+ 0.000100000, 0.000176875, 0.000305961, 0.000509080, 0.000810608,
+ 0.001229460, 0.001802510, 0.002554830, 0.003495560, 0.004666560,
+ 0.006077540, 0.007754800, 0.009683930, 0.011908100, 0.014471100,
+ 0.017209800, 0.020292001, 0.023637200, 0.027247399, 0.031040501,
+ 0.035017598, 0.039265200, 0.043699902, 0.048151501, 0.052791599,
+ 0.057448599, 0.062121999, 0.066724300, 0.071254298, 0.075623199,
+ 0.079916999, 0.083958700, 0.087657899, 0.092072703, 0.096499197,
+ 0.101825997, 0.108061001, 0.115213998, 0.122394003, 0.131405994,
+ 0.141367003, 0.152288005, 0.165098995, 0.180754006, 0.196513996,
+ 0.213311002, 0.231160000, 0.249127999, 0.269122005, 0.289252996,
+ 0.311453998, 0.333811015, 0.356319994, 0.380953997, 0.405757993,
+ 0.432734013, 0.458889991, 0.487251997, 0.515807986, 0.545585990,
+ 0.575564981, 0.606786013, 0.639265001, 0.671959996, 0.704868972,
+ 0.735844016, 0.765922010, 0.792918026, 0.818956017, 0.844021022,
+ 0.865904987, 0.886768997, 0.906602025, 0.924284995, 0.940909982,
+ 0.956465006, 0.970943987, 0.983220994, 0.994401991
+
+  Grd_rcoef = 4.5,4.5          ,
+ 
+  Lctl_debug_L    = .false.    ,
+
+  Sol_type_S = 'DIRECT'        ,
+
+  Cstv_tstr_8     = 240.
+
+  Hzd_pwr         = 6          , Hzd_lnr         = 0.04       ,
+
+  Init_balgm_L    = .false.     , Init_dftr_L     = .false.    ,
+  Init_dfwin_L    = .true.     , Init_dflength_S = '2h'
+  Init_dfpl_S     = '6h'
+
+  Vspng_coeftop   =  500000.   , Vspng_nk        = 6  
+  Vspng_zmean_L   = .false.    ,
+
+  Eq_sponge       = 50.0, 46.6, 38.3, 28.2, 18.4, 10.4, 4.6, 1.1,
+
+  Schm_hydro_L    = .true.     , 
+  Schm_itcn       = 2          ,
+  Schm_itnlh      = 2          , Schm_itraj      = 3          , 
+  Schm_adcub_L    = .true.     , Schm_wload_L    = .false.
+  Schm_source_ps_L= .false.     , Schm_psadj_L    = .false.
+  Schm_trapeze_L  = .false.
+
+  Out3_etik_s     = "base"   ,
+  Out3_lieb_levels= 5000., 4900., 4800., 4700., 4600., 4500., 4400., 4300., 4200., 4100.,
+                    4000., 3900., 3800., 3700., 3600., 3500., 3400., 3300., 3200., 3100.,
+                    3000., 2900., 2800., 2700., 2600., 2500., 2400., 2300., 2200., 2100.,
+                    2000., 1900., 1800., 1700., 1600., 1500., 1400., 1300., 1200., 1100.,
+                    1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
+  Out3_nbitg      = 12         , Out3_cliph_L     = .true.    ,
+  Out3_cubzt_L    = .false.    , Out3_cubuv_L     = .false.   ,
+  Out3_cubds_L    = .false.    , Out3_cubqs_L     = .false.   ,
+  Out3_cubdd_L    = .false.    , Out3_cubqq_L     = .false.   ,
+  Out3_cubww_L    = .false.    , Out3_linbot      =  3        ,
+  Out3_postfreq_s = '120m'
+  P_lmvd_weigh_high_lat = 0.0        , Clim_inincr_L    = .false.   ,
+  Schm_phyms_L = .false.
+/
+
+ &surface_cfgs
+ SCHMSOL          = 'ISBA'     ,
+ ICELAC           = .true.     ,
+ ICEMELT          = .true.     ,
+ LIMSNODP         = .true.     ,
+ SALTY_QSAT       = .false.    ,
+ IMPFLX           = .true.     ,
+ Z0TLAT           = 25., 30.   ,
+ ZTA              = -1.        ,
+ ZUA              = -1.        ,
+/
+
+ &physics_cfgs
+ MOYHR=1
+ RADIA            = 'cccmarad' ,  KNTRAD_S = '2h'
+ RADFLTR          = .false.    ,
+ TS_FLXIR         = .true.     ,
+ STRATOS          = .true.     ,
+
+ GWDRAG           = 'gwd86'    ,
+ NON_ORO          = .true.     ,
+ hines_flux_filter= 5
+ LMETOX           = .true.     , 
+
+ LONGMEL          = 'boujo'    ,
+ FLUVERT          = 'clef'     , PBL_RICRIT=0.25,2.,
+
+ pbl_shal         = 'conres'   ,
+ STCOND           = 'consun'   ,
+ INILWC           = .true.     ,
+ KTICEFRAC        = .false.    ,
+
+ PCPTYPE          = 'bourge3d' ,
+/
+
+ &convection_cfgs
+ DEEP             = 'kfc'      , SHAL            = 'ktrsnt_mg'
+ BKF_KENS             = 0      , BKF_KCH         = 0           ,
+ BKF_KTDIA            = 1      , BKF_KICE        = 0           ,
+ BKF_LDEEP            = .true. , BKF_LSHAL       = .false.     ,
+ BKF_LREFRESH         = .true. , BKF_LDOWN       = .true.      ,
+ BKF_LCH1CONV         = .false., BKF_LSETTADJ    = .false      ,
+ KFCRAD           = 1500.      , KFCDEPTH        = 4000.       ,
+ KFCDLEV          = 0.5        , KFCDET          = 0.          ,
+ KFCTIMEC         = 2700.      , KFCTIMEA        = 2700.       ,
+ KFCTRIG4         = 0.,0.,0.10,0.10
+ KFCTRIGLAT       = .true.     ,
+ KFCTRIGL         = 0.01       ,
+ TRIGLAT          = 25., 30.   ,
+/

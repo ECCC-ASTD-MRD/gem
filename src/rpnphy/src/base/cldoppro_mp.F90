@@ -116,7 +116,7 @@ contains
     real, pointer, dimension(:), contiguous :: ztopthw,ztopthi
     real, pointer, dimension(:,:), contiguous :: ztose,ztosi,ztole,ztoli
     real, pointer, dimension(:), contiguous :: zmg,zml,zdlat
-    real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp
+    real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp,zstrfr
     real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
     real, pointer, dimension(:,:), contiguous   :: zrewx, zreix, zrewi, zreii
     real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
@@ -149,6 +149,7 @@ contains
     MKPTR2Dm1(zeffradi4, effradi4, pvars)
     MKPTR2Dm1(zfmp, fmp, pvars)
     MKPTR2Dm1(zfxp, fxp, pvars)
+    MKPTR2Dm1(zstrfr, strfr, pvars)
     MKPTR2Dm1(zgraupel, qgplus, pvars)
     MKPTR2Dm1(zhumoins, humoins, pvars)
     MKPTR2Dm1(zqti1m, qti1moins, pvars)
@@ -486,6 +487,9 @@ contains
              cldfrac(i,k) = 0.0
              zlwcrad(i,k) = 0.0
              ziwcrad(i,k) = 0.0
+             if (associated(zstrfr)) zstrfr(i, k) = 0.0
+          else             
+             if (associated(zstrfr)) zstrfr(i, k) = cldfxp(i,k)/(cldfxp(i,k)+cldfmp(i,k))
           endif
           zcldrad(i,k) = cldfrac(i,k)
        end do

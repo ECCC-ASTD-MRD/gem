@@ -17,6 +17,7 @@ module IOs
    use, intrinsic :: iso_fortran_env
    use vGrid_Descriptors
    use rmn_fst24
+   use MiMd
    implicit none
    public
    save
@@ -30,7 +31,7 @@ module IOs
       logical :: Tr3d_anydate_L
       integer :: MY_WORLD_COMM, YYG_COMM
       integer :: gem_id, me_1on1, gem_1on1, Lun_out
-      integer :: myproc_GLB,myproc_IOS,numproc_IOS
+      integer :: myproc_IOS,numproc_IOS
       integer :: IOs_color, IOs_ncolors
       integer :: YYG_numproc, YYG_myproc, IOS_couleur, IOS_YIN
       integer :: client_pelocal,client_pestart,client_peend
@@ -59,7 +60,7 @@ contains
 
       subroutine IOs_mpi_init( F_component_S, F_colors, F_COMMs, &
                                F_nc,F_server_L)
-      use MiMd
+      use app
       use omp_timing
       use clib_itf_mod
       implicit none
@@ -72,13 +73,15 @@ contains
       integer, intent(OUT) :: F_COMMs(F_nc)
 
       character(len=256 ) :: string_S
-      integer i,mpx,irest, wnum,err
+      integer i,mpx,irest,err
 !     
 !--------------------------------------------------------------------
 !
+      app_ptr=app_init(0,F_component_S,' ',' ',' ')
       IOs_component_S= F_component_S ; IOs_color= F_colors(1)
+
       call MiMd_init (F_component_S,F_colors,F_nc,F_COMMs,&
-                      wnum, myproc_GLB, numproc_IOS, myproc_IOS)
+                      numproc_IOS, myproc_IOS)
       
       MY_WORLD_COMM = F_COMMs(1)
 
@@ -301,7 +304,7 @@ contains
                        clients_npes(2,gem_id)+IOS_YIN*IOS_couleur,&
                        client_pelocal,client_pestart,client_peend)
       endif
-      call MPI_comm_rank (MPI_COMM_WORLD,myproc,err)
+      call MPI_comm_rank (MiMd_gemworld,myproc,err)
       allocate (servicing(3,numproc_IOS))
       service_indx=0
       service_indx(1,myproc_IOS+1) = myproc

@@ -11,6 +11,7 @@ eval `cclargs_lite -D "" $0 \
   -npex      "1"     "1"     "[Block partitioning along-x     ]"\
   -npey      "1"     "1"     "[Block partitioning along-y     ]"\
   -nomp      "1"     "1"     "[Number of OMP threads          ]"\
+  -nodespec  "NoNe"  "NoNe"  "[Node distribution specification]"\
   -mimd      ""      ""      "[mimd configuration file        ]"\
   -dom_start "1"     "1"     "[Starting domain number         ]"\
   -dom_end   "1"     "1"     "[Ending domain number           ]"\
@@ -77,6 +78,8 @@ else
         if [ "${app}" == "gemdm" -o "${app}" == "gem" ] ; then
            app=${TASK_BIN}/ATM_MOD.Abs
            pes=$((npex*npey))
+        else
+           app=$(which "${app}")
         fi
         total_cpus=$((total_cpus+pes))
       #  all_apps="${all_apps}"" -np ${pes} ${app} :"
@@ -86,9 +89,9 @@ else
      done < ${mimd}
      #all_apps=$(echo $all_apps | sed -E 's/(.*):/\1/')
      #CMD="mpirun $all_apps"
-      CMD="${TASK_BIN}/r.mpirun -npex ${total_cpus} -npey $ndomains -pgm ${all_apps} $INORDER -minstdout ${inorder} -nocleanup ${instance_args}"
+      CMD="${TASK_BIN}/r.mpirun -npex ${total_cpus} -npey $ndomains -pgm ${all_apps} $INORDER -minstdout ${inorder} -nocleanup ${instance_args} -nodespec ${nodespec}"
   else
-     CMD="${TASK_BIN}/r.mpirun -pgm ${TASK_BIN}/ATM_MOD.Abs -npex $((npex*npey)) -npey $ndomains $INORDER -minstdout ${inorder} -nocleanup ${instance_args}"
+     CMD="${TASK_BIN}/r.mpirun -pgm ${TASK_BIN}/ATM_MOD.Abs -npex $((npex*npey)) -npey $ndomains $INORDER -minstdout ${inorder} -nocleanup ${instance_args} -nodespec ${nodespec}"
   fi
   if [[ "x${debug}" != "x0" ]] ; then
      [[ "x${debug}" == "xgdb" || "x${debug}" == "x1"  ]] && export debug=gdb || true

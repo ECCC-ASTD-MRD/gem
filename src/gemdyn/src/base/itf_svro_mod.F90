@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
       module svro_mod
       use iso_c_binding
+      use MiMd
       use omp_timing
       use out_mod
       use lun
@@ -53,12 +54,13 @@ contains
 !     
 !------------------------------------------------------------------
 !
-      OUTs_nplans =5000
+      OUTs_nplans = 10000
       if (OUTs_server_L) then
          ruge = .95*huge(1)
          rmax = real(Out_Hmaxdim)*real(OUTs_nplans)
          if(rmax > ruge)then
-            if(lun_out > 0)write(*,"(a,i8)",advance="no")'Warning : OUTs_nplans will be reset from ',OUTs_nplans
+            if(lun_out > 0)write(*,"(a,i8)",advance="no")&
+            'Warning : OUTs_nplans will be reset from ',OUTs_nplans
             OUTs_nplans = int(ruge/real(Out_Hmaxdim))
             if(lun_out > 0)print*,'to ',OUTs_nplans
          endif
@@ -74,7 +76,7 @@ contains
                !        The server don't have to read these set from user_vgrid* files.
                !        Therefore it is not put in the count_usr_lev sum.
                count_usr_lev=count_usr_lev+1
-               err=vgd_print(Level_vgrid_usr(i)%vgd)
+             !  err=vgd_print(Level_vgrid_usr(i)%vgd)
             endif
          end do
          ! Count user defined horizontal grids
@@ -303,7 +305,7 @@ contains
          tag= 1001 ; len= Out_Hmaxdim*Out_nplans
          if (Out_nplans>0) then
             call MPI_iSend (OUTs_data,len,MPI_REAL,OUTs_pe,&
-            tag,MPI_COMM_WORLD,OUTs_request(3),err )
+            tag,MiMd_gemworld,OUTs_request(3),err )
          endif
 
          OUTs_this_step_L= .false.
@@ -342,8 +344,9 @@ contains
          if (Lun_out > 0) then
             OUTs_err=-1
             write(Lun_out,&
-                 '("IOS_data buffer not large enough for VAR= ",a,"   requested=",i6,5x,"reserved=",i6)')&
-                 nomvar(1:4),Out_nplans+1+nk_o,OUTs_nplans
+            '("IOS_data buffer not large enough for VAR= ",&
+            a,"   requested=",i6,5x,"reserved=",i6)')&
+                 nomvar(1:4),Out_nplans+nk_o,OUTs_nplans
          end if
          return
       endif
@@ -440,9 +443,7 @@ contains
       return
       end subroutine find_indx
 
-
-
-      subroutine create_on_node_shared_space ()
+      subroutine create_on_node_shared_space () ! NOT USED FOR NOW
       use ptopo
       implicit none
 
@@ -463,7 +464,7 @@ contains
       call MPI_COMM_rank (OUTs_myHost, OUTs_myHost_rank ,ierr)
 
       call MPI_COMM_size (COMM_world,gnumproc,ierr)
-      call MPI_COMM_rank (MPI_COMM_WORLD,gmyproc ,ierr)
+      call MPI_COMM_rank (MiMd_gemworld,gmyproc ,ierr)
       call MPI_COMM_rank (COMM_WORLD,me ,ierr)
       
       allocate (host_pe0s(gnumproc,2),G_host_pe0s(gnumproc,2)) ; host_pe0s=0

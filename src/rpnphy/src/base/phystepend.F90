@@ -15,6 +15,7 @@ contains
     use phymem, only: phyvar
     use prep_cw, only: prep_cw3
     use sgspdf, only: sgspdf_compute
+    use phy_options, only: fluvert
 
     implicit none
 
@@ -66,18 +67,20 @@ contains
     call prep_cw3(F_pvars, F_ni, F_nk)
     if (phy_error_L) return
 
-    ! Compute condensate masses
-    if (mp_lwc(lwc, F_pvars) /= PHY_OK .or. &
-         mp_iwc(iwc, F_pvars) /= PHY_OK) then
-       call physeterror('phystepend', 'Cannot compute condensate contents')
-       return
+    if (fluvert == 'RPNINT') then
+       ! Compute condensate masses
+       if (mp_lwc(lwc, F_pvars) /= PHY_OK .or. &
+            mp_iwc(iwc, F_pvars) /= PHY_OK) then
+          call physeterror('phystepend', 'Cannot compute condensate contents')
+          return
+       endif
+
+       ! Diagnose subgrid-scale variability
+       call sgspdf_compute(zsigmas, ztplus, zhuplus, lwc, iwc, zpri, &
+            zzn, zzd, zgztherm, zsigt, zp0, zh, &
+            zdxdy, zmrk2, zvcoef, F_ni, nkm1)
+       if (phy_error_L) return
     endif
-    
-    ! Diagnose subgrid-scale variability
-    call sgspdf_compute(zsigmas, ztplus, zhuplus, lwc, iwc, zpri, &
-         zzn, zzd, zgztherm, zsigt, zp0, zh, &
-         zdxdy, zmrk2, zvcoef, F_ni, nkm1)
-    if (phy_error_L) return
 
     ! End of subprogram
     return
