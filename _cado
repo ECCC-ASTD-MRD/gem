@@ -9,6 +9,7 @@ cado_commands=(
     cmake-debug
     cmake-debug-extra
     cmake-nvhpc
+    cmake-nemo
     cmake-mach
     cmake-mach-strict
     cmake-mach-static

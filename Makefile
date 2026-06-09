@@ -35,6 +35,10 @@ cmake-debug-extra:
 cmake-nvhpc:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DCOMPILER_SUITE=nvhpc ${gem_DIR} )
 
+# Use installed RPN libraries and add NEMO
+cmake-nemo:
+	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_NEMO=TRUE ${gem_DIR} )
+
 # Use installed RPN libraries and add MACH package
 cmake-mach:
 	( cd build-${GEM_ARCH} && cd `/bin/pwd` && cmake -DWITH_MACH=TRUE ${gem_DIR} )
@@ -77,5 +81,4 @@ clean:
 # Delete the build and work directories
 distclean:
 	. ./.clean_all
-
 
