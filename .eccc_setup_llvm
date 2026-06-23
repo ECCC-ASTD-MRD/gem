@@ -21,7 +21,7 @@ case ${SETUP_SCRIPT_NAME} in
 esac
 
 # Load code-tools 
-. r.load.dot rpn/code-tools/test/env/exp/rhel-9-amd64-64@llvm-${COMPILER_VERSION}
+. r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@llvm-${COMPILER_VERSION}
 
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
