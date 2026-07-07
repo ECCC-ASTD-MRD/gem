@@ -50,11 +50,11 @@ XTRFZT,XTRDZT,XURDZU,                  &
 XQ1,XQ2,XQ3,XQ4,XQ5,XQ6,XQ7,           &
 XQ8,XQ9,XQ10,XQ11,XQ12,XQ13,           &
 XDSNOW_ROOF,XDSNOW_ROAD,               &
-XFSNOW_ROOF,XFSNOW_ROAD
+XFSNOW_ROOF,XFSNOW_ROAD,XMLTSNOW_TOWN
 
 !$OMP THREADPRIVATE(/ttte/)
 !
-INTEGER                           :: NNI             ! Number of grid points
+! INTEGER                           :: NNI             ! Number of grid points
 REAL, DIMENSION(:)  , POINTER :: XMASK           ! Land/sea maks          
 REAL, DIMENSION(:)  , POINTER :: XINI_LAT        ! Latitude              
 REAL, DIMENSION(:)  , POINTER :: XINI_LON        ! Longitude             
