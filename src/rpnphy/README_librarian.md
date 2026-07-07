@@ -12,7 +12,8 @@ Tests
 
 Make sure to test with
 * intel
-* GFortran
+* gnu
+* nvhpc
 * intel cmake-debug-extra
 
 1st shell
@@ -20,8 +21,7 @@ Make sure to test with
 . ./.ssmuse_gem intel
 . ./.initial_setup
 make cmake
-make -j4
-make -j4 work
+make -j work
 # ... run tests...
 ```
 
@@ -30,36 +30,51 @@ make -j4 work
 . ./.ssmuse_gem gnu
 . ./.initial_setup
 make cmake
-make -j4
-make -j4 work
+make -j work
 # ... run tests...
 ```
 
 3rd shell
 ```
+. ./.ssmuse_gem nvhpc
+. ./.initial_setup
+make cmake
+make -j work
+# ... run tests...
+```
+
+4th shell
+```
 . ./.ssmuse_gem intel
 . ./.initial_setup
 rm -rf build-${GEM_ARCH}/*
 make cmake-debug-extra
-make -j4
-make -j4 work
+make -j work
 # ... run tests...
 ```
 
 Finalize
 ========
 
-# Steps to be done in a GEM dev env.
+# Steps to be done in a (user) GEM dev env.
+Note that all the steps here assume that we are moving from a release version (`$ATM_MODEL_VERSION`).  If you are doing the release from a tag, then simply set `ATM_MODEL_VERSION=[TAG]` and continue with these steps.
 
-# Update MANIFEST for VERSION (do not reload env after this)
+# Check to see if there are changes to this component.
+```
+component=rpnphy
+git diff --name-only ${ATM_MODEL_VERSION} -- src/${component}
+```
+
+# Update MANIFEST for VERSION (**do not reload env after this**)
 ```
 emacs src/rpnphy/MANIFEST
 ```
 
 # Create nml_ref
 ```
+. ./.ssmuse_gem
 make cmake
-make -j6 && make work
+make -j work
 which prphynml || export PATH=${PATH}:${gem_DIR}/${GEM_WORK}/bin
 component=rpnphy
 MYVERSION=$(grep VERSION src/${component}/MANIFEST | cut -d: -f2)
@@ -103,11 +118,70 @@ MYVERSION=$(grep VERSION src/${component}/MANIFEST | cut -d: -f2)
 MYVERSION=${MYVERSION# *}
 git add src/${component}/share/nml_ref/${component}_settings.${MYVERSION}.ref*
 git commit -a -m "${component}: update VERSION, doc and nml ref (${component}_${MYVERSION})"
+git tag gem_${ATM_MODEL_VERSION}+${component}_${MYVERSION}
 ```
 
 
 Move patch from GEM dev to rpnphy depot
 =======================================
+
+If `--relative` option of `t.gitpull` from modeltools is not avail. See "Appendix: manual patch transfer" section below.
+
+## Steps to be done in a (user) GEM dev env.
+
+WARNING: we need to "squash the merges" before proceeding
+Check if there are merge commits
+```
+FROM=${ATM_MODEL_VERSION:-__scrap__}
+git rev-list --min-parents=2 --count ${FROM}..HEAD
+```
+If >0 then need rebase to linearize history.  Good luck.
+
+
+# Steps to be done in the rpnphy clone
+Create a local clone of the rpnphy repo (main repos: https://gitlab.science.gc.ca/MIG/rpnphy.git)
+```
+git clone https://gitlab.science.gc.ca/MIG/rpnphy.git
+cd rpnphy
+```
+
+Make sure you are on the right branch (e.g., rpnphy_6.3-branch) on top of the right version (original tag, accessible through rpnphy_`$rpnphy_version` in the GEM experiment above).
+
+To pull patches from the GEM dev experiment into the local repo.
+```
+. r.load.dot eccc/mrd/rpn/MIG/ENV/modeltools/tools
+component=rpnphy
+gemurldir=     # URL or path of the repos where the new rpnphy code is (dev experiment above)
+FROM_VERSION=  # Original GEM version number on top of which modifications
+               # were made (`${ATM_MODEL_VERSION}` in gemdev repos)
+gemtag=        # tag of the code to pull from in the repos where the new
+               # rpnphy code is (above created
+					# `gem_${ATM_MODEL_VERSION}+${component}_${MYVERSION}`)
+t.gitpull --relative src/${component} -- ${gemurldir} ${gemtag} ${FROM_VERSION}
+```
+
+## Tag & push
+```
+rpnphy_version=$(grep ^VERSION MANIFEST | cut -d: -f2)
+rpnphy_version=${rpnphy_version# *}
+phybranch=${rpnphy_version%.*}
+phybranch=rpnphy_${phybranch:-6.3}-branch
+git tag rpnphy_${rpnphy_version}
+git push origin ${phybranch} rpnphy_${rpnphy_version}
+```
+
+Documentation
+=============
+
+* Update MIG/rpnphy issue and milestones on gitlab by closing them.
+* Update rpnphy nml doc on the wiki
+  * Source: `share/doc/rpnphy.namelists.wiki`
+  * Dest: http://wiki.cmc.ec.gc.ca/wiki/RPNPhy/6.2/settings_inc (or 6.3)
+
+
+
+Appendix: manual patch transfer
+==============================
 
 # Steps to be done in a GEM dev env.
 
@@ -118,7 +192,6 @@ FROM=${ATM_MODEL_VERSION:-__scrap__}
 git rev-list --min-parents=2 --count ${FROM}..HEAD
 ```
 # If >0 then need rebase to linearize history.  Good luck.
-
 
 ```
 FROM=${ATM_MODEL_VERSION:-__scrap__}
@@ -168,12 +241,3 @@ phybranch=rpnphy_${phybranch:-6.3}-branch
 git tag rpnphy_${rpnphy_version}
 git push origin ${phybranch} rpnphy_${rpnphy_version}
 ```
-
-Documentation
-=============
-
-# Udpate MIG/rpnphy issue and milestones
-
-# Update rpnphy nml doc
-# Source: `share/doc/rpnphy.namelists.wiki`
-# Dest: http://wiki.cmc.ec.gc.ca/wiki/RPNPhy/6.2/settings_inc (or 6.3)

@@ -266,6 +266,11 @@ contains
          return
       endif
 
+      if (p3_liqfrac) then
+         call msg(MSG_ERROR, '(phy_nml_check) p3_liqfrac - this option is not yet supported')
+         return
+      endif
+
       m_istat = RMN_OK
       !----------------------------------------------------------------
       return
