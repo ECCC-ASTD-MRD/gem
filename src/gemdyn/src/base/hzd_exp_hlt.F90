@@ -20,6 +20,7 @@ module hzd_exp_hlt
   use HORgrid_options
   use glb_ld
   use glb_pil
+  use mem_tstp
   use, intrinsic :: iso_fortran_env
   implicit none
 
@@ -108,7 +109,7 @@ contains
 !
 !**s/r hzd_exp_visco - applies explicit 9pt del N horizontal filtering operator
 !
-      subroutine hzd_exp_deln( F_f2hzd, F_pwr, F_lnr, F_wk,&
+      subroutine hzd_exp_deln( F_f2hzd, F_pwr, F_lnr, &
                                    Minx,Maxx,Miny,Maxy, NK )
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -116,7 +117,9 @@ contains
 
       integer, intent(in) :: F_pwr,Minx,Maxx,Miny,Maxy,Nk
       real,    intent(in) :: F_lnr
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_f2hzd,F_wk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_f2hzd
+      !real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: F_wk
+      real, dimension(:,:,:), pointer :: F_wk
 
       integer :: i,j,k, nn,mm, i0,in,j0,jn
       real(kind=REAL64) :: nu_dif,visco
@@ -124,6 +127,8 @@ contains
 !
 !-------------------------------------------------------------------
 !
+      F_wk(minx:maxx,miny:maxy,1:nk) => WS1(1:)
+
       if (Grd_yinyang_L) then
          i0 = 1    + 2*west
          j0 = 1    + 2*south

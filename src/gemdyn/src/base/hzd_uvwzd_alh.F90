@@ -20,18 +20,18 @@
       use glb_ld
       use glb_pil
       use hvdif_options 
+      use hzd_mod
+      use mem_tstp
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
 
       integer :: Minx,Maxx,Miny,Maxy,nk,F_v
-      integer :: i,j,k, n,m, i0,in,j0,jn
+      integer :: i,j,k,dim,n,m,i0,in,j0,jn
       integer :: HzdPwr
       real    :: HzdLnr  
-      real , dimension(Minx:Maxx,Miny:Maxy,nk), intent(inout) ::rfd
-      real , dimension(Minx:Maxx,Miny:Maxy,nk) :: sfd
-      real , dimension(Minx:Maxx,Miny:Maxy,nk) :: sfd1
+      real, dimension(Minx:Maxx,Miny:Maxy,nk), intent(inout) ::rfd
 !
 !----------------------------------------------------------------------
 !
@@ -46,10 +46,8 @@
          in = l_ni - pil_e
          jn = l_nj - pil_n
       end if
-!if(ptopo_myproc==0.and.ptopo_couleur==0) print*,'=HZD-UVW   == 1','F_v=',F_v,  'Hzdpwr=', Hzdpwr
-      n= Hzdpwr/2.d0
 
-      sfd(:,:,:) = 0. ; sfd1(:,:,:)=0.
+      n= Hzdpwr/2.d0
 
 !$omp do collapse(2)
       do k=1,nk
@@ -62,7 +60,7 @@
 !$omp end do
 
       do m=1,n 
-        if (m == 2) then
+         if (m == 2) then
 !$omp do collapse(2)
             do k=1, nk
                do j=j0-1, jn+1
@@ -73,45 +71,36 @@
                end do
             end do
 !$omp end do
-        end if
-
-            if (F_v==1) call hzd_u_alh (sfd,HzdLnr,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-            if (F_v==2) call hzd_v_alh (sfd,HzdLnr,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-            if (F_v==3) call hzd_w_alh (sfd,HzdLnr,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-            if (F_v==4) call hzd_theta_cons_alh (sfd,HzdLnr,l_minx,l_maxx,l_miny,l_maxy, &
-                                                 G_nk,1)
-
-            if (m /= n) then
-!!$omp single
-      !        call rpn_comm_xch_halo( sfd, l_minx,l_maxx,l_miny,l_maxy,&
-      !        l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      !        call rpn_comm_xch_halo( sfd1, l_minx,l_maxx,l_miny,l_maxy,&
-      !        l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-!!$omp end single
-            endif
-
-            if(m==2)   then
-               do k=1,l_nk
-                  do j=Miny, Maxy
-                     do i=Minx, Maxx
-                         sfd(i,j,k)= sfd1(i,j,k)+sfd(i,j,k)
-                     enddo
+         end if
+         if (F_v==1) call hzd_u_alh (sfd,HzdLnr,minx,maxx,miny,maxy,nk)
+         if (F_v==2) call hzd_v_alh (sfd,HzdLnr,minx,maxx,miny,maxy,nk)
+         if (F_v==3) call hzd_scal_alh (sfd,HzdLnr,minx,maxx,miny,maxy,nk)
+!$omp single         
+         if (F_v==4) call hzd_theta_cons_alh (sfd,HzdLnr,minx,maxx,miny,maxy,nk,1)
+!$omp end single                                         
+         if(m==2) then
+!$omp do collapse(2)
+            do k=1,nk
+               do j=Miny, Maxy
+                  do i=Minx, Maxx
+                      sfd(i,j,k)= sfd1(i,j,k)+sfd(i,j,k)
                   enddo
-              enddo
-           endif
-                
+               enddo
+            enddo
+!$omp end do
+         endif
       end do
 
-      do k=1,l_nk
+!$omp do collapse(2)
+      do k=1,nk
          do j=Miny, Maxy
             do i=Minx, Maxx
                rfd(i,j,k)= sfd(i,j,k)
             enddo
          enddo
       enddo
-!
-!----------------------------------------------------------------------
-!
+!$omp end do
+
       return
       end
 

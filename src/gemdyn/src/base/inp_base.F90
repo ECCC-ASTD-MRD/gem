@@ -895,14 +895,14 @@ contains
       character(len=1), optional,intent(in) :: F_type_S
 
       character(len=1) :: typ
-      integer err,err2,i,j,k,nk,kind
+      integer err,err2,i,j,k,nk
       integer, dimension (:    ), pointer     :: ip1_list
       real   , dimension (:,:,:), pointer     :: wrk
-      real   , dimension (:    ), allocatable :: rna
       character(len=1) :: grid_S(3)
 !
 !---------------------------------------------------------------------
 !
+      err= -1
       if (associated(F_sq)) deallocate (F_sq)
       if (associated(F_su)) deallocate (F_su)
       if (associated(F_sv)) deallocate (F_sv)
@@ -912,9 +912,13 @@ contains
       nullify (F_sq,F_su,F_sv,F_LSsq,F_LSsu,F_LSsv,ip1_list,wrk)
       typ= ' '
       if (present(F_type_S)) typ= F_type_S
-      
-      if (Inp_dst_hauteur_L.and..not.Schm_autobar_L) then
 
+      if (Schm_autobar_L) then
+         call inp_src_surface_autobar ( F_sq,F_su,F_sv,F_topo )
+         return
+      endif
+      
+      if (Inp_dst_hauteur_L) then
          err = -1
          nullify (wrk,ip1_list)
 
@@ -935,8 +939,10 @@ contains
       grid_S=['Q','U','V']
 
       err = inp_read_mt ( 'SFCPRES', grid_S, wrk, 3,&
-                           ip1_list, nk, F_type_S=typ)
+                          ip1_list, nk, F_type_S=typ)
+
       if (associated(wrk)) then
+         err= 0
          allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy),&
                     F_su(l_minx:l_maxx,l_miny:l_maxy),&
                     F_sv(l_minx:l_maxx,l_miny:l_maxy) )
@@ -955,51 +961,6 @@ contains
             F_LSsv(:,:) = wrk(:,:,3)*100.
             deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
          endif
-      else
-         if (Inp_kind == 2.or.Schm_autobar_L) then
-            if (Inp_src_PX_L) then
-               allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy),&
-                          F_su(l_minx:l_maxx,l_miny:l_maxy),&
-                          F_sv(l_minx:l_maxx,l_miny:l_maxy) )
-               F_sq(:,:) = PX3d%valq(:,:,PX3d%nk)
-               F_su(:,:) = PX3d%valu(:,:,PX3d%nk)
-               F_sv(:,:) = PX3d%valv(:,:,PX3d%nk)
-               err=0
-            else
-
-            err = inp_read_mt ( 'GEOPOTENTIAL', 'Q', wrk, 1,&
-                                 ip1_list, nk )
-            if (nk == F_nka) then
-               allocate (rna(nk))
-               do k=1,nk
-                  call convip(ip1_list(k),rna(k),kind,-1,' ',.false.)
-               end do
-               allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy), &
-                          F_su(l_minx:l_maxx,l_miny:l_maxy), &
-                          F_sv(l_minx:l_maxx,l_miny:l_maxy) )
-               call gz2p0 ( F_sq, wrk, F_topo, rna     ,&
-                            l_minx,l_maxx,l_miny,l_maxy,&
-                      nk,1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy )
-               do j=1-G_haloy,l_nj+G_haloy
-                  do i=1-G_halox,l_ni+G_halox-1
-                     F_su(i,j)= (F_sq(i,j) + F_sq(i+1,j)) * 0.5d0
-                  end do
-               end do
-               if (l_east) F_su(l_ni+G_halox,:)=F_sq(l_ni+G_halox,:)
-               do j=1-G_haloy,l_nj+G_haloy-1
-                  do i=1-G_halox,l_ni+G_halox
-                     F_sv(i,j)= (F_sq(i,j) + F_sq(i,j+1)) * 0.5d0
-                  end do
-               end do
-               if (l_north) F_sv (:,l_nj+G_haloy)= F_sq(:,l_nj+G_haloy)
-               deallocate (rna,wrk,ip1_list) ; nullify (wrk,ip1_list)
-               call gem_xch_halo (F_su, l_minx, l_maxx, l_miny, l_maxy, 1)
-               call gem_xch_halo (F_sv, l_minx, l_maxx, l_miny, l_maxy, 1)
-            else
-               err = -1
-            end if
-            end if
-         end if
       endif
 
       call gem_error ( err,'inp_src_surface','MISSING SURFACE DATA' )
@@ -1008,6 +969,91 @@ contains
 !
       return
       end subroutine inp_src_surface
+      
+      subroutine inp_src_surface_autobar ( F_sq,F_su,F_sv,F_topo )
+      use dyn_fisl_options
+      implicit none
+
+      real   , dimension (:,:), pointer, intent(inout) :: F_sq,F_su,F_sv
+      real   , dimension (*  ),          intent(in   ) :: F_topo
+
+      integer err,i,j,k,nk,kind
+      integer, dimension (:    ), pointer :: ip1_list
+      real   , dimension (:    ), allocatable :: rna
+      real   , dimension (:,:,:), pointer :: wrk
+      real(kind=REAL64) :: lg_pstar_8
+!
+!---------------------------------------------------------------------
+!
+      err= -1 ; nullify (wrk,ip1_list) ; nk= 0
+      
+      if (Inp_kind == 21) then ! most likely in cascade mode with casc_* files
+         err = inp_read_mt ( 'SFCPRES', 'Q', wrk, 3, ip1_list, nk )
+      else if (Inp_kind == 2) then
+         if (Inp_src_PX_L) then
+            nk=1
+         else
+            err = inp_read_mt ( 'GEOPOTENTIAL', 'Q', wrk, 3,ip1_list, nk )
+         endif
+      endif
+
+      if (nk>0) then
+         err= 0
+         allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy), &
+                    F_su(l_minx:l_maxx,l_miny:l_maxy), &
+                    F_sv(l_minx:l_maxx,l_miny:l_maxy) )
+         if (Inp_kind == 21) then
+            lg_pstar_8=log(1.d5)
+            do j=1-G_haloy,l_nj+G_haloy
+               do i=1-G_halox,l_ni+G_halox-1
+                  F_sq(i,j)=(log(wrk(i,j,1))-lg_pstar_8)*(rgasd_8*Cstv_Tstr_8)+1.0d0/Cstv_invFI_8
+               end do
+            end do
+         else if (Inp_kind == 2) then
+            if (.not.Inp_src_PX_L) then
+               allocate (rna(nk))
+               do k=1,nk
+                  call convip(ip1_list(k),rna(k),kind,-1,' ',.false.)
+               end do
+               call gz2p0 ( F_sq, wrk, F_topo, rna     ,&
+                            l_minx,l_maxx,l_miny,l_maxy,&
+                            nk,1-G_halox,l_ni+G_halox,1-G_haloy,&
+                            l_nj+G_haloy )
+               deallocate(rna)
+            endif
+         endif        
+         deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
+         
+         if (Inp_src_PX_L) then
+            F_sq(:,:) = PX3d%valq(:,:,PX3d%nk)
+            F_su(:,:) = PX3d%valu(:,:,PX3d%nk)
+            F_sv(:,:) = PX3d%valv(:,:,PX3d%nk)
+         else
+            do j=1-G_haloy,l_nj+G_haloy
+               do i=1-G_halox,l_ni+G_halox-1
+                  F_su(i,j)= (F_sq(i,j) + F_sq(i+1,j)) * 0.5d0
+               end do
+            end do
+            if (l_east) F_su(l_ni+G_halox,:)=F_sq(l_ni+G_halox,:)
+            do j=1-G_haloy,l_nj+G_haloy-1
+               do i=1-G_halox,l_ni+G_halox
+                  F_sv(i,j)= (F_sq(i,j) + F_sq(i,j+1)) * 0.5d0
+               end do
+            end do
+            if (l_north) F_sv (:,l_nj+G_haloy)= F_sq(:,l_nj+G_haloy)
+         endif
+         call gem_xch_halo (F_sq, l_minx, l_maxx, l_miny, l_maxy, 1)
+         call gem_xch_halo (F_su, l_minx, l_maxx, l_miny, l_maxy, 1)
+         call gem_xch_halo (F_sv, l_minx, l_maxx, l_miny, l_maxy, 1)
+      endif
+
+      call gem_error ( err,'inp_src_surface_autobar',&
+                       'MISSING SURFACE DATA' )
+!     
+!---------------------------------------------------------------------
+!     
+      return
+      end subroutine inp_src_surface_autobar
 
 !**s/r inp_dst_surface - compute destination surface information
 

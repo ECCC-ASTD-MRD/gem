@@ -30,6 +30,7 @@
       integer :: me_1on1,OUTs_1on1, OUTs_cntwm, OUTs_nvar_indx
       integer :: OUTs_rank,OUTs_pe,OUTs_wm(4)
       integer :: OUTs_myHost_size,OUTs_myHost_rank,OUTs_request(3)
+      integer :: OUTs_sortie_largest_list=0   ! size of largest list in outcfg.out sortie[_p]
       integer :: OUTs_nplans                  ! maximum number of 2D plans
       integer, parameter :: OUTs_sorties=200  ! maximum number of sorties line in outcfg.out
       integer, parameter :: OUTs_nvar   =1000 ! maximum number of output variables
