@@ -116,7 +116,7 @@
       if ( F_stag_S(2:2) == 'S' ) then
          if (F_nk > 1) then
             do k=F_k0, F_kn
-               call encode_ips (ip1,ip2,ip3,F_levels(k))
+               call encode_ips (ip1,ip2,ip3,F_levels(k),F_stag_S(3:3))
               ! err = fstecr ( wk_ptr(1,1,k),wk,-Out_nbit,Out_unf,&
               ! Out_dateo,Out_deet,Out_npas,nis,wk_njs,1  ,&
               ! ip1,ip2,ip3, Out_typvar_S,Out_nomvar,etiket_S,gtyp,&
@@ -131,7 +131,7 @@
             end do
          else
             if ((F_k0==1).and.(F_kn==1)) then
-               call encode_ips (ip1,ip2,ip3,0.)
+               call encode_ips (ip1,ip2,ip3,0.,F_stag_S(3:3))
              !  err = fstecr ( wk_ptr,wk,-Out_nbit,Out_unf,&
              !  Out_dateo,Out_deet,Out_npas,nis,wk_njs,1  ,&
              !  ip1,ip2,ip3, Out_typvar_S,Out_nomvar,etiket_S,gtyp,&
@@ -146,7 +146,7 @@
          endif
       else
          do k=F_k0, F_kn
-            call encode_ips (ip1,ip2,ip3,F_levels(F_indo(k)))
+            call encode_ips (ip1,ip2,ip3,F_levels(F_indo(k)),F_stag_S(3:3))
             !err = fstecr ( wk_ptr(1,1,k),wk,-Out_nbit,Out_unf,&
             !      Out_dateo,Out_deet,Out_npas,nis,wk_njs,1  ,&
             !      ip1,ip2,ip3, Out_typvar_S,Out_nomvar,etiket_S,gtyp,&
@@ -271,7 +271,7 @@
          Out_rec%ig2=Out_ig2
          Out_rec%ig3=Out_ig3
          Out_rec%ig4=Out_ig4
-         call encode_ips (ip1,ip2,ip3,F_vsfc(k)%lvl)
+         call encode_ips (ip1,ip2,ip3,F_vsfc(k)%lvl,F_stag_S(3:3))
          !err = fstecr ( wk_ptr(1,1),wk,-F_vsfc(k)%nbits,Out_unf,&
          !          Out_dateo,Out_deet,Out_npas,nis,wk_njs,1  ,&
          !          ip1,ip2,ip3 ,&
@@ -281,6 +281,7 @@
          Out_rec%nomvar=F_vsfc(k)%nv
          Out_rec%etiket=etiket_S               
          Out_rec%pack_bits=F_vsfc(k)%nbits
+         Out_rec%data_bits=Out_rec%pack_bits
          Out_rec%ni=nis
          Out_rec%nj=wk_njs
          Out_rec%nk=1
@@ -297,7 +298,7 @@
       return
       end subroutine OUTs_fstecr_sfc
 
-      subroutine encode_ips (ip1,ip2,ip3,rf)
+      subroutine encode_ips (ip1,ip2,ip3,rf,ip1_style_S)
       use iso_c_binding
       use, intrinsic :: iso_fortran_env
       use mpi_f08
@@ -311,6 +312,7 @@
       include 'rmn/convert_ip123.inc'
 
       character(len=8) dumc
+      character(len=1) ip1_style_S
       integer :: lstep,modeip1,err,kind
       type(FLOAT_IP) :: RP1,RP2,RP3
       real lvl
@@ -318,7 +320,11 @@
 !--------------------------------------------------------------------
 !
       modeip1= 1
-      if (Out_kind == 1 .or. Out_kind == 2) modeip1= 3 !old ip1 style for pressure and eta lvls output
+      if (&
+           Out_kind    == 1 .or.&
+           Out_kind    == 2 .or.&
+           ip1_style_S == 'O' .or.&
+           ip1_style_S == 'o') modeip1= 3 !old ip1 style for pressure, eta and ip1_style_S flaf 'o' 'O'
       lstep= -1
       if ( lstep > 0 ) then
          RP2%lo  = dble(lstep          ) * dble(Out_deet) / 3600.d0

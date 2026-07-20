@@ -74,7 +74,7 @@
             end do
             end do
          end do
-!$omp end do
+!$omp end do 
       else
 
 !$omp do

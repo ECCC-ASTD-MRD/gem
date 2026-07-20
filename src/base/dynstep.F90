@@ -65,12 +65,12 @@
 
       if (Hzd_alh_L) then
          if (.not. init_done) then
-!$omp parallel
+!$omp single 
             call hzd_init_theta_cons ()
             call hzd_init_u ()
             call hzd_init_v ()
             call hzd_init_zdt ()
-!$omp end parallel
+!$omp end single
          endif
          init_done =.true.
       endif

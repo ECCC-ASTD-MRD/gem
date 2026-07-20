@@ -23,16 +23,12 @@
       use metric
       use hzd_mod
       use hvdif_options
-!
       use gmm_geof
       use tdpack
       use ptopo
-
-
 !
       use, intrinsic :: iso_fortran_env
       implicit none
-!
 
       integer j,i,k
       real(kind=REAL64)    one,half,zero

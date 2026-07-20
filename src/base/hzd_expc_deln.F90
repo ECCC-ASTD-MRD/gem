@@ -16,7 +16,7 @@
 !
 !**s/r hzd_exp_visco - applies explicit 9pt del N horizontal filtering operator
 !
-      subroutine hzd_expc_deln( F_f2hzd, F_rho, F_pwr, F_lnr, F_wk,&
+      subroutine hzd_expc_deln( F_f2hzd, F_rho, F_pwr, F_lnr,&
                                    Minx,Maxx,Miny,Maxy, NK )
       use hzd_mod
       use hvdif_options
@@ -26,6 +26,8 @@
       use glb_pil
       use dcst
       use tdpack
+      use mem_tstp
+      use ptopo
 
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -33,15 +35,18 @@
 
       integer, intent(in) :: F_pwr,Minx,Maxx,Miny,Maxy,Nk
       real,    intent(in) :: F_lnr
-      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_f2hzd,F_wk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_f2hzd
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) ::  F_rho 
+      real, dimension(:,:,:), pointer :: F_wk
 
       integer :: i,j,k, nn,mm, i0,in,j0,jn
-      real,  dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) ::  F_rho 
       real(kind=REAL64) :: nu_dif,visco
       real(kind=REAL64), parameter :: epsilon=1.0d-12, pt25=0.25d0
 !
 !-------------------------------------------------------------------
 !
+      F_wk(minx:maxx,miny:maxy,1:nk) => WS1(1:)
+
       if (Grd_yinyang_L) then
          i0 = 1    + 2*west
          j0 = 1    + 2*south
@@ -103,8 +108,7 @@
          end if
 
          call hzd_CvDel2_flt9pt (F_f2hzd,F_wk,F_rho,l_minx,l_maxx,l_miny,l_maxy,nk,&
-                                    nu_dif,mm, nn)
-
+                                   nu_dif,mm, nn,i0,in,j0,jn)
          if (mm /= nn) then
 !$omp single
               call rpn_comm_xch_halo( F_wk, l_minx,l_maxx,l_miny,l_maxy,&

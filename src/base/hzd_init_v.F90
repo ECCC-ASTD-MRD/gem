@@ -49,8 +49,7 @@
               jxp(l_minx:l_maxx, l_miny:l_maxy,l_nk,4)) 
       allocate(jzv(l_minx:l_maxx, l_miny:l_maxy,l_nk,3), &
               jzvm(l_minx:l_maxx, l_miny:l_maxy,l_nk,2)) 
-      !        jzpix(l_minx:l_maxx, l_miny:l_maxy,l_nk,3))
-
+     
       allocate(xfactv(l_minx:l_maxx, l_miny:l_maxy,l_nk)) 
 
       allocate(vsten(l_minx:l_maxx, l_miny:l_maxy,3,l_nk))

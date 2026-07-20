@@ -44,15 +44,20 @@ module hzd_mod
    real(kind=REAL64), dimension (:,:,:,:), allocatable :: Jm, Jzz
    real(kind=REAL64), dimension (:,:,:), allocatable :: a_u, b_u, c_u, W_u, &
                                                         a_v, b_v, c_v, W_v, &
-                                                        a_th, b_th, c_th, W_th, &
+                                                        a_th, b_th, c_th, d_th , &
                                                         a_zdt, b_zdt, c_zdt, W_zdt
-   real(kind=REAL64) :: zfact 
-   real(kind=REAL64) ru,rv
+   real(kind=REAL64), dimension (:,:,:),  allocatable :: Afdg1, Bfdg1, Afdg2, Bfdg2, &
+                                                        add_v8, bdd_v8, &
+                                                        cdd_v81, cdd_v82, cdd_v8, cflux 
+   real(kind=REAL64), dimension (:,:,:,:),  allocatable :: stencilV 
+   real(kind=REAL64) :: ru,rv, zfact
+   real, dimension (:,:,:), allocatable :: air_density,air_density_U,air_density_V,air_density_m
+   real, dimension (:,:,:), allocatable :: pres_pt,theta,theta0,wk1,wrkt1,wrkd1,wrkt2,wrkd2
+   real, dimension (:,:,:), allocatable :: u_wrk,v_wrk,w_wrk,zdt_wrk,u_wrk1,v_wrk1, w_wrk1, zdt_wrk1,wk2
+   real, dimension (:,:,:), allocatable :: sfd, sfd1, fdg2_4
 
    integer      Hzd_niter,Hzd_niter_tr,Hzd_niter_theta
    integer      Hzd_hyb_top, hzd_hyb_bot
-
-   real, dimension(:,:,:), allocatable :: air_density,air_density_U,air_density_V,air_density_m
 
 
 end module hzd_mod

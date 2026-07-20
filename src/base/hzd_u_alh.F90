@@ -29,16 +29,14 @@
       use gmm_geof
       use ptopo
       use step_options
-      use omp_timing
-      use stat_mpi, only: statf_dm
 !
       use, intrinsic :: iso_fortran_env
       implicit none
+#include <arch_specific.hf>
 !
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, NK
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent (inout) :: F_Sol1
       real  HzdlnR
-
 
 !author
 !       Abdessamad Qaddouri -  2018
@@ -46,23 +44,11 @@
 !revision
 ! v5.0 - Qaddouri A.       - initial version
 
-
-      integer j,i,k,kp,km
-      integer kd0 , k00, k01
-      real(kind=REAL64)    one,half,zero
+      integer j,i,k,kp,km,kd0,k00,k01
+      real(kind=REAL64)  one,half,zero
       parameter( one=1.0d0,half=0.5d0,zero=0.d0)
-      real   fdg2_4(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64)   Afdg1(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64)   Bfdg1(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64)   Afdg2(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64)   Bfdg2(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
       real(kind=REAL64) C1_8,C2_8,C,C3_8
-      real(kind=REAL64) bdd_v8(l_minx:l_maxx, l_miny:l_maxy,Nk)
-      real(kind=REAL64) add_v8(l_minx:l_maxx, l_miny:l_maxy,Nk)
-      real(kind=REAL64) cdd_v8(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64) cdd_v82(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64) cdd_v81(l_minx:l_maxx, l_miny:l_maxy,Nk+1)
-      real(kind=REAL64) crit_coef,base_coefT, dcoef
+      real(kind=REAL64) dcoef
 
       real(kind=REAL64)  ztht_8(l_minx:l_maxx, l_miny:l_maxy,0:Nk+1)
 !     ------Ui-1,j+1-------------phii,j+1------------Ui,j+1----------------------------
@@ -70,7 +56,6 @@
 !     ------Ui-1,j---------------Ai,jandphii,j--------Ui,j-------------------------
 !
 !     ------Ui-1,j-1---------------phii,j-1-----------Ui,j-1-----------------------------
-
 !  kd0 given by user      
       kd0=hzd_hyb_top
 
@@ -78,25 +63,31 @@
       k01=kd0+1 
       if (kd0.ne.1) k01=kd0
 
-      call gtmg_start (69, 'HZD_u_alh', 65)
+!      call gtmg_start (69, 'HZD_u_alh', 65)
 
       if (Hzd_pwr_z==2) then 
          dcoef = 0.25*HzdlnR*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
       else
          dcoef = 0.25*sqrt(HzdlnR)*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
       endif
-
-      Afdg1 = .0d0
-      Bfdg1 = .0d0
-      Afdg2= zero
-      Bfdg2= zero
-      add_v8 =0.0d0
-      bdd_v8=0.0d0
-      cdd_v8=0.0d0
-      cdd_v81=0.d0
-      cdd_v82=0.0d0
-      fdg2_4 =0.0 
-!
+      do k = 1, nk+1
+         do j=1+pil_s-1, l_nj-pil_n+1
+            do i=1+pil_w-1, l_ni-pil_e+1
+               Afdg1  (i,j,k) = zero
+               Bfdg1  (i,j,k) = zero
+               Afdg2  (i,j,k) = zero
+               Bfdg2  (i,j,k) = zero
+               add_v8 (i,j,k) = zero
+               bdd_v8 (i,j,k) = zero
+               cdd_v8 (i,j,k) = zero
+               cdd_v81(i,j,k) = zero
+               cdd_v82(i,j,k) = zero
+               fdg2_4 (i,j,k) = 0.0 
+               cflux  (i,j,k) = 0.0 
+            enddo
+         enddo
+      enddo
+!$omp do collapse(2)
       do k = 1, nk
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w-1, l_ni-pil_e+1
@@ -104,12 +95,17 @@
             enddo
          enddo
       enddo
+!$omp enddo
 
+!$omp single
       call rpn_comm_xch_halo(fdg2_4,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
+
 ! aplly gradient
 ! gradient component along X
       k=k00
+!$omp do 
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e+1
              Afdg1(i,j,k) = dcoef*((skpu(i,j,k,1)*fdg2_4(i,j,k) &
@@ -117,8 +113,10 @@
              Afdg2(i,j,k) = Afdg1(i,j,k) 
           enddo
         enddo
-!
+!$omp enddo
+
       k= NK
+!$omp do
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e+1
                C2_8= half*Ver_wm_8%m(k)*((fdg2_4(i-1,j,k)*GVM%mc_Jx_8(i-1,j,k)-&
@@ -131,7 +129,9 @@
                           -sku(i,j,k,1)*fdg2_4(i-1,j,k))*geomh_invDXM_8(j)) ! on M-level k and phi-ij position 
           enddo
         enddo
+!$omp enddo
 
+!$omp do collapse(2)
       do k = k01,Nk-1
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e+1
@@ -153,8 +153,10 @@
             enddo
          enddo
          enddo
+!$omp enddo
 ! Gradient component Along Y
          k=k00
+!$omp do 
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w, l_ni-pil_e
             Bfdg1(i,j,k) =dcoef*((sku(i,j,k,2)*fdg2_4(i,j+1,k) -skpu(i,j,k,2)*fdg2_4(i,j,k))* geomh_invDY_8)  ! M-level B_ij position 
@@ -162,8 +164,10 @@
 
           enddo
         enddo
-!
+!$omp enddo
+
       k= NK
+!$omp do 
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w, l_ni-pil_e
 ! D(jyU)/Dzeta on k T-level on ui,j position
@@ -174,7 +178,9 @@
 
           enddo
         enddo
-!
+!$omp enddo
+
+!$omp do collapse(2) 
       do k = k01,Nk-1
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w, l_ni-pil_e
@@ -190,7 +196,9 @@
             enddo
          enddo
          enddo
+!$omp enddo
 ! Apply divergence
+!$omp do collapse(2) 
       do k = k00, nk
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
@@ -201,7 +209,9 @@
             enddo
          enddo
       enddo
+!$omp enddo
 !  flux
+!$omp do collapse(2) 
       do k = k00+1,Nk
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
@@ -218,8 +228,10 @@
            enddo
          enddo
       enddo
+!$omp enddo
 
       k=Nk
+!$omp do  
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
 !Dz(Jx/Jz A) on T-level K-1 and position Ai,j
@@ -229,7 +241,9 @@
                                                      Bfdg2(i,j,k-1)*Jizxm(i,j,k,2))*Ver_idz_8%t(k-1)
            enddo
          enddo
+!$omp enddo
 
+!$omp do collapse(2) 
       do k=k00,NK-1
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
@@ -237,18 +251,21 @@
                cdd_v8(i,j,k)= xfactu(i,j,k) *(half*(cdd_v81(i,j,k)+ cdd_v81(i+1,j,k))+ half*(cdd_v82(i,j,k)+ cdd_v82(i,j-1,k))/geomh_cy_8(j))
 ! boundary condition
                F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-cdd_v8(i,j,k))
-
             enddo
          enddo
       enddo
+!$omp enddo
 
       k=NK
+!$omp do  
       do j=1+pil_s, l_nj-pil_n
          do i=1+pil_w, l_ni-pil_e
             F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-ru*cdd_v8(i,j,k-1))
          enddo
       enddo
+!$omp enddo
 
+!$omp do  
       do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
               do k = k00+1 , Nk
@@ -260,9 +277,11 @@
                   enddo
              enddo
           enddo
+!$omp enddo
 
       ! Hybrid diffusion if hzd_hyb_bot >0
       if(hzd_hyb_bot > 0) then
+!$omp do  
          do k = nk-hzd_hyb_bot+1, nk
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
@@ -270,9 +289,11 @@
                enddo
             enddo
          enddo
+!$omp enddo
       endif
 ! hybrid difusion for first kd0+1 level
       if (kd0.ne.1) then
+!$omp do  
           do k = 1, kd0 
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
@@ -280,10 +301,10 @@
                enddo
             enddo
          enddo
+!$omp enddo
       endif
 
-
-        call gtmg_stop (69)
+!        call gtmg_stop (69)
 
       return
       end

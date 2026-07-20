@@ -13,10 +13,9 @@
 
 !**s/r - 3D_diffusion operator   computation for GEM_H
 !
-      subroutine  hzd_theta_cons_alh ( F_Sol1,HzdlnR, Minx, Maxx, Miny, Maxy,Nk)
+      subroutine  hzd_scal_alh ( F_Sol1,HzdlnR, Minx, Maxx, Miny, Maxy,Nk)
       use gem_options
       use gmm_vt1
-      use gmm_hzd
       use geomh
       use glb_ld
       use cstv
@@ -28,10 +27,11 @@
       use step_options
       use gmm_geof
       use tdpack
+      use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-
+!
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, NK
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent (inout) :: F_Sol1
       real  HzdlnR
@@ -43,14 +43,16 @@
 !revision
 ! v5.0 - Qaddouri A.       - initial version
 
-      integer j,i,k,halox,haloy
+      integer j,i,k
       integer kd0 , k00, k01
       real(kind=REAL64)    one,half,zero
       parameter( one=1.0d0,half=0.5d0,zero=0.d0)
-      real dcoef 
-      real(kind=REAL64)   C1,C2 
-      real(kind=REAL64) Jz,qkm,qkp,W
+
+      real(kind=REAL64)   C1, C2 
+      real(kind=REAL64) Jz,qkm,qkp
       real(kind=REAL64) C1_8,C2_8,C,ski,skpi,skip,skpip
+      real(kind=REAL64) dcoef
+
 
 ! kd0 given by user      
       kd0=hzd_hyb_top
@@ -58,30 +60,42 @@
       k01=kd0+1
       if (kd0.ne.1) k01=kd0
 
-      if (Hzd_pwr_z==2)  then
-          dcoef= 0.25*HzdlnR*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
+      if (Hzd_pwr_z==2) then 
+         dcoef = 0.25*HzdlnR*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
       else
-          dcoef= 0.25*sqrt(HzdlnR)*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
+         dcoef = 0.25*sqrt(HzdlnR)*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
       endif
 
 ! Apply Horizontal diffusion along z
 
+       Afdg1 = 0.0d0
+       Bfdg1 = 0.0d0
+       add_v8 =0.0d0
+       bdd_v8=0.0d0
+       cdd_v81=0.d0
+       cdd_v82=0.d0
+       fdg2_4 =0.0
+       cflux=0.0
       do k = 1, nk+1
          do j=1+pil_s-1, l_nj-pil_n+1
             do i=1+pil_w-1, l_ni-pil_e+1
-               Afdg1(i,j,k)  =0.0d0
-               Bfdg1(i,j,k)  =0.0d0
-               add_v8(i,j,k) =0.0d0
-               bdd_v8(i,j,k) =0.0d0
-               cdd_v81(i,j,k)=0.d0
-               cdd_v82(i,j,k)=0.d0
-               fdg2_4(i,j,k) =0.0
-               cflux(i,j,k)  =0.0
+               Afdg1  (i,j,k) = zero
+               Bfdg1  (i,j,k) = zero
+               Afdg2  (i,j,k) = zero
+               Bfdg2  (i,j,k) = zero
+               add_v8 (i,j,k) = zero
+               bdd_v8 (i,j,k) = zero
+               cdd_v8 (i,j,k) = zero
+               cdd_v81(i,j,k) = zero
+               cdd_v82(i,j,k) = zero
+               cflux  (i,j,k) = 0.0
+               fdg2_4 (i,j,k) = 0.0 
             enddo
          enddo
       enddo
 
 !Field  before diffusion on T-level K  on phii,j
+!$omp do collapse(2)
          do k = 1, nk
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
@@ -89,31 +103,35 @@
                enddo
             enddo
          enddo
+!$omp enddo
 
+!$omp single
          call rpn_comm_xch_halo(fdg2_4,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk+1, &
                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+!$omp end single
+
          k=k00
+!$omp do 
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e
-               C1 = dcoef*((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
-               C2 = ((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
-               Afdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*C1
-               Afdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*C2
+               Afdg1(i,j,k) = dcoef*((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
+               Afdg2(i,j,k) = ((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
             enddo
          enddo
-!
+!$omp enddo
+
          k= NK
+!$omp do 
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w-1, l_ni-pil_e
                C1_8=half*(fdg2_4(i,j,k)*Jxt(i,j,k,1)-fdg2_4(i,j,k-1)*Jxt(i,j,k,2) + &
                          fdg2_4(i+1,j,k )*Jxt(i,j,k,3)-fdg2_4(i+1,j,k-1)*Jxt(i,j,k,4))
-               C1 = dcoef* ((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j) - half*C1_8)
-               C2 = ((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j)) 
-               Afdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*C1
-               Afdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*C2
+               Afdg1(i,j,k) = dcoef* ((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j) - half*C1_8)
+               Afdg2(i,j,k) = ((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j)) 
             enddo
          enddo
-!
+!$omp enddo
+!$omp do collapse(2)
          do k = k01,Nk-1
             do j=1+pil_s, l_nj-pil_n
                do i=1+pil_w-1, l_ni-pil_e
@@ -123,41 +141,36 @@
                            fdg2_4(i+1,j,k+1)*Jxt(i,j,k,7) - fdg2_4(i+1,j,k )*Jxt(i,j,k,8))
                C=   half*(qkp+qkm)
 
-               C1 = dcoef*((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j) - C)
-               C2 =((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
-! conservative
-               Afdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*C1
-               Afdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i+1,j,k))*C2
+               Afdg1(i,j,k) = dcoef*((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j) - C)
+               Afdg2(i,j,k) =((Jzpt(i,j,k,1)*fdg2_4(i+1,j,k) - Jzt(i,j,k,1)*fdg2_4(i,j,k) ) * geomh_invDX_8(j))
                enddo
             enddo
          enddo
+!$omp enddo
          k=k00
+!$omp do
          do j=1+pil_s-1, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
-               C1 = dcoef*(Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k)) * geomh_invDYMv_8(j) & 
+               Bfdg1(i,j,k) = dcoef*(Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k)) * geomh_invDYMv_8(j) & 
                          * geomh_cyv_8(j)
-               C2 =(Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
-! conservative
-               Bfdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))* C1
-               Bfdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))* C2
-
+               Bfdg2(i,j,k) =(Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
             enddo
          enddo
+!$omp enddo
 
          k= NK
+!$omp do
          do j=1+pil_s-1, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
                C1_8=half*(fdg2_4(i,j,k  )*Jyt(i,j,k,1)-fdg2_4(i,j,k-1)*Jyt(i,j,k,2) +&
                           fdg2_4(i,j+1,  k)*Jyt(i,j,k,3)-fdg2_4(i,j+1,k-1)*Jyt(i,j,k,4))
-               C1 =dcoef*((Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j) - half*C1_8)* &
+               Bfdg1(i,j,k) = dcoef*((Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j) - half*C1_8)* &
                              geomh_cyv_8(j)
-               C2 =(Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
-! conservative
-               Bfdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*C1
-               Bfdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*C2
-
+               Bfdg2(i,j,k) = (Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
             enddo
          enddo
+!$omp enddo
+!$omp do collapse(2)
          do k = k01,Nk-1
             do j=1+pil_s-1, l_nj-pil_n
                do i=1+pil_w, l_ni-pil_e
@@ -167,17 +180,16 @@
                             fdg2_4(i,j+1,k+1)*Jyt(i,j,k,7)-fdg2_4(i,j+1,k )*Jyt(i,j,k,8))
                   C = half*(qkp+qkm)
 
-                  C1 =dcoef* ((Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j) - C) &
+                  Bfdg1(i,j,k) =dcoef* ((Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j) - C) &
                         * geomh_cyv_8(j)
-                  C2 =(Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
-! conservative
-                  Bfdg1(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*C1
-                  Bfdg2(i,j,k)= half*(air_dens(i,j,k)+air_dens(i,j+1,k))*C2
+                  Bfdg2(i,j,k) =(Jzpt(i,j,k,2)*fdg2_4(i,j+1,k) - Jzt(i,j,k,2)*fdg2_4(i,j,k) ) * geomh_invDYMv_8(j)
                enddo
             enddo
          enddo
+!$omp enddo
 
 ! Apply divergence
+!$omp do collapse(2)
          do k = k00, nk
             do j=1+pil_s, l_nj-pil_n
                do i=1+pil_w, l_ni-pil_e
@@ -186,7 +198,9 @@
                enddo
             enddo
          enddo
+!$omp enddo
 !  flux
+!$omp do collapse(2)
       do k=k00+1,Nk
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
@@ -203,74 +217,49 @@
                enddo
             enddo
          enddo
+!$omp enddo
 
+!$omp do collapse(2)
          do k=k00,Nk-1
             do j=1+pil_s, l_nj-pil_n
                do i=1+pil_w, l_ni-pil_e
                   cflux(i,j,k)=Jzz(i,j,k,2)*Ver_idz_8%t(k)* &
                   ((cdd_v81(i,j,k+1)-cdd_v81(i,j,k)) + &
                     (cdd_v82(i,j,k+1)-cdd_v82(i,j,k))*geomh_invcy_8(j) )
-                  F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8/air_dens(i,j,k)*( add_v8(i,j,k)+bdd_v8(i,j,k)-cflux(i,j,k))
+                  F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-cflux(i,j,k))
                enddo
             enddo
          enddo
+!$omp enddo
          k=Nk
+!$omp do
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
                cflux(i,j,k)= (one-(ver_z_8%t(Nk)-ver_z_8%t(Nk-1))/(ver_z_8%t(Nk+1)-ver_z_8%t(Nk-1)))*&
                                     cflux(i,j,Nk-1)
-               F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8/air_dens(i,j,k)*( add_v8(i,j,k)+bdd_v8(i,j,k)-cflux(i,j,k))
+               F_sol1(i,j,k)= F_sol1(i,j,k) + Cstv_dt_8*( add_v8(i,j,k)+bdd_v8(i,j,k)-cflux(i,j,k))
             enddo
          enddo
+!$omp enddo
 
-! conservation 
-      do k=k00+1,NK
+!implicit
+!$omp do
          do j=1+pil_s, l_nj-pil_n
             do i=1+pil_w, l_ni-pil_e
-               stencilV(i,j,1,k)= (air_dens_m(i,j,k-1)*stencil_V1(i,j,k) +air_dens_m(i,j,k)* stencil_V2(i,j,k))
-               stencilV(i,j,2,k)= air_dens_m(i,j,k-1)*stencil_V(i,j,2,k)
-               stencilV(i,j,3,k)= air_dens_m(i,j,k  )*stencil_V(i,j,3,k)
-            enddo
-         enddo
-      enddo
-
-       k=NK
-        do j=1+pil_s, l_nj-pil_n
-            do i=1+pil_w, l_ni-pil_e
-               stencilV(i,j,2,k )=zfact  * stencilV(i,j,2,k-1 )
-               stencilV(i,j,1,k )=zfact  *(stencilV(i,j,1,k-1 )+stencilV(i,j,3,k-1 ))
-            enddo
-        enddo
-
-         do k=k00+1,Nk
-            do j=1+pil_s, l_nj-pil_n
-               do i=1+pil_w, l_ni-pil_e
-                  a_th(i,j,k)=-Cstv_dt_8*stencilV(i,j,2,k) /air_dens(i,j,k) 
-                  b_th(i,j,k)=one-Cstv_dt_8*stencilV(i,j,1,k) /air_dens(i,j,k) 
-                  d_th(i,j,k)=-Cstv_dt_8*stencilV(i,j,3,k) /air_dens(i,j,k) 
-               enddo
-            enddo
-         enddo
-
-         do j=1+pil_s, l_nj-pil_n
-            do i=1+pil_w, l_ni-pil_e
-                  b_th(i,j,k00)=one 
                do k = k00+1 , Nk
-!                  b_th(i,j,k00)=one
-                  W = a_th(i,j,k) / b_th(i,j,k - 1)
-                  b_th(i,j,k) = b_th(i,j,k) - W * d_th(i,j,k - 1)
-                  F_sol1(i,j,k) = F_sol1(i,j,k) - W * F_sol1(i,j,k- 1)
+                  F_sol1(i,j,k) = F_sol1(i,j,k) - W_zdt(i,j,k) * F_sol1(i,j,k-1)
                enddo
-               F_sol1(i,j,Nk) = F_sol1(i,j,Nk) / b_th(i,j,Nk)
-               F_sol1(i,j,1) = (F_sol1(i,j,1) - d_th(i,j,1) * F_sol1(i,j,2)) 
-               do k = Nk-1, k00+1, -1
-                  F_sol1(i,j,k) = (F_sol1(i,j,k) - d_th(i,j,k) * F_sol1(i,j,k + 1)) / b_th(i,j,k)
+               F_sol1(i,j,Nk) = F_sol1(i,j,Nk) / b_zdt(i,j,Nk)
+               do k = Nk-1, k00, -1
+                  F_sol1(i,j,k) = (F_sol1(i,j,k) - c_zdt(i,j,k) * F_sol1(i,j,k+1)) / b_zdt(i,j,k)
                enddo
             enddo
          enddo
+!$omp enddo
 
-      ! Hybrid diffusion if hzd_hyb_th_nk >0
+      ! Hybrid diffusion if hzd_hyb_bot >0
       if(hzd_hyb_bot >0) then
+!$omp do collapse(2) 
          do k = nk-hzd_hyb_bot+1, nk
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
@@ -278,9 +267,12 @@
                enddo
             enddo
          enddo
+!$omp enddo
       endif
+
 ! hybrid difusion for first kd0+1 level
       if (kd0.ne.1) then
+!$omp do collapse(2) 
           do k = 1, kd0 
             do j=1+pil_s-1, l_nj-pil_n+1
                do i=1+pil_w-1, l_ni-pil_e+1
@@ -288,6 +280,7 @@
                enddo
             enddo
          enddo
+!$omp enddo
       endif
 
       return

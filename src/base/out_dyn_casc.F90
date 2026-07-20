@@ -113,7 +113,7 @@
       end if
 
       conv = 1.d0 / grav_8
-      if (.not. Schm_autobar_L) then
+!      if (.not. Schm_autobar_L) then
          Out_stag_S= 'MS '
          call out_fstecr ( pw_p0_plus,l_minx,l_maxx,l_miny,l_maxy,hyb0,&
                    'P0  ',.01, 0., 2,-1,1, ind0, 1, nbits, .false. )
@@ -133,7 +133,7 @@
                   'MELS',conv,0.,2,-1,1, ind0, 1, nbits, .false. )
             end if
          end if
-      end if
+!      end if
 
       Out_stag_S= 'MT '
       call out_fstecr ( wt1 ,l_minx,l_maxx,l_miny,l_maxy, hybt,&

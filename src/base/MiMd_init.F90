@@ -188,7 +188,7 @@ contains
             write (6,987) ' CRITICAL ERROR: server ',trim(F_component_S), ' is assigned to multiple host '
          endif
          if (shared_host) then
-            write (6,987) ' WARNING ERROR: server ',trim(F_component_S), ' is sharing hosts with GEM '
+            write (6,987) ' WARNING: server ',trim(F_component_S), ' is sharing hosts with GEM '
          endif
       endif
  987  format (//20("#"),3a,20("#")//)
