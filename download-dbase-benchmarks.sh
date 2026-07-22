@@ -3,8 +3,8 @@
 set -e
 
 GEM_DBASE="gem_dbase_benchmarks_5.3.tar.gz"
-GEM_DBASE_URL="http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/${GEM_DBASE}"
-GEM_DBASE_MD5SUM="e8f3979eb71742363639141b16861cbd"
+GEM_DBASE_URL="https://hpfx.collab.science.gc.ca/~sixf000/GEM/${GEM_DBASE}"
+GEM_DBASE_MD5SUM="41b82f600e766ac9459dfc49b3d7271e"
 
 printUsage() {
     echo -e "Download a sample database of data files needed to run GEM benchmarks"
