@@ -2,9 +2,9 @@
 
 set -e
 
-GEM_DBASE="gem_dbase_benchmarks_5.3.tar.gz"
-GEM_DBASE_URL="https://hpfx.collab.science.gc.ca/~sixf000/GEM/${GEM_DBASE}"
-GEM_DBASE_MD5SUM="41b82f600e766ac9459dfc49b3d7271e"
+GEM_BENCHMARK_DBASE="gem_dbase_benchmarks_5.3.tar.gz"
+GEM_DBASE_URL="https://hpfx.collab.science.gc.ca/~sixf000/GEM/${GEM_BENCHMARK_DBASE}"
+GEM_DBASE_MD5SUM="a55980c09691e3d944d96fc1f4ad285a"
 
 printUsage() {
     echo -e "Download a sample database of data files needed to run GEM benchmarks"
@@ -36,7 +36,7 @@ if [[ $# -eq 2 ]]; then
         tarballPath="$2"
     fi
 else
-    tarballPath="${1}/${GEM_DBASE}"
+    tarballPath="${1}/${GEM_BENCHMARK_DBASE}"
     if [[ -x $(which wget) ]]; then
         wget ${GEM_DBASE_URL} -O "${tarballPath}";
     elif [[ -x $(which curl) ]]; then
@@ -51,7 +51,7 @@ fi
 if checkMd5 "$tarballPath" "$GEM_DBASE_MD5SUM"; then
     echo "MD5 check OK"
 else
-    echo "The MD5 of $GEM_DBASE does not match what was expected.  The file might be corrupted."
+    echo "The MD5 of $GEM_BENCHMARK_DBASE does not match what was expected.  The file might be corrupted."
     exit 1
 fi
 
