@@ -10,7 +10,10 @@ Updating the rpnphy depot for a GEM release
 Tests
 =====
 
-Make sure to test with GFortran and intel
+Make sure to test with
+* intel
+* GFortran
+* intel cmake-debug-extra
 
 1st shell
 ```
@@ -18,7 +21,7 @@ Make sure to test with GFortran and intel
 . ./.initial_setup
 make cmake
 make -j4
-make work
+make -j4 work
 # ... run tests...
 ```
 
@@ -28,7 +31,18 @@ make work
 . ./.initial_setup
 make cmake
 make -j4
-make work
+make -j4 work
+# ... run tests...
+```
+
+3rd shell
+```
+. ./.ssmuse_gem intel
+. ./.initial_setup
+rm -rf build-${GEM_ARCH}/*
+make cmake-debug-extra
+make -j4
+make -j4 work
 # ... run tests...
 ```
 
@@ -134,7 +148,7 @@ git checkout ${phybranch}
 component=rpnphy
 for item in ${mydir}/patches/${component}/*.patch ; do
     if [[ -s ${item} ]] ; then
-       git am -3 -k ${item}
+       git am -3 -k --empty=drop ${item}
        if [[ $? != 0 ]] ; then
           echo "ERROR: problem applying ${item}"
           break
@@ -147,6 +161,10 @@ done
 
 # Tag & push
 ```
+rpnphy_version=$(grep ^VERSION MANIFEST | cut -d: -f2)
+rpnphy_version=${rpnphy_version# *}
+phybranch=${rpnphy_version%.*}
+phybranch=rpnphy_${phybranch:-6.3}-branch
 git tag rpnphy_${rpnphy_version}
 git push origin ${phybranch} rpnphy_${rpnphy_version}
 ```

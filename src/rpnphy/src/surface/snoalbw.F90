@@ -1,4 +1,9 @@
-      SUBROUTINE SNOALBW(ALBSNO,RHOSNO,ZSNOW,HCPSNO,TSNOW,           &
+module snoalbw_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE SNOALBW(ALBSNO,RHOSNO,ZSNOW,HCPSNO,TSNOW,           &
                          FI,S,RMELT,WSNOW,RHOMAX,ISAND,              &
                          ILG,IG,IL1,IL2,JL)                             
 !                                                                       
@@ -38,7 +43,8 @@
 !     *                         AGING. (ASSIGN DIFFERENT LOWER          
 !     *                         SNOW ALBEDO LIMITS FOR DRY AND          
 !     *                         MELTING SNOW.)                          
-!                                                                       
+!
+      use xit_mod, only: xit
       IMPLICIT NONE                                                     
 !                                                                       
 !     * INTEGER CONSTANTS.                                              
@@ -89,7 +95,9 @@
                   RHOMAX(I)=450.0-(204.7/ZSNOW(I))*(1.0-EXP(-ZSNOW(I)/0.673))                        
               ELSE                                                      
                   RHOMAX(I)=700.0-(204.7/ZSNOW(I))*(1.0-EXP(-ZSNOW(I)/0.673))                        
-              ENDIF                                                     
+              ENDIF
+          ELSE
+             RHOMAX(I)=0.0
           ENDIF                                                         
 !                                                                       
           IF(FI(I).GT.0. .AND. ZSNOW(I).GT.0.0001 .AND. RHOSNO(I).LT.(RHOMAX(I)-0.01)) THEN  
@@ -108,4 +116,5 @@
       ENDIF                                                             
 !                                                                       
       RETURN                                                            
-      END                                                               
+    END SUBROUTINE SNOALBW
+  end module snoalbw_mod

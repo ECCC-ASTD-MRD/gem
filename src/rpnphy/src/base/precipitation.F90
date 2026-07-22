@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ---------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END -----------------------------
 
 module precipitation
    implicit none
@@ -28,11 +13,13 @@ contains
       use shal_ktrsnt, only: sc_ktrsnt
       use cnv_main, only: cnv_main4
       use condensation, only: condensation4
+      use microphy_statcond, only: sc_adjust
       use phy_status, only: phy_error_L
       use phy_options
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@Object Interface to convection/condensation
@@ -65,7 +52,8 @@ contains
       real, dimension(:), pointer, contiguous :: zrckfc,ztlc,ztlcs,ztls,ztsc,ztscs,ztss,zpmoins,ztlcm, ztdmaskxdt
       real, dimension(:,:), pointer, contiguous :: ztcond,zhucond,ztshal,zhushal,zqcphytd,zqrphytd, &
            zcte,zcqe,zste,zsqe,zcqce,zsqce,zprcten,zsqre,zhumoins,zsigt,zmte,zmqe, &
-           zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins,zprctns,zpritns
+           zmqce,zprctnm,ztplus,zhuplus,zqcplus,zqcmoins,zprctns,zpritns,zqccondc2, &
+           zqcondc2,ztcondc2,zqccondc1,zqcondc1,ztcondc1
       !----------------------------------------------------------------
 
       ! Early return moist processes are inactive
@@ -84,7 +72,11 @@ contains
       MKPTR2D(zprcten, prcten, pvars)
       MKPTR2D(zprctnm, prctnm, pvars)
       MKPTR2D(zmqce, mqce, pvars)
+      MKPTR2D(zqccondc1, qccondc1, pvars)
+      MKPTR2D(zqccondc2, qccondc2, pvars)
       MKPTR2D(zqcmoins, qcmoins, pvars)
+      MKPTR2D(zqcondc1, qcondc1, pvars)
+      MKPTR2D(zqcondc2, qcondc2, pvars)
       MKPTR2D(zqcphytd, qcphytd, pvars)
       MKPTR2D(zqcplus, qcplus, pvars)
       MKPTR2D(zqrphytd, qrphytd, pvars)
@@ -95,6 +87,8 @@ contains
       MKPTR2D(zsqre, sqre, pvars)
       MKPTR2D(zste, ste, pvars)
       MKPTR2D(ztcond, tcond, pvars)
+      MKPTR2D(ztcondc1, tcondc1, pvars)
+      MKPTR2D(ztcondc2, tcondc2, pvars)
       MKPTR1D(ztlc, tlc, pvars)
       MKPTR1D(ztlcm, tlcm, pvars)
       MKPTR1D(ztlcs, tlcs, pvars)
@@ -119,15 +113,24 @@ contains
       if (phy_error_L) return
 
       ! Store current state
-      t0(:,:) = ztplus(:,:)
-      q0(:,:) = zhuplus(:,:)
+      if (.not.any(stcond == (/&
+           'MP_MY2 ', &
+           'MP_P3  ', &
+           'MP_P3V3'/))) then
+         t0(:,:) = ztplus(:,:)
+         q0(:,:) = zhuplus(:,:)
+         if (stcond /= 'NIL' .and. associated(zqcplus)) then
+            qc0(:,:) = zqcplus(:,:)
+         else
+            qc0(:,:) = 0.
+         endif
+      endif
+
+      ! Clipping
       where (zhuplus(:,:) < 0.) zhuplus(:,:) = 0.
-      if (stcond /= 'NIL' ) then
-         qc0(:,:) = zqcplus(:,:)
+      if (stcond /= 'NIL') then
          where(zqcplus(:,:) < 0.) zqcplus(:,:) = 0.
          where(zqcmoins(:,:) < 0.) zqcmoins(:,:) = 0.
-      else
-         qc0(:,:) = 0.
       endif
       
       ! Run deep and shallow convective schemes
@@ -148,15 +151,19 @@ contains
          where(press < TOPC)
             zcte = 0.
             zste = 0.
-            zmte = 0.
             zcqe = 0.
             zsqe = 0.
-            zmqe = 0.
             zcqce = 0.
             zsqce = 0.
-            zmqce = 0.
             zsqre = 0.
          endwhere
+         if (conv_mid /= 'NIL') then
+            where(press < TOPC)
+               zmte = 0.
+               zmqe = 0.
+               zmqce = 0.
+            endwhere
+         endif
          if (associated(zprcten)) then
             where(press < TOPC)
                zprcten = 0.
@@ -165,8 +172,12 @@ contains
       endif
 
       ! Sum of convective and stratiform 
-      ztcond(:,1:nkm1) = zcte(:,1:nkm1) + zste(:,1:nkm1) + zmte(:,1:nkm1)
-      zhucond(:,1:nkm1) = zcqe(:,1:nkm1) + zsqe(:,1:nkm1) + zmqe(:,1:nkm1)
+      ztcond(:,1:nkm1) = zcte(:,1:nkm1) + zste(:,1:nkm1)
+      if (associated(zmte)) &
+         ztcond(:,1:nkm1) = ztcond(:,1:nkm1) + zmte(:,1:nkm1)
+      zhucond(:,1:nkm1) = zcqe(:,1:nkm1) + zsqe(:,1:nkm1)
+      if (associated(zmqe)) &
+           zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zmqe(:,1:nkm1)
       if (associated(zqcphytd)) zqcphytd(:,1:nkm1) = 0.
       if (stcond(1:3)=='MP_') then
          ! Use only convective liquid fraction for MP schemes
@@ -177,8 +188,11 @@ contains
          ! Use full convective condensate tendency for condensation schemes
          if (associated(zcqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zcqce(:,1:nkm1)
          if (associated(zsqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zsqce(:,1:nkm1)
-         if (associated(zmqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zmqce(:,1:nkm1)
+         if (associated(zmqce)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zmqce(:,1:nkm1)      
       endif
+      if (associated(ztcondc1)) ztcond(:,1:nkm1) = ztcond(:,1:nkm1) + ztcondc1(:,1:nkm1)
+      if (associated(zqcondc1)) zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zqcondc1(:,1:nkm1)
+      if (associated(zqccondc1).and.associated(zqcphytd)) zqcphytd(:,1:nkm1) = zqcphytd(:,1:nkm1) + zqccondc1(:,1:nkm1)
       if (associated(zqrphytd)) zqrphytd(:,1:nkm1) = zsqre(:,1:nkm1)
       ! note: zqcphytd does not contain shal contributions; ok because will be re-calculated in tendency
 
@@ -209,10 +223,15 @@ contains
         endif
       endif
 
+      ! Post-scheme condensation adjustment
+      if (stcond == 'S2') &
+           call sc_adjust(ztcondc2, zqcondc2, zqccondc2, pvars, dt, ni, nkm1)
+      
       ! Add shallow convection tendencies to convection/condensation tendencies 
-      ztcond(:,1:nkm1) = ztcond(:,1:nkm1) + ztshal(:,1:nkm1)
-      zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zhushal(:,1:nkm1)
-
+      if (associated(ztshal))  ztcond(:,1:nkm1)  = ztcond(:,1:nkm1)  + ztshal(:,1:nkm1)
+      if (associated(zhushal)) zhucond(:,1:nkm1) = zhucond(:,1:nkm1) + zhushal(:,1:nkm1)
+      
+           
       ! Convert from flux to liquid-equivalent precipitation rates by dividing by
       ! the density of water
       irhow = 1./RAUW

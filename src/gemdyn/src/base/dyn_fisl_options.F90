@@ -77,6 +77,12 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Schm_psadj
    namelist /dyn_fisl_p/ Schm_psadj
 
+   !# True-> the diagnostic value of pressure on thermodynamic levels
+   !# obtained using the hypsometric relationship is used inside physics 
+   logical :: Schm_pressure_thm_L = .false.
+   namelist /dyn_fisl  / Schm_pressure_thm_L
+   namelist /dyn_fisl_p/ Schm_pressure_thm_L
+
    !# True-> print dry/wet air masses
    logical :: Schm_psadj_print_L = .false.
    namelist /dyn_fisl  / Schm_psadj_print_L
@@ -111,6 +117,13 @@ module dyn_fisl_options
    namelist /dyn_fisl  / Schm_Topo_L
    namelist /dyn_fisl_p/ Schm_Topo_L
 
+
+   !# True-> compute omega from vertical coordinate definition
+   !#        Only for GEM-P (for CCCMA)
+   logical :: Schm_omega_cccma = .false.
+   namelist /dyn_fisl  / Schm_omega_cccma
+   namelist /dyn_fisl_p/ Schm_omega_cccma
+   
    !# * 0   ->          NO advection
    !# * 1   -> traditional advection
    !# * 2   -> consistent advection with respect to off-centering

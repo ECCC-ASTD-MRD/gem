@@ -17,23 +17,24 @@
       implicit none
 
 #include <rmnlib_basics.hf>
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       external dummy_checkdm
       integer, external :: domain_decomp, sol_transpose, gemdm_config
 
       character(len=16) npex_S,npey_S
+      character(len=256) :: component_S
       character(len=2048) cdm_eigen_S,fn
       integer cdm_npex(2), cdm_npey(2), unf, cnt
       integer, dimension(:), allocatable ::  pe_xcoord, pe_ycoord
       integer err,ierr(4),npex,npey,i,max_io_pes
+      integer :: colors(3), COMMs(3), wnum, wme, cnum, cme, un_out
 
       namelist /cdm_cfgs/ cdm_npex,cdm_npey,cdm_eigen_S
 !
 !-------------------------------------------------------------------
 !
-      call init_component()
-
       if (Ptopo_couleur == 0) then
          call open_status_file3 (trim(Path_input_S)//'/../checkdmpart_status.dot')
          call write_status_file3 ('checkdmpart_status=ABORT')
@@ -139,7 +140,6 @@
          err = sol_transpose ( 1, 1, .true. )
          call glbpos ()
          call set_geomh ()
-         call canonical_cases ("SET_GEOM")
          if (cdm_eigen_S /= 'NONE@#$%') then
             call set_opr () !compute and store eigen values
          endif
@@ -158,18 +158,13 @@
          call close_status_file3 ()
       endif
 
-      call gemtime ( Lun_out, 'END OF CHECKDMPART', .true. )
-      call memusage (Lun_out)
-
- 9999 call rpn_comm_FINALIZE(err)
-
  8000 format (/,'========= ABORT ============='/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
 !
 !-------------------------------------------------------------------
 !
-      return
+9999      return
       end
 
 subroutine dummy_checkdm

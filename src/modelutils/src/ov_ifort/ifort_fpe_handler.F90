@@ -3,7 +3,7 @@
 
 subroutine fpe_setup()
 
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 
    use ifport
    implicit none
@@ -30,7 +30,7 @@ end subroutine fpe_setup
 
 
 subroutine fpe_handler(sig, code)
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
    use ifcore
    use ifport
 #endif
@@ -38,7 +38,7 @@ subroutine fpe_handler(sig, code)
    integer :: sig, code
    character(len=128) :: msg_s
 
-#ifdef __INTEL_COMPILER
+#if defined(__INTEL_COMPILER) || defined(__INTEL_LLVM_COMPILER)
 
    if (code == FPE$INVALID .or. code == FPE$ZERODIVIDE .or. code == FPE$OVERFLOW) then
       call msg_buffer_flush()

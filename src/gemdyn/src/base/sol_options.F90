@@ -71,7 +71,7 @@ module sol_options
    namelist /sol  / Sol_one_transpose_L
 
    !# True => use quad precision for norm computation
-   logical :: Sol_quadnorm_L = .true.
+   logical :: Sol_quadnorm_L = .false.
 
 contains
 
@@ -95,7 +95,7 @@ contains
       if ( F_unf < 0 ) then
          sol_nml= 0
          if ( Lun_out >= 0) then
-            if ( F_unf == -1 ) write (Lun_out,nml=sol)
+            if ( F_unf == -1 .or. F_unf == -2 ) write (Lun_out,nml=sol)
          end if
          return
       end if

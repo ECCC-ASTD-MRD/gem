@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-! version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module kfmid
    implicit none
@@ -21,7 +6,7 @@ module kfmid
 
 contains
 
-   subroutine kfmid1(tp1, qp1, ub, vb, wb, gzm, sigt, ps, dxdy, latr, &
+   subroutine kfmid1(tp1, qp1, ub, vb, wb, wbtrig, gzm, sigt, ps, dxdy, latr, &
         deep_cape, deep_active, cond_prflux, &
         dtdt, dqdt, dudt, dvdt, dqcdt, dqidt, &
         active, zcrr, clouds, rliqout, riceout, rnflx, snoflx, mcd, mpeff, mainc, &
@@ -35,6 +20,13 @@ contains
       use debug_mod, only: init2nan
       use tpdd, only: tpdd1
       use ens_perturb, only: ens_spp_get
+      use phy_status, only: physeterror
+      use difuvd12_mod, only: difuvd1, difuvd2
+      use condload_mod, only: condload
+      use tpmix_mod, only: tpmix
+      use envirtht_mod, only: envirtht
+      use prof5_mod, only: prof5
+      use dtfrznew_mod, only: dtfrznew2
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -48,6 +40,7 @@ contains
       real, dimension(:,:), intent(in) :: ub                       !U-component wind speed (m/s)
       real, dimension(:,:), intent(in) :: vb                       !V-component wind speed (m/s)
       real, dimension(:,:), intent(in) :: wb                       !Vertical motion (m/s)
+      real, dimension(:,:), intent(in) :: wbtrig                   !Vertical motion for use in trigger test (m/s)
       real, dimension(:,:), intent(in) :: gzm                      !Geopotential heights (m)
       real, dimension(:,:), intent(in) :: sigt                     !Eta level value (0-1)
       real, dimension(:), intent(in) :: ps                         !Surface pressure (Pa)
@@ -116,17 +109,11 @@ contains
       real, dimension(kx+1)  :: omg
       real, dimension(1,kx) :: pp0c,q00c,qst1c
       real, dimension(ix,kx) :: tt0,tv00,q00,u00,v00,wz0,dzp,dpp,qst1,  &
-           pp0,z0g,sigkfc,ql0,qi0,thv0,areaup
+           pp0,z0g,sigkfc,ql0,qi0,thv0,areaup,wztrig
       logical :: need_buoyancy_sorting,need_above_let,need_mixing
 !!$      character(len=8) :: cdmf
 !!$      character(len=2) :: cderl,cderr,cddrl,cddrr
 !!$      character(len=512) :: clfs
-
-      ! External subprograms
-      external tpmix
-      external condload
-      external envirtht
-      external prof5
 
       ! Basic parameters
       include "phyinput.inc"
@@ -183,7 +170,7 @@ contains
       call init2nan(qipa,qlg,qig,qtpa,qtdt,qtg,thpai,qtpai,qlpai,qipai)
       call init2nan(td_thta,td_qt,td_ql,td_qi,tri_thta,tri_qt,tri_ql,tri_qi)
       call init2nan(workk,emf,td_q,tri_q,qpai,td_u,td_v,tri_u,tri_v,upai)
-      call init2nan(pp0c,q00c,qst1c)
+      call init2nan(pp0c,q00c,qst1c,wztrig)
       call init2nan(tt0,tv00,q00,u00,v00,wz0,dzp,dpp,qst1)
       call init2nan(pp0,z0g,sigkfc,ql0,qi0,thv0,areaup)
 
@@ -257,6 +244,7 @@ contains
             ROCPQ=0.2854*(1.-0.28*Q00(I,K))
             THV0(I,K) = TV00(I,K)*(1.E5/PP0(I,K))**ROCPQ
             WZ0(I,K)  = WB(I,NK)
+            WZTRIG(I,K) = WBTRIG(I,NK)
 
          end do
       end do
@@ -325,7 +313,7 @@ contains
 
          ! Find the first level that meets the vertical motion criterion
          k = 1
-         do while (dxdy(i)*wz0(i,k)*(pp0(i,k)/(RGASD*tv00(i,k))) < minemf(i) .and. k < kx)
+         do while (dxdy(i)*wztrig(i,k)*(pp0(i,k)/(RGASD*tv00(i,k))) < minemf(i) .and. k < kx)
             k = k+1
          enddo
          if (k < kx) then
@@ -1005,7 +993,7 @@ contains
          dtfm(ltop1:kx) = 0.
          omga(ltop1:kx) = 0.
          thadv(ltop1:kx) = 0.
-         qadv(ltop1:kx) = 0.
+         qadv(ltop1:kx) = 0.  !#TODO: never used?
          omg(ltop1:kx) = 0.
          ems(ltop1:kx) = dpp(i,ltop1:kx)*dxsq/GRAV
          emsd(ltop1:kx) = 1./ems(ltop1:kx)
@@ -1037,6 +1025,7 @@ contains
             EXN(NK)=(P00/PP0(I,NK))**(0.2854*(1.-0.28*Q00(I,NK)))
             THTA0(NK)=TT0(I,NK)*EXN(NK)
             if(PP0(I,NK).gt.P165)LVF=NK
+            !#TODO: LVF may be uninit
             QTDT(NK) = QDT(NK)+RLIQ(NK)+RICE(NK) !updraft total water
             OMG(NK)=0.
          enddo

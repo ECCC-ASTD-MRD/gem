@@ -8,21 +8,22 @@ if (MPI_FOUND)
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MPI_COMPILER_FLAGS}")
 endif()
 
-add_executable(maingemdm maingemdm.F90)
+add_executable(${gem_exe} maingemdm.F90)
 
-if (${CMAKE_BUILD_TYPE} MATCHES Debug )
-  # Debug: generate linker map file
-  target_link_options(maingemdm PRIVATE "-Wl,-Map=maingemdm.map")
-endif()
-
-target_compile_definitions(maingemdm PUBLIC
+target_compile_definitions(${gem_exe} PUBLIC
   dyn_VERSION="${dyn_VERSION}"
   modelutils_VERSION="${modelutils_VERSION}"
   phy_VERSION="${phy_VERSION}"
 )
 
-target_link_libraries(maingemdm
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM") AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2025))
+  # link with libgcc_s to get a traceback
+  set(GCC_S gcc_s)
+endif()
+
+target_link_libraries(${gem_exe}
    gemdyn
+   ${GCC_S}
    ${phy_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
@@ -31,6 +32,7 @@ target_link_libraries(maingemdm
    tdpack::tdpack
    rpncomm::rpncomm
    rmn::rmn-ompi
+   $<$<AND:$<BOOL:WITH_NEMO>,$<NOT:$<BOOL:WITH_GOSSIP>>>:iris::iris>
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
    ${FFTW}
@@ -39,4 +41,4 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
 )
 
-install(TARGETS maingemdm RUNTIME DESTINATION bin)
+install(TARGETS ${gem_exe} RUNTIME DESTINATION bin)

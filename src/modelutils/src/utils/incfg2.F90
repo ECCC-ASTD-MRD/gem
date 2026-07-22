@@ -21,6 +21,7 @@ module incfg2_mod
    use clib_itf_mod, only: clib_tolower, clib_isfile, clib_isreadok
    use str_mod, only: str_tab2space, str_toreal
    use mu_jdate_mod
+   use str_split_mod
    implicit none
    private
    !@objective
@@ -309,7 +310,6 @@ contains
       character(len=*), intent(in) :: F_string_S
       integer :: F_istat
       !*@/
-      integer, external :: str_split2keyval
       integer, parameter :: NMAX = 32
       integer :: nkeys
       character(len=1024) :: string_S, kv_S(2, NMAX)
@@ -380,6 +380,7 @@ contains
          case('cat ')
             call priv_parse_cat(F_incfgobj, index, val_S)
          case('hint') !hinterp
+            F_incfgobj%v(index)%hint_S = ' '
             do ii=1, size(INCFG_KNOWN_H_INT)
                if (val_S(1:4) == INCFG_KNOWN_H_INT(ii)(1:4)) then
                   val_S = INCFG_KNOWN_H_INT(ii)
@@ -387,10 +388,12 @@ contains
                endif
             enddo
             if (F_incfgobj%v(index)%hint_S == ' ') then
-               call msg(MSG_WARNING, '(incfg) using default interp - ignoring unknown interp= ' &
+               F_incfgobj%v(index)%hint_S = INCFG_KNOWN_H_INT(1)
+               call msg(MSG_WARNING, '(incfg) using default interp ('//trim(F_incfgobj%v(index)%hint_S)//') - ignoring unknown interp= ' &
                     //trim(val_S))
             endif
          case('vint') !vinterp
+            F_incfgobj%v(index)%vint_S = ' '
             do ii=1, size(INCFG_KNOWN_V_INT)
                if (val_S(1:4) == INCFG_KNOWN_V_INT(ii)(1:4)) then
                   F_incfgobj%v(index)%vint_S = INCFG_KNOWN_V_INT(ii)
@@ -398,7 +401,8 @@ contains
                endif
             enddo
             if (F_incfgobj%v(index)%vint_S == ' ') then
-               call msg(MSG_WARNING, '(incfg) using default vinterp - ignoring unknown vinterp= ' &
+               F_incfgobj%v(index)%vint_S = INCFG_KNOWN_V_INT(1)
+               call msg(MSG_WARNING, '(incfg) using default vinterp ('//trim(F_incfgobj%v(index)%vint_S)//') - ignoring unknown vinterp= ' &
                     //trim(val_S))
             endif
          case('tint') !timeint
@@ -411,7 +415,7 @@ contains
             enddo
             if (F_incfgobj%v(index)%tint_S == ' ') then
                F_incfgobj%v(index)%tint_S = INCFG_KNOWN_T_INT(1)
-               call msg(MSG_WARNING, '(incfg) using default interp - ignoring unknown timeint= ' &
+               call msg(MSG_WARNING, '(incfg) using default interp ('//trim(F_incfgobj%v(index)%tint_S)//') - ignoring unknown timeint= ' &
                     //trim(val_S))
             endif
          case('typv') !typvar

@@ -14,6 +14,7 @@ module config_mod
    use rpn_comm_itf_mod
    use clib_itf_mod, only: clib_realpath, clib_realpath, clib_isfile, clib_getcwd
    use wb_itf_mod
+   use mod_handle_error, only: collect_error
    implicit none
    private
    !@objective Read options config [dictionary + users config] for MPI jobs

@@ -3,22 +3,28 @@
 # For internal use at ECCC
 
 # Source this file to:
-# - Load profile and code-tools for gnu
+# - Load profile and code-tools for gnu, depending on compiler version
 # - Load RPN-SI libraries and utilities, and RPNPY
 # - Load a script for common setup to all compilers
 
-DOMAIN=`hostname -d`
+# Check name of the script called, to load the proper code-tools
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 # Load code-tools 
-if  [[ -z "${DOMAIN}" || ${DOMAIN} = "science.gc.ca" ]]; then
-    . r.load.dot rpn/code-tools/20240719/env/gnu-9.3.0
-else
-    . r.load.dot rpn/code-tools/20240719/env/gnu
-fi
+case ${SETUP_SCRIPT_NAME} in
+    .eccc_setup_gnu)
+        . r.load.dot rpn/code-tools/20260219/env/gnu
+        ;;
+    .eccc_setup_gnu_15.2.0)
+        # to avoid linking with libgfortran.so in /lib64
+        unset SSMUSE_LD_PREPEND
+        . r.load.dot rpn/code-tools/20260219/env/exp/rhel-9-amd64-64@gnu-15.2.0
+        ;;
+esac
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot mrd/rpn/libs/20241105-alpha
-. r.load.dot mrd/rpn/utils/20241105-alpha
+. r.load.dot rpn/libs/20260512-beta
+. r.load.dot rpn/utils/20260512-beta
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
@@ -33,9 +39,13 @@ fi
 export COMPILER_SUITE=gnu
 COMPILER_VERSION=$(utils/compiler.sh gnu)
 export COMPILER_VERSION
-
+# Problem with OpenMPI with gnu 11.4.1
+if [ "${COMPILER_VERSION}" == "11.4.1" ]; then
+     export OMPI_MCA_hwloc_base_binding_policy=none
+fi
 # Call common setup file
 . ./.common_setup ${COMPILER_SUITE}
 
 # Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
 export WITH_SYSTEM_RPN=TRUE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}

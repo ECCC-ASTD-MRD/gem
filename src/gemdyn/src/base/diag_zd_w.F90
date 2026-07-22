@@ -34,8 +34,7 @@
       integer, intent(in) :: Minx, Maxx, Miny, Maxy, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(out) :: F_zd, F_w
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(inout) :: F_u, F_v
-      real, dimension(Minx:Maxx,Miny:Maxy), intent(in   ) :: F_sls
-      real, dimension(Minx:Maxx,Miny:Maxy), intent(inout) :: F_s
+      real, dimension(Minx:Maxx,Miny:Maxy), intent(inout) :: F_s,F_sls
       real, dimension(Minx:Maxx,Miny:Maxy,Nk), intent(in) :: F_t
       logical, intent(in) ::  F_zd_L, F_w_L
 !
@@ -70,6 +69,7 @@
 !     ________________________________________________________________
 !
       call gem_xch_halo (F_s, l_minx, l_maxx, l_miny, l_maxy, 1)
+      call gem_xch_halo (F_sls, l_minx, l_maxx, l_miny, l_maxy, 1)
       call gem_xch_halo (F_u, l_minx, l_maxx, l_miny, l_maxy, nk)
       call gem_xch_halo (F_v, l_minx, l_maxx, l_miny, l_maxy, nk)
 

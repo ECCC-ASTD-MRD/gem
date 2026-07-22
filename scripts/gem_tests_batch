@@ -33,5 +33,5 @@ time gem_tests -exp $exp -ctrl $ctrl $MAIL
 EOF
 
 cat $JOB
-ord_soumet $JOB -mach ${TRUE_HOST} -cm 2G -t 3600 -mpi -cpus 40x1
+ord_soumet $JOB -mach ${TRUE_HOST} -cm 2G -t 3600 -mpi -cpus 80x1
 

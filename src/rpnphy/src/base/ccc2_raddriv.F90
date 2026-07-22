@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------
 
 module ccc2_raddriv
    implicit none
@@ -31,7 +16,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      qq, co2, ch4, an2o, f11, &
      f12, f113, f114,o2,rmu, r0r, salb, em0, taucs, &
      omcs, gcs, taucl, omcl, gcl, &
-     cldfrac, tauae, exta, exoma, exomga, &
+     cldfrac, strfr, tauae, exta, exoma, exomga, &
      fa, absa, lcsw, lclw, mrk2, luvonly, &
      ni, lay, lev)
    use tdpack_const
@@ -43,7 +28,17 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    use ccc2_gasopts, only: ccc2_gasopts5
    use ccc2_gasoptl, only: ccc2_gasoptl7
    use ccc2_gasoptlgh, only: ccc2_gasoptlgh7
+   use ccc2_strandn_mod, only: ccc2_strandn3
    use ccc2_strandngh, only: ccc2_strandngh4
+   use ccc2_planck_mod, only: ccc2_planck
+   use ccc2_raylev_mod, only: ccc2_raylev2
+   use ccc2_stranup_mod, only: ccc2_stranup3
+   use ccc2_preintr_mod, only: ccc2_preintr3
+   use ccc2_lattenu_mod, only: ccc2_lattenu4
+   use ccc2_sattenu_mod, only: ccc2_sattenu4
+   use ccc_raylei_mod, only: ccc_raylei
+   use ccc_swtran_mod, only: ccc_swtran
+   use ccc_cldifm_mod, only: ccc_cldifm1
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
@@ -64,6 +59,7 @@ subroutine ccc2_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    real taucs(ni,lay,nbs), omcs(ni,lay,nbs), gcs(ni,lay,nbs), &
         taucl(ni,lay,nbl), omcl(ni,lay,nbl), gcl(ni,lay,nbl), &
         cldfrac(ni,lay), fslo(ni), fsamoon(ni)
+   real, pointer, dimension(:,:) :: strfr
 
    real, dimension(ni, ens_nc2d) :: mrk2
    logical lcsw, lclw, luvonly
@@ -459,7 +455,7 @@ include "nocld.cdk"
 
    call ccc_cldifm1 (cldm, tauomgc, anu, a1, ncd, &
         ncu, inptg, nct, ncum, ncdm, &
-        cldfrac, pfull, mrk2, lev1, cut, maxc, &
+        cldfrac, strfr, pfull, mrk2, lev1, cut, maxc, &
         1, ni, ni, lay, lev)
 
 
@@ -1130,7 +1126,7 @@ include "nocld.cdk"
          !    reusing space o3g for dbf
          !----------------------------------------------------------------------
 
-         call ccc2_planck2(bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
+         call ccc2_planck(bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
               1, ni, ni, lay, lev)
 
          gh = .false.

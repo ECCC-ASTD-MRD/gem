@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module cnv_options
    implicit none 
@@ -58,6 +43,10 @@ module cnv_options
    !# Evaporate detrained condensate in shallow convection
    logical           :: bkf_evaps       = .false.
    namelist /convection_cfgs/ bkf_evaps
+
+   !# Scaling of shallow convection cloud fraction
+   real              :: bkf_fnfacs      = 1.
+   namelist /convection_cfgs/ bkf_fnfacs
 
    !# Number of species for convective transport (never tested)
    integer           :: bkf_kch         = 0
@@ -181,6 +170,11 @@ module cnv_options
         'TIMECONV                '  &
         /) !#TODO: remove 'USER DEFINED'?
 
+   !# Use time-averaged vertical motion for deep convection trigger
+   logical           :: deep_wavg = .false.
+   namelist /convection_cfgs/ deep_wavg
+   namelist /convection_cfgs_p/ deep_wavg
+   
    !# Minimum depth of conv. updraft for KFC  trigger (m)
    real              :: kfcdepth        = 4000.
    namelist /convection_cfgs/ kfcdepth
@@ -242,6 +236,15 @@ module cnv_options
    real              :: kfctaucape(4)   = (/-1., -1., -1., -1./)
    namelist /convection_cfgs/ kfctaucape
 
+   !# Coefficient for trigger adjustment by subgrid-scale orography (sgo)
+   real              :: kfctrigsgo      = 0.
+   namelist /convection_cfgs/ kfctrigsgo
+
+   !# Exponent (power) applied to subgrid-scale orography (sgo) when computing
+   !# sgo-based trigger adjustment 
+   real              :: kfctrigsgop     = 1.
+   namelist /convection_cfgs/ kfctrigsgop
+   
    !# Trigger parameter of Kain-Fritsch convection scheme (WKLCL).
    !# Trigger parameter will increase from kfctrigw(3) to kfctrigw(4) [m/s]
    !# between wstar values kfctrigw(1) and kfctrigw(2)
@@ -360,6 +363,11 @@ module cnv_options
         'QLCL       ' &
         /)
 
+   !# Use time-averaged vertical motion for mid-level trigger
+   logical           :: mid_wavg = .false.
+   namelist /convection_cfgs/ mid_wavg
+   namelist /convection_cfgs_p/ mid_wavg
+
    !# Switch for shallow convection
    !# * 'NIL'
    !# * 'KTRSNT'
@@ -398,6 +406,11 @@ module cnv_options
    !# * and linear interpolation in between TRIGLAT(1) and TRIGLAT(2)
    real              :: triglat(2)      = 0.0
    namelist /convection_cfgs/ triglat
+
+   !# Vertical motion relaxation for trigger tests (s)
+   real              :: trigtauw = 3600.
+   namelist /convection_cfgs/ trigtauw
+   namelist /convection_cfgs_p/ trigtauw
 
 contains
 

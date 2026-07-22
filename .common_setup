@@ -1,5 +1,6 @@
 #!/bin/bash
 
+#export GOAS_SCRIPT_MODE=toto
 # Source this file to:
 # - set some environment variables
 # - set PATH to find GEM binaries and scripts
@@ -9,6 +10,7 @@ if [[ $# -eq 0 ]] ; then
     echo "Example: . ./.common_setup gnu"
     echo "Example: . ./.common_setup intel"
 else
+    export gemmod=${PWD}/share/gem-maestro/gem_module
     unset GEM_ARCH GEM_WORK GEM_STORAGE_DIR gem_DIR
     export OMP_STACKSIZE=4G
 

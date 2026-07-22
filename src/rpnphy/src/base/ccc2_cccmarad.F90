@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN --------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ----------------------------
 
 module ccc2_cccmarad
    implicit none
@@ -37,8 +22,8 @@ contains
       use diagno_clouds, only: diagno_clouds2
       use prep_cw_rad, only: prep_cw_rad3
       use phy_options
-      use phy_status, only: phy_error_L
-      use phybusidx
+      use phy_status, only: phy_error_L, physeterror
+      use phybusidx, except=>znt
       use phymem, only: phyvar
       use linoz_param, only: mwt_air, mwt_o3, p_linoz_meso
       use series_mod, only: series_xst, series_isstep
@@ -46,10 +31,15 @@ contains
       use ens_perturb, only: ens_spp_get
       use ccc2_uv_raddriv, only: ccc2_uv_raddriv1
       use ccc2_raddriv, only: ccc2_raddriv3
+      use ccc2_uvindex_mod, only: ccc2_uvindex2
       use suncos, only: suncos3
+      use radfac_mod, only: radfac4
+      use ccc_aerooppro_mod, only: ccc_aerooppro2
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
       type(phyvar), pointer, contiguous :: pvars(:)
       integer, intent(in) :: kount, trnch, ni, nkm1, nk
@@ -135,17 +125,18 @@ contains
       real, dimension(ni, nkm1, nbs) :: exta, exoma, exomga, fa, taucs, omcs, gcs
       real, dimension(ni, nkm1, nbl) :: absa, taucl, omcl, gcl
 
-      integer(INT64) :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder
+      integer(INT64) :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder, taui64
       real(REAL64) :: hz_8
       real :: hz, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss, step
-      logical :: thisstepisrad,nextstepisrad,thisstepisraduv
+      logical :: thisstepisrad,nextstepisrad,thisstepisraduv,dontneedall
       character(len=1) :: niuv
 
       real, dimension(ni,nk) :: dum2d, o3uv, o3_vmr, o3_mmr, ch4_vmr, n2o_vmr, cf11_vmr, cf12_vmr
       real, dimension(ni) :: vmod2, vdir, th_air, my_tdiag, my_udiag, my_vdiag
       
       real, target :: dummy1d(ni)
+
 
 #define PHYPTRDCL
 #include "cccmarad_ptr.hf"
@@ -157,6 +148,7 @@ contains
 
       !----------------------------------------------------------------
       call msg_toall(MSG_DEBUG, 'ccc2_cccmarad [BEGIN]')
+
 
 #undef PHYPTRDCL
 #include "cccmarad_ptr.hf"
@@ -205,15 +197,15 @@ contains
       enddo
 
       ! Initialize O3 if not read from a 3D climatology
-      if (kount == 0 .and. .not.any(phyinread_list_S(1:phyinread_n) == 'o3ce')) zo3ce = -1.
+      if (kount == 0 .and. .not.ISPHYIN('o3ce')) zo3ce = -1.
 
       if (radghg_L) then
          if (kount == 0) then
             !#TODO: check if var was read from dyn as well
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'ch4c')) zch4c = 1.
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'n2oc')) zn2oc = 1.
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'cf1c')) zcf1c = 1.
-            if (.not.any(phyinread_list_s(1:phyinread_n) == 'cf2c')) zcf2c = 1.
+            if (.not.ISPHYIN('ch4c')) zch4c = 1.
+            if (.not.ISPHYIN('n2oc')) zn2oc = 1.
+            if (.not.ISPHYIN('cf1c')) zcf1c = 1.
+            if (.not.ISPHYIN('cf2c')) zcf2c = 1.
          endif
          zch4  = zch4  * zch4c
          zn2o  = zn2o * zn2oc
@@ -224,44 +216,30 @@ contains
 
       ! Initialize O3 tracer for uvindex calculation from climatology, if not found in analysis
       IF_LINOZ0: if (kount == 0 .and. llinoz) then
-
-         if (.not.any(dyninread_list_s == 'o3l') .or.   &
-             .not.any(phyinread_list_s(1:phyinread_n) == 'tr/o3l:p')) then
-
+         if (.not.(ISDYNIN('o3l') .or. ISPHYIN('tr/o3l:p'))) then
             ! climato_phase2_v2 (Paul V)
             if (minval(zo3ce) >= 0.) zo3lmoins = zo3ce * 1E+9  !micro g /kg air <-- kg /kg air
-
          endif
-
       endif IF_LINOZ0
 
       IF_RDGHG0: if (kount == 0 .and. radghg_L) then
-
          if (radlinghg_L) then
-
-            if (.not.any(dyninread_list_s == 'ch4l') .or.   &
-                 .not.any(phyinread_list_s(1:phyinread_n) == 'tr/ch4l:m')) &
-               zch4lmoins = zch4 * 1E+9                      !micro g /kg
-
-            if (.not.any(dyninread_list_s == 'n2ol') .or.   &
-                .not.any(phyinread_list_s(1:phyinread_n) == 'tr/n2ol:m')) &
-               zn2olmoins = zn2o * 1E+9                      !micro g /kg
-
-            if (.not.any(dyninread_list_s == 'f11l') .or.   &
-                .not.any(phyinread_list_s(1:phyinread_n) == 'tr/f11l:m')) &
-               zf11lmoins = zcf11 * 1E+9                     !micro g /kg
-
-            if (.not.any(dyninread_list_s == 'f12l') .or.   &
-                .not.any(phyinread_list_s(1:phyinread_n) == 'tr/f12l:m')) &
-               zf12lmoins = zcf12 * 1E+9                     !micro g /kg
-
+            if (.not.(ISDYNIN('ch4l') .or. ISPHYIN('tr/ch4l:m'))) &
+                 zch4lmoins = zch4 * 1E+9                      !micro g /kg
+            if (.not.(ISDYNIN('n2ol') .or. ISPHYIN('tr/n2ol:m'))) &
+                 zn2olmoins = zn2o * 1E+9                      !micro g /kg
+            if (.not.(ISDYNIN('f11l') .or. ISPHYIN('tr/f11l:m'))) &
+                 zf11lmoins = zcf11 * 1E+9                     !micro g /kg
+            if (.not.(ISDYNIN('f12l') .or. ISPHYIN('tr/f12l:m'))) &
+                 zf12lmoins = zcf12 * 1E+9                     !micro g /kg
          endif
-
       endif IF_RDGHG0
 
       zt2   = 0.0
       zfdss = 0.0
       zev   = 0.0
+      if (associated(zsft)) zsft = 0.0
+      if (associated(zsfb)) zsfb  = 0.0
       zflusolis = 0.0
       zfsd  = 0.0
       zfsf  = 0.0
@@ -274,15 +252,26 @@ contains
       zfctb = 0.0
       zfcdb = 0.0
       zfcfb = 0.0
+      if (associated(zstrfr)) zstrfr = 0.0
 
-      ! calculate cloud optical properties and dependent diagnostic
+      ! is this or next step a radiation timestep?
+      thisstepisraduv = ((kntraduv_S /= '') .and. &
+           (kount == 0 .or. mod(kount, kntraduv) == 0)) 
+      thisstepisrad=(kount == 0 .or. mod(kount-1, kntrad) == 0)
+      nextstepisrad=(mod(kount, kntrad) == 0)
 
+      ! for diagnostic outputs, only taucs(band=1) and taucl(band=6) are needed
+      ! so, calculate all optical properties ONLY if it is a RAD timestep
+      ! RADUV also only needs SW(band=1)
+      dontneedall=.not.(thisstepisrad)
+
+      ! calculate cloud optical properties and dependent diagnostics
       if (stcond(1:3)=='MP_') then
          call cldoppro_MP3(pvars, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, ni, nkm1, nk, kount)
+              temp, sig, ps, dontneedall, ni, nkm1, nk, kount)
          if (phy_error_L) return
       else
          call prep_cw_rad3(pvars, &
@@ -292,23 +281,17 @@ contains
          call cldoppro_noMP1(pvars, taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, trnch, ni, &
+              temp, sig, ps, dontneedall, trnch, ni, &
               ni, nkm1, nk)
       endif
 
       ! calculate diagnostic cloud variables
       ! such as cloud cover, effective and true; cloud top temp and pressure
-
-      call diagno_clouds2(pvars, taucs, taucl,  &
+      if (associated(ztotot)) ztotot = taucs(:,:,1) 
+      call diagno_clouds2(pvars, taucs(:,:,1), taucl(:,:,6),  &
              zgztherm, cldfrac, &
              temp, sig, ps, trnch, &
              ni, nkm1, nk)
-
-      ! is this or next step a radiation timestep?
-      thisstepisraduv = ((kntraduv_S /= '') .and. &
-           (kount == 0 .or. mod(kount, kntraduv) == 0))
-      thisstepisrad=(kount == 0 .or. mod(kount-1, kntrad) == 0)
-      nextstepisrad=(mod(kount, kntrad) == 0)
 
       csec_in_day  = 8640000
       timestep     =  nint(tau*100.)
@@ -318,7 +301,8 @@ contains
       day_reminder =  mod(ncsec_now, csec_in_day)
       hz_8 = day_reminder / 360000.0d0
       hz   = hz_8
-      julien = real(jdate_day_of_year(jdateo + kount*int(tau) + MU_JDATE_HALFDAY))
+      taui64 = int(tau)
+      julien = real(jdate_day_of_year(jdateo + kount*taui64 + MU_JDATE_HALFDAY))
 
       ! cosine of solar zenith angle at greenwich hour
       call suncos3(rmu0, ni, zdlat, zdlon, hz, julien)
@@ -355,14 +339,14 @@ contains
             zalwater  = 0.0
             alwcap = 0.3
             do i = 1, ni
-               salb(i, 1) = amax1(amin1(zalvis_ag(i), 0.80), 0.03)
+               salb(i, 1) = amax1(amin1(zalvis_ag(i), 0.90), 0.03)
                if (zmg(i) <= 0.01 .and. zglsea(i) <= 0.01  &
                     .and. avgcos(i) > seuil) then
                   ws = (my_udiag(i)*my_udiag(i) + my_vdiag(i)*my_vdiag(i))**1.705
                   fwcap      = amin1(3.84e-06 * ws, 1.0)
                   albrmu     = 0.037 / (1.1 * (avgcos(i)**1.4) + 0.15)
                   zalwater(i)  = (1.-fwcap) * albrmu + fwcap * alwcap
-                  zalwater(i)  = amax1(amin1(zalwater(i), 0.80), 0.03) ! this max comes from newrad!?!
+                  zalwater(i)  = amax1(amin1(zalwater(i), 0.90), 0.03) ! this max comes from newrad!?!
                   salb(i, 1) = zalwater(i)
                endif
                zsalb6z(i)=salb(i, 1)
@@ -390,7 +374,7 @@ contains
             endif
             do i = 1, ni
                ! albedo agregated at previous timestep,set the same for all 4 bands
-               salb(i, 1) = amax1(amin1(zalvis_ag(i), 0.80), 0.03)
+               salb(i, 1) = amax1(amin1(zalvis_ag(i), 0.90), 0.03)
                zsalb6z(i)=salb(i, 1)
                do l = 2, nbs
                   salb(i, l) = salb(i, 1)
@@ -436,7 +420,7 @@ contains
 
          call radfac4(zo3fk, zoztoit, sig, nk, nkm1, npcl, zdlat, ps, ni, ni, &
               p2, p3, p4, p5, p6, p7, p8, nlacl, &
-              goz(fozon), goz(clat), goz(pref))
+              goz(fozon:), goz(clat:), goz(pref:))
          if (phy_error_L) return
 
          ! must modify oztoit to fit the needs of raddriv who expects an average
@@ -506,12 +490,12 @@ contains
             ! appel diagnostique pour calculer fatb,fctb...
             ! utiliser rmu0 (temps courant)
             call ccc2_uv_raddriv1(zfatb, zfadb, zfafb, zfctb, zfcdb, zfcfb, &
-                 fslo, zfsamoon, ps, shtj, sig, &
+                 ps, shtj, sig, &
                  temp, o3uv, zoztoit, &
                  qq, co2, zch4,  &
                  o2, rmu0, r0r, salb, taucs, &
                  omcs, gcs, &
-                 cldfrac, tauae, exta, exoma, exomga, &
+                 cldfrac, zstrfr, tauae, exta, exoma, exomga, &
                  fa, zmrk2, &
                  ni, nkm1, nk)
 
@@ -528,7 +512,7 @@ contains
          ! call for prognostic outputs
          ! actual call to the Li & Barker (2005) radiation
 
-         call ccc2_raddriv3(zfsg, zfsd0, zfsf0, zfsv0, zfsi0, &
+         call ccc2_raddriv3(zfdss0, zfsd0, zfsf0, zfsv0, zfsi0, &
               zfatb0, zfadb0, zfafb0, zfctb0, zfcdb0, zfcfb0, &
               albpla, fdl, ful, zt20, zti, &
               zcstt, zcsb, zclt, zclb, zparr0, &
@@ -538,7 +522,7 @@ contains
               qq, co2, zch4, zn2o, zcf11, &
               zcf12, f113, f114, o2, zcosas, r0r, salb, zemisr, taucs, &
               omcs, gcs, taucl, omcl, gcl, &
-              cldfrac, tauae, exta, exoma, exomga, &
+              cldfrac, zstrfr, tauae, exta, exoma, exomga, &
               fa, absa, rad_sw, rad_lw, zmrk2, .not.DO_UV_ONLY, &
               ni, nkm1, nk)
 
@@ -549,11 +533,13 @@ contains
 
          thold=(zcosas > seuil .and. rmu0 > seuil)
 
+! UP TO LINE 672, mostly diagnostic calculations that could be conditional to output 
+! TI,T2 and some fluxes are necessary
          do  i = 1, ni
             zfdsi(i)  = fdl(i)
             zei(i)    = ful(i)
             zfusi(i)  = zfluxul(i, nk)
-            zfdss0(i) = zfsg(i)
+
             zev0(i)   = CONSOL2 * r0r * zcosas(i) * albpla(i)
 
             ! moduler les flux et les taux par le cosinus de l'angle solaire.
@@ -673,6 +659,8 @@ contains
 
          if (thold(i)) then
             ziv(i) = CONSOL2 * r0r * rmu0(i)
+            if (associated(zsft)) zsft(i) = (ziv(i) - zev(i)) - zcstt(i) 
+            if (associated(zsfb)) zsfb(i) = zfdss(i) - zcsb(i)
          else
             ziv(i) = 0.0
             zsalb6z(i)=0.0
@@ -683,6 +671,11 @@ contains
          else
             zap(i) = 0.
          endif
+
+         if (associated(zlft)) zlft(i) = -zei(i)  - zclt(i)
+         if (associated(zlfb)) zlfb(i) = zfnsi(i) - zclb(i)
+         if (associated(znft)) znft(i) = zlft(i)  + zsft(i)
+         if (associated(znfb)) znfb(i) = zlfb(i)  + zsfb(i)
 
          p1(i) = ziv(i) - zev(i) - zei(i)
       enddo
@@ -699,11 +692,11 @@ contains
          call series_xst(ziv    , 'iv',   trnch)
          call series_xst(p1     , 'nr',   trnch)
          if (associated(ztcc)) call series_xst(ztcc   , 'tcc',  trnch)
-         if (associated(znt)) call series_xst(znt    , 'nt', trnch)
+         if (associated(znt)) call series_xst(znt     , 'nt', trnch)
          if (associated(zecc)) call series_xst(zecc   , 'ecc',  trnch)
-         if (associated(zeccl)) call series_xst(zeccl  , 'eccl', trnch)
-         if (associated(zeccm)) call series_xst(zeccm  , 'eccm', trnch)
-         if (associated(zecch)) call series_xst(zecch  , 'ecch', trnch)
+         if (associated(zeccl)) call series_xst(zeccl , 'eccl', trnch)
+         if (associated(zeccm)) call series_xst(zeccm , 'eccm', trnch)
+         if (associated(zecch)) call series_xst(zecch , 'ecch', trnch)
          call series_xst(zev    , 'ev',   trnch)
          call series_xst(zei    , 'ei',   trnch)
          call series_xst(zap    , 'ap',   trnch)
@@ -807,7 +800,7 @@ contains
                fwcap      = amin1(3.84e-06 * ws, 1.0)
                albrmu     = 0.037 / (1.1 * (avgcos(i)**1.4) + 0.15)
                zalwater(i)  = (1.-fwcap) * albrmu + fwcap * alwcap
-               zalwater(i)  = amax1(amin1(zalwater(i), 0.80), 0.03) ! this max comes from newrad!?!
+               zalwater(i)  = amax1(amin1(zalwater(i), 0.90), 0.03) ! this max comes from newrad!?!
             endif
          enddo
          zcosn=avgcos

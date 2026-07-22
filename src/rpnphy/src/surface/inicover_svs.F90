@@ -27,6 +27,12 @@ subroutine inicover_svs(pvars, kount, ni)
    use sfc_options
    use sfcbus_mod
    use phymem, only: phyvar
+   use lookup4ccilc_we_mod, only: lookup4ccilc_we
+   use aggcovernat_mod, only: aggcovernat
+   use aggveghigh_mod, only: aggveghigh
+   use aggveglow_mod, only: aggveglow
+   use interpveg_mod, only: interpveg
+   use veglowhigh_mod, only: veglowhigh
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -82,18 +88,18 @@ subroutine inicover_svs(pvars, kount, ni)
    ! Tables for the veg characteristics for each veg type
    !********************************************************************
       REAL ALDAT(NCLASS), D2DAT(NCLASS), D50DAT(NCLASS), D95DAT(NCLASS)
-      REAL RSMINDAT(NCLASS)
+      REAL RSMINDAT(NCLASS), GEXPDAT(NCLASS)
       REAL LAIDAT(NCLASS), VEGDAT(NCLASS),EMISDAT(NCLASS) 
       REAL CVDAT(NCLASS), RGLDAT(NCLASS), GAMMADAT(NCLASS)
       REAL Z0MDAT(NCLASS), MAXPDAT(NCLASS)
 !
       DATA ALDAT/ &
-                     0.13   , 0.70   , 0.13   , 0.14   , 0.12   , &
-                     0.14   , 0.18   , 0.13   , 0.17   , 0.14   , &
-                     0.18   , 0.19   , 0.20   , 0.19   , 0.20   , & 
-                     0.21   , 0.18   , 0.18   , 0.25   , 0.18   , & 
-                     0.12   , 0.17   , 0.12   , 0.30   , 0.15   , &
-                     0.15   / 
+                    0.13   , 0.70   , 0.13   , 0.14   , 0.12   , &
+                    0.14   , 0.18   , 0.13   , 0.17   , 0.14   , &
+                    0.18   , 0.19   , 0.20   , 0.19   , 0.20   , & 
+                    0.21   , 0.18   , 0.18   , 0.25   , 0.18   , & 
+                    0.12   , 0.17   , 0.12   , 0.30   , 0.15   , &
+                    0.15   / 
 !    
       DATA D2DAT/    &
                     0.0    , 0.0    , 0.0    , 2.0    , 2.0    , &
@@ -121,47 +127,47 @@ subroutine inicover_svs(pvars, kount, ni)
                     1.5    / 
 !    
       DATA RSMINDAT/    &
-                     500.   , 500.   , 500.   , 250.   , 250.   , &
-                     250.   , 250.   , 250.   , 250.   , 150.   , & 
-                     150.   , 150.   ,  100.   , 100.   ,  100.   , & 
-                     100.   ,  100.   ,  100.   , 100.   , 150.   , & 
-                     150.   , 150.   , 150.   , 500.   , 250.   , & 
-                     250.   / 
+                    500.   , 500.   , 500.   , 250.   , 250.   , &
+                    250.   , 250.   , 250.   , 250.   , 150.   , & 
+                    150.   , 150.   , 100.   , 100.   , 100.   , & 
+                    100.   , 100.   , 100.   , 100.   , 150.   , & 
+                    150.   , 150.   , 150.   , 500.   , 250.   , & 
+                    250.   / 
       DATA LAIDAT/ &
-                     0.00   , 0.00   , 0.00   , 5.00   , 6.00   , & 
-                    -99.    , -99.   , 6.00   , 4.00   , 3.00   , & 
-                    -99.    , 3.00   , 1.00   , -99.   , -99.   , &
-                    -99.    , -99.   , -99.   , -99.   , 1.00   , & 
-                     1.00   , -99.   , 4.00   , 0.00   , -99.   , & 
-                    -99.    / 
+                    0.00   , 0.00   , 0.00   , 5.00   , 6.00   , & 
+                   -99.    , -99.   , 6.00   , 4.00   , 3.00   , & 
+                   -99.    , 3.00   , 1.00   , -99.   , -99.   , &
+                   -99.    , -99.   , -99.   , -99.   , 1.00   , & 
+                    1.00   , -99.   , 4.00   , 0.00   , -99.   , & 
+                   -99.    / 
       DATA MAXPDAT/ &
-                     0.00   , 0.00   , 0.00   , 0.10   , 0.10   , &
-                     0.10   , 0.10   , 0.10   , 0.10   , 0.05   , &
-                     0.05   , 0.05   , 0.05   , 0.05   , 0.05  , &
-                     0.05   , 0.05   , 0.05   , 0.05   , 0.005  , &
-                     0.005  , 0.05   , 0.05   , 0.05   , 0.10   , &
-                     0.10   /
+                    0.00   , 0.00   , 0.00   , 0.10   , 0.10   , &
+                    0.10   , 0.10   , 0.10   , 0.10   , 0.05   , &
+                    0.05   , 0.05   , 0.05   , 0.05   , 0.05   , &
+                    0.05   , 0.05   , 0.05   , 0.05   , 0.005  , &
+                    0.005  , 0.05   , 0.05   , 0.05   , 0.10   , &
+                    0.10   /
       DATA VEGDAT/ &
-                     0.00   , 0.00   , 0.00   , 0.90   , 0.99   , & 
-                     0.90   , 0.90   , 0.99   , 0.90   , 0.50   , & 
-                     0.50   , 0.50   , 0.7    , 0.30   , -99.   , & 
-                     -99.   , -99.   , -99.   , -99.   , 0.85   , & 
-                     0.80   , 0.50   , 0.60   , 0.00   , 0.90   , & 
-                     0.70   / 
+                    0.00   , 0.00   , 0.00   , 0.90   , 0.99   , & 
+                    0.90   , 0.90   , 0.99   , 0.90   , 0.50   , & 
+                    0.50   , 0.50   , 0.7    , 0.30   , -99.   , & 
+                    -99.   , -99.   , -99.   , -99.   , 0.85   , & 
+                    0.80   , 0.50   , 0.60   , 0.00   , 0.90   , & 
+                    0.70   / 
       DATA CVDAT/  &   
-                     2.0E-5 , 2.0E-5 , 2.0E-5 , 1.0E-5 , 1.0E-5 , & 
-                     1.0E-5 , 1.0E-5 , 1.0E-5 , 1.0E-5 , 2.0E-5 , & 
-                     2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , & 
-                     2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , & 
-                     2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , & 
-                     1.5E-5 / 
+                    2.0E-5 , 2.0E-5 , 2.0E-5 , 1.0E-5 , 1.0E-5 , & 
+                    1.0E-5 , 1.0E-5 , 1.0E-5 , 1.0E-5 , 2.0E-5 , & 
+                    2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , & 
+                    2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , & 
+                    2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , 2.0E-5 , & 
+                    1.5E-5 / 
       DATA RGLDAT/  &  
-                     100.   , 100.   , 100.   , 30.    , 30.    , & 
-                     30.    , 30.    , 30.    , 30.    , 100.   , & 
-                     100.   , 100.   , 100.   , 100.   , 100.   , & 
-                     100.   , 100.   , 100.   , 100.   , 100.   , & 
-                     100.   , 100.   , 100.   , 100.   , 100.   , & 
-                     100.   / 
+                    100.   , 100.   , 100.   , 30.    , 30.    , & 
+                    30.    , 30.    , 30.    , 30.    , 100.   , & 
+                    100.   , 100.   , 100.   , 100.   , 100.   , & 
+                    100.   , 100.   , 100.   , 100.   , 100.   , & 
+                    100.   , 100.   , 100.   , 100.   , 100.   , & 
+                    100.   / 
       DATA GAMMADAT/ & 
                      0.    , 0.     , 0.     , 0.04   , 0.04   , & 
                      0.04  , 0.04   , 0.04   , 0.04   , 0.     , & 
@@ -179,13 +185,20 @@ subroutine inicover_svs(pvars, kount, ni)
                     0.5    / 
 !
       DATA EMISDAT/ & 
-                     0.991  , 1.000  , 0.991  , 0.996  , 0.996  , & 
-                     0.990  , 0.990  , 0.996  , 0.990  , 0.954  , & 
-                     0.954  , 0.954  , 0.993  , 0.993  , 0.981  , &
-                     0.981  , 0.981  , 0.981  , 0.981  , 0.981  , &
-                     1.000  , 0.992  , 0.995  , 0.941  , 0.993  , & 
-                     0.993  /
-
+                    0.991  , 1.000  , 0.991  , 0.996  , 0.996  , & 
+                    0.990  , 0.990  , 0.996  , 0.990  , 0.954  , & 
+                    0.954  , 0.954  , 0.993  , 0.993  , 0.981  , &
+                    0.981  , 0.981  , 0.981  , 0.981  , 0.981  , &
+                    1.000  , 0.992  , 0.995  , 0.941  , 0.993  , & 
+                    0.993  /
+!
+      DATA GEXPDAT/ & 
+                    2.  , 2.  , 2.  , 2.  , 2.  , & 
+                    2.  , 2.  , 2.  , 2.  , 2.  , & 
+                    2.  , 2.  , 2.  , 2.  , 2.  , &
+                    2.  , 2.  , 2.  , 2.  , 2.  , &
+                    2.  , 2.  , 2.  , 2.  , 2.  , & 
+                    2.  /
 !
 !
 
@@ -193,18 +206,52 @@ subroutine inicover_svs(pvars, kount, ni)
    !                tables describing the annual evolution of veg fields
    !********************************************************************
 
-   real, save :: vegcrops(13)
+   real, save :: d50veg15(13),d95veg15(13),d50veg16(13),d95veg16(13)
+   
+   data d50veg15/ &
+        0.15   , 0.15   , 0.15  , 0.15  , 0.15   , &
+        0.15   , 0.30   , 0.30  , 0.30  , 0.15   , &
+        0.15   , 0.15   , 0.15                      /
+                    
+   data  d95veg15/ &
+        1.0    , 1.0    , 1.0   , 1.0   , 1.0    , &
+        1.0    , 2.5    , 2.5   , 2.5   , 1.0    , &
+        1.0    , 1.0    , 1.0                       /
+             
+   data d50veg16/ &
+        0.15   , 0.15   , 0.15  , 0.15  , 0.15   , &
+        0.15   , 0.30   , 0.30  , 0.30  , 0.15   , &
+        0.15   , 0.15   , 0.15                      /
+                    
+   data  d95veg16/ &
+        1.0    , 1.0    , 1.0   , 1.0   , 1.0    , &
+        1.0    , 2.5    , 2.5   , 2.5   , 1.0    , &
+        1.0    , 1.0    , 1.0                       /
+
+   real, save :: vegcrops(13),vegdat14(13),vegdat16(13),vegdat17(13)
 
    data vegcrops/ &
-        0.05   , 0.05   , 0.05   , 0.10   , 0.20   , &
+        0.05   , 0.05   , 0.05  , 0.10  , 0.20   , &
+        0.40   , 0.60   , 0.6   , 0.6   , 0.05   , &
+        0.05   , 0.05   , 0.05                      /
+        
+   !Meme chose que vegcrops par default
+   data vegdat14/ &
+        0.05   , 0.05   , 0.05  , 0.10  , 0.20   , &
         0.40   , 0.60   , 0.6   , 0.6   , 0.05   , &
         0.05   , 0.05   , 0.05                      /
 
+   !Meme chose que vegcrops par default
+   data vegdat16/ &
+        0.05   , 0.05   , 0.05  , 0.10  , 0.20   , &
+        0.40   , 0.60   , 0.6   , 0.6   , 0.05   , &
+        0.05   , 0.05   , 0.05                      /
 
-  ! DATA VEGCROPS/  &
-  !                  0.05   , 0.05   , 0.95   , 0.95   , 0.95   , &
-  !                  0.95   , 0.95   , 0.80   , 0.90   , 0.05   , & 
-   !                 0.05   , 0.05   , 0.05                      /
+   !Meme chose que vegcrops par default
+   data vegdat17/ &
+        0.05   , 0.05   , 0.05  , 0.10  , 0.20   , &
+        0.40   , 0.60   , 0.6   , 0.6   , 0.05   , &
+        0.05   , 0.05   , 0.05                      /
 
 
    real, save :: lai6(13), lai7(13), lai11(13), lai14(13), lai15(13), &
@@ -213,62 +260,58 @@ subroutine inicover_svs(pvars, kount, ni)
 
    DATA LAI6 / & 
         0.1   , 0.1   , 0.5   , 1.0   , 2.0   ,  &
-        4.0   , 5.0   , 5.0   , 4.0   , 2.0   , & 
+        4.0   , 5.0   , 5.0   , 4.0   , 2.0   ,  & 
         1.0   , 0.1   , 0.1                      /
    DATA LAI7 /  &
-        0.1   , 0.1   , 0.5   , 1.0   , 2.0   , & 
+        0.1   , 0.1   , 0.5   , 1.0   , 2.0   ,  & 
         4.0   , 5.0   , 5.0   , 4.0   , 2.0   ,  &
         1.0   , 0.1   , 0.1                      /
    DATA LAI11/  &
-        0.5   , 0.5   , 1.0   , 1.0   , 1.5   , & 
-        2.0   , 3.0   , 3.0   , 2.0   , 1.5   , & 
+        0.5   , 0.5   , 1.0   , 1.0   , 1.5   ,  & 
+        2.0   , 3.0   , 3.0   , 2.0   , 1.5   ,  & 
         1.0   , 0.5   , 0.5                      /
    DATA LAI14/    &
         0.5   , 0.5   , 0.5   , 0.5   , 0.5   ,  &
         0.5   , 1.0   , 2.0   , 2.0   , 1.5   ,  &
         1.0   , 1.0   , 0.5                      /
-   ! DATA LAI15/  &
-   !      0.1   , 0.1   , 0.1   , 0.1   , 0.3   , & 
-   !      0.5   , 0.5   , 3.5   , 4.0   , 0.1   , & 
-   !      0.1   , 0.1   , 0.1                      /
    data lai15/ &
-        0.1   , 0.1   , 0.1   , 0.5   , 1.0   , &
-        2.0   , 3.0   , 3.5   , 4.0   , 0.1   , &
+        0.1   , 0.1   , 0.1   , 0.5   , 1.0   ,  &
+        2.0   , 3.0   , 3.5   , 4.0   , 0.1   ,  &
         0.1   , 0.1   , 0.1                      /
    DATA LAI16/  &
         0.1   , 0.1   , 0.1   , 0.5   , 1.0   ,  &
         2.5   , 4.0   , 5.0   , 6.0   , 0.1   ,  &
         0.1   , 0.1   , 0.1                      /
    DATA LAI17/  &
-        0.1   , 0.1   , 0.1   , 0.5   , 1.0   , & 
-        3.0   , 4.0   , 4.5   , 5.0   , 0.1   , & 
+        0.1   , 0.1   , 0.1   , 0.5   , 1.0   ,  & 
+        3.0   , 4.0   , 4.5   , 5.0   , 0.1   ,  & 
         0.1   , 0.1   , 0.1                      /
    DATA LAI18/  &
         0.1   , 0.1   , 0.1   , 0.5   , 1.0   ,  &
         2.0   , 3.0   , 3.5   , 4.0   , 0.1   ,  &
         0.1   , 0.1   , 0.1                      /
    DATA LAI19/  &
-        0.1   , 0.1   , 0.1   , 0.5   , 1.0   , & 
-        3.0   , 4.0   , 4.5   , 5.0   , 0.1   , & 
+        0.1   , 0.1   , 0.1   , 0.5   , 1.0   ,  & 
+        3.0   , 4.0   , 4.5   , 5.0   , 0.1   ,  & 
         0.1   , 0.1   , 0.1                      /
    DATA LAI22/  &
-        1.0   , 1.0   , 0.5   , 0.1   , 0.1   , & 
-        0.1   , 0.1   , 1.0   , 2.0   , 1.5   , & 
+        1.0   , 1.0   , 0.5   , 0.1   , 0.1   ,  & 
+        0.1   , 0.1   , 1.0   , 2.0   , 1.5   ,  & 
         1.5   , 1.0   , 1.0                      /
    DATA LAI25/  &
         3.0   , 3.0   , 3.0   , 4.0   , 4.5   ,  &
-        5.0   , 5.0   , 5.0   , 4.0   , 3.0   , & 
+        5.0   , 5.0   , 5.0   , 4.0   , 3.0   ,  & 
         3.0   , 3.0   , 3.0                      /
    DATA LAI26/  &
-        3.0   , 3.0   , 3.0   , 4.0   , 4.5   , & 
-        5.0   , 5.0   , 5.0   , 4.0   , 3.0   , & 
+        3.0   , 3.0   , 3.0   , 4.0   , 4.5   ,  & 
+        5.0   , 5.0   , 5.0   , 4.0   , 3.0   ,  & 
         3.0   , 3.0   , 3.0                      /
 
    !********************************************************************
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
-   real, external :: interpveg
 
    integer :: i,k
+   integer(INT64) :: delti64
    real :: julien, juliens
 
    real, dimension(nclass) :: laidatdn, laidatds, logz0mloc
@@ -294,17 +337,50 @@ subroutine inicover_svs(pvars, kount, ni)
       MKPTR2D(zlaivf26,laivf26)
       MKPTR2D(zvegf,vegf)
 
+!    Default look-up for vf_type .eq. CCILC_WE:
+!    This have being tweaked to work with geophy file produced
+!    using CCILC_WE and tested just for North America (HRDPS)
+
+      if (vf_type .eq. 'CCILC_WE') &
+      call lookup4ccilc_we(ALDAT, D2DAT, D50DAT, D95DAT, VEGDAT, Z0MDAT, GEXPDAT, &
+                           d50veg15,d95veg15,d50veg16,d95veg16,vegcrops,vegdat14,vegdat16,vegdat17, &
+                           lai11, lai14, lai15, lai16, lai17, nclass)
+
+      ! Read some of the look up tables from namelist
+      if (svs_read_aldat)    aldat    = svs_aldat
+      if (svs_read_d2dat)    d2dat    = svs_d2dat
+      if (svs_read_d50dat)   d50dat   = svs_d50dat
+      if (svs_read_d95dat)   d95dat   = svs_d95dat
+      if (svs_read_vegdat)   vegdat   = svs_vegdat
+      if (svs_read_z0mdat)   z0mdat   = svs_z0mdat
+      if (svs_read_gexpveg)  gexpdat   = svs_gexpveg
+      
+      ! Read look-up monthly climatology
+      
+      if (svs_read_d50veg15) d50veg15 = svs_d50veg15
+      if (svs_read_d50veg16) d50veg16 = svs_d50veg16
+      if (svs_read_d95veg15) d95veg15 = svs_d95veg15
+      if (svs_read_d95veg16) d95veg16 = svs_d95veg16
+      
+      if (svs_read_vegcrops) vegcrops = svs_vegcrops
+      if (svs_read_vegdat14) vegdat14 = svs_vegdat14
+      if (svs_read_vegdat16) vegdat16 = svs_vegdat16
+      if (svs_read_vegdat17) vegdat17 = svs_vegdat17
+      
+      if (svs_read_lai11) lai11    = svs_lai11
+      if (svs_read_lai14) lai14    = svs_lai14
+      if (svs_read_lai15) lai15    = svs_lai15
+      if (svs_read_lai16) lai16    = svs_lai16
+      if (svs_read_lai17) lai17    = svs_lai17
+
       if (svs_urban_params) then ! modify urban surface parameters set above
          cvdat(21)   = 0.3E-5
          z0mdat(21)  = 1.0
          emisdat(21) = 0.950
       endif
       
-     ! Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
-
+      ! Initialize arrays that differ for N and S hemispheres
       do i=1,nclass
-         ! initialize arrays that differ for N and S hemispheres
          laidatdn(i)  = laidat(i)
          laidatds(i)  = laidat(i)
          vegdatdn(i)  = vegdat(i)
@@ -313,13 +389,36 @@ subroutine inicover_svs(pvars, kount, ni)
          logz0mloc(i) = log(z0mdat(i))
       end do
 
+     ! Determine the current julian day
+      delti64 = int (delti64)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
+      
+      ! Use a monthly climatology of rooting depth for veg15 and veg16
+      ! Only applies to class 15 et 16 and the same values are used in both hemispheres!!!
+      ! TODO: generalize to other crop classes and both hemispheres.
+      if (svs_read_d50veg15 .or. vf_type .eq. 'CCILC_WE') then
+         d50dat(15) = interpveg(julien, d50veg15)
+      endif
+
+      if (svs_read_d50veg16 .or. vf_type .eq. 'CCILC_WE') then
+         d50dat(16) = interpveg(julien, d50veg16)
+      endif
+
+      if (svs_read_d95veg15 .or. vf_type .eq. 'CCILC_WE') then
+         d95dat(15) = interpveg(julien, d95veg15)
+      endif
+
+      if (svs_read_d95veg16 .or. vf_type .eq. 'CCILC_WE') then
+         d95dat(16) = interpveg(julien, d95veg16)
+      endif
+
+
       ! Fill the laidatd and vegdatd fields for
       ! land use classes varying with seasons
       ! (i.e., replace the -99 values in the table
       ! with temporal interpolations from the tables above)
 
       ! tables for northern hemisphere
-
       laidatdn( 6)  = interpveg(julien , lai6 )
       laidatdn( 7)  = interpveg(julien , lai7 )
       laidatdn(11)  = interpveg(julien , lai11)
@@ -333,9 +432,15 @@ subroutine inicover_svs(pvars, kount, ni)
       laidatdn(25)  = interpveg(julien , lai25)
       laidatdn(26)  = interpveg(julien , lai26)
 
+      if (svs_read_vegdat14 .or. vf_type .eq. 'CCILC_WE') &
+               vegdatdn(14)  = interpveg(julien , vegdat14)
       vegdatdn(15)  = interpveg(julien , vegcrops)
       vegdatdn(16)  = interpveg(julien , vegcrops)
+      if (svs_read_vegdat16 .or. vf_type .eq. 'CCILC_WE') &
+               vegdatdn(16)  = interpveg(julien , vegdat16)
       vegdatdn(17)  = interpveg(julien , vegcrops)
+      if (svs_read_vegdat17 .or. vf_type .eq. 'CCILC_WE') &
+               vegdatdn(17)  = interpveg(julien , vegdat17)
       vegdatdn(18)  = interpveg(julien , vegcrops)
       vegdatdn(19)  = interpveg(julien , vegcrops)
 
@@ -356,9 +461,15 @@ subroutine inicover_svs(pvars, kount, ni)
       laidatds(25)  = interpveg(juliens, lai25)
       laidatds(26)  = interpveg(juliens, lai26)
 
+      if (svs_read_vegdat14 .or. vf_type .eq. 'CCILC_WE') &
+               vegdatds(14)  = interpveg(juliens, vegdat14)
       vegdatds(15)  = interpveg(juliens, vegcrops)
       vegdatds(16)  = interpveg(juliens, vegcrops)
+      if (svs_read_vegdat16 .or. vf_type .eq. 'CCILC_WE') &
+               vegdatds(16)  = interpveg(juliens , vegdat16)
       vegdatds(17)  = interpveg(juliens, vegcrops)
+      if (svs_read_vegdat17 .or. vf_type .eq. 'CCILC_WE') &
+               vegdatds(17)  = interpveg(juliens , vegdat17)
       vegdatds(18)  = interpveg(juliens, vegcrops)
       vegdatds(19)  = interpveg(juliens, vegcrops)
 
@@ -384,10 +495,12 @@ subroutine inicover_svs(pvars, kount, ni)
            PTR1D(dlat), ni, nclass)
       call aggcovernat(PTR1D(vegf), maxpdat, maxpdat , PTR1D(maxpond), &
            PTR1D(dlat), ni, nclass)
+      call aggcovernat(PTR1D(vegf), gexpdat, gexpdat , PTR1D(gexp), &
+           PTR1D(dlat), ni, nclass)
 
       do i=1,ni
            if(zdlat(i).ge.0.0) then
-           !             northern hemisphere
+           !  northern hemisphere
               zlaideci(i) = laidatdn( 6 )
            else
 !             southern hemisphere
@@ -465,11 +578,7 @@ subroutine inicover_svs(pvars, kount, ni)
 !
       call veglowhigh(PTR1D(vegf), vegdatdn , vegdatds, PTR1D(vegl), &
            PTR1D(vegh), PTR1D(deciduous), PTR1D(evergreen), PTR1D(impervu), &
-           PTR1D(dlat), ni, nclass )
-
-!      call veglowhigh(PTR1D(vegf), vegdatdn , vegdatds, bogus1, &
-!           bogus2, PTR1D(deciduous), PTR1D(evergreen), PTR1D(impervu), &
-!           PTR1D(dlat), ni, nclass )
+           PTR1D(dlat), PTR1D(agrifrac), ni, nclass )
 
    return
  end subroutine inicover_svs

@@ -1,4 +1,9 @@
-        SUBROUTINE MIXLYR(DTEMP,Q0,NLAK,USTAR,IL1,IL2,ILG, &
+module mixlyr_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE MIXLYR(DTEMP,Q0,NLAK,USTAR,IL1,IL2,ILG, &
                     HDPTH,TKE,DELU,FQU,BFLX,DISS,EXPW,QSTAR,       &
                     FSHEAR,FENTRA,HLAK,LLAK,GRED,TRAN,             &
                     CQ1A,CQ1B,CQ2A,CQ2B,CQ3A,CQ3B,RHOMIX,          &
@@ -17,6 +22,7 @@
 !     * MAR 15/07 - M.MACKAY.   COMPUTES LAKE MIXED LAYER DEPTH, TKE
 !     *  
 !
+      use xit_mod, only: xit
       IMPLICIT NONE
 !
 ! ----* GLOBAL LAKE VARIABLES *---------------------------------------
@@ -193,8 +199,8 @@
 !
        H2=HLAK(I)-HDPTH(I)
        IF (H2 .GE. 1.0E-12 .AND. GRED(I) .GT. 0.0) THEN
-         TI=2.0*LLAK(I)/(SQRT(GRED(I)*HDPTH(I)*H2/HLAK(I)))
-!        TI=0.0         !test mdm to turn off shear term
+ !        TI=2.0*LLAK(I)/(SQRT(GRED(I)*HDPTH(I)*H2/HLAK(I)))
+         TI=0.0         !test mdm to turn off shear term
        ELSE
          TI=0.0
        ENDIF
@@ -206,4 +212,5 @@
 100   CONTINUE
 
       RETURN
-      END
+    END SUBROUTINE MIXLYR
+  end module mixlyr_mod

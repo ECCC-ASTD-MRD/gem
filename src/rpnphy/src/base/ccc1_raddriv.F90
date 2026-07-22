@@ -1,19 +1,8 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
+module ccc1_raddriv_mod
+   implicit none
+   public
 
+contains
 
 subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      fatb,fadb,fafb,fctb,fcdb,fcfb, &
@@ -24,12 +13,29 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
      tfull, tt, gt, o3, o3top, &
      qq, rmu, r0r, salb, em0, taucs, &
      omcs, gcs, taucl, omcl, gcl, &
-     cldfrac, tauae, exta, exoma, exomga, &
+     cldfrac, strfr, tauae, exta, exoma, exomga, &
      fa, absa, lcsw, lclw, mrk2, &
      il1, il2, ilg, lay, lev)
    use tdpack_const
    use phy_options, only: RAD_NUVBRANDS, rad_atmpath
    use ens_perturb, only: ens_nc2d
+   use ccc1_gasopts_mod, only: ccc1_gasopts
+   use ccc1_gasoptl_mod, only: ccc1_gasoptl2
+   use ccc1_gasoptlgh_mod, only: ccc1_gasoptlgh3
+   use ccc1_strandngh_mod, only: ccc1_strandngh
+   use ccc1_strandn_mod, only: ccc1_strandn
+   use ccc1_preintp_mod, only: ccc1_preintp
+   use ccc1_preintr_mod, only: ccc1_preintr
+   use ccc1_raylev_mod, only: ccc1_raylev
+   use ccc1_sattenu_mod, only: ccc1_sattenu
+   use ccc1_stranup_mod, only: ccc1_stranup
+   use ccc1_planck_mod, only: ccc1_planck
+   use ccc1_lwtran_mod, only: ccc1_lwtran
+   use ccc1_lattenu_mod, only: ccc1_lattenu
+   use ccc1_lwtragh_mod, only: ccc1_lwtragh
+   use ccc_raylei_mod, only: ccc_raylei
+   use ccc_swtran_mod, only: ccc_swtran
+   use ccc_cldifm_mod, only: ccc_cldifm1
    implicit none
 
 !!!#include <arch_specific.hf>
@@ -51,6 +57,7 @@ subroutine ccc1_raddriv3(fsg, fsd, fsf, fsv, fsi, &
    real taucs(ilg,lay,nbs), omcs(ilg,lay,nbs), gcs(ilg,lay,nbs), &
         taucl(ilg,lay,nbl), omcl(ilg,lay,nbl), gcl(ilg,lay,nbl), &
         cldfrac(ilg,lay), fslo(ilg), fsamoon(ilg)
+   real, pointer, dimension(:,:) :: strfr
 
    logical lcsw, lclw
    real flxds(ilg,lev),flxus(ilg,lev),flxdl(ilg,lev),flxul(ilg,lev)
@@ -398,7 +405,7 @@ include "nocld.cdk"
 
    call ccc_cldifm1 (cldm, tauomgc, anu, a1, ncd, &
         ncu, inptg, nct, ncum, ncdm, &
-        cldfrac, pfull, mrk2, lev1, cut, maxc, &
+        cldfrac, strfr, pfull, mrk2, lev1, cut, maxc, &
         il1, il2, ilg, lay, lev)
 
 
@@ -1028,7 +1035,7 @@ include "nocld.cdk"
          !    reusing space o3g for dbf
          !----------------------------------------------------------------------
 
-         call ccc1_planck (bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
+         call ccc1_planck(bf, bs, urbf, a1(1,2), a1(1,3), o3g, tfull, gt, ib, &
               il1, il2, ilg, lay, lev, tg)
 
          gh = .false.
@@ -1209,3 +1216,4 @@ include "nocld.cdk"
    return
 end subroutine ccc1_raddriv3
 
+end module ccc1_raddriv_mod

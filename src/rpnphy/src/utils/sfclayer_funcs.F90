@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module sfclayer_funcs
   implicit none
@@ -263,7 +248,7 @@ contains
     do j=1,2
        sf(j) = a*F_zm(j)*F_ilmo &
             + b*(F_zm(j)*F_ilmo-c/d)*EXP(-d*F_zm(j)*F_ilmo) + b*c/d
-       if (present(F_dfm)) dsf = a*F_zm(j)*F_ilmo &
+       if (present(F_dfm)) dsf(j) = a*F_zm(j)*F_ilmo &
             + b*F_zm(j)*F_ilmo*EXP(-d*F_zm(j)*F_ilmo) &
             - d*F_zm(j)*F_ilmo*b*(F_zm(j)*F_ilmo-c/d)*EXP(-d*F_zm(j)*F_ilmo)
     enddo
@@ -274,7 +259,7 @@ contains
     do j=1,2
        sf(j) = (1.+b*a*F_zh(j)*F_ilmo)**1.5 - 1 &
             + b*(F_zh(j)*F_ilmo-c/d)*EXP(-d*F_zh(j)*F_ilmo) + b*c/d
-       if (present(F_dfh)) dsf = a*F_zh(j)*F_ilmo*(1.+b*a*F_zh(j)*F_ilmo)**0.5 &
+       if (present(F_dfh)) dsf(j) = a*F_zh(j)*F_ilmo*(1.+b*a*F_zh(j)*F_ilmo)**0.5 &
             + b*F_zh(j)*F_ilmo*EXP(-d*F_zh(j)*F_ilmo) &
             - d*F_zh(j)*F_ilmo*b*(F_zh(j)*F_ilmo-c/d)*EXP(-d*F_zh(j)*F_ilmo)
     enddo
@@ -358,7 +343,7 @@ contains
     do j=1,2
        a = (1-16*F_zm(j)*F_ilmo)**(0.25)
        sf(j) = - 2.*LOG(a+1) - LOG(a**2+1) + 2.*ATAN(a)
-       if (present(F_dfm)) dsf = (1./a) - 1
+       if (present(F_dfm)) dsf(j) = (1./a) - 1
     enddo
     F_fmi = sfadjust(F_lzz0, sf, 1.)
     if (present(F_dfm)) F_dfm = sfderiv(dsf, 1.)
@@ -367,7 +352,7 @@ contains
     do j=1,2
        a = (1-16*F_zh(j)*F_ilmo)**(0.5)
        sf(j) = - 2.*LOG(a+1)
-       if (present(F_dfh)) dsf = (1./a) - 1
+       if (present(F_dfh)) dsf(j) = (1./a) - 1
     enddo
     F_fhi = sfadjust(F_lzz0t, sf, F_beta)
     if (present(F_dfh)) F_dfh = sfderiv(dsf, F_beta)

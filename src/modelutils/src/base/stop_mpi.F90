@@ -12,6 +12,13 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+
+module stop_mpi_mod
+   implicit none
+   public
+
+contains
+   
 !/@*
 subroutine stop_mpi(F_EndType,F_FromSubName,F_Message)
    use iso_c_binding
@@ -56,3 +63,4 @@ subroutine stop_mpi(F_EndType,F_FromSubName,F_Message)
    stop
 end subroutine stop_mpi
 
+end module stop_mpi_mod

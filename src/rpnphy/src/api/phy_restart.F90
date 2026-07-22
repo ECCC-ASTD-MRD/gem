@@ -1,17 +1,3 @@
-!---------------------------------- LICENCE BEGIN ------------------------------
-! GEM - Library of kernel routines for the GEM numerical atmospheric model
-! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
-!                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it
-! under the terms of the GNU Lesser General Public License as published by
-! the Free Software Foundation, version 2.1 of the License. This library is
-! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-! You should have received a copy of the GNU Lesser General Public License
-! along with this library; if not, write to the Free Software Foundation, Inc.,
-! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END --------------------------------
 
 module phy_restart_mod
   use clib_itf_mod, only: clib_toupper
@@ -46,6 +32,9 @@ contains
 
     integer :: istat
     character(len=32) :: WorR_S
+#ifdef HAVE_MACH
+    integer, external :: chm_snapshot
+#endif
 
     ! ------------------------------------------------------------------
     WorR_S = adjustl(F_WorR_S)
@@ -66,6 +55,12 @@ contains
 #ifdef HAVE_NEMO
 ! coupling may have something to do for restart
     call cpl_restart(WorR_S)
+#endif
+    
+#ifdef HAVE_MACH
+    if (WorR_S == PHY_RESTART_WRITE) then
+       istat = chm_snapshot(WorR_S)
+    endif
 #endif
 
     F_istat = RMN_OK

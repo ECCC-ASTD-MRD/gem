@@ -1,5 +1,8 @@
 !copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
-
+module soil_ksatc_mod
+  implicit none
+  public
+contains
       SUBROUTINE SOIL_KSATC( &
         WSOIL, ISOIL, WSAT, KSAT, KSATC, N, NLEVELS)
 
@@ -55,23 +58,32 @@
       ! Local Variable and arrays
       INTEGER I, K
 
-      IF (lsoil_freezing_svs1 .AND. soil_ksat_ice .EQ. 'ZHANGGRAY97') THEN
-         ! Correction factor taken from Zhang and Gray (1997). Same as CLASS 3.6
-         DO I=1,N
-            DO K=1,NLEVELS
-               KSATC(I,K) = KSAT(I,K) * (1.0-MAX(0.0,MIN((WSAT(I,K)-CRITWATER)/WSAT(I,K),ISOIL(I,K)/WSAT(I,K))))**2.
-            END DO
-         END DO
-      ELSE IF (lsoil_freezing_svs1 .AND. soil_ksat_ice .EQ. 'BOONE2000') THEN
-         ! Impedance factor taken from SURFEX (Boone et al., 2000)
-         DO I=1,N
-            DO K=1,NLEVELS
-               KSATC(I,K) = KSAT(I,K) * EXP(LOG(10.0)*(-6*ISOIL(I,K)/(ISOIL(I,K)+WSOIL(I,K))))
-            END DO
-         END DO
-      ELSE
-         ! No change to KSAT as a function of ice content (not very realistic!)
-         KSATC(:,:) = KSAT(:,:)
-      ENDIF 
+      IF (lsoil_freezing_svs1 .or. schmsol.EQ.'SVS2') THEN
 
-      END SUBROUTINE SOIL_KSATC
+         IF (soil_ksat_ice .EQ. 'ZHANGGRAY97') THEN
+            ! Correction factor taken from Zhang and Gray (1997). Same as CLASS 3.6
+            DO I=1,N
+               DO K=1,NLEVELS
+                  KSATC(I,K) = KSAT(I,K) * (1.0-MAX(0.0,MIN((WSAT(I,K)-CRITWATER)/WSAT(I,K),ISOIL(I,K)/WSAT(I,K))))**2.
+               END DO
+            END DO
+         ELSE IF (soil_ksat_ice .EQ. 'BOONE2000') THEN
+            ! Impedance factor taken from SURFEX (Boone et al., 2000)
+            DO I=1,N
+               DO K=1,NLEVELS
+                  KSATC(I,K) = KSAT(I,K) * EXP(LOG(10.0)*(-6*ISOIL(I,K)/(ISOIL(I,K)+WSOIL(I,K))))
+               END DO
+            END DO
+         ELSE
+            ! No change to KSAT as a function of ice content (not very realistic!)
+            KSATC(:,:) = KSAT(:,:)
+         ENDIF 
+
+      ELSE
+
+         KSATC(:,:) = KSAT(:,:)
+
+      ENDIF
+
+    END SUBROUTINE SOIL_KSATC
+  end module soil_ksatc_mod

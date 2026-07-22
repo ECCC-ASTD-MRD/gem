@@ -15,6 +15,11 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module iniptsurf_mod
+  implicit none
+  public
+contains
+  
 function iniptsurf5() result(F_istat)
    use sfc_options
    use sfcbus_mod
@@ -43,11 +48,11 @@ function iniptsurf5() result(F_istat)
 #include <rmn/msg.h>
 #include <rmnlib_basics.hf>
 
-   integer, parameter :: nb_agrege = 48
+   integer, parameter :: nb_agrege = 49
    integer, parameter :: nb_glaciers = 1
    integer, parameter :: nb_water = 4
    integer, parameter :: nb_ice = 2
-   integer, parameter :: nb_urb = 95
+   integer, parameter :: nb_urb = 102
    integer, parameter :: nb_lake = 26
    integer, parameter :: nb_river = 4
 
@@ -67,8 +72,8 @@ function iniptsurf5() result(F_istat)
         'ALFAQ'    , 'ALFAT'    , 'ALVIS'    , 'BM'       , 'BT'       , &
         'EMISR'    , 'FC'       , 'FRV'      , 'FTEMP'    , 'FV'       , &
         'FVAP'     , 'HST'      , 'ILMO'     , &
-        'QDIAG'    , 'QSURF'    , 'RUNOFFTOT', 'SNODP'    , 'TDIAG'    , &
-        'TSURF'    , 'UDIAG'    , 'VDIAG'    , &
+        'QDIAG'    , 'QSURF'    , 'RUNOFFTOT', 'SNODP'    , 'SNOWE'    , &
+        'TDIAG'    , 'TSURF'    , 'UDIAG'    , 'VDIAG'    , &
         'QDIAGTYP' , 'TDIAGTYP' , 'UDIAGTYP' , 'VDIAGTYP' , &
         'QDIAGTYPV', 'TDIAGTYPV', 'UDIAGTYPV', 'VDIAGTYPV', &
         'YUTCISUN' , 'YUTCISHADE' ,                                      &
@@ -120,7 +125,9 @@ function iniptsurf5() result(F_istat)
         ,'YUTCIRFSHADE', 'YUTCICIN','YWBGTRFSUN','YWBGTRFSHADE'         &
         ,'YUTCICSUN','YUTCICSHADE', 'YUTCICRFSUN','YUTCICRFSHADE'       &
         ,'YTGLBRFSUN','YTGLBRFSHADE','YTWETBRF', 'YTRFZT', 'YTRDZT',    &
-        'YURDZU' , 'YQ8', 'YQ9', 'YQ10','YQ11' ,'YQ12' , 'YQ13'         &
+        'YURDZU' , 'YQ8', 'YQ9', 'YQ10','YQ11' ,'YQ12' , 'YQ13',        &
+        'SROOF_DEPTH', 'SROOF_PSN', 'SROAD_DEPTH', 'SROAD_PSN',         &
+        'SROAD_WSTOK', 'SROOF_WSTOK', 'STOWN_MELT'                      &
         /
 
    ! liste des variables de sortie du modules "lake"
@@ -305,4 +312,5 @@ function iniptsurf5() result(F_istat)
 
    F_istat = RMN_OK
    return
-end function iniptsurf5
+ end function iniptsurf5
+end module iniptsurf_mod

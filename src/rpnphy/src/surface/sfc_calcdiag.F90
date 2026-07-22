@@ -23,6 +23,7 @@ contains
 
    !/@*
    subroutine sfc_calcdiag3(pvars,moyhr,acchr,dt,kount,step_driver,ni)
+      use timing_omp
       use tdpack_const, only: CHLC, CHLF
       use sfc_options
 !!$      use sfcbus_mod
@@ -108,7 +109,9 @@ contains
       endif
       
       ! Common ISBA/SVS accumulators
-      IF_ISBA_SVS: if (schmsol == 'ISBA' .or. schmsol == 'SVS') then
+      IF_ISBA_SVS: if (schmsol == 'ISBA' .or. &
+           schmsol == 'SVS' .or. &
+           schmsol == 'SVS2') then
 
          IF_RESET: if (kount == 0 .or. lacchr) then
 
@@ -205,7 +208,7 @@ contains
       endif IF_ISBA
 
       ! SVS only accumulators
-      IF_SVS: if (schmsol == 'SVS') then
+      IF_SVS: if (schmsol == 'SVS' .or. schmsol == 'SVS2') then
          
          ! Reset accumulators at t=T+00hr 
          IF_RESET_SVS: if (kount == 0 .or. lacchr) then

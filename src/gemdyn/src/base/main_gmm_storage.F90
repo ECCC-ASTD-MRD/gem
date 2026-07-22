@@ -25,6 +25,7 @@
       use rmn_gmm
       use HORgrid_options
       use init_options
+      use spn_options
       use lun
       use metric
       use var_gmm
@@ -33,6 +34,8 @@
       use mem_tstp
       use ldnh
       use tr3d
+      use mem_nest
+      use lam_options
       implicit none
 
 #include "gmm_gem_flags.hf"
@@ -56,9 +59,9 @@
          call yyg_init()
          call yyg_initstencils()
          call yyg_rhs_initscalbc()
-      else
-         call nest_set_mem
       end if
+
+      call iau_set_mem ()
 
 !     Initialize digital filter variables modules
 !     --------------------------------------------
@@ -114,6 +117,7 @@
       rhsf (l_minx:l_maxx,l_miny:l_maxy,1:l_nk)=>rhs(5*dim+1:)
 
       rhsu=0.;rhsv=0.;rhst=0.;rhsc=0.;rhsw=0.;rhsf=0.;rhs_zero=0.
+      dgzm=0.;dgzt =0.
 
       allocate (orhsu(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                 orhsv(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
@@ -148,8 +152,10 @@
 
          allocate ( GVM%mc_Jx_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     GVM%mc_Jy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_Jxt_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_Jyt_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     GVM%mc_iJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
-                  GVM%mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
+                    GVM%mc_logJz_8(l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     GVM%mc_Ix_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     GVM%mc_Iy_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk), &
                     GVM%mc_Iz_8 (l_minx:l_maxx,l_miny:l_maxy,G_nk) )

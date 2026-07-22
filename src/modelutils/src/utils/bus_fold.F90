@@ -19,6 +19,7 @@
 module bus_fold_mod
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
    use clib_itf_mod, only: clib_tolower
+   use gmmx_name_mod
    use rmn_gmm
    implicit none
    private

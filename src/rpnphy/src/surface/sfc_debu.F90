@@ -15,8 +15,13 @@
 !-------------------------------------- LICENCE END --------------------------
 
 !@*
+module sfc_debu_mod
+  implicit none
+  public
+contains
 function sfc_init1() result(F_istat)
-   use sfc_options
+  use sfc_options
+  use iniptsurf_mod, only: iniptsurf5
    implicit none
 !!!#include <arch_specific.hf>
    !@Object initialization of the surface parameters at the beginning
@@ -34,9 +39,10 @@ function sfc_init1() result(F_istat)
    !          2) call iniptsurf to construct the surface bus
 !*@/
 #include <rmnlib_basics.hf>
-   integer, external :: iniptsurf5
    !---------------------------------------------------------------------
    !#TODO: remove this useless step
    F_istat = iniptsurf5()
    !----------------------------------------------------------------------
 end function sfc_init1
+
+end module sfc_debu_mod

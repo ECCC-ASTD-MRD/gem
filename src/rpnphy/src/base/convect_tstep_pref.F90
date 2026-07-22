@@ -1,3 +1,9 @@
+module convect_tstep_pref_mod
+   implicit none
+   public
+
+contains
+   
 !     ######################################################################
       SUBROUTINE CONVECT_TSTEP_PREF( KLON, KLEV,                           &
                                    & PU, PV, PPRES, PZ, PDXDY, KLCL, KCTL, &
@@ -171,3 +177,4 @@ PPREF(:) = 0.5 * ( PPREF(:) + ZWORK1(:) )
 
 END SUBROUTINE CONVECT_TSTEP_PREF
 
+end module convect_tstep_pref_mod

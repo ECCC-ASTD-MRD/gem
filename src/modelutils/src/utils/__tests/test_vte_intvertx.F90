@@ -17,6 +17,7 @@
 subroutine test_vte_intvertx()
    use, intrinsic :: iso_fortran_env, only: INT64
    use testutils
+   use vinterp_mod
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2012-02

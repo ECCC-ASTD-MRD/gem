@@ -1,21 +1,7 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module microphy_utils
   use phy_status, only: PHY_OK, PHY_ERROR
+  use microphy_thompson, only: thompson_wrapper_init
   implicit none
   private
   save
@@ -78,19 +64,27 @@ contains
   function mp_init(F_input_path) result(F_istat)
     use microphy_consun
     use microphy_s2
-    use microphy_p3, P3_STATUS_OK=>STATUS_OK
+    use microphy_p3, only: &
+         p3x_init => p3_init, p3x_phybusinit => p3_phybusinit, &
+         p3x_lwc => p3_lwc, p3x_iwc => p3_iwc
+    use microphy_p3v5, only: &
+         P3_STATUS_OK => STATUS_OK, &
+         p3v5_init => p3_init, p3v5_phybusinit => p3_phybusinit, &
+         p3v5_lwc => p3_lwc, p3v5_iwc => p3_iwc
     use microphy_p3v3, only: &
          p3v3_init => p3_init, p3v3_phybusinit => p3_phybusinit, &
          p3v3_lwc => p3_lwc, p3v3_iwc => p3_iwc
     use microphy_my2
     use microphy_kessler
-    use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac
+    use microphy_thompson
+    use phy_options, only: stcond, p3_ncat, p3_trplmomi, p3_liqFrac, p3_autoAccr
+    use phy_status, only: physeterror
     implicit none
     character(len=*), intent(in) :: F_input_path  !Directory containing initializing data
     integer :: F_istat                            !Return status (PHY_OK on success)
 
     ! Internal variables
-    integer :: istat
+    integer :: istat, p3_autoAccr_i
     character(len=1024) :: missing_list
 
     ! Initialization
@@ -110,11 +104,45 @@ contains
        mp_lwc => s2_lwc
        mp_iwc => s2_iwc
     case ('MP_P3')
-       call p3_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, stat=istat)
+       select case(p3_autoAccr)
+       case ('SEIFERT2001')
+          p3_autoAccr_i = 1
+       case ('BEHENG1994')
+          p3_autoAccr_i = 2
+       case ('KHAIROUT2000')
+          p3_autoAccr_i = 3
+       case ('KOGAN2013')
+          p3_autoAccr_i = 4
+       case DEFAULT
+          call physeterror('microphy_utils::mp_init', &
+               'Unsupported p3_autoAccr'//trim(p3_autoAccr))
+          return
+       end select
+       call p3v5_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac, p3_autoAccr_i, stat=istat)
        if (istat == P3_STATUS_OK) istat = PHY_OK
-       mp_phybusinit => p3_phybusinit
-       mp_lwc => p3_lwc
-       mp_iwc => p3_iwc
+       mp_phybusinit => p3v5_phybusinit
+       mp_lwc => p3v5_lwc
+       mp_iwc => p3v5_iwc
+    case ('MP_P3X')
+       select case(p3_autoAccr)
+       case ('SEIFERT2001')
+          p3_autoAccr_i = 1
+       case ('KHAIROUT2000')
+          p3_autoAccr_i = 2
+       case ('KOGAN2013')
+          p3_autoAccr_i = 3
+       case DEFAULT
+          call physeterror('microphy_utils::mp_init', &
+               'Unsupported p3_autoAccr'//trim(p3_autoAccr))
+          return
+       end select
+       call p3x_init(F_input_path, p3_ncat, p3_trplmomi, p3_liqFrac,  &
+                    autoAccr_param_in = p3_autoAccr_i,                &
+                    stat = istat)
+       if (istat == P3_STATUS_OK) istat = PHY_OK
+       mp_phybusinit => p3x_phybusinit
+       mp_lwc => p3x_lwc
+       mp_iwc => p3x_iwc
     case ('MP_P3V3')
        call p3v3_init(F_input_path, p3_ncat, stat=istat)
        if (istat == P3_STATUS_OK) istat = PHY_OK
@@ -131,6 +159,12 @@ contains
        mp_phybusinit => kessler_phybusinit
        mp_lwc => kessler_lwc
        mp_iwc => kessler_iwc
+    case ('THOMPSON')
+       call thompson_wrapper_init(F_input_path)
+       istat = PHY_OK
+       mp_phybusinit => thompson_phybusinit
+       mp_lwc => thompson_lwc
+       mp_iwc => thompson_iwc
     case ('NIL')
        istat = PHY_OK
     case DEFAULT
@@ -156,7 +190,7 @@ contains
          missing_list = trim(missing_list)//' mp_iwc'
     if (len_trim(missing_list) /= 0) then
        call physeterror('microphy_utils::mp_init', &
-            'Failed to initialize microphysics API components for ', &
+            'Failed to initialize microphysics API components for '// &
             trim(stcond)//': '//trim(missing_list))
        return
     endif
@@ -170,7 +204,7 @@ contains
   function mp_post_init() result(F_istat)
     use phy_options, only: fluvert
     use phymem, only: phymeta, phymem_find, phymem_getmeta
-    use phy_status, only: PHY_OK
+    use phy_status, only: PHY_OK, physeterror
     implicit none
     integer :: F_istat                            !Return status (PHY_OK on success)
     
@@ -252,10 +286,11 @@ contains
     ! Local parameters from Eq. 2 of Hu et al. (2010; JGR 10.1029/2009JD012384)
     real, parameter :: C0 = 5.3608, C1=0.4025, C2=0.08387, C3=0.007182, &
          C4=2.39e-4, C5=2.87e-6
+    real, parameter :: T_HOM = -40.  !Temperature for homogeneous freezing to avoid overflow
     
     ! Local variables
     integer :: i, k
-    real :: ptmid, dptmid, tmid
+    real :: ptmid, dptmid, tmid, twc, iwc, sigmoid
 
     ! Initialization
     F_istat = PHY_ERROR
@@ -263,7 +298,16 @@ contains
     ! Compute ice fraction
     do k=1,F_nkm1
        do i=1,F_ni
-          F_if(i,k) = F_iwc(i,k) / max(F_lwc(i,k) + F_iwc(i,k), tiny(F_iwc))
+          iwc = max(F_iwc(i,k), 0.)
+          twc = max(F_lwc(i,k), 0.) + iwc
+          if (twc > tiny(twc)) then
+             F_if(i,k) = iwc / max(twc, tiny(iwc))
+          else
+             tmid = max(F_tt(i,k) - TCDK, T_HOM)
+             ptmid = C0 + tmid * (C1 + tmid * (C2 + tmid * (C3 + tmid * (C4 + tmid * C5))))
+             sigmoid = 1. / (1. + exp(-ptmid))
+             F_if(i,k) = 1. - sigmoid             
+          endif  
        enddo
     enddo
 
@@ -272,10 +316,11 @@ contains
     if (present(F_difdt)) then
        do k=1,F_nkm1
           do i=1,F_ni             
-             tmid = F_tt(i,k) - TCDK
-             ptmid = max(C0 + tmid * (C1 + tmid * (C2 + tmid * (C3 + tmid * (C4 + tmid * C5)))), -40.)
+             tmid = max(F_tt(i,k) - TCDK, T_HOM)
+             ptmid = C0 + tmid * (C1 + tmid * (C2 + tmid * (C3 + tmid * (C4 + tmid * C5))))
              dptmid = C1 + tmid * (2*C2 + tmid * (3*C3 + tmid * (4*C4 + tmid * 5*C5)))
-             F_difdt(i,k) = -exp(-ptmid) / (1. + exp(-ptmid))**2 * dptmid             
+             sigmoid = 1. / (1. + exp(-ptmid))
+             F_difdt(i,k) = -sigmoid * (1. - sigmoid) * dptmid             
           enddo
        enddo
     endif

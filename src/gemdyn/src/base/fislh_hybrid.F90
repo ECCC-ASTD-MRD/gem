@@ -55,7 +55,7 @@
       real, dimension(:), pointer :: std_p_prof=>null(),wkpt
       real(kind=REAL64), parameter :: zero=0.d0, one=1.d0, half=0.5d0
       real(kind=REAL64), dimension(:), pointer :: wkpt8
-      character(len=VGD_LEN_NAME) :: rfls_S
+      character(len=32) :: rfls_S
 !     __________________________________________________________________
 !
       if (G_nk<3) call gem_error(-1,'fislh_hybrid','NOT ENOUGH LEVELS')

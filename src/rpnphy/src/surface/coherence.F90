@@ -60,9 +60,12 @@ subroutine coherence3(pvars, ni)
    real, pointer, dimension(:) :: zalveg,  zcveg,  zgamveg,  zglacier,  zglsea,  zicedp,  zlai,  zmg,  zrgl,  zrootdp,  zsnoal, zsnoden, zsnoma,  zsnoro,  zstomr,  zvegfrac,  zwsnow,  zwveg
 !!$      real, pointer, dimension(:) :: zsdepth
 
-   real, pointer, dimension(:,:) :: zclay, zisoil, zsand, zsnodp, ztglacier, ztsoil, zwsoil,ztpsoil
+   real, pointer, dimension(:,:) :: zclay, zisoil, zsand, zsnodp,zsnowe, ztglacier, ztsoil, zwsoil,ztpsoil
    ! SVS
    real, pointer, dimension(:) :: zsnodpl, zsnval, zsnvden, zsnvdp, zsnvma, zsnvro, zvegh, zvegl, zwsnv
+   ! SVS 2
+   real, pointer, dimension(:) :: zwveg_vl,zwveg_vh, zhveglpol
+   real, pointer, dimension(:,:) :: zbulksoil, zoc
 
 
 #define MKPTR1D(NAME1,NAME2) nullify(NAME1); if (vd%NAME2%idxv > 0) NAME1(1:ni) => pvars(vd%NAME2%idxv)%data(:)
@@ -73,6 +76,7 @@ subroutine coherence3(pvars, ni)
    MKPTR1D(zgamveg,  gamveg)
    MKPTR1D(zglacier, glacier)
    MKPTR1D(zglsea,   glsea)
+   MKPTR1D(zhveglpol,hveglpol)
    MKPTR1D(zicedp,   icedp)
    !MKPTR1D(zisoil,   isoil)
    MKPTR1D(zlai,     lai)
@@ -96,11 +100,16 @@ subroutine coherence3(pvars, ni)
    MKPTR1D(zwsnow,   wsnow)
    MKPTR1D(zwsnv,    wsnv)
    MKPTR1D(zwveg,    wveg)
-
+   MKPTR1D(zwveg_vh,    wveg_vh)
+   MKPTR1D(zwveg_vl,    wveg_vl)
+   
+   MKPTR2D(zbulksoil , bulksoil)
    MKPTR2D(zclay,    clay)
    MKPTR2D(zisoil,   isoil)
+   MKPTR2D(zoc , oc)
    MKPTR2D(zsand,    sand)
    MKPTR2D(zsnodp,   snodp)
+   MKPTR2D(zsnowe,   snowe)
    MKPTR2D(ztglacier,tglacier)
    MKPTR2D(ztsoil,   tsoil)
    MKPTR2D(ztpsoil,   tpsoil)
@@ -117,14 +126,20 @@ subroutine coherence3(pvars, ni)
 !VDIR NODEP
       do i=1,ni
          if (zmg(i).lt.critmask) then
-
             zmg      (i)              = 0.0
             zglacier (i)              = 0.0
             zsnodp   (i,indx_soil)    = 0.0
             zsnodp   (i,indx_glacier) = 0.0
-            if (schmurb  == 'TEB') zsnodp   (i,indx_urb ) = 0.0
-            if (schmlake /= 'NIL') zsnodp   (i,indx_lake) = 0.0
-
+            zsnowe   (i,indx_soil)    = 0.0
+            zsnowe   (i,indx_glacier) = 0.0
+            if (schmurb  == 'TEB') then
+                zsnodp   (i,indx_urb ) = 0.0
+                zsnowe   (i,indx_urb) = 0.0
+            endif
+            if (schmlake /= 'NIL') then 
+                zsnodp   (i,indx_lake) = 0.0
+                zsnowe   (i,indx_lake) = 0.0
+            endif                
          end if
       end do
 
@@ -228,6 +243,35 @@ subroutine coherence3(pvars, ni)
          endif  
 
       endif IF_SVS
+      
+      IF_SVS_V2:  if (schmsol.EQ.'SVS2') then
+         do i=1,ni
+            if (zmg(i).lt.critmask) then
+               ! OVER WATER, FOR ESTHETIC PURPOSE ONLY
+               do k=1,nl_svs
+                  zwsoil(i,k)   = 1.0
+                  zisoil(i,k)   = 0.0
+                  ztpsoil(i,k)   = -1.0
+               enddo
+               zwveg_vl    (i)      = 0.0
+               zwveg_vh    (i)      = 0.0
+               zrootdp  (i)      = 0.0
+               zvegfrac (i)      = 0.0
+               zvegh    (i)      = 0.0
+               zvegl    (i)      = 0.0
+               zsnodpl(i) = 0.0
+               zsnoma(i)  = 0.0
+               zwsnow(i)  = 0.0
+               zsnvdp(i)  = 0.0
+               zsnvma(i)  = 0.0
+               zwsnv(i)   = 0.0
+               if(read_hveglpol) then
+                   zhveglpol(i) = -1.0 
+               endif
+            endif
+         enddo      
+      endif IF_SVS_V2
+
 
    endif NEW_MG_MASK
 
@@ -257,6 +301,7 @@ subroutine coherence3(pvars, ni)
             zglsea (i)          = 0.0
             zicedp (i)          = 0.0
             zsnodp (i,indx_ice) = 0.0
+            zsnowe (i,indx_ice) = 0.0
          else
             zicedp (i) = max( zicedp(i) , minicedp )
          end if
@@ -353,6 +398,39 @@ subroutine coherence3(pvars, ni)
          end do
 
       end if IF_SVS2
+
+      IF_SVS_V2_2: if (schmsol == 'SVS2') then
+
+!VDIR NODEP
+         do i=1,ni
+            if (zglacier(i) > 1.-critmask) then
+
+               do k=1,nl_svs
+                  zwsoil(i,k)   = 1.0
+                  zisoil(i,k)   = 0.0
+                  ztpsoil(i,k)   = -1.0
+               enddo
+
+               zwveg_vl    (i)      = 0.0
+               zwveg_vh    (i)      = 0.0
+               zrootdp  (i)      = 0.0
+               zvegfrac (i)      = 0.0
+               zvegh    (i)      = 0.0
+               zvegl    (i)      = 0.0
+               zsnodpl(i) = 0.0
+               zsnoma(i)  = 0.0
+               zwsnow(i)  = 0.0
+               zsnvdp(i)  = 0.0
+               zsnvma(i)  = 0.0
+               zwsnv(i)   = 0.0
+               if(read_hveglpol) then
+                   zhveglpol(i) = -1.0
+               endif
+            end if
+         end do
+
+      end if IF_SVS_V2_2
+
    endif NEW_GL_MASK
 
 
@@ -365,6 +443,7 @@ subroutine coherence3(pvars, ni)
       do i=1,ni
           if (zsnodp(i,indx_soil).lt.critsnow) then
               zsnodp(i,indx_soil) = 0.0
+              zsnowe(i,indx_soil) = 0.0
           end if
       end do
 
@@ -387,7 +466,7 @@ subroutine coherence3(pvars, ni)
          end do
       end if IF_ISBA3
 
-      IF_SVS3: if (schmsol.EQ.'SVS') then
+      IF_SVS3: if (schmsol.EQ.'SVS' .OR. schmsol.EQ.'SVS2') then
 !VDIR NODEP
 
          ! Calculate density
@@ -405,9 +484,9 @@ subroutine coherence3(pvars, ni)
                zsnodpl(i) = 0.0
                zsnoma(i)  = 0.0
                zwsnow(i)  = 0.0
-               zsnoro(i)  = rhosdef
-               zsnoden(i) = rhosdef * rauw
-               zsnoal(i)  = ansmax
+               zsnoro(i)  = rhosdef_svs
+               zsnoden(i) = rhosdef_svs * rauw
+               zsnoal(i)  = ansmax_svs
             else
                zsnoro(i)  = min(  max(100.,zsnoden(i)) / rauw  , 0.9 )
             endif
@@ -416,9 +495,9 @@ subroutine coherence3(pvars, ni)
                zsnvdp(i)  = 0.0
                zsnvma(i)  = 0.0
                zwsnv(i)   = 0.0
-               zsnvro(i)  = rhosdef
-               zsnvden(i) = rhosdef*rauw
-               zsnval(i)  = ansmax
+               zsnvro(i)  = rhosdef_svs
+               zsnvden(i) = rhosdef_svs * rauw
+               zsnval(i)  = ansmax_svs
             else
                zsnvro(i)  =  min(  max(100.,zsnvden(i)) / rauw  , 0.9 )
             endif

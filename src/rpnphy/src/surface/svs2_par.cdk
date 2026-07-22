@@ -1,0 +1,19 @@
+
+      real, parameter :: lami  = 2.22  ! Thermal conductivity of ice
+      real, parameter :: ci  = 2.106E3 ! Heat capctiy of ice
+
+      real, parameter :: lamw  = 0.57  ! Thermal conductivity of water
+
+      real, parameter :: day  = 86400. ! Duration of a day in sec
+
+!    Albedo values from literature
+      real, parameter ::    ADRYSAND = 0.35
+      real, parameter ::     AWETSAND = 0.24
+      real, parameter ::    ADRYCLAY = 0.15
+      real, parameter ::    AWETCLAY = 0.08
+
+!    Emissivity values from van Wijk and Scholte Ubing (1963)
+      real, parameter :: EDRYSAND = 0.95
+      real, parameter :: EWETSAND = 0.98
+      real, parameter :: EDRYCLAY = 0.95
+      real, parameter :: EWETCLAY = 0.97

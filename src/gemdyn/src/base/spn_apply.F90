@@ -18,12 +18,10 @@
 
       subroutine spn_apply ( F_ft1, F_nest, Minx, Maxx, Miny, Maxy, Nk )
       use spn_options
-      use gmm_vt1
       use glb_ld
       use glb_pil
       use HORgrid_options
       use ldnh
-      use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
 
@@ -82,7 +80,7 @@
       end do
 
       call rpn_comm_transpose ( Spn_wrk, ldnh_minx, ldnh_maxx, G_ni, Spn_njnh,&
-                               Spn_12smin,Spn_12smax, G_nk, Spn_fft, -1, 2 )
+                                Spn_12smin,Spn_12smax, G_nk, Spn_fft, -1, 2 )
 
       do k= 2, G_nk
          F_ft1(1:l_ni,1:l_nj,k)= F_ft1(1:l_ni,1:l_nj,k) + &

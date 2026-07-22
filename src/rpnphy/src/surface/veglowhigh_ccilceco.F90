@@ -13,9 +13,13 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module veglowhigh_ccilceco_mod
+  implicit none
+  public
+contains
 
 subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu, &
-     ni, nclass)
+     agfrac, ni, nclass)
   use svs_configs, only : ntypel, vl_type, ntypeh, vh_type, furb_vl, imp_urb, epsilon_svs
    implicit none
 !!!#include <arch_specific.hf>
@@ -29,6 +33,7 @@ subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu
    !            - Output -
    ! LOW        Fraction of (soil) grid covered by low vegetation classes 
    ! HIGH       Fraction of (soil) grid covered by high vegetation classes
+   ! AGFRAC     Fraction of (soil) grid covered by aggricultural areas
    ! DECI       Fraction of HIGH vegetation that is deciduous
    ! EVER       Fraction of HIGH vegetation that is evergreen 
    ! IMPERVU    Fraction of LAND SURFACE that is IMPERVIOUS 
@@ -36,7 +41,7 @@ subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu
 
    integer ni, nclass
    real deci(ni), ever(ni), fcover(ni,nclass), vegf_evol(ni,nclass), impervu(ni)
-   real high(ni), low(ni)
+   real high(ni), low(ni), agfrac(ni)
 !
 !Author
 !        Maria Abrahamowicz (dec 2020)
@@ -57,6 +62,9 @@ subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu
         high(i)= 0.0
         deci(i)= 0.0
         ever(i)= 0.0
+        ! with the option "vf_type='CCILC_ECO'", only classes 15, 17 and 20
+        ! consist of agricultural areas (see inside inicover_svs_ccilceco)
+        agfrac(i) = fcover(i,15) + fcover(i,17) + fcover(i,20)
       END DO
 !
 !
@@ -97,6 +105,8 @@ subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu
           ! TAKE TO BE FRACTION OF URBAN CLASS (vf=21) TIMES A CONSTANT...
           impervu(i) =  imp_urb * fcover(i,21) / totfract
 !
+          ! FRACTION OF LAND SURFACE COVERED WITH AGRICULTURAL AREAS
+          agfrac(i) = agfrac(i) / totfract
 
        ELSE
           low(i)     = 0.0
@@ -145,3 +155,4 @@ subroutine veglowhigh_ccilceco(fcover, vegf_evol, low, high, deci, ever, impervu
 !
    return
  end subroutine veglowhigh_ccilceco
+end module veglowhigh_ccilceco_mod

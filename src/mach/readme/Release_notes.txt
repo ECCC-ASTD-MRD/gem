@@ -1,0 +1,364 @@
+Release notes
+--------------------------Development Version 2.0.0 ------------------------------
+(Fevrier 2016)
+- 0002479: Release of next operational GEM-MACH version 2.0.0
+
+--------------------------Development Version 1.5.5 ------------------------------
+(Juin 2015)
+- 0003229: Preparer/Tester SRPDQA014 basé sur GEM 3.3.8.4
+
+--------------------------Development Version 1.5.4 ------------------------------
+(Fevrier 2015)
+- 0003071: [Model] Bogue découvert dans GEM 3.3.8.2 (passage a 3.3.8.2-isba))
+
+--------------------------Development Version 1.5.3 ------------------------------
+(April 2014)
+- 0002734: [Model] Passer à GEM 3.3.8.2 PHY 5.0.4.4 
+
+--------------------------Development Version 1.5.2 ------------------------------
+(April 2014)
+- 0002721: [Model] Tester l'impact du passage à GEM 3.3.8.1 
+
+--------------------------Development Version 1.5.1 ------------------------------
+(Nov 2012)
+- 0002331: [Model] Underestimate of the height of the BL by factor of ~ 10 when setting diffusion coefficient in mach_input_check
+- 0002358: [Model] Kain-Fritsch (KFC) wet deposition removal not taken into account at sub-grid scale
+- 0002312: [Model] S/R mach_updatdyn has erroneously been updating already-updated GEM dynamics fields in chemistry since PHY 4.5 and G-M v1.2
+
+--------------------------Development Version 1.5.0 ------------------------------
+(May 2012)
+- 0002231: [Model] Go from 3.3.7 to 3.3.8 (with bugfix)
+- 0002199: [Model] New GEM-MACH code needed to go from 58 levels to 80 levels
+
+--------------------------Development Version 1.4.6 ------------------------------
+(March 2012)
+- 0002037: (Model) Upgrade from 3.3.3/4.7.2 to 3.3.6/4.7.2.1 (Power7 migration)
+
+--------------------------Development Version 1.4.5 ------------------------------
+(Dec 2011)
+- 0002039: (GEM-MACH 15)[Bug/Crash/Report] Operational GEM-MACH15 crash with a SEGFAULT on 2011120512
+
+--------------------------Development Version 1.4.4 ------------------------------
+(Sept 2011)
+- 0001944: [Model] Parallel GEM-MACH15 2011-08-18 12 UTC run crashed at time step 309 (FP overflow exception) 
+
+--------------------------Development Version 1.4.3 ------------------------------
+(May 2011)
+- 0001804: [Model] Bug in GEM subroutine: sgoflx3
+- 0001774: [Model] Incorrect INTEGER type used for exponents in calculation in mach_hetv_rebin.ftn90 
+
+--------------------------Development Version 1.4.2 ------------------------------
+(March 2011)
+- 0001371: [Model] Revise GEM-MACH vertical diffusion scheme to include flux bottom boundary condition (Sylvain Menard) - fermé.
+- 0001316: [Emission processing] Smoke 	2009/10 SMOKE processing for GEM-MACH15 (Qiong Zheng) -  fermé.
+- 0000794: [Model] Validation d'une passe de 12h avec une passe de 48h apres 96pdt (Sylvain Menard) - fermé.
+- 0001260: [Model] AF at model top is corrupted on hyb level (Hugo Landry) - fermé.
+- 0001487: [Model] Dates of emissions files are modified every time they are read by gmemisp. (Hugo Landry) - fermé.
+- 0001543: [Model] colef not initialized in mach_cam_cas.ftn90 (Mike Moran) - fermé.
+- 0001574: [Model] Update to GEM3.3.3 libraries, bug found... nest_intt.ftn is missing in gem-mach release 1.4.0 & 1.4.1 (Hugo Landry) - fermé.
+- 0001722: [Model] Bug in chm_mjrpts_get_stkinfo - please confirm (Hugo Landry) - fermé.
+- 0001718: [Model] Possible division by zero in mach_gas_drydep_solver.ftn90 (Hugo Landry) - fermé.
+- 0001677: [Model] Major point sources are not read correctly (Hugo Landry) - fermé.
+
+--------------------------Development Version 1.4.1 ------------------------------
+(May 2010)
+- 0001493: [Installation / Launching] Launching scripts does not work under some circumptances (Hugo Landry) - résolu.
+- 0001451: [Optimization] mach_hetv_case9 contains redundent coding (Sylvain Menard) - fermé.
+- 0001449: [Model] mach_hetv_coorhno3 is called in mach_hetv_main and mach_hetv_case11 with inconsistent lwmin. (Sylvain Menard) - fermé.
+- 0001450: [Optimization] integer variable "iter" is in the arguments of mach_hetv_case2 but not used in the calculation. (Sylvain Menard) - fermé.
+
+--------------------------Development Version 1.4.0 ------------------------------
+(March 2010)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.4.0
+Web page: https://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.4.0
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features
+- 0001425 : [Model] Migrate to GEM 3.3.3 / phy 4.7.2
+
+Bug fixes
+- 0001392 : [Model] 21 Nov. 2009 00Z operational GEM-MACH15 run aborted with "error exch westwards: Adw_halox+ 1" message
+- 0001402 : [Model] GEM-MACH15 operational crash (SEGFAULT) on Dec 1 2009 00z
+- 0001426 : [Model] Surface pressure (PN) is output twice
+
+--------------------------Development Version 1.3.0 beta------------------------------
+(January 2009)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.3.0_beta
+Web page: https://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.3.0_beta
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features
+- 0000376 : [Model] Develop and implement CAM into GEM-MACH (2 size bins for operational purpose)
+- 0000377 : [Model] Develop/Implement hetereogenous chemistry into GEM-MACH
+- 0000378 : [Model] Develop/implement dry deposition for Particules into GEM-MACH
+- 0000382 : [Model] Expand chemical boundary condition profiles to all species
+- 0000383 : [Model] Develop/implement wet deposition for gases and particles
+- 0000385 : [Code management] Develop gem_settings namelist keys to control all chemistry processes
+- 0000386 : [Model] Decide on operator sequence for processes in GEM-MACH
+- 0000387 : [Model] Implement condensation of SOA to particle phase
+- 0000628 : [Code management] With the winter series being tested : have tr_profile use winter profiles for BC
+- 0000651 : [Model] Implement vertical diffusion for PM species.
+- 0000725 : [Model] Summer/winter biogenic emissions input treatment
+- 0000782 : [Model] Add the preparation/reading of Winter biogenic emissions
+- 0000799 : [Code management] Need a new naming convention for file name & s/r names
+- 0000843 : [Code management] Switch to activate and deactivate aqueous phase chemistry.
+- 0000890 : [Model] Replace common block by modules
+- 0000000 : [Model] Implementation of Aqueous Chemistry
+- 0000000 : [Model] Implementation of Sea Salt
+- 0000000 : [Model] Implementation of Wind Dust
+
+Bug fixes
+- 0000200 : [Emissions processing] EMIS_PREP is not considering global grids, only LAM
+- 0000800 : [Model] incorrect value of chmt_ntr in svn535
+- 0000817 : [Model] crash in mach_output.ftn90
+- 0000837 : [Model] Possible bug in mach_incld_in_cloud
+- 0000841 : [Model] Hardcoded molecular weight in mach_cam_aerocld.ftn90
+- 0000842 : [Model] Subscripts out of bound in mach_aurams_cwc_per_bin.f90
+- 0000844 : [Model] Global region emissions can not be read by GEM-MACH properly
+- 0000846 : [Model] Index "ih2so4" set to incorrect value in subroutine "mach_cam_aerocld.ftn90"
+- 0000852 : [Model] Division by zero in subroutine HETVCALL
+- 0000854 : [Model] Negative values of global run found at the time zero in listing fil
+- 0000858 : [Model] crash in aerocld when chm_aqueous_s = NIL
+- 0000859 : [Model] crash in mach_cam_rain_ (floating point exception)
+- 0000879 : [Model] "igf" and "igfig" memory need to be deallocated at the end of mach_pm_chme.ftn90
+- 0000886 : [Model] Sea salt get high values >>1e+05 ug/m3
+- 0000897 : [Code management] many constants are redeclared: maxnsp, maxns, maxnsaq and maxnsp
+- 0000901 : [Model] mach_incld_soleq.ftn90 (add patch for H+)
+- 0000902 : [Model] Why turning SEA SALT off changes PM concentration for other PM species?
+- 0000908 : [Model] Add feedback from CAM on gases
+- 0000917 : [Model] Donald job freeze on supercomputer (adi_svn669/adi412)
+- 0000927 : [Model] GEM-MACH do not validate when we change the topology (Alexander Kallaur)
+- 0000934 : [Model] mach_hetv abort with negatives values of H+
+- 0000937 : [Model] gem-mach does not validate when using -qinitauto option on IBM
+- 0000960 : [Model] Bug in dry_deposition with aero_resist and diff_resist
+- 0000961 : [Model] Bug found in mach_calc_season.ftn90 (problem with southern hemisphere)
+- 0000970 : [Model] Corrections to HETV algorithms
+- 0000973 : [Model] Differing molecular weights in mach_cam_scaveng
+- 0000974 : [Model] mach_dry_deposition_solver crash when tsurf <-80 C (exponential blows up)
+- 0000975 : [Model] If CAM=/ NIL , chm_soa_s must be /NIL ... ====> JIANG or ODUM
+- 0000976 : [Model] Bug in drydeposition with humidity treatment
+- 0000977 : [Model] Increase O3 deposition velocity over lakes
+- 0000978 : [Model] Wrong humidity field to drydeposition solver
+- 0000984 : [Model] Wrong behaviour of namelist key checking for soa and cam interaction
+- 0000985 : [Model] A potential bug is found in current trunk version GEM-MACH
+- 0000987 : [Model] Run v 1.3.0 to see if it give the same results for different topology
+
+--------------------------Development Version 1.2.2 and 1.2.2a------------------------------
+(May & April 2008)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.2.2
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.2.2a
+Web page: https://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.2.2
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features
+
+- 0000363: (Model) Find a way to associate major points emissions NOMVAR with advection species NOMVAR
+- 0000388: (Model) Implement injection of major point sources emissions
+- 0000595: (Model) Plume rise for major points sources
+- 0000730: (Model) Units of PM and gases in GEM-MACH output files
+- 0000752: (Code management) New nomvars for GEM-MACH DM and KM files
+- 0000781: (Code management) gem_settings.nml keys explanation
+- 0000751: (Documentation) Have an external tool that print the species list
+
+Bug fixes
+- 0000737: (Model) svn513 (1.2.1) does not validate for different topology values
+- 0000743: (Model) Cycle stop with ZERO DIVIDE in ace_svn523/ace102
+- 0000797: (Model) chm_mjrpts_rearrange for EMISSIONS is never executed
+- 0000800: (Model) incorrect value of chmt_ntr in svn535
+
+--------------------------Development Version 1.2.1------------------------------
+(April 2008)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.2.1
+Web page: https://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.2.1
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features
+
+- 0000716: (Model) Dry deposition (update): Make surface resistance (RA) landuse dependant
+- 0000700: (Code management) Move sp_AC and SP_AF from the gas_pkg to the cam_pkg
+- 0000672: (Model) Recalculate season at every timestep for dry deposition
+- 0000670: (Code management) Move species lists from diffusion and dry deposition to mach_main.ftn90
+- 0000668: (Optimization) Review chm_read_nml.ftn90 so that "impossible" runs are aborted right away
+- 0000651: (Model) Implement vertical diffusion for PM species.
+- 0000633: (Code management) Redesign mach_main.ftn90 to fit the new "order process sequence"
+- 0000605: (Model) Setting minimum and maximum values for vertical diffusion KT. Recalculate KT at ground level.
+- 0000600: (Model) Renamed of libchmbeis3em.a to libgemmach.a
+- 0000597: (Model) More realistic boundary conditions for chemistry tracers
+- 0000596: (Optimization) Moving species' molecular weight to the species_info structure.
+- 0000587: (Model) BEIS3 now use solar incoming radiation (FB) instead of absorbed (FS)
+- 0000586: (Model) Units correction and use of better meteorological inputs fields for drydeposition
+- 0000547: (Model) Module mach_mod_adom2 is now split into 3 packages.
+- 0000543: (Emissions processing) Need a way to toggle emissions type in EMIS_PREP
+- 0000515: (Model) Implement the "master array" of species
+- 0000443: (Model) Update mechanism to provide boundary conditions for chemistry species (pil and blend zone)
+- 0000402: (Model) Creation of cycling scripts for chemistry
+- 0000386: (Management) Decide on operator sequence for processes in GEM-MACH
+- 0000368: (Model) Make the emission preprocessor to ignore one or more category of emissions
+- 0000363: (Model) Find a way to associate biogenic, area and majors points emissions NOMVAR with chemistry tracers NOMVAR.
+- 0000362: (Model) The number of CPU related to OPENMP is always equal to 1 although we ask for more
+- 0000361: (Model) Add the capacity to do chemistry up to a certain height (nk_top < nk)
+- 0000347: (Config) New gem_settings keys to control: diffusion, cycling, deposition and the number of active chemistry levels
+- 0000321: (Model) Mechanism to create a cycling file for chemistry to continue a run for the next day.
+- 0000287: (Model) Implementation of dry deposition for gas
+- 0000273: (Model) Development/implementation of vertical diffusion of chemistry tracers using emissions as input files
+- 0000143: (Installation / Launching) Stop the code asap if no chemical constants are found
+
+Bug fixes
+
+- 0000675: (Code management) NO2 is missing in tr_profile although present in set_bc.cdk
+- 0000638: (Code management) gem-mach is having troubles finding the biogenics file
+- 0000627: (Model) Ozone is too high because of erroneous anthropogenic emissions.
+- 0000626: (Model) Crash in diffusion at timestep 0 when biogenic emissions are disabled
+- 0000586: (Code management) Discrepancies between units in dry deposition and units in GEM
+- 0000567: (Model) RPNlibrairy return error message for newdate
+- 0000566: (Model) Dry deposition output are wrong (striped)
+- 0000548: (Code management) Zero divide while cycling
+- 0000538: (Model) SVN 379 ne compile pas sur AIX avec la chimie compiler avec "make debug"
+- 0000511: (Model) Crash solved in subroutine mach_jcorr. Check made on vertical levels in mach_updatdyn
+- 0000502: (Code management) Chemistry does not validate for different values of Ptopo_smtphy
+- 0000501: (Model) Floating point overflow in mach_soa_yield
+- 0000479: (Code management) Vivian bugfix on GEM 3.3.0 that she will include in GEM 3.3.1
+- 0000477: (Model) Make GEM-MACH listing shorter
+- 0000449: (Model) Division by zero in gas chemistry solver
+- 0000432: (Model) Elimination of Biogenics Emissions from the dynamic bus
+- 0000414: (Model) Mismatch between memory allocation in physics versus chemistry (gesdict.ftn, vs chm_gesdict.ftn90)
+- 0000412: (Config) gem_settings.nml file size limit of 39992 bytes encountered
+- 0000410: (Code management) PR after 12h integration in GEM-MACH15 do not make sense - problem with cycling
+- 0000362: (Config) The number of CPU related to OPENMP is always equal to 1 although we ask for more
+- 0000206: (Model) Different topology produce different results
+- 0000143: (Script) Stop the code asap if no chemical constants are found
+
+Known bug to be resolved
+
+- 0000673: (Model) abr_svn475/abr115 aborts in the model in mach_drivesc_il_omp
+    * NOTE: This bug has not been reproduced in SVN 510. It is possible that it was fixed in the process of fixing something else.
+
+--------------------------Development Version 1.2.0------------------------------
+(August 2007)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.2.0
+Web page: http://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.2.0
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features
+
+- 0000000: (Model) Upgrade from GEM dynamics 3.2.2 ----> 3.3.0
+- 0000000: (Model) Upgrade from GEM physics 4.4 ----> 4.5
+- 0000000: (Model) Chemistry interface is now part of GEM librairies managed by MRB.
+- 0000000: (Model) Emissions interface is now part of GEM librairies managed by MRB.
+- 0000359: (Model) First version of GEM-MACH that run on supercomputer.
+- 0000120: (Model) Full implementation of major points sources into the model
+- 0000269: (Model) Add capacity to run chemistry with different timestep length
+- 0000217: (Model) Chemistry tracers initialisation 3.2.2 ---> 3.3.0
+- 0000326: (Model) Build a gem_settings namelist (LAM) for GEM-MACH based on GEM 3.3.0
+- 0000154: (Model) Patch to update physics fields to be at the same timestep as the chemistry
+- 0000113: (Code management) Choose a GEM-MACH grid domain to run on a continental scale (at 15km)
+- 0000277: (Code management) Biogenic subroutines called under mach_main.ftn90 should be rename
+                                                         mach_*.ftn90 instead of chm*.ftn90
+- 0000346: (Launching) Upgrade GEM-MACH installation scripts from v1.1.2 to v1.2.0
+- 0000219: (Documentation) Update documentation on the current chemical interface including major points sources
+
+Bug fixes
+
+- 0000253: (Model) Memory leak with major points sources in /CHEM ...subroutine mjrpt*ftn90
+- 0000295: (Model) Biogenic emissions fix for high isoprene over ocean
+- 0000293: (Model) Constant correction in mach_uprate.ftn90
+- 0000198: (Launching) GEM-MACH now works with new version of r.compile
+- 0000325: (Model) Clarification about gem_settings keys in v3.3.0 and the use of BMF meteorological files
+- 0000213: (Model) Variable constant values
+- 0000276: (Model) Variables with problems for anthropogenic emissions
+- 0000299: (Model) Use gas constant in the constant file instead of hardcoded value 8.31 in mach_bio*.ftn90
+- 0000320 (Model) Elimination of *.cdk on the /CHEM side that belong to /GEM
+
+--------------------------Development Version 1.1.2------------------------------
+(June 2007)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.1.2
+Web page: http://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.1.2
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features:
+
+* Implementation of major points sources emissions (#0000120) (sub: chm_mjrpts*ftn90)
+* Implementation of gas phase chemistry            (#0000170) (sub: mach_gas_chem.ftn90)
+* Implementation of SOA formation                             (sub: mach_soa_yield.ftn90)
+* Implementation of initial and boundary conditions
+  for chemistry tracers                                       (sub: tr_profile.ftn, nest_clim.ftn, ...)
+* Temporary patch to update physics fields to be
+  at the same timestep as the chemistry            (#0000154) (sub: mach_maketend.ftn90, mach_updatdyn.ftn90, ...)
+* Introduction of new keys in gem_settings.nml to control
+  chemistry process activation                     (#0000214) (see: mach_main.ftn90 / chm_read_nml.ftn90)
+
+* Bug fix: Area emissions are always zero in
+           RPN output files but not in the
+           emissions files inputs                  (#0000148)
+* Other changes:  http://ulysse.cmc.ec.gc.ca/mantis/changelog_page.php?project_id=7
+
+--------------------------Development Version 1.1.1------------------------------
+(January 2007)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.1.1
+Web page: http://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.1.1
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features: * Biogenics and area emissions are now driven into the model (#0000136)
+               * Major points sources processing in EMIS_PREP (#0000120)
+               * Update to what will become GEM 3.3 and physics 4.5 (Not released yet)
+               * Global coordinates available in chm_exe (#000137)
+               * Chemical constants available in the model (#0000119)
+               * Implementation of BEIS 3.1.3 (#0000138)
+
+--------------------------Development Version 1.1------------------------------
+(October 2006)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.1
+Web page: http://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.1
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features: * Full biogenics calculation (BIES3) in the main model
+               * New mechanic to read biogenic and area input files
+               * New mechanic to generated BMF files from the input files
+               * Pulled out emissions preparation from the GEM entry; it is
+                 now in a stand alone form in EMIS_PREP directory
+               * Removal of modified Um_runent.sh since biogenics are now offline
+               * Added a tool to generate chm_ini.ftn, chm_bus.cdk and
+                 chm_beis3em_nml.cdk
+                  NOTES: - Those files are already included in the release.
+                           If one want to change number of species/bin, this
+                           tool can be used.
+                         - The files generated are in FORTRAN 77, they need
+                           to be converted to FORTRAN 90
+                         - chm_beis3em_nml.cdk has been merged with other cdk
+                           to create chm_triggers.cdk
+               * Applied new naming convention:
+                  - GEM  => itf_chm_* for filenames and s/r names of the CHEM interface
+                  - CHEM => chm_* for all filenames and s/r
+               * Removed etagere mechanism in CHEM.  It is not needed since CHEM
+                 library is not linked with anything from GEM: the linkage is done
+                 during the GEM building.  So now there's no need to open an experiment
+                 with ouv_exp and generating a makefile with r.make_exp.
+               * Added chemistry keys to gem_settings.nml in namelist &chem_cfgs
+               * Now using standard Phy 4.4 instead of a modified version of it
+               * Lots of beautifications
+
+-------------------------Development Version 1.0.1-----------------------------
+(June 2006)
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.0.1
+Web page: http://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.0.1
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main features: * Reading of GEM physics field in CHEM package
+               * Calculation of PAR, as part of the future biogenic emissions
+               * Removal of 4DVar from makefiles (not used un chemistry
+                 package)
+               * Remove the output of uninitialized field
+
+--------------------------Development Version 1.0------------------------------
+(May 2006)
+First official version
+http://ulysse.cmc.ec.gc.ca/svn/gem-mach/code/tags/1.0
+Web page: http://wiki.cmc.ec.gc.ca/wiki/GEM-MACH/1.0
+Bug tracking: http://ulysse.cmc.ec.gc.ca/mantis
+
+Main Features: * GEM Interface in GEM directory
+               * CHEM library in CHEM directory
+               * No actual chemistry is done, it is simply a baseline for future
+                 work
+
+--------------------------------Universe starts here------------------------------

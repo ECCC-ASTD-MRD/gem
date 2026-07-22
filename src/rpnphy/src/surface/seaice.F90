@@ -15,6 +15,10 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module seaice_mod
+  implicit none
+  public
+contains
 subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
      N, M, NK)
    use tdpack
@@ -26,6 +30,9 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
 
    use sfc_options
    use sfcbus_mod
+   use phy_status, only: physeterror
+   use difuvd12_mod, only: difuvd1, difuvd2
+   use fillagg_mod, only: fillagg
    implicit none
 !!!#include <arch_specific.hf>
    !@Object The multi-level model calculates the temperature profile across a
@@ -90,8 +97,8 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    real,dimension(n) :: tb,    vmod,  vdir, zsnodp_m,  vmod0
    real,dimension(n) :: my_ta,my_qa
    real,dimension(n) :: zu10, zusr   ! wind at 10m and at sensor level
-   real,dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
-   real,dimension(n) :: zusurfzt, zvsurfzt, zqd
+   real,dimension(n) :: zref_sw_surf, zemit_lw_surf
+   real,dimension(n) :: zusurfzt, zvsurfzt
 
    real,dimension(n,nl) :: a, b, c, cap, cond, d, dz, sour, tp, z
 
@@ -102,7 +109,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    real,pointer,dimension(:) :: z0h, z0m, zalfaq, zalfat
    real,pointer,dimension(:) :: zdlat, zfcor, zfdsi, zftemp, zfvap
    real,pointer,dimension(:) :: zml, zqdiag, zrainrate, zrunofftot
-   real,pointer,dimension(:) :: zsnodp, zsnowrate, ztdiag
+   real,pointer,dimension(:) :: zsnodp, zsnowe, zsnowrate, ztdiag
    real,pointer,dimension(:) :: ztsrad, zudiag, zvdiag, zfrv, zzusl, zztsl
    real,pointer,dimension(:) :: zfsd, zfsf, zcoszeni
    real,pointer,dimension(:) :: zutcisun, zutcishade, zwbgtsun, zwbgtshade
@@ -180,6 +187,7 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
    zrainrate(1:n) => bus( x(rainrate,1,1)     : )
    zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
+   zsnowe   (1:n) => bus( x(snowe,1,indx_sfc) : )
    zsnowrate(1:n) => bus( x(snowrate,1,1)     : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
@@ -951,6 +959,11 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
           ZALFAQ   (I) = - CTU(I) *  QSICE(I)
         endif
 
+        ! Compute SWE over sea ice using assumption of a constant snow density in the sea ice scheme
+        ! ROSNOW(1) is used since it corresponds to the value used when computing the changes in snow depth
+        ! due to snowfall and snow melt.         
+        ZSNOWE(I) =  ZSNODP(I) * ROSNOW(1)
+
       end do
 
       ! Estimate diagnostic quantities at user-specified level
@@ -966,6 +979,67 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
          zvdiag = zvdiag * vmod0 / vmod
       endif
       
+#ifdef HAVE_NEMO
+      if (cplocn) then
+         ! Update with fluxes and diagnostic variables from ocean model
+         cplupd=.false.
+         call cpl_update (vmod(1:n), 'UVI', lcl_indx, n, u=UU, v=VV, cplu=cplupd)
+         if (cplupd) then
+           call cpl_update (FC_ICE(1:n), 'SHI' , lcl_indx, n)
+           call cpl_update (FV_ICE(1:n), 'LHI' , lcl_indx, n)
+           call cpl_update (ZUDIAG(1:n), 'ZUI' , lcl_indx, n)
+           call cpl_update (ZVDIAG(1:n), 'ZVI' , lcl_indx, n)
+           call cpl_update (ZTDIAG(1:n), 'ZTI' , lcl_indx, n)
+           call cpl_update (ZQDIAG(1:n), 'ZQI' , lcl_indx, n)
+           call cpl_update (TS    (1:n), 'I7I' , lcl_indx, n)
+           call cpl_update (ZTSRAD(1:n),   'T4I' , lcl_indx, n)
+           call cpl_update (QSICE (1:n),   'QSI' , lcl_indx, n)
+           call cpl_update (ILMO_ICE(1:n), 'ILI' , lcl_indx, n)
+           call cpl_update (Z0M   (1:n),   'ZMI' , lcl_indx, n)
+           call cpl_update (Z0H   (1:n),   'ZHI' , lcl_indx, n)
+           
+           ! Derives other variables from cpl_update output
+           ! assuming FC_ICE and FV_ICE were computed with
+           ! RHOA at the same level
+           if (zt_rho == zt) then
+             my_ta(1:n)=ztdiag(1:n)
+             my_qa(1:n)=zqdiag(1:n)
+           else
+             call physeterror('seaice', 'inconsistent density level')
+             return
+           endif
+           do I=1,N
+              RHOA  (I)= PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
+              ZALFAT(I)= FC_ICE(I)/(-CPD *RHOA(I))
+              ZALFAQ(I)= FV_ICE(I)/(-(CHLC+CHLF)*RHOA(I))
+              ZFTEMP(I) = -ZALFAT(I)
+              ZFVAP(I)  = -ZALFAQ(I)
+              T   (I,1)= TS(I)
+              if (IMPFLX) then
+                ! CTU consistent with ice-ocean model fluxes (as possible)
+                ! Uncertainties in CTU from interpolation/agregation
+                ! will be compensated by ZALFAT and ZALFAQ
+                delh=TS(I)-TH(I) ; delq=QSICE(I)-HU(I)
+                CTU(I) = 0.5*( -ZALFAT(I)/sign(max(abs(delh),delh_tresh),delh) &
+                               -ZALFAQ(I)/sign(max(abs(delq),delh_tresh),delq) )
+                CTU(I) = max(0.,CTU(I)) ! CTU<0 should never occur except under vicinity
+                                        ! of null fluxes agregation/interpolation anyway
+                                        ! e.g. sign(ZALFAT) /= sign(delh) or sign(ZALFAQ) /= sign(delq)
+                ! ZALFAT and ZALFAQ consistent with FC_ICE and FV_ICE
+                ZALFAT(I) = ZALFAT(I) - CTU(I)*TH(I)
+                ZALFAQ(I) = ZALFAQ(I) - CTU(I)*HU(I)
+              else
+                CTU(I) = 0. !Redundant but less dangerous
+              endif
+           end do
+           ! Diagnostic ustar based on agregated ice model stress (tau=rho*ustar**2)
+           call cpl_update (ZFRV  (1:n), 'FRI' , lcl_indx, n, rho=RHOA, vmod=VMOD, cmu=CMU)
+           ! Updated consistent CMU needed by implicit scheme using the following relation
+           ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
+         endif
+      endif
+#endif
+
       ! Fill surface type-specific diagnostic values
       zqdiagtyp = zqdiag
       ztdiagtyp = ztdiag
@@ -976,71 +1050,12 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
       zudiagtypv = zudiag
       zvdiagtypv = zvdiag
 
-#ifdef HAVE_NEMO
-      ! Update with fluxes and diagnostic variables from ocean model
-      cplupd=.false.
-      call cpl_update (vmod(1:n), 'UVI', lcl_indx, n, u=UU, v=VV, cplu=cplupd)
-      if (cplupd) then
-        call cpl_update (FC_ICE(1:n), 'SHI' , lcl_indx, n)
-        call cpl_update (FV_ICE(1:n), 'LHI' , lcl_indx, n)
-        call cpl_update (ZUDIAG(1:n), 'ZUI' , lcl_indx, n)
-        call cpl_update (ZVDIAG(1:n), 'ZVI' , lcl_indx, n)
-        call cpl_update (ZTDIAG(1:n), 'ZTI' , lcl_indx, n)
-        call cpl_update (ZQDIAG(1:n), 'ZQI' , lcl_indx, n)
-        call cpl_update (TS    (1:n), 'I7I' , lcl_indx, n)
-        call cpl_update (ZTSRAD(1:n),   'T4I' , lcl_indx, n)
-        call cpl_update (QSICE (1:n),   'QSI' , lcl_indx, n)
-        call cpl_update (ILMO_ICE(1:n), 'ILI' , lcl_indx, n)
-        call cpl_update (Z0M   (1:n),   'ZMI' , lcl_indx, n)
-        call cpl_update (Z0H   (1:n),   'ZHI' , lcl_indx, n)
-        
-        ! Derives other variables from cpl_update output
-        ! assuming FC_ICE and FV_ICE were computed with
-        ! RHOA at the same level
-        if (zt_rho == zt) then
-          my_ta(1:n)=ztdiag(1:n)
-          my_qa(1:n)=zqdiag(1:n)
-        else
-          call physeterror('seaice', 'inconsistent density level')
-          return
-        endif
-        do I=1,N
-           RHOA  (I)= PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
-           ZALFAT(I)= FC_ICE(I)/(-CPD *RHOA(I))
-           ZALFAQ(I)= FV_ICE(I)/(-(CHLC+CHLF)*RHOA(I))
-           ZFTEMP(I) = -ZALFAT(I)
-           ZFVAP(I)  = -ZALFAQ(I)
-           T   (I,1)= TS(I)
-           if (IMPFLX) then
-             ! CTU consistent with ice-ocean model fluxes (as possible)
-             ! Uncertainties in CTU from interpolation/agregation
-             ! will be compensated by ZALFAT and ZALFAQ
-             delh=TS(I)-TH(I) ; delq=QSICE(I)-HU(I)
-             CTU(I) = 0.5*( -ZALFAT(I)/sign(max(abs(delh),delh_tresh),delh) &
-                            -ZALFAQ(I)/sign(max(abs(delq),delh_tresh),delq) )
-             CTU(I) = max(0.,CTU(I)) ! CTU<0 should never occur except under vicinity
-                                     ! of null fluxes agregation/interpolation anyway
-                                     ! e.g. sign(ZALFAT) /= sign(delh) or sign(ZALFAQ) /= sign(delq)
-             ! ZALFAT and ZALFAQ consistent with FC_ICE and FV_ICE
-             ZALFAT(I) = ZALFAT(I) - CTU(I)*TH(I)
-             ZALFAQ(I) = ZALFAQ(I) - CTU(I)*HU(I)
-           else
-             CTU(I) = 0. !Redundant but less dangerous
-           endif
-        end do
-        ! Diagnostic ustar based on agregated ice model stress (tau=rho*ustar**2)
-        call cpl_update (ZFRV  (1:n), 'FRI' , lcl_indx, n, rho=RHOA, vmod=VMOD, cmu=CMU)
-        ! Updated consistent CMU needed by implicit scheme using the following relation
-        ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
-      endif
-#endif
-
       !--------------------------------------
       !   8.     Heat Stress Indices
       !------------------------------------
       !#TODO: at least 4 times identical code in surface... separeted s/r to call
-      IF_TERMAL_STRESS: if (thermal_stress) then
-
+      IF_THERMAL_STRESS: if (thermal_stress) then
+!     Compute wind at z=zt for wbgt
       i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,ts,qsice,z0m,z0h,zdlat,zfcor, &
            hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt, &
            v_diag=zvsurfzt,tdiaglim=SEAICE_TDIAGLIM,L_min=sl_Lmin_seaice,spdlim=vmod)
@@ -1068,23 +1083,20 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
          zusr(i) = zu10(i)
          endif
 
-             zqd(i) = max( ZQDIAG(i) , 1.e-6)
+        if (atm_external) then
+      !# if direct/diffuse solar radiation not in forcing used default partitionning
+          zfsd(i) = 0.85*fsol(i)
+          zfsf(i) = 0.15*fsol(i)
+        endif
 
-            zref_sw_surf(i) = albsfc(i) * fsol(i)
-            zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsrad(i)**4
-
-         zzenith(i) = acos(zcoszeni(i))
-         if (fsol(i) > 0.0) then
-            zzenith(i) = min(zzenith(i), pi/2.)
-         else
-            zzenith(i) = max(zzenith(i), pi/2.)
-         endif
+        zref_sw_surf(i) = albsfc(i) * fsol(i)
+        zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsrad(i)**4
 
       end do
 
-         call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+         call SURF_THERMAL_STRESS(ZTDIAG, zqdiag,         &
               ZU10,ZUSR,  ps,                             &
-              ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+              ZFSD, ZFSF, ZFDSI, acos(zcoszeni),          &
               ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
               Zutcisun ,Zutcishade,                       &
               zwbgtsun, zwbgtshade,                       &
@@ -1092,11 +1104,12 @@ subroutine seaice3(BUS, BUSSIZ, PTSURF, PTSURFSIZ, lcl_indx, &
               ztglbsun, ztglbshade, ztwetb,               &
               ZQ1, ZQ2, ZQ3, ZQ4, ZQ5,                    &
               ZQ6,ZQ7, N)
-      endif IF_TERMAL_STRESS
+      endif IF_THERMAL_STRESS
 
 !     FILL THE ARRAYS TO BE AGGREGATED LATER IN S/R AGREGE
       call FILLAGG ( BUS, BUSSIZ, PTSURF, PTSURFSIZ, INDX_ICE, &
                      SURFLEN )
 
    return
-end subroutine seaice3
+ end subroutine seaice3
+end module seaice_mod

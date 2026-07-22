@@ -14,14 +14,14 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r hzd_flt9pt  - 9 points explicit horizontal diffusion operator
 
-      subroutine hzd_flt9pt (rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,&
+      subroutine hzd_flt9pt (rfd,sfd,Minx,Maxx,Miny,Maxy,nk,&
                              nu,m,n,i0,in,j0,jn)
       use, intrinsic :: iso_fortran_env
       implicit none
 
-      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,lnk,m,n,i0,in,j0,jn
-      real, intent(INOUT) :: rfd (Minx:Maxx,Miny:Maxy,lnk), &
-                             sfd (Minx:Maxx,Miny:Maxy,lnk)
+      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,nk,m,n,i0,in,j0,jn
+      real, intent(INOUT) :: rfd (Minx:Maxx,Miny:Maxy,nk), &
+                             sfd (Minx:Maxx,Miny:Maxy,nk)
       real(kind=REAL64), intent(IN) :: nu
 
 !OBJECT
@@ -62,7 +62,7 @@
 
       if (m == n) then
 !$omp do collapse(2)
-         do k=1,lnk
+         do k=1,nk
             do j=j0,jn
             do i=i0,in
                rfd(i,j,k)= rfd(i,j,k) +  &
@@ -78,7 +78,7 @@
       else
 
 !$omp do
-         do k=1,lnk
+         do k=1,nk
             do j=j0,jn
             do i=i0,in
                wk(i,j)= c1*(sfd(i  ,j+1,k)+sfd(i+1,j  ,k) + &

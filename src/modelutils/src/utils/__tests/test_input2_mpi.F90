@@ -24,6 +24,7 @@ use iso_c_binding
    use vGrid_Descriptors
    use vgrid_wb
    use rmn_gmm
+   use gmm_build_meta_mod
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2011-04

@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module MODI_URBAN_DRAG
+  implicit none
+  public
+contains
 subroutine URBAN_DRAG2(PTSTEP, PT_CANYON, PQ_CANYON,                    &
                           PTS_ROOF, PTS_ROAD, PTS_WALL, PDELT_SNOW_ROOF,    &
                           PEXNS, PEXNA, PTA, PQA, PPS, PRHOA,               &
@@ -30,6 +33,7 @@ subroutine URBAN_DRAG2(PTSTEP, PT_CANYON, PQ_CANYON,                    &
                           ZTRDZT,ZTRFZT,ZUZT,ZVZT                           )
        use sfclayer, only: sl_sfclayer,SL_OK
        use sfc_options
+       use phy_status, only: physeterror
 
 !!****  *URBAN_DRAG*
 !
@@ -111,9 +115,9 @@ real, dimension(:), intent(IN)    :: PZREF          ! reference height of the fi
                                                     ! atmospheric level (temperature)
 real, dimension(:), intent(IN)    :: PUREF          ! reference height of the first
                                                     ! atmospheric level (wind)
-real, dimension(:), intent(IN)    :: PZ0_TOWN       ! roughness length for momentum
-real, dimension(:), intent(IN)    :: PZ0_ROOF       ! roughness length for momentum for roof
-real, dimension(:), intent(IN)    :: PZ0_ROAD       ! roughness length for momentum for road
+real, dimension(:), intent(INOUT) :: PZ0_TOWN       ! roughness length for momentum
+real, dimension(:), intent(INOUT) :: PZ0_ROOF       ! roughness length for momentum for roof
+real, dimension(:), intent(INOUT) :: PZ0_ROAD       ! roughness length for momentum for road
 real, dimension(:), intent(IN)    :: PBLD           ! fraction of buildings
 real, dimension(:), intent(IN)    :: PBLD_HEIGHT    ! h
 real, dimension(:), intent(IN)    :: PCAN_HW_RATIO  ! h/W
@@ -276,7 +280,8 @@ Z0H_CAN(:) = max( PZ0_TOWN(:),1.e-20 )
 
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/3.,PZREF+PBLD_HEIGHT/3., &
      ZTS_TOWN/PEXNS,ZQ_TOWN,PZ0_TOWN,Z0H_TOWN,PLAT,fcor,optz0=8,L_min=sl_Lmin_town, coefm=cmu,  &
-     coeft=ctu,ue=ue,tdiaglim=TOWN_TDIAGLIM)
+     coeft=ctu,ue=ue,tdiaglim=TOWN_TDIAGLIM,z0m_optz0=PZ0_TOWN,z0t_optz0=Z0H_TOWN)
+
 
    if (stat /= SL_OK) then
       call physeterror('urban_drag mom.', 'error returned by sl_sfclayer()')
@@ -296,7 +301,7 @@ stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/3.,PZREF+PBLD_HEI
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF,PZREF, &
      PTS_ROOF/PEXNS,ZQ_ROOF,PZ0_ROOF,Z0H_ROOF,PLAT,fcor,optz0=8,L_min=sl_Lmin_town,coefm=cmu,  &
      coeft=ctu,ue=ue,hghtm_diag=zt,hghtt_diag=zt,t_diag=ztrfzt,u_diag=zuzt,v_diag=zvzt,   &
-     tdiaglim=TOWN_TDIAGLIM)
+     tdiaglim=TOWN_TDIAGLIM,z0m_optz0=PZ0_ROOF,z0t_optz0=Z0H_ROOF)
 
               PAC_ROOF(:) = (cmu(:)*ctu(:)/ue(:)**2)  * PVMOD(:)
 
@@ -329,7 +334,7 @@ PAC_ROOF_WAT(:) = PAC_ROOF(:) * min ( 1. , ZLE_MAX(:)/ZLE(:) )
 
 stat = sl_sfclayer(PTA/PEXNA,PQA,PVMOD,PVDIR,PUREF+PBLD_HEIGHT/2.,PZREF+PBLD_HEIGHT/2., &
      PT_CANYON/PEXNS,PQ_CANYON,PZ0_TOWN,Z0H_can,PLAT,fcor,optz0=1,L_min=sl_Lmin_town,coefm=cmu, &
-     coeft=ctu,ue=ue,tdiaglim=TOWN_TDIAGLIM)
+     coeft=ctu,ue=ue,tdiaglim=TOWN_TDIAGLIM,z0m_optz0=PZ0_TOWN,z0t_optz0=Z0H_can)
 
    if (stat /= SL_OK) then
       call physeterror('urban_drag canyon', 'error returned by sl_sfclayer()')
@@ -386,7 +391,8 @@ do JLOOP=1,3
 ! compute T at z=xzt above the road
   stat = sl_sfclayer(PT_CANYON/PEXNS,PQ_CANYON,PU_CAN+ZW_CAN,PVDIR,PBLD_HEIGHT/2.,PBLD_HEIGHT/2., &
      PTS_ROAD/PEXNS,PQ_CANYON,PZ0_ROAD,Z0H_ROAD,PLAT,fcor,optz0=8,L_min=sl_Lmin_town,coefm=cmu,  &
-     coeft=ctu,ue=ue, hghtt_diag=zt,t_diag=ztrdzt,tdiaglim=TOWN_TDIAGLIM)
+     coeft=ctu,ue=ue, hghtt_diag=zt,t_diag=ztrdzt,tdiaglim=TOWN_TDIAGLIM,z0m_optz0=PZ0_ROAD, &
+     z0t_optz0=Z0H_ROAD)
 
    if (stat /= SL_OK) then
       call physeterror('urban_drag road', 'error returned by sl_sfclayer()')
@@ -428,3 +434,4 @@ PAC_ROAD_WAT(:) = PAC_ROAD(:) * min ( 1. , ZLE_MAX(:)/ZLE(:) )
 !-------------------------------------------------------------------------------
 
 end subroutine URBAN_DRAG2
+end module MODI_URBAN_DRAG

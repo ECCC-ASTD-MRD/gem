@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN --------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ----------------------------
 
 module cnv_main
    implicit none
@@ -26,17 +11,21 @@ contains
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use tdpack_const, only: CHLC, CPD, GRAV, RAUW
-      use phy_status, only: phy_error_L, PHY_OK
+      use phy_status, only: phy_error_L, PHY_OK, physeterror
       use phybusidx
       use phymem, only: phyvar
       use phy_options
       use cnv_options
+      use kfcp_mod, only: kfcp8
       use kfrpn, only: kfrpn4
       use phybudget, only: pb_compute, pb_conserve, pb_residual
       use shallconv, only: shallconv5
       use kfmid, only: kfmid1
       use tendency, only: apply_tendencies
       use conv_mp_tendencies, only: conv_mp_tendencies1
+      use bkf_shallow_mod, only: bkf_shallow6
+      use bkf_deep_mod, only: bkf_deep4
+      use secajus_mod, only: secajus
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -66,7 +55,7 @@ contains
 
       include "surface.cdk"
 
-      real    :: cdt1, rcdt1
+      real    :: cdt1, rcdt1, wfact
       integer :: i,k,niter, ier, nkm1
 
       real(REAL64), dimension(ni) :: l_en0, l_pw0
@@ -95,7 +84,6 @@ contains
       real,    dimension(ni,nk-1)      :: ppres,pudr, pddr, phsflx, dmsedt
       real,    dimension(ni,nk-1,kchm) :: pch1, pch1ten
 
-
       ! Switches for convection call
       !
       !integer:: kice = 0           ! take ice phase into account or not (0)
@@ -116,16 +104,16 @@ contains
            ztstar, zcapekfc, ztauckfc, zcinkfc, zmg, zml, zdlat, zdxdy, zkmid, &
            zabekfc, zpeffkfc, zrice_int, zrliq_int, zwumaxkfc, zzbasekfc, zztopkfc, &
            zcoadvu,zcoadvv,zcoage,zcowlcl,zwklcl,zcozlcl,ztlcm, zconemc, zconqmc, &
-           zmcd,zmpeff,zmainc
+           zmcd,zmpeff,zmainc, zsigs
       real, pointer, dimension(:,:), contiguous :: ncp, nip, qcm, qcp, qip, qqm, qqp, qrp, &
-           sigma, ttm, ttp, uu, vv, wz, zfdc, zgztherm, zhufcp, zhushal, &
+           sigma, ttm, ttp, uu, vv, wzavg, wz, zfdc, zgztherm, zhufcp, zhushal, &
            zprcten, zpriten, zqckfc, ztfcp, ztshal, ztusc, ztvsc,  &
            zufcp, zvfcp, zufcp1, zvfcp1, zufcp2, zvfcp2, zufcp3, zvfcp3,  zsufcp, zsvfcp, &
            zprctns,zpritns,qti1p, nti1p, zti1p, zfsc, zqlsc, zqssc, &
            zumfs, ztpostshal, zhupostshal, zcqce, zcqe, zcte, zen, zkt, &
            zareaup, zdmfkfc, zkfcrf, zkfcsf, zqldi, zqrkfc, zqsdi, zumfkfc, &
-           zqcz, zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
-           zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2
+           zqdifv, zwklclplus, zkfmrf, zkfmsf, zqlmi, zqsmi, zfmc, zprctnm, zpritnm, &
+           zmqce, zmte, zmqe, zumid, zvmid, zrnflx, zsnoflx, zmrk2, wztrigd, wztrigm
 
       logical :: kfcmom
       !----------------------------------------------------------------
@@ -164,6 +152,7 @@ contains
       MKPTR1D(zmpeff, mpeff, pvars)
       MKPTR1D(zpeffkfc, peffkfc, pvars)
       MKPTR1D(zrckfc, rckfc, pvars)
+      MKPTR1D(zsigs, sigs, pvars)
       MKPTR1D(ztlcm, tlcm, pvars)
       MKPTR1D(zrice_int, rice_int, pvars)
       MKPTR1D(zrliq_int, rliq_int, pvars)
@@ -196,6 +185,7 @@ contains
       MKPTR2Dm1(ttp, tplus, pvars)
       MKPTR2Dm1(uu, uplus, pvars)
       MKPTR2Dm1(vv, vplus, pvars)
+      MKPTR2Dm1(wzavg, wavg, pvars)
       MKPTR2Dm1(wz, wplus, pvars)
       MKPTR2Dm1(zcqce, cqce, pvars)
       MKPTR2Dm1(zcqe, cqe, pvars)
@@ -217,7 +207,6 @@ contains
       MKPTR2Dm1(zpritns, pritns, pvars)
       MKPTR2Dm1(zqckfc, qckfc, pvars)
       MKPTR2Dm1(zmqce, mqce, pvars)
-      MKPTR2Dm1(zqcz, qcz, pvars)
       MKPTR2Dm1(zqdifv, qdifv, pvars)
       MKPTR2Dm1(zqlsc, qlsc, pvars)
       MKPTR2Dm1(zqssc, qssc, pvars)
@@ -288,6 +277,24 @@ contains
       pch1ten = 0.
       zkkfc = 0.
 
+      ! Compute time-relaxed vertical velocity
+      wztrigd => wz
+      wztrigm => wz
+      if (associated(wzavg)) then
+         if ( kount == 0 ) then
+            wfact = 0. 
+         else
+            wfact = trigtauw/(trigtauw + cdt1)
+         endif
+         do i=1,ni
+            do k=1,nkm1
+               wzavg(i,k) = wz(i,k) + (wzavg(i,k) - wz(i,k)) * wfact
+            enddo
+         enddo
+         if (deep_wavg) wztrigd => wzavg
+         if (mid_wavg) wztrigm => wzavg
+      endif
+
       ! Run selected deep convective scheme
       DEEP_CONVECTION: if (convec == 'SEC') then            ! ajustement convectif sec
          call secajus(zcte, ttp, sigma, psp, niter, 0.1, cdt1, ni, nkm1)
@@ -297,7 +304,7 @@ contains
       else if (convec == 'KFC') then
 
          call kfcp8(ni,nkm1,zfcpflg,zkkfc,psp,ttp,qqp, &
-              uu,vv,wz, &
+              uu,vv,wztrigd, &
               ztfcp,zhufcp,zufcp,zvfcp, &
               zprcten,zpriten, zqrkfc, &
               sigma,zdxdy,zrckfc,geop, &
@@ -315,7 +322,7 @@ contains
       else if (convec == 'KFC2') then
 
          call kfrpn4(ni,nkm1,zfcpflg,zkkfc,psp,ttp,qqp, &
-              uu,vv,wz, &
+              uu,vv,wztrigd, &
               ztfcp,zhufcp,zufcp,zvfcp, &
               zufcp1,zvfcp1,zufcp2,zvfcp2, zufcp3,zvfcp3, zsufcp,zsvfcp, &
               zprcten,zpriten, zqrkfc, &
@@ -327,7 +334,7 @@ contains
               zqldi, zqsdi, &
               zrliq_int, zrice_int, &
               zkfcrf, zkfcsf, &
-              kount,zdlat,zmg,zml,zwstar,ztstar,zen,zkt, &
+              kount,zdlat,zmg,zml,zwstar,ztstar,zen,zkt,zsigs, &
               zcoadvu,zcoadvv,zcoage,zcowlcl,zcozlcl,zmrk2,critmask,delt)
          if (phy_error_L) return
          ztlc = zrckfc
@@ -348,7 +355,7 @@ contains
               dt, bkf_ldown, bkf_kice,                           &
               bkf_kens,                                          &
               ppres, zgztherm,zdxdy, phsflx,                     &
-              ttp, qqp, dummy1, dummy2, uu, vv, wz,              &
+              ttp, qqp, dummy1, dummy2, uu, vv, wztrigd,          &
               kcount, ztfcp, zhufcp, zprcten, zpriten,           &
               ztlc,ztsc,                                         &
               zumfkfc, zdmfkfc, zkfcrf, zkfcsf, zcapekfc, zztopkfc, zzbasekfc, &
@@ -499,7 +506,7 @@ contains
          cnv_active = 0.
          if (associated(zkkfc)) cnv_active = zkkfc
          cond_prflux = zrnflx + zsnoflx
-         call kfmid1(ttp, qqp, uu, vv, wz, zgztherm, sigma, psp, zdxdy, zdlat, &
+         call kfmid1(ttp, qqp, uu, vv, wz, wztrigm, zgztherm, sigma, psp, zdxdy, zdlat, &
               cape, cnv_active, cond_prflux, &
               zmte, zmqe, zumid, zvmid, zprctnm, zpritnm, &
               zkmid, ztlcm, zfmc, zqlmi, zqsmi, zkfmrf, zkfmsf, zmcd, zmpeff, zmainc, &
@@ -510,36 +517,40 @@ contains
       endif MIDLEVEL_CONVECTION
       if (phy_error_L) return
 
-      ! Adjust midlevel tendencies to impose conservation
-      if (pb_conserve(mid_conserve, zmte, zmqe, pvars, &
-           F_dqc=zprctnm, F_dqi=zpritnm, F_rain=ztlcm) /= PHY_OK) then
-         call physeterror('cnv_main', &
-              'Cannot correct conservation for '//trim(conv_mid))
-         return
-      endif
+      MIDLEVEL_CONS_TEND: if (conv_mid /= 'NIL') then
+         
+         ! Adjust midlevel tendencies to impose conservation
+         if (pb_conserve(mid_conserve, zmte, zmqe, pvars, &
+              F_dqc=zprctnm, F_dqi=zpritnm, F_rain=ztlcm) /= PHY_OK) then
+            call physeterror('cnv_main', &
+                 'Cannot correct conservation for '//trim(conv_mid))
+            return
+         endif
 
-      ! Apply midlevel convective tendencies for non-condensed state variables
-      if (associated(zumid) .and. associated(zvmid)) then
-         call apply_tendencies(ttp,  qqp,  uu,    vv, &
-              &                zmte, zmqe, zumid, zvmid, &
-              &                ztdmaskxdt, ni, nk, nkm1)
-      else
-         call apply_tendencies(ttp,  qqp, &
-              &                zmte, zmqe, ztdmaskxdt, ni, nk, nkm1)
-      endif
-      
-      ! Apply mid-level convective tendencies for condensed variables
-      call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, &
-            qti1p, nti1p, zti1p, ztdmaskxdt, ni, nk, nkm1)
+         ! Apply midlevel convective tendencies for non-condensed state variables
+         if (associated(zumid) .and. associated(zvmid)) then
+            call apply_tendencies(ttp,  qqp,  uu,    vv, &
+                 &                zmte, zmqe, zumid, zvmid, &
+                 &                ztdmaskxdt, ni, nk, nkm1)
+         else
+            call apply_tendencies(ttp,  qqp, &
+                 &                zmte, zmqe, ztdmaskxdt, ni, nk, nkm1)
+         endif
 
-      ! Post-midlevel budget analysis
-      if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, pvars, &
-           delt, nkm1, F_rain=ztlcm) /= PHY_OK) then
-         call physeterror('cnv_main', &
-              'Problem computing final budget for '//trim(conv_mid))
-         return
-      endif
-      
+         ! Apply mid-level convective tendencies for condensed variables
+         call conv_mp_tendencies1(zprctnm, zpritnm, ttp, qcp, ncp, qip, nip, &
+              qti1p, nti1p, zti1p, ztdmaskxdt, ni, nk, nkm1)
+
+         ! Post-midlevel budget analysis
+         if (pb_residual(zconemc, zconqmc, l_en0, l_pw0, pvars, &
+              delt, nkm1, F_rain=ztlcm) /= PHY_OK) then
+            call physeterror('cnv_main', &
+                 'Problem computing final budget for '//trim(conv_mid))
+            return
+         endif
+         
+      endif MIDLEVEL_CONS_TEND
+
       call msg_toall(MSG_DEBUG, 'cnv_main [END]')
       !----------------------------------------------------------------
       return

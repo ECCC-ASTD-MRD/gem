@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module pbl_maintke
   implicit none
@@ -24,11 +9,12 @@ contains
   !/@*
   subroutine maintke(pvars, kount, ni, nk, nkm1, trnch)
     use, intrinsic :: iso_fortran_env, only: INT64
+    use neark, only: neark_dp => neark_dp_orig
     use debug_mod, only: init2nan
     use tdpack_const, only: CPD, DELTA, GRAV, KARMAN, CAPPA
     use series_mod, only: series_xst
     use phy_options
-    use phy_status, only: phy_error_L, PHY_OK
+    use phy_status, only: phy_error_L, PHY_OK, physeterror
     use phybusidx, except1=>lwc, except2=>iwc
     use phymem, only: phyvar
     use vintphy, only: vint_thermo2mom1
@@ -39,6 +25,7 @@ contains
     use pbl_mtke_utils, only: BLCONST_CU, BLCONST_CK
     use sfclayer, only: sl_stabfunc, SL_OK
     use microphy_utils, only: mp_lwc, mp_iwc
+    use twind_mod, only: twind
     implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -63,8 +50,6 @@ contains
     include "tables.cdk"
     include "phyinput.inc"
 
-    integer, external :: neark
-
     real, save :: tfilt = 0.1
 
     integer :: i, k, stat, ksl(ni)
@@ -84,7 +69,8 @@ contains
          zsigm, zsigt, zumoins, zvmoins, zfbl, zfblgauss, zfblnonloc, zfnn, &
          zftot, zqtbl, zturbreg, zzd, zgq, zgql, zgte, zgzmom, zrif, &
          zrig, zshear2, zc1pbl, zbuoy, zmrk2, zdiffen, zdissen, &
-         zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar
+         zpri, zsige, zbuoyen, zshren, zgztherm, zfxp, zqwvar, zwcascd, zznu, zznd, zn2, &
+         zznt, zlscorer2
 
     real, pointer, dimension(:,:,:), contiguous :: zvcoef
 
@@ -146,7 +132,9 @@ contains
     MKPTR2D(zhumoins, humoins, pvars)
     MKPTR2D(zkm, km, pvars)
     MKPTR2D(zkt, kt, pvars)
+    MKPTR2D(zlscorer2, lscorer2, pvars)
     MKPTR2D(zmrk2, mrk2, pvars)
+    MKPTR2D(zn2, n2, pvars)
     MKPTR2D(zpri, pri, pvars)
     MKPTR2D(zqcmoins, qcmoins, pvars)
     MKPTR2D(zqtbl, qtbl, pvars)
@@ -164,10 +152,13 @@ contains
     MKPTR2D(zuwng, uwng, pvars)
     MKPTR2D(zvmoins, vmoins, pvars)
     MKPTR2D(zvwng, vwng, pvars)
+    MKPTR2D(zwcascd, wcascd, pvars)
     MKPTR2D(zwqng, wqng, pvars)
     MKPTR2D(zwtng, wtng, pvars)
     MKPTR2D(zzd, zd, pvars)
     MKPTR2D(zze, ze, pvars)
+    MKPTR2D(zznd, znd, pvars)
+    MKPTR2D(zznu, znu, pvars)
 
     MKPTR3D(zvcoef, vcoef, pvars)
 
@@ -182,6 +173,11 @@ contains
        MKPTR2D(zzn, znplus, pvars)
     else
        MKPTR2D(zzn, zn, pvars)
+    endif
+    if (zntplus > 0) then
+       MKPTR2D(zznt, zntplus, pvars)
+    else
+       MKPTR2D(zznt, znt, pvars)
     endif
     if (qwvarplus > 0) then
        MKPTR2D(zqwvar, qwvarplus, pvars)
@@ -200,10 +196,10 @@ contains
 
     if (kount == 0) then
        
-       if (.not.any([(any((/'tr/qtbl:m','qtbl     '/) == phyinread_list_s(i)),i=1,phyinread_n)]) .or. &
+       if (.not.ANYPHYINL((/'tr/qtbl:m','qtbl     '/)) .or. &
             fluvert == 'RPNINT') zqtbl = 0.
 
-       INIT_TKE: if (any('en'==phyinread_list_s(1:phyinread_n))) then
+       INIT_TKE: if (ISPHYIN('en')) then
           tke = max(tke,0.)
        else
           do k=1,nkm1
@@ -244,7 +240,7 @@ contains
     end do
 
     ! Compute surface layer scales
-    stat = neark(zsigt, zpmoins, 1000., ni, nkm1, ksl)
+    ksl = neark_dp(zsigt, zpmoins, 1000., ni, nkm1)
     do i=1,ni
        xb(i)=1.0+DELTA*zhumoins(i,ksl(i))
        xh(i)=(GRAV/(xb(i)*ztve(i,ksl(i)))) * ( xb(i)*zftemp_ag(i) &
@@ -268,12 +264,12 @@ contains
        endif     
 
        ! Call RPN Integrated PBL scheme
-       call rpnint(tke, zkm, zkt, zpri, zrif, zrig, zbuoy, zshear2, &
-            zbuoyen, zshren, zdiffen, zdissen, zqwvar, zzn, zzd, enold, &
+       call rpnint(tke, zkm, zkt, zpri, zrif, zrig, zbuoy, zn2, zshear2, &
+            zbuoyen, zshren, zdiffen, zdissen, zqwvar, zzn, zznt, zznu, zznd, zzd, enold, &
             zumoins, zvmoins, ztmoins, zhumoins, lwc, iwc, zfxp, zturbreg, &
             zh, zlh, zpmoins, zz0_ag, zz0t_ag, zfrv_ag, zwstar, zqstar, &
             zhpar, ztsurf, zqsurf, zdlat, zfcor, &
-            zsigm, zsigt, zgzmom, zgztherm, zdxdy, zmrk2, zvcoef, &
+            zsigm, zsigt, zgzmom, zgztherm, zdxdy, std_p_prof, zmrk2, zvcoef, &
             eturbtau, kount, ni, nkm1)
        if (phy_error_L) return
        
@@ -285,11 +281,11 @@ contains
        zuwng = 0.
        zvwng = 0.
        
-       call moistke(tke,enold,zzn,zzd,zrif,zrig,zbuoy,zshear2,zpri,zqtbl,zc1pbl,zfnn, &
-            zfblgauss,zfblnonloc,zgte,zgq,zgql,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
+       call moistke(tke,enold,zzn,zznt,zzd,zrif,zrig,zbuoy,zshear2,zpri,zqtbl,zc1pbl,zfnn, &
+            zfblgauss,zfblnonloc,zgte,zgq,zgql,zwcascd,zh,zlh,zhpar,zwtng,zwqng,zuwng,zvwng,&
             zumoins,zvmoins,ztmoins,ztve,zhumoins,zhumoins,zpmoins,zsigt,zsigm,zsige, &
             zze,zz0_ag,zgzmom,zfrv_ag,zwstar,fbsurf,zturbreg, &
-            zmrk2,zvcoef,zdxdy,eturbtau,kount,trnch,ni,nkm1)
+            zmrk2,zvcoef,zdxdy,zlscorer2,eturbtau,kount,trnch,ni,nkm1)
        if (phy_error_L) return
        
        do k=1,nkm1-1

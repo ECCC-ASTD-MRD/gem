@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module boundary_layer
    implicit none
@@ -27,7 +12,7 @@ contains
       use debug_mod, only: init2nan
       use phybudget, only: pb_compute, pb_conserve, pb_residual, INT_TYPE_LINEAR
       use phy_options
-      use phy_status, only: phy_error_L, PHY_OK
+      use phy_status, only: phy_error_L, PHY_OK, physeterror
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
@@ -36,6 +21,7 @@ contains
       use pbl_sim, only: simplepbl
       use pbl_ri_diffuse, only: diffuseall
       use pbl_diffuse, only: difver
+      use pbl_massflux, only: massflux
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -60,58 +46,53 @@ contains
 
       ! Local variables
       integer :: i, istat, nkm1
-      real    :: wk1(ni,nk), wk2(ni,nk), rcdt1
-      real, dimension(ni,nk), target :: zero
+      real    :: rcdt1
       real(REAL64), dimension(ni) :: l_en0, l_pw0
       real, pointer, dimension(:,:), contiguous :: zqplus, ztplus, zuplus, zvplus, zumoins, zvmoins, zqcplus, zwplus
-      real, pointer, dimension(:), contiguous   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, zps, ztdmaskxdt
-      real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zflw
-      real, pointer, dimension(:) :: zfc  !#TODO: should be contiguous
+      real, pointer, dimension(:), contiguous   :: zqdiag, ztdiag, zudiag, zvdiag, zz0, ztdmaskxdt
+      real, pointer, dimension(:), contiguous   :: zconepbl, zconqpbl, zflw, zfc
       real, pointer, dimension(:,:), contiguous :: zqdifv, ztdifv, zudifv, zvdifv, zkm, zkt, zgzmom, zgztherm, &
-           zwdifv, zqcdifv, ztmoins, zqmoins, ztve, zvcoef
+           zwdifv, zqcdifv, ztmoins, zqmoins, ztve
+      logical :: dqc_applied
 
-      ! External symbols
-      integer, external :: pbl_simple
-
-      call init2nan(wk1,wk2)
       call init2nan(l_en0,l_pw0)
 
       MKPTR2D(zqmoins, humoins, pvars)
       MKPTR2D(zqplus, huplus, pvars)
       MKPTR2D(ztmoins, tmoins, pvars)
       MKPTR2D(ztplus, tplus, pvars)
-      MKPTR2D(zumoins, umoins, pvars)
       MKPTR2D(zuplus, uplus, pvars)
-      MKPTR2D(zvmoins, vmoins, pvars)
       MKPTR2D(zvplus, vplus, pvars)
       MKPTR2D(zqcplus, qcplus, pvars)
       MKPTR2D(zwplus, wplus, pvars)
-      MKPTR1D(zps, pmoins, pvars)
       MKPTR1D(zqdiag, qdiag, pvars)
       MKPTR1D(ztdiag, tdiag, pvars)
       MKPTR1D(zudiag, udiag, pvars)
       MKPTR1D(zvdiag, vdiag, pvars)
-      MKPTR1D(zz0, z0, pvars)
       MKPTR1D(ztdmaskxdt, tdmaskxdt, pvars)
       MKPTR1D(zconepbl, conepbl, pvars)
       MKPTR1D(zconqpbl, conqpbl, pvars)
       MKPTR1DK(zfc, fc, indx_agrege, pvars)
       MKPTR1D(zflw, flw, pvars)
-      MKPTR2D(zkm, km, pvars)
-      MKPTR2D(zkt, kt, pvars)
-      MKPTR2D(zgzmom, gzmom, pvars)
-      MKPTR2D(zgztherm, gztherm, pvars)
       MKPTR2D(zqcdifv, qcdifv, pvars)
       MKPTR2D(zqdifv, qdifv, pvars)
       MKPTR2D(ztve, tve, pvars)      
       MKPTR2D(ztdifv, tdifv, pvars)
       MKPTR2D(zudifv, udifv, pvars)
       MKPTR2D(zvdifv, vdifv, pvars)
-      MKPTR2D(zvcoef, vcoef, pvars)
       MKPTR2D(zwdifv, wdifv, pvars)
+
+      ! if (fluvert == 'SIMPLE') then
+         MKPTR2D(zumoins, umoins, pvars)
+         MKPTR2D(zvmoins, vmoins, pvars)
+         MKPTR1D(zz0, z0, pvars)
+         MKPTR2D(zkm, km, pvars)
+         MKPTR2D(zkt, kt, pvars)
+         MKPTR2D(zgzmom, gzmom, pvars)
+         MKPTR2D(zgztherm, gztherm, pvars)
+      ! endif
       
       ! Initialization
-      zero = 0.
       rcdt1 = 1./cdt1
       nkm1 = nk-1
       
@@ -132,6 +113,12 @@ contains
          endif
       elseif (fluvert == 'YSU') then
          istat = pbl_ysu1(pvars, cdt1, ni, nk, nkm1, trnch)
+         if (phy_error_L) return
+      endif
+
+      ! Mass-flux closures to compute nonlocal mixing
+      if (pbl_nonloc == 'DEROOY22') then
+         call massflux(pvars, kount, ni, nkm1)
          if (phy_error_L) return
       endif
 
@@ -160,9 +147,10 @@ contains
 
       ! Apply diffusion operator to compute PBL tendencies
       if (fluvert == 'RPNINT') then
-         call diffuseall(pvars, cdt1, ni, nk, nkm1)
+         call diffuseall(pvars, dqc_applied, cdt1, ni, nk, nkm1)
       else
          call difver(pvars, cdt1, kount, ni, nk, nkm1, trnch)
+         dqc_applied = .false.
       endif
       if (phy_error_L) return
          
@@ -178,7 +166,7 @@ contains
       call apply_tendencies(zqplus, ztplus, zuplus, zvplus, &
            &                zqdifv, ztdifv, zudifv, zvdifv, &
            &                ztdmaskxdt, ni, nk, nkm1)
-      if (associated(zqcplus)) &
+      if (associated(zqcplus) .and. .not.dqc_applied) &
            call apply_tendencies(zqcplus, zqcdifv, ztdmaskxdt, ni, nk, nkm1)
       if (diffuw) call apply_tendencies(zwplus, zwdifv, ztdmaskxdt, ni, nk, nkm1)
       

@@ -1,24 +1,8 @@
-!COMP_ARCH=inteloneapi-2022.1.2 ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-5.2.82  ; -suppress=-std08
-!COMP_ARCH=intel-19.0.3.199 ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-6.0.5  ; -suppress=-std08
-!COMP_ARCH=PrgEnv-intel-6.0.5-19.0.5.281  ; -suppress=-std08
+module kfcp_mod
+   implicit none
+   public
 
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
+contains
 
 subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
      ub,vb,scr3, &
@@ -33,6 +17,12 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
    use tdpack_const
    use cnv_options
    use tpdd, only: tpdd1
+   use condload_mod, only: condload
+   use tpmix_mod, only: tpmix
+   use envirtht_mod, only: envirtht
+   use prof5_mod, only: prof5
+   use dtfrznew_mod, only: dtfrznew2
+   use phy_status, only: physeterror
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -279,11 +269,6 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
    real, dimension(ix,kx) :: tt0,  tv00,   q00,  u00,    v00,   ww0,    &
         dzp,  dpp,    qst1, pp0,    thts, z0g,     &
         sigkfc, ql0,  qi0
-
-   external tpmix
-   external condload
-   external envirtht
-   external prof5
 
    ! Basic parameters
 
@@ -872,7 +857,9 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 
            PMID = 0.5 * ( 1000.*PSB(I) + 100.E2 )
            if (PP0(I,K).ge.PMID) L5 = K
+           !#TODO: L5 may be uninit
            if (PP0(I,K).ge.P300) LLFC = K
+           !#TODO: LLFC may be uninit
            if (TT0(I,K).gt.TRPL) ML=K
 
   15    continue
@@ -1376,6 +1363,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
          if(NK1.eq.KLCL)THTMIN=THTES(NK1)
          THTMIN=AMIN1(THTES(NK1),THTMIN)
          if(THTMIN.eq.THTES(NK1))KMIN=NK1
+         !#TODO: KMIN may be uninit
 
 
 
@@ -1892,6 +1880,7 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
         THTA0(NK)=TT0(I,NK)*EXN(NK)
 
         if(PP0(I,NK).gt.P165)LVF=NK
+        !#TODO: LVF may be uninit ...
 !        PPTMLT=PPTMLT+PPTICE(NK)
 
         QTDT(NK) = QDT(NK)+RLIQ(NK)+RICE(NK) !updraft total water
@@ -3349,4 +3338,6 @@ subroutine kfcp8(ix,kx,flagconv,kkfc,ps,tp1,qp1, &
 !!$       endif
 
     return
-end
+end subroutine kfcp8
+
+end module kfcp_mod

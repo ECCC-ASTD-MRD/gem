@@ -1,23 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------
+module serie_mod
+   implicit none
+   public
+   
+contains
 
 subroutine serie3(INPUNIT,SERSTD,STATUS,ECHO,COMPRESS,HOUR64, &
      F_NIG,F_NK_HYBM,F_NK_HYBT)
    use, intrinsic :: iso_fortran_env, only: REAL64
    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_print,vgd_write,VGD_OK
+   use seracc_mod, only: seracc
+   use serpat_mod, only: serpat2
+   use indseri_mod, only: indseri
+   use serecri_mod, only: serecri4
+   use serfin_mod, only: serfin2
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -45,8 +40,7 @@ subroutine serie3(INPUNIT,SERSTD,STATUS,ECHO,COMPRESS,HOUR64, &
 
 #include "series.cdk"
 
-   integer, external :: FSTECR_S,INDSERI
-   external :: SERPAT2
+   integer, external :: FSTECR_S
 
    !     AUTOMATIC ARRAYS
    integer, dimension(F_nig) :: ig
@@ -454,3 +448,5 @@ subroutine serie3(INPUNIT,SERSTD,STATUS,ECHO,COMPRESS,HOUR64, &
    return
 
 end subroutine serie3
+
+end module serie_mod

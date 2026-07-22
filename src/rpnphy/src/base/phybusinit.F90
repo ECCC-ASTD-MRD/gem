@@ -1,18 +1,8 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
+module phybusinit_mod
+   implicit none
+   public
+
+contains
 
 !/@*
 subroutine phybusinit(ni,nk)
@@ -20,11 +10,12 @@ subroutine phybusinit(ni,nk)
    use wb_itf_mod
    use cnv_options
    use phy_options
-   use phy_status, only: phy_error_L, PHY_OK
+   use phy_status, only: phy_error_L, PHY_OK, physeterror
    use phybusidx
    use ens_perturb, only: ens_nc2d
    use microphy_utils, only: mp_phybusinit
-   use phymem, only: phymem_init, phymem_add
+   use phymem, only: phymem_init, phymem_add, phymem_find, phymem_alloc
+   use sfc_businit_mod, only: sfc_businit
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Establishes requirements in terms of variables in the 4 main buses
@@ -57,21 +48,22 @@ subroutine phybusinit(ni,nk)
    character(len=4), parameter :: LVLM2= 'M*2'
    character(len=4), parameter :: LVLT = 'T'
 
-   character(len=6)  :: nag, nmar, dwwz, nuv, psss
+   character(len=6)  :: nag, nmar, dwwz, nuv, psss, nccl
+   character(len=2)  :: o3p01
    integer :: ier, iverb, nsurf, i
    logical :: lbourg3d, lbourg
    logical :: lkfbe, lshal, lshbkf, lmid
    logical :: lmoistke, lrpnint
    logical :: lmoyhr, lmoyhrkf, lmoykfsh, lmoymid
-   logical :: lgwdsm
-   logical :: lccc2
-   logical :: lghg, ltrigtau
+   logical :: lgwdsm, lgwd, ltofd
+   logical :: lccc2, lanu
+   logical :: lghg, ltrigtau, ltrigtauw
    logical :: liuv
    logical :: lmoyhroz, lmoyhrgh, llinozout, llinghout, llinozage
    logical :: lmoycons
    logical :: lhn_init, lsfcflx
    logical :: lsurfonly, lwindgust
-   logical :: lpcp_frac, ladvzn, ls2
+   logical :: lpcp_frac, ladvzn, ls2, lmp, lcsun, lpblderooy
    !---------------------------------------------------------------------
 
    ier = phymem_init()
@@ -93,6 +85,7 @@ subroutine phybusinit(ni,nk)
    write(nag,'(a,i2)') 'A*', nagrege
 
    write(nuv,'(a,i2)') 'A*', RAD_NUVBRANDS
+   write(nccl,'(a,i2)') 'A*', RAD_TCCL
 
    !# nmar is the number of 2d Markov fields
    write(nmar,'(a,i2)') 'A*', ens_nc2d
@@ -105,7 +98,8 @@ subroutine phybusinit(ni,nk)
    endif
    
    lbourg3d= (pcptype == 'BOURGE3D')
-   lgwdsm  = (sgo_tdfilter > 0.)
+   lgwdsm  = (gwdrag /= 'NIL' .and. sgo_tdfilter > 0.)
+   lgwd    = (gwdrag /= 'NIL')
    lmoyhr  = (moyhr > 0 .or. dynout)
    lkfbe   = any(convec == (/ &
         'BECHTOLD', &
@@ -126,11 +120,16 @@ subroutine phybusinit(ni,nk)
         'SPS_H13'  &
         /))
    lrpnint = (fluvert == 'RPNINT')
+   lmoistke = (fluvert == 'MOISTKE')
    ladvzn  = (advectke .and. lrpnint)
    lccc2   = (radia == 'CCCMARAD2')
+   lanu    = all(rad_anuexp >= 0.)
    lghg    = (lccc2 .and. radghg_L)
    ls2     = (stcond == 'S2')
-
+   lcsun   = (stcond == 'CONSUN')
+   lmp     = (stcond(1:3) == 'MP_')
+   lpblderooy = (pbl_nonloc == 'DEROOY22')
+   
    ! Compute linoz diags only on demand
    do i=1,nphyoutlist
       out_linoz = any(phyoutlist_S(i) == (/ &
@@ -151,25 +150,29 @@ subroutine phybusinit(ni,nk)
       /))
       if (out_linoz) exit
    enddo
-   out_linoz = (out_linoz .or. debug_alldiag_L)
-   
+   out_linoz = (out_linoz .or. debug_alldiag_L .or. nphyoutlist < 0)
+   out_linoz = (out_linoz .and. fluvert /= 'SURFACE')
+
    llinozage = (llinoz .and. age_linoz)              ! age of air tracer off 
    llinozout = (llinoz .and. out_linoz)
    llinghout = (llingh .and. out_linoz)
    lmoyhroz =(lmoyhr .and. llinoz .and. out_linoz)
    lmoyhrgh =(lmoyhr .and. llingh .and. out_linoz)
    ltrigtau = (kfctrigtau > 0.)
+   ltrigtauw = (deep_wavg .or. mid_wavg)
    liuv    = (any(radia == (/&
         'CCCMARAD ', &
         'CCCMARAD2'  &
         /)) .and. kntraduv_S /= '')      
-
+   o3p01 = P0
+   if (llinoz) o3p01 = P1
    
    dwwz = 'd1'
    lsurfonly = (fluvert == 'SURFACE')
    if (lsurfonly) dwwz = 'd0'
    psss = 'p0'
    if (tofd /= 'NIL') psss = 'p1'
+   ltofd = (tofd /= 'NIL')
    lpcp_frac = lsurfonly .and. (pcptype == 'SPS_FRC')
 
 
@@ -185,7 +188,8 @@ subroutine phybusinit(ni,nk)
            )) ebdiag = .true.
       i = i+1
    enddo
-   ebdiag = (ebdiag .or. debug_alldiag_L)
+   ebdiag = (ebdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
+   ebdiag = (ebdiag .and. fluvert /= 'SURFACE')
 
    ! Activate ECMWF diagnostics only if outputs are requested by the user
    i = 1
@@ -196,7 +200,19 @@ subroutine phybusinit(ni,nk)
            /))) ecdiag = .true.
       i = i+1
    enddo
-   ecdiag = (ecdiag .or. debug_alldiag_L)
+   ecdiag = (ecdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
+   ecdiag = (ecdiag .and. fluvert /= 'SURFACE')
+
+   ! Activate final-state screen-level diagnostics only if outputs are requested by the user
+   i = 1
+   do while (.not.fsdiag .and. i <= nphyoutlist)
+      if (any(phyoutlist_S(i) == (/ &
+           'SLT    ', 'SLQ    ', 'SLTD   ', 'SLU    ', 'SLV    ' &
+           /))) fsdiag = .true.
+      i = i+1
+   enddo
+   fsdiag = (fsdiag .or. debug_alldiag_L .or. nphyoutlist < 0)   
+   fsdiag = (fsdiag .and. fluvert /= 'SURFACE')
 
    ! Activate lightning diagnostics only if outputs are requested by the user
    llight = .false.
@@ -209,7 +225,8 @@ subroutine phybusinit(ni,nk)
               /))) llight = .true.
          i = i+1
       enddo
-      llight = (llight .or. debug_alldiag_L)
+      llight = (llight .or. debug_alldiag_L .or. nphyoutlist < 0)
+      llight = (llight .and. fluvert /= 'SURFACE')
    endif
    
    ! Activate refractivity diagnostics only if outputs are requested by the user
@@ -228,7 +245,8 @@ subroutine phybusinit(ni,nk)
            /))) lrefract = .true.
       i = i+1
    enddo
-   lrefract = (lrefract .or. debug_alldiag_L)
+   lrefract = (lrefract .or. debug_alldiag_L .or. nphyoutlist < 0)
+   lrefract = (lrefract .and. fluvert /= 'SURFACE')
 
    ! Activate wind gust estimate only if outputs are requested by the user
    lwindgust = .false.
@@ -242,8 +260,9 @@ subroutine phybusinit(ni,nk)
            /))) lwindgust = .true.
       i = i+1
    enddo
-   lwindgust = (lwindgust .or. debug_alldiag_L)
-   
+   lwindgust = (lwindgust .or. debug_alldiag_L .or. nphyoutlist < 0)
+   lwindgust = (lwindgust .and. fluvert /= 'SURFACE')
+
    ! Activate energy budget diagnostics only if outputs are requested by the user
    lcons = .false.
    i = 1
@@ -276,7 +295,8 @@ subroutine phybusinit(ni,nk)
            /))) lcons = .true.
       i = i+1
    enddo
-   lcons = (lcons .or. debug_alldiag_L)
+   lcons = (lcons .or. debug_alldiag_L .or. nphyoutlist < 0)
+   lcons = (lcons .and. fluvert /= 'SURFACE')
    lmoycons = (lcons .and. lmoyhr)
 
    etccdiag = .false.
@@ -288,20 +308,9 @@ subroutine phybusinit(ni,nk)
            /))) etccdiag = .true.
       i = i+1
    enddo
-   etccdiag = (etccdiag .or. debug_alldiag_L)
-   
-   etccdiagout = .false.
-   i = 1
-   do while (.not.etccdiagout .and. i <= nphyoutlist)
-      if (any(phyoutlist_S(i) == (/ &
-           'TCCM', 'NF  ', 'TSHM', 'TSMM', 'TSLM', 'TZHM', 'TZMM', 'TZLM', &
-           'NTAF' &
-           /))) etccdiagout = .true.
-      i = i+1
-   enddo
-   etccdiagout = (etccdiagout .or. debug_alldiag_L)
+   etccdiag = (etccdiag .or. debug_alldiag_L .or. nphyoutlist < 0)
+   etccdiag = (etccdiag .and. fluvert /= 'SURFACE')
 
-   
    lhn_init = (lhn /= 'NIL')
    lsfcflx = (sfcflx_filter_order > 0)
 
@@ -320,11 +329,35 @@ subroutine phybusinit(ni,nk)
          i = i+1
       enddo
    endif
-   cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L)
+   cmt_comp_diag = (cmt_comp_diag .or. debug_alldiag_L .or. nphyoutlist < 0)
+   cmt_comp_diag = (cmt_comp_diag .and. fluvert /= 'SURFACE')
 
 #include "phymkptr.hf"
 #include "phyvar.hf"
    if (phy_error_L) return
+
+   call sfc_businit(moyhr,ni,nk)
+   if (phy_error_L) return
+
+#ifdef HAVE_MACH
+   call chm_businit(ni,nk)
+#endif
+
+   !#NOTE: phymem_alloc must be done before any call to phymem_find
+   if (debug_alldiag_L .or. nphyoutlist < 0) then
+      ier = phymem_alloc(debug_mem_L, (/'*'/))
+   else
+      ier = phymem_alloc(debug_mem_L, phyoutlist_S)
+   endif
+   if (.not.RMN_IS_OK(ier)) &
+        call physeterror('phybusinit', 'problem in phymem_alloc')
+   if (phy_error_L .or. .not.RMN_IS_OK(ier)) return
+
+#undef PHYMKPTR
+#define PHYPTRGETIDX
+#include "phymkptr.hf"
+#include "phyvar.hf"
+   if (phy_error_L) return   
 
    sigw = sigt
 
@@ -337,14 +370,9 @@ subroutine phybusinit(ni,nk)
    if (qcphytdmp > 0) qcphytd = qcphytdmp
    if (qcplusmp > 0) qcplus = qcplusmp
    if (qrphytdmp > 0) qrphytd = qrphytdmp
-
-   call sfc_businit(moyhr,ni,nk)
-   if (phy_error_L) return
-
-#ifdef HAVE_MACH
-   call chm_businit(ni,nk)
-#endif
+   
    !-------------------------------------------------------------------
    return
 end subroutine phybusinit
 
+end module phybusinit_mod

@@ -19,6 +19,8 @@ module ezgrid_mod
    use rpn_comm_itf_mod
    use ptopo_utils
    use agg_filter_mod
+   use mod_handle_error, only: collect_error
+   use samegrid_mod, only: samesubgrid, is_samegrid2
    implicit none
    private
    !@objective Manipulates ezscint grids
@@ -38,9 +40,6 @@ module ezgrid_mod
 
 #include <rmn/msg.h>
 #include <rmnlib_basics.hf>
-
-!!$   integer,external :: gdll,ezget_nsubgrids,ezget_subgridids,ezgdef_supergrid,msg_getUnit
-   logical,external :: is_samegrid2,is_samegrid_sid
 
    !TODO-later: compute CHARPERBYTE value
    integer,parameter :: CHARPERBYTE = 4
@@ -502,7 +501,6 @@ contains
       !@objective Compare grids projection, localisation and extent for point colacation (src_grid must be a sub-set of dst_grid)
       !@arguments
       integer,intent(in) :: F_src_gridid,F_dst_gridid
-      integer,external :: samesubgrid
       !@author
       !@return
       integer :: F_subgrid

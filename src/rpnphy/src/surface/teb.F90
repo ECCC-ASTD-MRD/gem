@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module MODI_TEB
+  implicit none
+  public
+contains
 subroutine TEB2(PT_CANYON, PQ_CANYON, PU_CANYON,                         &
                      PTI_BLD,                                                 &
                      PT_ROOF, PT_ROAD, PT_WALL, PWS_ROOF,PWS_ROAD,            &
@@ -57,8 +60,9 @@ subroutine TEB2(PT_CANYON, PQ_CANYON, PU_CANYON,                         &
                     PUTCIC_IN,PUTCIC_OUTSUN,PUTCIC_OUTSHADE,                  &
                     PUTCIC_RFSUN,PUTCIC_RFSHADE,                              &
                     PTRFZT,PTRDZT,PURDZU,                                      &
-                    PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,PQ8,PQ9,PQ10,PQ11,PQ12,PQ13)
-
+                    PQ1,PQ2,PQ3,PQ4,PQ5,PQ6,PQ7,PQ8,PQ9,PQ10,PQ11,PQ12,PQ13   &
+                    ,PWKSNOW_ROOF,PWKSNOW_ROAD                                )
+ 
 
 !!****  *TEB*
 !
@@ -319,14 +323,14 @@ subroutine TEB2(PT_CANYON, PQ_CANYON, PU_CANYON,                         &
 !               ------------
 
 use MODD_CSTS,     only : XTT, XSTEFAN
-use MODD_SNOW_PAR, only : XEMISSN, XANSMAX,SWE_CRIT
-use SFC_OPTIONS,   only : THERMAL_STRESS
+use MODD_SNOW_PAR_TEB, only : XEMISSN, XANSMAX,SWE_CRIT
+use SFC_OPTIONS,   only : THERMAL_STRESS, teb_hydropar
 
 use MODE_THERMOS
 use MODE_SURF_SNOW_FRAC
 
 use MODI_URBAN_SOLAR_ABS
-use MODI_URBAN_DRAG2
+use MODI_URBAN_DRAG
 use MODI_URBAN_SNOW_EVOL
 use MODI_ROOF_LAYER_E_BUDGET
 use MODI_ROAD_WALL_LAYER_E_BUDGET
@@ -362,6 +366,8 @@ real, dimension(:),   intent(INOUT) :: PRSNOW_ROAD ! snow layers density
 real, dimension(:),   intent(INOUT) :: PASNOW_ROAD ! snow albedo
 real, dimension(:),   intent(INOUT) :: PESNOW_ROAD ! snow emissivity
 real, dimension(:),   intent(INOUT) :: PTSSNOW_ROAD! snow surface temperature
+real, dimension(:),   intent(INOUT) :: PWKSNOW_ROAD ! snow addi res
+real, dimension(:),   intent(INOUT) :: PWKSNOW_ROOF ! snow addi reSLAYERS ReseRVOir
 real, dimension(:), intent(IN)    :: PPS           ! pressure at the surface
 real, dimension(:), intent(IN)    :: PPA           ! pressure at the first atmospheric level
 real, dimension(:), intent(IN)    :: PEXNS         ! surface exner function
@@ -394,12 +400,12 @@ real, dimension(:), intent(IN)    :: PZREF         ! reference height of the fir
 real, dimension(:), intent(IN)    :: PUREF         ! reference height of the first
                                                    ! atmospheric level (wind)
 real,               intent(IN)    :: PTSTEP        ! time step
-real, dimension(:), intent(IN)    :: PZ0_TOWN      ! town roughness length
-                                                   ! for momentum
-real, dimension(:), intent(IN)    :: PZ0_ROOF      ! roof roughness length
-                                                   ! for momentum
-real, dimension(:), intent(IN)    :: PZ0_ROAD      ! road roughness length
-                                                   ! for momentum
+real, dimension(:), intent(INOUT) :: PZ0_TOWN      ! town roughness length
+                                                   ! for momentum - INOUT because of urban_drag/sfclayer
+real, dimension(:), intent(INOUT) :: PZ0_ROOF      ! roof roughness length
+                                                   ! for momentum - INOUT because of urban_drag/sfclayer
+real, dimension(:), intent(INOUT) :: PZ0_ROAD      ! road roughness length
+                                                   ! for momentum - INOUT because of urban_drag/sfclayer
 real, dimension(:), intent(IN)    :: PBLD          ! fraction of buildings
 real, dimension(:), intent(IN)    :: PBLD_HEIGHT   ! buildings h
 real, dimension(:), intent(IN)    :: PWALL_O_HOR   ! wall surf. / hor. surf.
@@ -638,8 +644,8 @@ integer :: i
 !*      1.1    water reservoirs
 !              ----------------
 
-ZWS_ROOF_MAX =  1. ! (1mm) maximum deepness of roof water reservoir
-ZWS_ROAD_MAX =  1. ! (1mm) maximum deepness of road water reservoir
+ZWS_ROOF_MAX =  teb_hydropar(1)  ! Default (1.) kg/m2 or (1mm) maximum deepness of roof water reservoir
+ZWS_ROAD_MAX =  teb_hydropar(2)  ! Default (1.) kg/m2 or (1mm) maximum deepness of road water reservoir
 
 !*      1.2    surfaces relative fractions
 !              ---------------------------
@@ -667,11 +673,13 @@ ZVMOD(:) = max(1.,PVMOD(:))
 
 !*      2.     snow-covered surfaces relative effects
 !              --------------------------------------
-!       Impose minimum snow value, so no calculation are done on tiny reservoir
+!       Impose minimum snow value, so no calculation are done on tiny reservoir - but store this amount first
+
+where (PWSNOW_ROAD(:)<SWE_CRIT) PWKSNOW_ROAD(:)=PWKSNOW_ROAD(:)+PWSNOW_ROAD(:)
+where (PWSNOW_ROOF(:)<SWE_CRIT) PWKSNOW_ROOF(:)=PWKSNOW_ROOF(:)+PWSNOW_ROOF(:)
 
 where (PWSNOW_ROAD(:)<SWE_CRIT) PWSNOW_ROAD(:)=0.0
 where (PWSNOW_ROOF(:)<SWE_CRIT) PWSNOW_ROOF(:)=0.0
-
 
 
 !*      2.1    snow-covered surfaces relative fractions (at previous time-step)
@@ -814,7 +822,8 @@ call URBAN_SNOW_EVOL(PT_CANYON, PQ_CANYON, PU_CANYON,                         &
                      PMELT_ROOF,                                              &
                      PRNSNOW_ROAD, PHSNOW_ROAD, PLESNOW_ROAD, PGSNOW_ROAD,    &
                      PMELT_ROAD,                                              &
-                     ZLW_S_TO_N                                               )
+                     ZLW_S_TO_N                                               &
+                     ,PWKSNOW_ROOF,PWKSNOW_ROAD                               )
 
 
 !-------------------------------------------------------------------------------
@@ -1017,3 +1026,4 @@ PUTCIC_RFSHADE(:)  = PUTCI_RFSHADE(:)
 !-------------------------------------------------------------------------------
 
 end subroutine TEB2
+end module MODI_TEB

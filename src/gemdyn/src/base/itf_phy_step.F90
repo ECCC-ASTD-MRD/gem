@@ -17,6 +17,7 @@
 
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
+      use gmmx_name_mod
       use phy_itf, only: PHY_MAXNAMELENGTH, phymeta, phy_input1, phy_step,phy_snapshot, phy_getmeta, phy_putmeta
       use itf_phy_cloud_objects, only: cldobj_displace,cldobj_expand,CLDOBJ_OK
       use itf_phy_filter, only: ipf_smooth_fld, sfcflxfilt_o, nsurfag
@@ -45,6 +46,7 @@
 ! F_lctl_step              step number
 !----------------------------------------------------------------
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer,external :: itf_phy_prefold_opr

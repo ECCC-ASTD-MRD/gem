@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# For internal use at ECCC
+
+# Source this file to:
+# - Load profile and code-tools for nvhpc, depending on compiler version
+# - Load RPN-SI libraries and utilities, and RPNPY
+# - Load a script for common setup to all compilers
+
+unset SSMUSE_LD_PREPEND
+
+# Check name of the script called, to export corresponding nvhpc compiler version
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
+
+case ${SETUP_SCRIPT_NAME} in
+    .eccc_setup_nvhpc)
+        export COMPILER_VERSION=25.9.0
+        ;;
+    .eccc_setup_nvhpc_25.9.0)
+        export COMPILER_VERSION=25.9.0
+        ;;
+    .eccc_setup_nvhpc_25.7.0)
+        export COMPILER_VERSION=25.7.0
+        ;;
+esac
+# Load code-tools 
+. r.load.dot rpn/code-tools/20260219/env/exp/rhel-9-amd64-64@nvhpc-${COMPILER_VERSION}
+
+# Load latest version of RPN-SI libraries and utilities
+. r.load.dot rpn/libs/20260512-beta
+. r.load.dot rpn/utils/20260512-beta
+# Load latest version of RPNPY
+. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
+
+# Check and tell if maestro is loaded
+if [ -z "${MAESTRO_VERSION}" ]; then
+    echo ""
+    echo "Maestro is not loaded: GEM task setup scripts will be used instead of maestro scripts."
+else
+    echo "Maestro ${MAESTRO_VERSION} scripts will be used"
+fi
+
+# Call common setup file
+export COMPILER_SUITE=nvhpc
+. ./.common_setup ${COMPILER_SUITE}
+
+# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
+export WITH_SYSTEM_RPN=TRUE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}

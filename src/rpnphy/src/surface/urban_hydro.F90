@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_URBAN_HYDRO
+  implicit none
+  public
+contains
 !   ##########################################################################
     SUBROUTINE URBAN_HYDRO(PWS_ROOF_MAX,PWS_ROAD_MAX, PWS_ROOF, PWS_ROAD,  &
                            PRR, PTSTEP, PBLD, PLE_ROOF, PLE_ROAD,          &
@@ -153,3 +157,4 @@ PRUNOFF_TOWN(:) = PRUNOFF_ROAD(:) * (1.-PBLD(:)) + PRUNOFF_ROOF(:) * PBLD(:)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE URBAN_HYDRO
+end module MODI_URBAN_HYDRO

@@ -1,4 +1,5 @@
 module pbl_ri_diffuse
+  use phy_status, only: phy_error_L, PHY_OK, physeterror
   implicit none
   private
 
@@ -14,18 +15,17 @@ module pbl_ri_diffuse
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  subroutine diffuseall(F_pvars, F_tau, F_ni, F_nk, F_nkm1)
+  subroutine diffuseall(F_pvars, F_dqc_applied, F_tau, F_ni, F_nk, F_nkm1)
     use debug_mod, only: init2nan
     use tdpack_const, only: CAPPA, CHLC, CHLF, CPD, DELTA, GRAV, RGASD
     use vintphy, only: vint_thermo2mom
     use phy_options, except=>pbl_dissheat
-    use phy_status, only: phy_error_L, PHY_OK
     use phybusidx, except1=>lwc, except2=>iwc, except3=>ti
     use phymem, only: phyvar
     use ens_perturb, only: ens_nc2d, ens_spp_get
     use microphy_utils, only: mp_lwc, mp_iwc
     use atmflux, only: atmflux4
-    use pbl_ri_utils, only: baktot, ktosig, sgsvar, K_M, K_T
+    use pbl_ri_utils, only: baktotq, ktosig, K_M, K_T
     use pbl_utils, only: dissheat, sfcflux
     use cons_thlqw, only: thlqw_compute
     use integrals, only: INT_TYPE_LINEAR
@@ -40,6 +40,7 @@ contains
     integer, intent(in) :: F_nkm1                       !Vertical dimension of operator
     type(phyvar), pointer, contiguous :: F_pvars(:)     !Physics buses
     real, intent(in) :: F_tau                           !Time step (s)
+    logical, intent(out) :: F_dqc_applied               !Cloud tendency application status
 
     !@Object   Computed turbulent transport (diffusion) tendencies
 
@@ -53,22 +54,26 @@ contains
     ! Local declarations
     integer :: i, k, ni, nk, nkm1
     real, dimension(F_ni) :: bmsg, btsg, aq, bq, rhosfc, fm_mult, fh_mult, zero
-    real, dimension(F_ni,F_nkm1) ::  kmsg, ktsg, dket, tvt, tvm, thl_star, qw_star, &
-         lwc, iwc, tl, ti, tzn
+    real, dimension(F_ni,F_nkm1) ::  kmsg, ktsg, dket, tvt, tvm, lwc, iwc, &
+         tl, ti, thl_star, qw_star
 
     ! Bus pointer declarations
     real, pointer, dimension(:), contiguous :: zbt_ag, zfv_ag, zqsurf_ag, zfvap_ag, &
-         ps, zalfat, zalfaq, zbm, zbm0, zfdsi, zfdss, zfq, ztsrad, zustress, &
-         zvstress, zue, zflw, zfsh, zdxdy, ztdmaskxdt
+         ps, zalfat, zalfaq, zbm, zfdsi, zfdss, zfq, ztsrad, zustress, &
+         zvstress, zue, zflw, zfsh, zfca, ztdmaskxdt
     real, pointer, dimension(:,:), contiguous :: tu, tv, tt, tq, uu, vv, w, &
-         t, q, zsigt, zsigm, tm, zpblsigs, zqcplus, tqc, zze, zkm, zkt, &
-         zzd, zzn, zfc, zfv, zpri, zturbqf, zturbtf, zturbuf, zturbvf, &
-         zturbuvf, zmrk2, ztcons, zqcons, zdtcons, zdqcons, zturbtlf, zgztherm
+         t, q, zsigt, zsigm, tm, zqcplus, tqc, zkm, zkt, zfxp, &
+         zzn, zfc, zfv, zturbqf, zturbtf, zturbuf, zturbvf, &
+         zturbuvf, zmrk2, ztcons, zqcons, zdtcons, zdqcons, zturbtlf, zgztherm, &
+         zsigmas
     real, pointer, dimension(:,:,:), contiguous :: zvcoef
 
+    ! Default value of retuned arg in case of early return on error
+    F_dqc_applied = .false.
+    
     ! Initialize local arrays to detect undefined fields
     call init2nan(bmsg, btsg, aq, bq, rhosfc, fm_mult, fh_mult)
-    call init2nan(kmsg, ktsg, dket, tl, ti, lwc, iwc, tzn)
+    call init2nan(kmsg, ktsg, dket, tl, ti, lwc, iwc)
     call init2nan(zero)
 
     ! Initialize array bounds for bus pointer macros
@@ -79,13 +84,12 @@ contains
     MKPTR1D(zalfaq, alfaq, F_pvars)
     MKPTR1D(zalfat, alfat, F_pvars)
     MKPTR1D(zbm, bm, F_pvars)
-    MKPTR1D(zbm0, bm0, F_pvars)
-    MKPTR1D(zdxdy, dxdy, F_pvars)
     MKPTR1D(zfdsi, fdsi, F_pvars)
     MKPTR1D(zfdss, fdss, F_pvars)
     MKPTR1D(zflw, flw, F_pvars)
     MKPTR1D(zfq, fq, F_pvars)
     MKPTR1D(zfsh, fsh, F_pvars)
+    MKPTR1D(zfca, fca, F_pvars)
     MKPTR1D(ztsrad, tsrad, F_pvars)
     MKPTR1D(ztdmaskxdt, tdmaskxdt, F_pvars)
     MKPTR1D(zue, ue, F_pvars)
@@ -99,8 +103,9 @@ contains
 
     MKPTR2DN(zfc, fc, ni, nagrege, F_pvars)
     MKPTR2DN(zfv, fv, ni, nagrege, F_pvars)
-    MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, F_pvars)
+    MKPTR2D(zmrk2, mrk2, F_pvars)
 
+    MKPTR2D(zfxp, fxp, F_pvars)
     MKPTR2D(zturbqf, turbqf, F_pvars)
     MKPTR2D(zturbtf, turbtf, F_pvars)
     MKPTR2D(zturbtlf, turbtlf, F_pvars)
@@ -112,6 +117,7 @@ contains
     MKPTR2Dm1(zqcplus, qcplus, F_pvars)
     MKPTR2Dm1(zsigt, sigt, F_pvars)
     MKPTR2Dm1(zsigm, sigm, F_pvars)
+    MKPTR2Dm1(zsigmas, sigmas, F_pvars)
     MKPTR2Dm1(t, tplus, F_pvars)
     MKPTR2Dm1(tm, tmoins, F_pvars)
     MKPTR2Dm1(tu, udifv, F_pvars)
@@ -127,12 +133,8 @@ contains
     MKPTR2Dm1(zgztherm, gztherm, F_pvars)
     MKPTR2Dm1(zkm, km, F_pvars)
     MKPTR2Dm1(zkt, kt, F_pvars)
-    MKPTR2Dm1(zpri, pri, F_pvars)
     MKPTR2Dm1(zqcons, qcons, F_pvars)
     MKPTR2Dm1(ztcons, tcons, F_pvars)
-    MKPTR2Dm1(zzd, zd, F_pvars)
-    MKPTR2Dm1(zze, ze, F_pvars)
-    MKPTR2Dm1(zpblsigs, pblsigs, F_pvars)
     
     MKPTR3D(zvcoef, vcoef, F_pvars)
 
@@ -177,7 +179,7 @@ contains
     call diffuse(tu, uu, kmsg, zero, bmsg, zsigm, zsigt, F_tau, &
          FIELD_ON_MLEV, F_ni, F_nkm1)
     if (phy_error_L) return
-    if (any([(any((/'TFUU', 'TFUV'/) == phyoutlist_S(i)), i=1,nphyoutlist)])) then
+    if (ISREQSTEPL((/'TFUU', 'TFUV'/))) then
        call atmflux4(zturbuf, tu, zsigm, ps, F_ni, F_nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -186,13 +188,13 @@ contains
     call diffuse(tv, vv, kmsg, zero, bmsg, zsigm, zsigt, F_tau, &
          FIELD_ON_MLEV, F_ni, F_nkm1)
     if (phy_error_L) return
-    if (any([(any((/'TFVV', 'TFUV'/) == phyoutlist_S(i)), i=1,nphyoutlist)])) then
+    if (ISREQSTEPL((/'TFVV', 'TFUV'/))) then
        call atmflux4(zturbvf, tv, zsigm, ps, F_ni, F_nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
 
     ! Diagnose total turbulent momentum flux
-    if (any('TFUV' == phyoutlist_S)) &
+    if (ISREQSTEP('TFUV')) &
          zturbuvf(:,:) = sqrt(zturbuf(:,:)**2+zturbvf(:,:)**2)
     
     ! Set surface flux boundary terms for thermal diffusion
@@ -203,56 +205,76 @@ contains
     call diffuse(zdtcons, ztcons, ktsg, aq, bq, zsigm, zsigt, F_tau, &
          FIELD_ON_TLEV, F_ni, F_nkm1)
     if (phy_error_L) return
-    if (any(phyoutlist_S == 'TFTL')) then
+    if (ISREQSTEP('TFTL')) then
        call atmflux4(zturbtlf, zdtcons, zsigt, ps, F_ni, F_nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif    
 
-    ! Set surface flux boundary terms for specific humidity diffusion
+    ! Set surface flux boundary terms for total water diffusion
     aq(:) = fh_mult(:) * zalfaq(:)
     bq(:) = fh_mult(:) * btsg(:)
 
-    ! Compute tendency for moisture and diagnose flux on request
+    ! Diffuse total water
     call diffuse(zdqcons, zqcons, ktsg, aq, bq, zsigm, zsigt, F_tau, &
          FIELD_ON_TLEV, F_ni, F_nkm1)
     if (phy_error_L) return
-    if (any(phyoutlist_S == 'TFHU')) then
+    
+    ! Compute moist tendencies and return to state variables
+    STATISTICAL_CLOUDS: if (stcond == 'S2') then
+       
+       ! Compute state-variable tendencies via statistical clouds
+       call sc_condense(tt, tq, tl, ti, ztcons, zdtcons, zqcons, zdqcons, &
+            F_pvars, F_tau, F_ni, F_nkm1)
+       F_dqc_applied = .false.
+
+    else
+
+       ! Compute diffusion tendency for condensate and update clouds
+       F_dqc_applied = .true.
+       tl(:,:) = 0.
+       ti(:,:) = 0.
+!!$       call diffuse_condensate(tl, ti, lwc, iwc, t, q, ktsg, zfxp, &
+!!$            zsigmas, ps, zsigm, zsigt, zmrk2, ztdmaskxdt, F_pvars, &
+!!$            F_tau, F_ni, F_nkm1)
+
+       ! Update conserved variables
+       do k=1,F_nkm1
+          do i=1,F_ni
+             thl_star(i,k) = ztcons(i,k) + F_tau*zdtcons(i,k)
+             qw_star(i,k) = zqcons(i,k) + F_tau*zdqcons(i,k)
+          enddo
+       enddo
+       
+       ! Convert conserved variable tendencies to temperature tendency
+       call baktotq(tt, tq, zdtcons, zdqcons, tl, ti, zsigt, F_ni, F_nkm1)
+
+    endif STATISTICAL_CLOUDS
+
+    ! Total condensate tendency
+    tqc(:,:) = tl(:,:) + ti(:,:)
+    
+    ! Diagnose water vapour flux on request
+    if (ISREQSTEP('TFHU')) then
        call atmflux4(zturbqf, tq, zsigt, ps, F_ni, F_nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
-
-    ! Update conserved variables
-    do k=1,F_nkm1
-       do i=1,F_ni
-          thl_star(i,k) = ztcons(i,k) + F_tau*zdtcons(i,k)
-          qw_star(i,k) = zqcons(i,k) + F_tau*zdqcons(i,k)
-       enddo
-    enddo
     
-    ! Estimate updated subgrid-scale variance
-    call sgsvar(zpblsigs, thl_star, qw_star, lwc, iwc, tm, zpri, &
-         zzn, zzd, zgztherm, zsigt, ps, zdxdy, zvcoef, F_ni, F_nkm1)
+    ! Diagnose (implicit) surface fluxes based on updated atmospheric state but exluding diss heating
+    call sfcflux(zustress, zvstress, zfq, zue, zfsh, zfca, zflw, &
+         uu, vv, t, q, tu, tv, tt, tq, zsigt, bmsg, btsg, zalfaq, zalfat,&
+         rhosfc, ps, F_tau, F_ni, F_nkm1)
+    if (phy_error_L) return
 
-    ! Compute state-variable tendencies via statistical clouds
-    call sc_condense(tt, tq, tl, ti, ztcons, zdtcons, zqcons, zdqcons, &
-         F_pvars, F_tau, F_ni, F_nkm1)
-    tqc(:,:) = tl(:,:) + ti(:,:)
-    
     ! Dissipative heating
     call dissheat(dket, uu, vv, tu, tv, kmsg, zsigm, zsigt, zvcoef, F_tau, F_ni, F_nkm1)
     tt(:,1:F_nkm1) = tt(:,1:F_nkm1) - (1./CPD) * dket(:,1:F_nkm1)
 
     ! Diagnose atmospheric fluxes for dry-air temperature
-    if (any(phyoutlist_S == 'TFTT')) then
+    if (ISREQSTEP('TFTT')) then
        call atmflux4(zturbtf, tt, zsigt, ps, F_ni, F_nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
 
-    ! Diagnose (implicit) surface fluxes based on updated atmospheric state
-    call sfcflux(zustress, zvstress, zfq, zue, zfsh, zflw, &
-         uu, vv, t, q, tu, tv, tt, tq, bmsg, btsg, zalfaq, &
-         rhosfc, ps, F_tau, F_ni, F_nkm1)
-    if (phy_error_L) return
 
     ! End of subprogram
     return
@@ -410,19 +432,28 @@ contains
   end subroutine diffuse
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
-  subroutine diffuse_condensate(F_dliq, F_dice, F_lwc, F_iwc, F_ktsg, F_sigm, F_sigt, &
-       F_tdmaskxdt, F_pvars, F_tau, F_ni, F_nkm1)
+  subroutine diffuse_condensate(F_dliq, F_dice, F_lwc, F_iwc, F_tt, F_hu, &
+       F_ktsg, F_fbl, F_sigmas, F_ps, F_sigm, F_sigt, F_mrk2, F_tdmaskxdt, &
+       F_pvars, F_tau, F_ni, F_nkm1)
     use phymem, only: phyvar, phymem_find
     use microphy_utils, only: mp_todiffuse, mp_lwc, mp_iwc
-    use phy_status, only: PHY_OK
     use tendency, only: apply_tendencies
+    use tdpack, only: foqst
+    use ens_perturb, only: ens_nc2d
+    use microphy_consun, only: compute_rhc, compute_cloudfrac
 
     !@Arguments
     integer, intent(in) :: F_ni                                 !horizontal dimension
     integer, intent(in) :: F_nkm1                               !vertical dimension
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_tt            !dry air temperature (K)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_hu            !specific humidity (kg/kg)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_ktsg          !diffusion coefficient for scalars
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_fbl           !PBL cloud fraction
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_sigmas        !subgrid moisture std dev (kg/kg)
+    real, dimension(F_ni), intent(in) :: F_ps                   !surface pressure (Pa)
     real, dimension(F_ni,F_nkm1), intent(in) :: F_sigm          !sigma values of momentum levels
     real, dimension(F_ni,F_nkm1), intent(in) :: F_sigt          !sigma values of thermo levels
+    real, dimension(F_ni,ens_nc2d), intent(in) :: F_mrk2        !Markov chains for stochastic parameters
     real, dimension(F_ni), intent(in) :: F_tdmaskxdt            !tendency mask times F_tau
     type(phyvar), pointer, contiguous :: F_pvars(:)             !physics buses
     real, intent(in) :: F_tau                                   !time step (s)
@@ -433,12 +464,16 @@ contains
 
     ! Local parameters
     integer, parameter :: NMAX_DIFF=256
+    integer, parameter :: FILTER_WIDTH=0
+    logical, parameter :: UPDATE_FN=.false.
     
     ! Local variables
     integer :: i, k
     integer, dimension(:), pointer :: dindxl=>null()
+    real :: rh, adist, bdist
     real, dimension(F_ni) :: zero
-    real, dimension(F_ni,F_nkm1) :: lwc, iwc, tnd
+    real, dimension(F_nkm1) :: lagup, lagdown
+    real, dimension(F_ni,F_nkm1) :: lwc, iwc, tnd, tndmask, rhc, fn
     real, dimension(:,:), pointer :: busptr3d
 
     ! Initializations
@@ -451,11 +486,42 @@ contains
        return
     endif
 
+    ! Update cloud fraction
+    UPDATE_CLOUD: if (UPDATE_FN) then
+       call compute_rhc(rhc, F_tt, F_tt, F_sigmas, F_ps, F_sigt, F_mrk2, F_ni, F_nkm1)
+       do k=1,F_nkm1
+          do i=1,F_ni
+             rh = max(min(F_hu(i,k) / foqst(F_tt(i,k), F_ps(i)*F_sigt(i,k)), 1d0), 0d0)
+             call compute_cloudfrac(fn(i,k), adist, bdist, rh, rhc(i,k))
+          enddo
+       enddo
+    else
+       fn(:,:) = F_fbl(:,:)
+    endif UPDATE_CLOUD
+    
+    ! Set up tendency mask
+    TENDENCY_FILTER: if (FILTER_WIDTH > 0) then
+       do i=1,F_ni
+          do k=1+FILTER_WIDTH,F_nkm1
+             lagdown(k) = sum(fn(i,k-FILTER_WIDTH:k))/(FILTER_WIDTH+1)
+          enddo
+          lagdown(1:FILTER_WIDTH) = 1.
+          do k=F_nkm1-FILTER_WIDTH,1,-1
+             lagup(k) = sum(fn(i,k:k+FILTER_WIDTH))/(FILTER_WIDTH+1)
+          enddo
+          lagup(F_nkm1-FILTER_WIDTH+1:F_nkm1) = 1.
+          tndmask(i,:) = min(lagdown(:), lagup(:))
+       enddo
+    else
+       tndmask(:,:) = fn(:,:)
+    endif TENDENCY_FILTER    
+
     ! Diffuse requested fields
     do i=1,size(dindxl)
        busptr3d(1:F_ni,1:F_nkm1) => F_pvars(dindxl(i))%data(:)
        call diffuse(tnd, busptr3d, F_ktsg, zero, zero, F_sigm, F_sigt, F_tau, &
             FIELD_ON_TLEV, F_ni, F_nkm1)
+       tnd(:,:) = tnd(:,:) * tndmask(:,:)
        call apply_tendencies(busptr3d, tnd, F_tdmaskxdt, F_ni, F_nkm1)
     enddo
 

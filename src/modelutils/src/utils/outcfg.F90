@@ -20,6 +20,7 @@ module outcfg_mod
    use, intrinsic :: iso_fortran_env, only: INT64
    use clib_itf_mod, only: clib_isfile, clib_tolower, clib_isreadok
    use str_mod, only: str_tab2space,str_rm_quotes,str_toint,str_tobool,str_toreal
+   use str_split_mod
    use sort_mod
    use mu_jdate_mod
    implicit none
@@ -392,7 +393,6 @@ contains
       integer :: F_istat
       !@author Stephane Chamberland, 2011-07
       !*@/
-      integer, external :: str_split2keyval
       integer, parameter :: NMAX = 32
       integer :: istat
       character(len=2048) :: key_S, val_S, string_S, msg_S
@@ -848,7 +848,7 @@ contains
       integer :: istat,istat2,fileid,n
       character(len=2048) :: string_S,string1_S
       !---------------------------------------------------------------------
-      write(string_S, '(a,1x,i0.1x,a)') '(priv_parse_cfgfile) ',F_id,trim(F_filename_S)
+      write(string_S, '(a,1x,i0,1x,a)') '(priv_parse_cfgfile) ',F_id,trim(F_filename_S)
       call msg(MSG_DEBUG,string_S)
 
       F_istat = RMN_ERR

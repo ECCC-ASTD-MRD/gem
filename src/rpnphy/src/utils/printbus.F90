@@ -1,21 +1,11 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
+module printbus
+   implicit none
+   public
+
+contains
 
 !/@*
-subroutine printbus(F_bus_S)
+subroutine printbus1(F_bus_S)
    use clib_itf_mod, only: clib_toupper
    use phymem, only: phymeta, nphyvars, phymem_busidx, phymem_getmeta
    implicit none
@@ -78,4 +68,6 @@ subroutine printbus(F_bus_S)
 130 format ('+',17('-'),'+',12('-'),'+',41('-'),'+',8('-'),'+',8('-'), &
         '+',5('-'),'+',5('-'),'+',3('-'),'+',4('-'),'+')
    return
-end subroutine printbus
+end subroutine printbus1
+
+end module printbus

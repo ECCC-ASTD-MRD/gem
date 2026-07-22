@@ -27,6 +27,7 @@
                           inp_src_levels,inp_dst_levels
       use inp_mod
       use glb_ld
+      use lam_options
       use lun
       use tr3d
       use ver
@@ -123,10 +124,9 @@
          deb= (n-1)*l_nk+1
          if (trim(vname) /= 'HU') then
             err = inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t, Sp0_q,Slsp0_q,&
-                            Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,&
-                            F_tracers(l_minx,l_miny,deb),&
-                            l_minx,l_maxx,l_miny,l_maxy,G_nk        ,&
-                            F_inttype_S=Inp_vertintype_tracers_S )
+              Dp0_q, Dlsp0_q,GZ3d%valq,GZ3d%ip1,F_tracers(l_minx,l_miny,deb),&
+              l_minx,l_maxx,l_miny,l_maxy,G_nk, F_Hinttype_S=Lam_hint_S     ,&
+              F_Vinttype_S=Inp_vertintype_tracers_S )
             if (err == 0) then
                NTR_Tr3d_ntr= NTR_Tr3d_ntr + 1
                NTR_Tr3d_name_S(NTR_Tr3d_ntr) = trim(vname)
@@ -153,37 +153,37 @@
 
       ut1_L= .false. ; urt1_L= .false. ; err = -1
 
-      if (F_stag_L) then
-         err = inp_get ( 'URT1', 'U', Ver_ip1%m               ,&
-                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-         if ( err == 0 ) then
-            err = inp_get ( 'VRT1', 'V', Ver_ip1%m            ,&
-                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-         end if
-         urt1_L= ( err == 0 )
-
-         if (.not. urt1_L) then
-            err = inp_get ( 'UT1', 'U', Ver_ip1%m              ,&
-                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-            if ( err == 0 ) then
-               err = inp_get ( 'VT1', 'V', Ver_ip1%m           ,&
-                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
-                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
-            end if
-            ut1_L= ( err == 0 )
-         end if
-      end if
-
-      if ((.not. urt1_L) .and. (.not. ut1_L)) then
+!!$      if (F_stag_L) then
+!!$         err = inp_get ( 'URT1', 'U', Ver_ip1%m               ,&
+!!$                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$         if ( err == 0 ) then
+!!$            err = inp_get ( 'VRT1', 'V', Ver_ip1%m            ,&
+!!$                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$         end if
+!!$         urt1_L= ( err == 0 )
+!!$
+!!$         if (.not. urt1_L) then
+!!$            err = inp_get ( 'UT1', 'U', Ver_ip1%m              ,&
+!!$                   Sp0_u, Slsp0_q, Dp0_u, Dlsp0_u,GZ3d%valu,GZ3d%ip1,F_u,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$            if ( err == 0 ) then
+!!$               err = inp_get ( 'VT1', 'V', Ver_ip1%m           ,&
+!!$                   Sp0_v, Slsp0_q, Dp0_v, Dlsp0_v,GZ3d%valv,GZ3d%ip1,F_v,&
+!!$                   l_minx,l_maxx,l_miny,l_maxy,G_nk,F_quiet_L=.true. )
+!!$            end if
+!!$            ut1_L= ( err == 0 )
+!!$         end if
+!!$      end if
+!!$
+!!$      if ((.not. urt1_L) .and. (.not. ut1_L)) then
          call inp_hwnd ( F_u,F_v, F_stag_L, &
                          Sp0_q,Sp0_u,Sp0_v,Slsp0_q,Slsp0_u,Slsp0_v,&
                          Dp0_q,Dp0_u,Dp0_v,Dlsp0_q,Dlsp0_u,Dlsp0_v,&
-                         GZ3d%valq,GZ3d%valu,GZ3d%valv,GZ3d%ip1            ,&
+                         GZ3d%valq,GZ3d%valu,GZ3d%valv,GZ3d%ip1   ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      end if
+ !     end if
 
       deallocate (Sp0_q)
       if (associated(Sp0_u)) deallocate (Sp0_u)

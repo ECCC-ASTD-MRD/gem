@@ -1,11 +1,32 @@
-Copyright 2021, Her Majesty the Queen in right of Canada
+Environment Canada – Atmospheric Science and Technology
 
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+License/Disclaimer version 3
 
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+Acceptance of this Agreement. Permission is hereby granted to install and use this Software subject to the terms and conditions set forth in this License Agreement. The Software refers to any copyrightable work of Environment Canada (“EC”) as herein licensed. Downloading, installing and/or using the Software, as developed by EC will indicate your acceptance to enter into a license agreement with Her Majesty the Queen in Right of Canada, acting through and represented by the Minister of the Environment. If you do not wish to be bound by those terms and conditions, do not download and/or use the Software.
 
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+Access and use of the Software shall impose the following obligations on you and the organization you represent (“User”):
 
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+Grant of Rights. The User is granted the non-exclusive, perpetual, royalty-free right, to use, copy, modify, alter, enhance and distribute the Software, and any derivative works thereof (including Software outputs), and its supporting documentation for any purpose whatsoever, except commercial sales.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+Redistribution Restrictions. Redistribution to any other third party is only permitted when that third party has been informed by the User of the terms and conditions on the usage of the Software as described herein, and that accessing and using the redistributed Software and/or derivative work imply their acceptance of those conditions.
+Furthermore the following notice shall be included in every distributed source file:
+
+Environment Canada – Atmospheric Science and Technology License/Disclaimer, version 3;
+Last Modified: May 7, 2008.
+
+
+This is free but copyrighted software; you can use/redistribute/modify it under the terms of the Environment Canada – Atmospheric Science and Technology License/Disclaimer version 3 or (at your option) any later version that should be found at: http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+
+This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the above mentioned License/Disclaimer for more details.
+
+You should have received a copy of the License/Disclaimer along with this software; if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+
+Copyright Notice. Further, the User agrees to acknowledge the source of the Software herein provided, in any publications that result from the use of the Software or in any software package that includes the Software with the following layout: based on software models developed and copyrighted to Environment Canada. However, the name of Environment Canada may not be used in any advertising or publicity to endorse or promote any products or commercial entity unless specific written permission is obtained from EC.
+
+No Support. The User also understands that EC is not obligated to provide the User with any support, consulting, training or assistance of any kind with regard to the use, operation and performance of the Software nor to provide the User with any updates, revisions, new versions or "bug fixes".
+
+No Warranty. The Software is provided by EC "as is" and any express or implied warranties, including but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. In no event shall EC be liable for any special, indirect or consequential damages or any damages whatsoever, including but not limited to claims associated with the loss of data or profits, which may result from an action in contract, negligence or other tortuous claim that arises out of or in connection with the access, use or performance of the Software.
+
+Indemnification. The User shall indemnify and save harmless EC, its employees and agents, from and against and be responsible for all claims, demands, losses, costs, including solicitor and client costs, damages, actions, suits, or proceedings, by whomsoever made, brought, and prosecuted, in any manner, based upon, arising out of, related to, occasioned by or attributable to any acts or conduct of the User, its employees, agents whether by reason of negligence or otherwise from the use, modification or distribution of the Software.
+
+Termination. This License and the rights granted hereunder will terminate automatically if the User fails to comply with its terms and conditions and fails to cure such breach within 30 days of receiving written notice to that effect from EC.

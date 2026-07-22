@@ -27,14 +27,12 @@
       use ptopo
       use rmn_fst24
       implicit none
-#include <arch_specific.hf>
 
       character(len=*), intent(in ) :: F_arakawa_S
       integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
                                      F_y0,F_y1,F_stridey
 #include <rmnlib_basics.hf>
 
-!!$      integer, external :: out_samegrd
       character(len=1) :: familly_uencode_S
       integer :: err,ni,nis,njs,niyy,ix1,ix2,ix3,ix4, &
                sindx,i0,in,j0,jn,vesion_uencode

@@ -1,18 +1,3 @@
- !-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module apply_rad_tendencies
    implicit none
@@ -26,13 +11,14 @@ contains
       use, intrinsic :: iso_fortran_env, only: REAL64
       use debug_mod, only: init2nan
       use phybudget, only: pb_compute, pb_conserve, pb_residual
-      use phy_status, only: PHY_OK
+      use phy_status, only: PHY_OK, physeterror
       use phy_options
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
       use ens_perturb, only: ens_spp_get
       use microphy_statcond, only: sc_adjust
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
       !@Object Apply radiative tendencies
@@ -56,7 +42,7 @@ contains
       ! Local variables
       integer :: k
       real, dimension(ni) :: tradmult
-      real, dimension(ni,nkm1) :: qrad, mtrad
+      real, dimension(ni,nkm1) :: qrad, mtrad  !#TODO: use a single tmpvar for both?
       real, dimension(:), pointer, contiguous :: zconerad, zconqrad, ztdmaskxdt, znetrad
       real, dimension(:,:), pointer, contiguous :: ztplus, &
            ztrad, zmrk2, zqccondr, zqcondr, ztcondr

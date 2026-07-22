@@ -1,20 +1,6 @@
-!-------------------------------------- LICENCE BEGIN --------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module sigmalev
+   use vintphy, only: energy_as_thermo
    implicit none
    private
    public :: sigmalev3
@@ -47,9 +33,11 @@ contains
       if (fluvert == 'RPNINT') then
          se(1:n,1:nk-1)  = s(1:n,1:nk-1)
          se(1:n,nk) = 1.
+         energy_as_thermo = .false.
       else
          se(1:n,1:nk-2)  = st(1:n,1:nk-2)
          se(1:n,nk-1:nk) = 1.
+         energy_as_thermo = .true.
       endif
 
       call mweights(vcoef(:,:,1), s, st, n, nk, nk-1)

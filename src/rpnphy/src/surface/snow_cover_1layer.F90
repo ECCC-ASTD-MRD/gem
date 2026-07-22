@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_SNOW_COVER_1LAYER
+  implicit none
+  public
+contains
 !   ##########################################################################
     SUBROUTINE SNOW_COVER_1LAYER(PTSTEP, PANSMIN, PANSMAX, PTODRY,         &
                                  PRHOSMIN, PRHOSMAX, PRHOFOLD, OALL_MELT,  &
@@ -22,7 +26,8 @@
                                  PTG,PABS_SW, PLW1, PLW2,                  &
                                  PTA, PQA, PVMOD, PPS, PRHOA, PSR,         &
                                  PZREF, PUREF,                             &
-                                 PRNSNOW, PHSNOW, PLESNOW, PGSNOW, PMELT   )
+                                 PRNSNOW, PHSNOW, PLESNOW, PGSNOW, PMELT   &
+                                 ,PWKSNOW)
 !   ##########################################################################
 !
 !!****  *SNOW_COVER_1LAYER*  
@@ -64,18 +69,22 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    08/09/98 
+!       S. Leroyer  jan 2026 : custom parameters with teb_snow options
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_CSTS,       ONLY : XTT, XCI, XRHOLI, XRHOLW, XCPD, XLSTT, XLMTT, XDAY, XCONDI
-USE MODD_SNOW_PAR,   ONLY : XEMISSN, SWE_CRIT
+USE MODD_SNOW_PAR_TEB,   ONLY : XEMISSN, SWE_CRIT, XANS_T, XANS_T_MA00, XANS_T_LE10, &
+                                XANS_T_JA14, XEMISSN_JA14, XEMISSN_SVS1
 !
 USE MODE_THERMOS
 !
 USE MODI_SURFACE_RI
-USE MODI_SURFACE_AERO_COND
+USE MODI_SURFACE_AERO_COND_TEB
+!
+use sfc_options, only: teb_snow,teb_snroof,teb_snroad
 !
 implicit none
 !!!#include <arch_specific.hf>
@@ -106,6 +115,7 @@ REAL, DIMENSION(:), INTENT(INOUT) :: PASNOW   ! snow albedo
 REAL, DIMENSION(:), INTENT(INOUT) :: PRSNOW   ! snow density
 REAL, DIMENSION(:), INTENT(INOUT) :: PTS_SNOW ! snow surface temperature
 REAL, DIMENSION(:), INTENT(INOUT) :: PESNOW   ! snow emissivity
+REAL, DIMENSION(:), INTENT(INOUT) :: PWKSNOW  ! snow additional reservoir (accumulation)
 REAL, DIMENSION(:), INTENT(IN)    :: PTG      ! underlying ground temperature
 REAL, DIMENSION(:), INTENT(IN)    :: PABS_SW  ! absorbed SW energy (Wm-2)
 REAL, DIMENSION(:), INTENT(IN)    :: PLW1     ! LW coef independant of TSNOW
@@ -173,6 +183,9 @@ LOGICAL, DIMENSION(SIZE(PWSNOW)) :: GFLUXMASK ! where fluxes can
 REAL :: ZWSNOW_MIN = 0.1 ! minimum value of snow content (kg/m2) for prognostic
 !                        ! computations
 REAL :: MIN_TDIFF = 0.01 ! minimum temperature diff. for flux calculations
+!                        ! computations
+REAL :: PANS_T   ! Local assignment of timescale for albedo aging
+REAL :: PEMISSN  ! Local assignment of snow emissivity
 !
 !-------------------------------------------------------------------------------
 !
@@ -194,6 +207,27 @@ ZSNOW_D (:) = 0.
 ZSNOW_TC(:) = 0.
 ZSNOW_HC(:) = 0.
 !
+!-------------------------------------------------------------------------------
+! Assignemnt options
+ IF (TEB_SNOW .EQ. 'MA00') THEN
+  PANS_T  = XANS_T_MA00
+  PEMISSN = XEMISSN
+ ELSE IF  (TEB_SNOW .EQ. 'LE10' ) THEN
+  PANS_T   = XANS_T_LE10
+  PEMISSN  = XEMISSN
+ ELSE IF (TEB_SNOW .EQ. 'JA14') THEN
+  PANS_T  = XANS_T_JA14
+  PEMISSN = XEMISSN_JA14
+ ELSE IF (TEB_SNOW .EQ. 'SVS1') THEN
+  PANS_T  = XANS_T
+  PEMISSN = XEMISSN_SVS1
+ ELSE IF (TEB_SNOW .EQ. 'CUSTOM') THEN
+  PANS_T   = teb_snroof(9)
+  PEMISSN  = teb_snroof(8)
+ ELSE
+  PANS_T  = XANS_T
+  PEMISSN = XEMISSN
+ END IF
 !-------------------------------------------------------------------------------
 !
 !*      1.1    most useful masks
@@ -265,7 +299,7 @@ CALL SURFACE_RI(ZTS_SNOW, ZQSAT, ZEXNS, ZEXNA, PTA, PQA, &
 !*      1.3.4  Aerodynamical conductance
 !              -------------------------
 !
-CALL SURFACE_AERO_COND(ZRI, PZREF, PUREF, PVMOD, ZZ0, ZZ0H, ZAC)
+CALL SURFACE_AERO_COND_TEB(ZRI, PZREF, PUREF, PVMOD, ZZ0, ZZ0H, ZAC)
 !
 !-------------------------------------------------------------------------------
 
@@ -438,7 +472,7 @@ WHERE (GFLUXMASK(:))
 !
 END WHERE
 !
-!*      5.6    If ground T>0°C, Melting is estimated from conduction heat flux
+!*      5.6    If ground T>0?C, Melting is estimated from conduction heat flux
 !              ---------------------------------------------------------------
 !
 WHERE (GFLUXMASK(:) .AND. PTG(:)>XTT)
@@ -463,6 +497,7 @@ PLESNOW(:) = MIN( PLESNOW(:), XLSTT*PWSNOW/PTSTEP )
 !
 PWSNOW(:)  = MAX( PWSNOW(:) - PTSTEP * PLESNOW(:)/XLSTT , 0.)
 !
+WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:)
 WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 !*      6.3    melting
@@ -472,6 +507,7 @@ PMELT(:) = MIN( PMELT(:), PWSNOW/PTSTEP )
 !
 PWSNOW(:)= MAX( PWSNOW(:) - PTSTEP * PMELT(:) , 0.)
 !
+WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:)
 WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 WHERE(PWSNOW(:)==0.) PGSNOW(:) = MAX ( PGSNOW(:), - PMELT(:)*XLMTT )
@@ -482,7 +518,8 @@ WHERE(PWSNOW(:)==0.) PGSNOW(:) = MAX ( PGSNOW(:), - PMELT(:)*XLMTT )
 !
 IF (PDRAIN_TIME>0.) THEN
   WHERE ( PWSNOW(:)>0.)
-    PWSNOW(:) = PWSNOW(:) * EXP(-PTSTEP/PDRAIN_TIME/XDAY)
+  PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:) - PWSNOW(:) * EXP(-PTSTEP/PDRAIN_TIME/XDAY)
+  PWSNOW(:) = PWSNOW(:) * EXP(-PTSTEP/PDRAIN_TIME/XDAY)
   END WHERE
 END IF
 !
@@ -491,9 +528,11 @@ END IF
 !
 WHERE ( PWSNOW(:)<ZWSNOW_MIN .AND. PMELT(:)>0. .AND. PSR(:)==0. )
   PMELT(:) = PMELT(:) + PWSNOW(:) / PTSTEP
+  PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:) 
   PWSNOW(:)=0.
 END WHERE
 !
+WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWKSNOW(:) = PWKSNOW(:) + PWSNOW(:) 
 WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 !-------------------------------------------------------------------------------
@@ -506,7 +545,9 @@ WHERE ( PWSNOW(:)<1.E-8 * PTSTEP ) PWSNOW(:) = 0.
 !
 WHERE ( GSNOWMASK(:) .AND. PMELT>0. )
 !
-  PASNOW(:) = (PASNOW(:)-PANSMIN)*EXP(-0.01*PTSTEP/3600.) + PANSMIN   &
+!!  PASNOW(:) = (PASNOW(:)-PANSMIN)*EXP(-0.01*PTSTEP/3600.) + PANSMIN   &
+!!              + PSR(:)*PTSTEP/PWCRN*PANSMAX
+  PASNOW(:) = (PASNOW(:)-PANSMIN)*EXP(-PANS_T*PTSTEP/3600.) + PANSMIN   &
               + PSR(:)*PTSTEP/PWCRN*PANSMAX
 !
 END WHERE
@@ -532,7 +573,7 @@ END WHERE
 !
 WHERE (  ZWSNOW(:)==0. .AND. PWSNOW(:)>0. )
   PASNOW(:) = PANSMAX
-  PESNOW(:) = XEMISSN
+  PESNOW(:) = PEMISSN
 END WHERE
 !-------------------------------------------------------------------------------
 !
@@ -606,3 +647,4 @@ END WHERE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SNOW_COVER_1LAYER
+end module MODI_SNOW_COVER_1LAYER

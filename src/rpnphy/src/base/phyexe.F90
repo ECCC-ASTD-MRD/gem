@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phyexe
    private
@@ -35,8 +20,8 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    use phy_options
    use phymem, only: phyvar
    use phystepinit, only: phystepinit3
+   use phystepend, only: phystepend1
    use precipitation, only: precipitation4
-   use prep_cw, only: prep_cw3
    use radiation, only: radiation3
    use sfc_calcdiag, only: sfc_calcdiag3
    use surface, only: surface1
@@ -76,23 +61,18 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    integer :: iverb, nkm1
    character(len=64) :: tmp_S
 
-   real, dimension(ni,nk) :: uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0
-
    !----------------------------------------------------------------
    write(tmp_S, '(i6,i6,a)') kount, trnch, ' (phyexe)'
    call msg_verbosity_get(iverb)
    if (debug_trace_L) call msg_verbosity(MSG_DEBUG)
    call msg_toall(MSG_DEBUG, trim(tmp_S)//' [BEGIN]')
 
-   call init2nan(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0)
-
    nkm1 = nk-1
 
    call inichamp4(pvars, kount, ni, nk)
    if (phy_error_L) return
 
-   call phystepinit3(pvars, uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, &
-        delt, kount, ni, nk, trnch)
+   call phystepinit3(pvars, delt, kount, ni, nk, trnch)
    if (phy_error_L) return
 
    call radiation3(pvars, kount, ni, nk, trnch)
@@ -119,11 +99,10 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call precipitation4(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call prep_cw3(pvars, ni, nk)
+   call phystepend1(pvars, ni, nk)
    if (phy_error_L) return
 
-   call tendency5(uplus0, vplus0, wplus0, tplus0, huplus0, qcplus0, pvars, &
-        1./delt, kount, ni, nk)
+   call tendency5(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
    call lhn2(pvars, delt, kount, ni, nk)
@@ -135,7 +114,7 @@ subroutine phyexe1(pvars, kount, ni, nk, trnch)
    call calcdiag1(pvars, delt, kount, ni, nk)
    if (phy_error_L) return
 
-   call sfc_calcdiag3(pvars, moyhr, acchr, delt, kount, step_driver, ni)
+   call sfc_calcdiag3(pvars, moyhrsteps, acchrsteps, delt, kount, step_driver, ni)
    if (phy_error_L) return
 
 #ifdef HAVE_MACH

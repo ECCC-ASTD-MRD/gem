@@ -34,6 +34,7 @@
       use glb_ld
       use cstv
       use out_mod
+      use out_meta
       use out3
       use levels
       use outp
@@ -41,6 +42,9 @@
       use ver
       use rmn_gmm
       use, intrinsic :: iso_fortran_env
+      use set_level_mod, only: set_level_usr_val,set_level_ERROR
+      use outgrid, only: OutGrid_hgrid_usr
+
       implicit none
 
       integer, intent(in) :: levset, set
@@ -52,32 +56,32 @@
       type(vgrid_descriptor) :: vcoord
 
       logical,save :: done_L= .false.
-      logical      :: write_diag_lev,near_sfc_L
+      logical      :: write_diag_lev,near_sfc_L,is_pressure_L
       logical      :: satues_L= .false.
 
       integer,save :: lastdt= -1
-      integer i,j,k,ii,l_ninj,nko,istat,nk_under,nk_src,knd
-      integer pngz,pnvt,pntt,pnes,pntd, pnhr,pnpx,pntw,pnwe,pnww,&
+      integer i,j,k,ii,l_ninj,nko,istat,nk_under,nk_src,knd,nkindx
+      integer pngz,pnvt,pntt,pnes,pntd, pnhr,pnpx,pntw,pnww,&
               pnzz,pnth,pnpn,pnp0,psum,pnpt,pnla,pnlo,pnme,pnmx
-      integer, dimension(:), allocatable :: indo
-      integer, dimension(:), pointer     :: ip1m
+      integer, dimension(:), pointer     :: indo,ip1m
 
       real  , parameter :: theta_p0 = 100000.
-      real  , parameter :: ES_MAX   = 30.
       real(kind=REAL64), parameter :: ZERO_8   = 0.0
-
+      real(kind=REAL64) :: ptop_user_8
+      
       real w1(l_minx:l_maxx,l_miny:l_maxy), w2(l_minx:l_maxx,l_miny:l_maxy),&
          ptop(l_minx:l_maxx,l_miny:l_maxy), p0(l_minx:l_maxx,l_miny:l_maxy),&
          deg2rad,zd2etad
 
-      real, dimension(:,:,:), pointer    :: gmm_hut1, wlnph_m, wlnph_ta
+      real, dimension(:,:,:), pointer    :: gmm_hut1, wlnph_m, wlnph_ta,&
+                                            usr_src,cible
       real ,dimension(:,:,:), allocatable:: px_pres,hu_pres,td_pres    ,&
-                                            tt_pres,vt_pres,w5,w6,cible,&
+                                            tt_pres,vt_pres,w5,w6      ,&
                                             gzm,gzt,ttx,htx,ffwe       ,&
                                             px_ta,px_m,th,t8,myomega   
       real, dimension(:,:  ), allocatable:: wlao
-      real ,dimension(:    ), allocatable:: prprlvl,rf
-      real, dimension(:    ), pointer    :: hybm,hybt,hybt_w
+      real ,dimension(:    ), allocatable:: prprlvl
+      real, dimension(:    ), pointer    :: hybm,hybt,hybt_w,rf
       integer ind0(1) ! One level output
       real hyb0(1),hybt_gnk1(1),hybt_gnk2(1) ! One level output
 
@@ -93,7 +97,7 @@
 
       pnpn=0 ; pnp0=0 ; pnpt=0 ; pnla=0 ; pnlo=0 ; pnme=0 ; pnmx=0
       pngz=0 ; pnvt=0 ; pntt=0 ; pnes=0 ; pntd=0 ; pnhr=0 ; pnpx=0
-      pntw=0 ; pnwe=0 ; pnww=0 ; pnzz=0 ; pnth=0
+      pntw=0 ; pnww=0 ; pnzz=0 ; pnth=0
       hyb0(1)=0.0
       ind0(1)=1
 
@@ -113,18 +117,44 @@
          if (Outd_var_S(ii,set) == 'HR') pnhr=ii
          if (Outd_var_S(ii,set) == 'PX') pnpx=ii
          if (Outd_var_S(ii,set) == 'TW') pntw=ii
-         if (Outd_var_S(ii,set) == 'WE') pnwe=ii
          if (Outd_var_S(ii,set) == 'WW') pnww=ii
          if (Outd_var_S(ii,set) == 'ZZ') pnzz=ii
          if (Outd_var_S(ii,set) == 'TH') pnth=ii
       end do
 
-      if (pnpt /= 0 .and. Hyb_rcoef(2) /= 1.0) pnpt=0
+      if(Level_vgrid_usr(levset)%usr_grid_L .and. Level_vgrid_usr(levset)%vcode==1002)then
+         ! For eta user coordinates, PT must be present along with P0 in order
+         ! to correctly describe the legacy eta vertical coordinate.
+         ! If PT is not in the user's list, the file vertical structure would
+         ! look like a sigma coordinate and computing the pressure for such
+         ! a file would lead to incorrect pressure values.
+         ! Note that forcing pnpt=pnp0 means that
+         ! Outd_convmult(pnpt,set) and Outd_convadd(pnpt,set)
+         ! will in fact be the ones for P0 put theses convertion values are
+         ! the correct ones for PT.
+         if(pnp0 /= 0)pnpt=pnp0
+      endif
+      
+      if (pnpt /= 0 )then
+         if(Level_vgrid_usr(levset)%usr_grid_L)then
+            if(Level_vgrid_usr(levset)%vcode==1002)then
+               if (vgd_get(Level_vgrid_usr(levset)%vgd,"PTOP",ptop_user_8) &
+                    == VGD_ERROR)then
+                  print*,'TODO in out_thm, handle error gracefully -1'
+                  return
+               endif            
+            else
+               pnpt=0
+            endif
+         else
+            if(Hyb_rcoef(2) /= 1.0) pnpt=0
+         endif
+      endif
 
       psum=pnpn+pnp0+pnpt+pnla+pnlo+pnme+pnmx
       psum=psum +  &
            pngz+pnvt+pntt+pnes+pntd+pnhr+pnpx+ &
-           pntw+pnwe+pnww+pnzz+pnth
+           pntw+pnww+pnzz+pnth
 
       if (psum == 0) return
 
@@ -132,10 +162,16 @@
       if (pnth /= 0) allocate ( th   (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
 !     Obtain humidity HUT1 and other GMM variables
-      nullify (gmm_hut1,wlnph_m,wlnph_ta)
+      nullify (gmm_hut1,wlnph_m,wlnph_ta,indo,usr_src,cible,rf)
       istat= gmm_get('TR/'//'HU'//':P', gmm_hut1  )
       istat= gmm_get(gmmk_pw_log_pm_s , wlnph_m   )
-      istat= gmm_get(gmmk_pw_log_pt_s , wlnph_ta  )
+
+      if (trim(Dynamics_Kernel_S)=='DYNAMICS_FISL_H'.and..not.Schm_pressure_thm_L) then
+         istat= gmm_get(gmmk_pw_log_ptd_s , wlnph_ta  )
+      else
+         istat= gmm_get(gmmk_pw_log_pt_s , wlnph_ta  )
+      end if
+      
       call out_padbuf (wlnph_m ,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
       call out_padbuf (wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
@@ -166,7 +202,12 @@
       call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 
 !     Store PTOP and p0
-      ptop (:,:) = Cstv_ptop_8
+      if(Level_vgrid_usr(levset)%usr_grid_L .and. pnpt /= 0)then
+         ptop (:,:) = ptop_user_8
+      else
+         ptop (:,:) = Cstv_ptop_8
+      endif
+
       p0= pw_p0_plus
       call out_padbuf(p0,l_minx,l_maxx,l_miny,l_maxy,1)
 
@@ -176,6 +217,7 @@
 !_________________________________________________________________
 !     output 2D fields on 0mb (pressure)
       knd=2
+      Out_stag_S= 'MS '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
 
       if (pnme /= 0)then
          call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
@@ -186,12 +228,12 @@
                   'MELS',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
                   knd,-1,1,ind0, 1, Outd_nbit(pnme,set),.false. )
             endif
-         end if
+      end if
       if (pnmx /= 0)then
             call out_fstecr(fis0,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'MX  ',Outd_convmult(pnmx,set),Outd_convadd(pnmx,set),&
               knd,-1,1,ind0, 1, Outd_nbit(pnmx,set),.false. )
-         end if
+      end if
       if (pnpt /= 0) &
           call out_fstecr(ptop,l_minx,l_maxx,l_miny,l_maxy,hyb0, &
               'PT  ',Outd_convmult(pnpt,set),Outd_convadd(pnpt,set),&
@@ -302,8 +344,9 @@
       if (Level_typ_S(levset) == 'M') then  ! Output on model levels
 
 !       Setup the indexing for output
+         Out_stag_S= 'MT '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
          knd= Level_kind_ip1
-         allocate ( indo(G_nk+1) )
+         allocate ( indo(G_nk+1) ) ; indo(G_nk+1)=G_nk+1
          call out_slev ( Level(1,levset), Level_max(levset), &
                           Level_momentum,indo,nko,near_sfc_L)
          write_diag_lev= near_sfc_L .and. out3_sfcdiag_L
@@ -324,18 +367,28 @@
          hybt_gnk2(1)=hybt(G_nk+2)
 
          if (pngz /= 0)then
+            Out_stag_S= 'MM '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
             call out_fstecr(gzm,l_minx,l_maxx,l_miny,l_maxy,hybm, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
                knd,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
+            Out_stag_S= 'MT '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
             call out_fstecr(gzt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
                knd,-1,G_nk+1,indo,nko,Outd_nbit(pngz,set),.false. )
+
             if (near_sfc_L) then
+               Out_stag_S(2:2)= 'G'     
                call out_fstecr(gzt(l_minx,l_miny,G_nk+1)    , &
                     l_minx,l_maxx,l_miny,l_maxy,hybt_gnk1, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
                knd,-1,1,ind0,1,Outd_nbit(pngz,set),.false.)
-            end if
+               Out_stag_S(2:2)= 'T'
+            endif
+            !nkindx= nko
+            !if (near_sfc_L) nkindx= nko+1
+            !call out_fstecr(gzt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            !   'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
+            !   knd,-1,G_nk+1,indo,nkindx,Outd_nbit(pngz,set),.false. )
          end if
 
          if (pnvt /= 0)then
@@ -343,10 +396,12 @@
                  'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set),&
                  knd,-1,G_nk+1,indo,nko,Outd_nbit(pnvt,set),.false. )
             if (write_diag_lev) then
+               Out_stag_S(3:3)= 'D'
                call out_fstecr(vt(l_minx,l_miny,G_nk+1),&
                                l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                     'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set),&
                     Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnvt,set),.false. )
+               Out_stag_S(3:3)= ' '
             end if
          end if
          if (pnth /= 0) then
@@ -354,10 +409,12 @@
                     'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set),&
                     knd,-1,G_nk+1,indo,nko,Outd_nbit(pnth,set),.false. )
                if (write_diag_lev) then
+               Out_stag_S(3:3)= 'D'
                   call out_fstecr(th(l_minx,l_miny,G_nk+1),&
                                   l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                        'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnth,set),.false. )
+               Out_stag_S(3:3)= ' '
                end if
          end if
 
@@ -366,10 +423,12 @@
                  'TT  ' ,Outd_convmult(pntt,set),Outd_convadd(pntt,set), &
                  knd,-1, G_nk+1,indo,nko,Outd_nbit(pntt,set),.false. )
             if (write_diag_lev) then
+               Out_stag_S(3:3)= 'D'
                call out_fstecr(tt(l_minx,l_miny,G_nk+1),&
                                l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                  'TT  ',Outd_convmult(pntt,set),Outd_convadd(pntt,set),&
                  Level_kind_diag,-1,1,ind0,1,Outd_nbit(pntt,set),.false. )
+               Out_stag_S(3:3)= ' '
             end if
          end if
 
@@ -389,18 +448,27 @@
          end if
 
          if (pnpx /= 0)then
-             call out_fstecr(px_m,l_minx,l_maxx,l_miny,l_maxy,hybm, &
-                  'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set), &
+            Out_stag_S= 'MM '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
+            call out_fstecr(px_m,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+                 'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set), &
                   knd,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
-             call out_fstecr(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                  'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
-                  knd,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
-             if (near_sfc_L) then
-                call out_fstecr(px_ta(l_minx,l_miny,G_nk+1), &
-                                l_minx,l_maxx,l_miny,l_maxy,hybt_gnk1, &
-                     'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
-                     knd,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )
-             end if
+            Out_stag_S= 'MT '//OutGrid_hgrid_usr(Outd_grid(set))%usr_grid_index_S
+            call out_fstecr(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                 'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
+                 knd,-1,G_nk+1,indo,nko,Outd_nbit(pnpx,set),.false. )
+            if (near_sfc_L) then
+               Out_stag_S(2:2)= 'G'
+               call out_fstecr(px_ta(l_minx,l_miny,G_nk+1), &
+                               l_minx,l_maxx,l_miny,l_maxy,hybt_gnk1, &
+                    'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
+                    knd,-1,1,ind0,1,Outd_nbit(pnpx,set),.false. )
+               Out_stag_S(2:2)= 'T'
+            end if
+            !nkindx= nko
+            !if (near_sfc_L) nkindx= nko+1
+            !call out_fstecr(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            !      'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
+            !      knd,-1,G_nk+1,indo,nkindx,Outd_nbit(pnpx,set),.false. )
          end if
 
          if (pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0) &
@@ -414,10 +482,12 @@
                   'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
                   knd,-1,G_nk+1, indo, nko, Outd_nbit(pntw,set),.false. )
              if (write_diag_lev) then
+                Out_stag_S(3:3)= 'D'
                 call out_fstecr(t8(l_minx,l_miny,G_nk+1),&
                      l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                      'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set),&
                      Level_kind_diag,-1,1,ind0,1, Outd_nbit(pntw,set),.false. )
+                Out_stag_S(3:3)= ' '
              end if
          end if
 
@@ -426,7 +496,6 @@
             call mhuaes3 (t8,hu,tt,px_ta,satues_l, &
                                   l_ninj,nk_src,l_ninj)
 
-            t8(1:l_ni,1:l_nj,1:nk_src) = min(t8(1:l_ni,1:l_nj,1:nk_src), ES_MAX)
             if (Out3_cliph_L) then
                t8(1:l_ni,1:l_nj,1:nk_src) = max(t8(1:l_ni,1:l_nj,1:nk_src), 0.)
             end if
@@ -436,10 +505,12 @@
                     'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
                     knd,-1,G_nk+1,indo,nko,Outd_nbit(pnes,set),.false. )
                if (write_diag_lev) then
+                  Out_stag_S(3:3)= 'D'
                   call out_fstecr(t8(l_minx,l_miny,G_nk+1), &
                                   l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                        'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnes,set),.false. )
+                  Out_stag_S(3:3)= ' '
                end if
             end if
 
@@ -456,11 +527,13 @@
                     'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
                     knd,-1,G_nk+1,indo,nko,Outd_nbit(pntd,set),.false. )
                if (write_diag_lev) then
+                  Out_stag_S(3:3)= 'D'
                   call out_fstecr(t8(l_minx,l_miny,G_nk+1), &
                        l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                        'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
                        Level_kind_diag,-1,1,ind0,1,Outd_nbit(pntd,set),.false. )
-               end if
+                  Out_stag_S(3:3)= ' '
+              end if
             end if
          end if
 
@@ -480,10 +553,12 @@
                  'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set),&
                  knd,-1,G_nk+1,indo,nko,Outd_nbit(pnhr,set),.false. )
             if (write_diag_lev) then
+               Out_stag_S(3:3)= 'D'
                call out_fstecr(t8(l_minx,l_miny,G_nk+1), &
                     l_minx,l_maxx,l_miny,l_maxy,hybt_gnk2, &
                     'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set),&
                     Level_kind_diag,-1,1,ind0,1,Outd_nbit(pnhr,set),.false. )
+               Out_stag_S(3:3)= ' '
             end if
          end if
 
@@ -491,45 +566,6 @@
             call out_fstecr(myomega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set),&
                  knd,-1,G_nk,indo,nko,Outd_nbit(pnww,set),.false. )
-         end if
-
-         if (pnwe /= 0) then
-            call gem_error(-1,'out_thm_hlt','REVIEW WE CODE for DYNAMICS_FISL_H')
-         !
-         ! Compute WE (Normalized velocity in eta) mainly used by EER Lagrangian Dispertion Model
-         !
-         ! ZETA = ZETAs + ln(hyb)
-         !
-         ! Taking the total time derivative
-         !  .      .
-         ! ZETA = hyb/hyb
-         !  .     .
-         ! hyb = ZETA*hyb
-         !
-         ! Normalizing by domain height
-         !       .
-         ! WE = ZETA*hyb/( hyb(s) - hyb(t) )
-         !
-         ! Note: put WE=0 at first thermo level to close the domain
-         !       Do not write we for thermo level nk+3/4 since zdt is at surface
-         !       I user wants data at nk_3/4 us 0.5*ffwe(nk-1) (liniar interpolation)
-
-
-            istat = gmm_get(gmmk_zdt1_s,zdt1)
-            allocate(ffwe(l_minx:l_maxx,l_miny:l_maxy,G_nk))
-            ffwe(:,:,G_nk)= 0.
-            do k=1,G_nk-1
-               zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
-               do j= 1, l_nj
-               do i= 1, l_ni
-                  ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
-               end do
-               end do
-            end do
-            call out_fstecr(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&
-                 'WE  ',Outd_convmult(pnwe,set),Outd_convadd(pnwe,set),&
-                 knd,-1,G_nk,indo,min(nko,G_nk),Outd_nbit(pnwe,set),.false.)
-            deallocate (ffwe)
          end if
 
          if (pnzz /= 0) then
@@ -545,9 +581,35 @@
          if (pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0) &
             deallocate (t8)
 
-      else   ! Output on pressure levels
+      else   ! Output on pressure, heights AGL or user levels
 
-         nko= Level_max(levset)
+         ! Note,
+         ! is_pressure_L=.true. only for pressure output defined with a line
+         ! like the following in outcfg.out:
+         ! levels=2,pres,[1000., 925., 850., 700., 500., 250.];
+         ! Pressure levels defined with a ! record in a user_hgrid* file and
+         ! requested with a line like the following in outcfg.out:
+         ! levels=3,user_vgrid1,-1;
+         ! have is_pressure_L=.false.
+         is_pressure_L = Level_typ_S(levset) == 'P'
+
+         ! Note: The pointers cible, usr_src, indo, and rf
+         ! will point to memory allocated within set_level_usr_val.
+         ! This "internal" memory allocation will persist 
+         ! throughout the model integration and will be expanded if necessary. 
+         ! Therefore, cible, usr_src, indo, and rf must not
+         ! be deallocated, but they can be nullified if needed.
+         Out_stag_S= 'M???'
+         
+         if( set_level_usr_val(cible, indo, rf, knd, nko, usr_src, &
+              levset,Level,Level_max, 'THERMO', l_minx,l_maxx,l_miny,l_maxy, G_nk, &
+              Out_stag_S, Level_typ_S(levset), Outd_grid(set)) &
+              == set_level_ERROR )then
+            print*,'TODO in out_thm_htl handle error gracefully 1'
+            stop
+            return
+         endif
+
          allocate ( hu_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
                     vt_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
                     tt_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
@@ -555,21 +617,17 @@
                     px_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
                     w5     (l_minx:l_maxx,l_miny:l_maxy,nko), &
                     w6     (l_minx:l_maxx,l_miny:l_maxy,nko), &
-                    cible  (l_minx:l_maxx,l_miny:l_maxy,nko), &
-                    indo(nko), rf(nko) , prprlvl(nko) )
+                    prprlvl(nko) )
 
-         knd=2 !for pressure output
-
-         do i = 1, nko !Setup the indexing for output
-            indo     (i)= i
-            rf       (i)= Level(i,levset)
-            prprlvl  (i)= rf(i) * 100.0
-            cible(:,:,i)= log(prprlvl(i))
-         end do
+         if(is_pressure_L)then
+            do i = 1, nko !Setup the indexing for output
+               prprlvl  (i)= rf(i) * 100.0
+            end do
+         end if
 
 ! Compute HU (hu_pres=HU,px_ta=vert.der)
 
-         call vertint2 ( hu_pres,cible,nko, hu,wlnph_ta,nk_src,&
+         call vertint2 ( hu_pres,cible,nko, hu, usr_src,nk_src,&
                          l_minx,l_maxx,l_miny,l_maxy          ,&
                     1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )
 
@@ -585,15 +643,24 @@
 
 ! Compute GZ,VT (w5=GZ_pres, vt_pres=VT_pres)
 
-         call prgzvta( w5, vt_pres, prprlvl, nko , &
-                       gzt, vt, wlnph_ta, wlao   , &
-                       ttx, htx, nk_under,.false., &
-                       Out3_linbot, l_minx,l_maxx,l_miny,l_maxy,nk_src)
-
-         call out_padbuf(vt_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
+         if(is_pressure_L)then            
+            call prgzvta( w5, vt_pres, prprlvl, nko , &
+                 gzt, vt, wlnph_ta, wlao   , &
+                 ttx, htx, nk_under,.false., &
+                 Out3_linbot, l_minx,l_maxx,l_miny,l_maxy,nk_src)            
+            call out_padbuf(vt_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
+         else
+            ! Note: usr_src are thermo levels, therefore we take gzt
+            call vertint2 ( w5,cible,nko, gzt, usr_src,G_nk+1,&
+                 l_minx,l_maxx,l_miny,l_maxy          ,&
+                 1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )
+            call vertint2 ( vt_pres,cible,nko, vt, usr_src,nk_src,&
+                 l_minx,l_maxx,l_miny,l_maxy          ,&
+                 1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )            
+         endif
 
         if (pngz /= 0) then
-           if (Outd_filtpass(pngz,set) > 0)then
+           if (Outd_filtpass(pngz,set) > 0 .and. is_pressure_L)then
               call filter( w5,Outd_filtpass(pngz,set),Outd_filtcoef(pngz,set), &
                             l_minx,l_maxx,l_miny,l_maxy,nko)
            end if
@@ -609,20 +676,39 @@
                          nko,1,l_ni,1,l_nj,.false.)
         end if
 
-        if ( pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0) then
+        if ( pnes /= 0.or.pntw /= 0.or.pntd /= 0.or.pnhr /= 0.or.pnpx /= 0) then
 ! Compute PX for ES,TD,HR
-            do k=1,nko
-               do j= 1, l_nj
-               do i= 1, l_ni
-                  px_pres(i,j,k) = prprlvl(k)
-               end do
-               end do
-            end do
-            call out_padbuf(px_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
-            call out_padbuf(tt_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
-            call out_padbuf(hu_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
+           if(is_pressure_L)then
+              do k=1,nko
+                 do j= 1, l_nj
+                    do i= 1, l_ni
+                       px_pres(i,j,k) = prprlvl(k)
+                    end do
+                 end do
+              end do              
+           else
+              call vertint2 ( px_pres,cible,nko,wlnph_ta,usr_src,nk_src,&
+                   l_minx,l_maxx,l_miny,l_maxy          ,&
+                   1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )              
+              do k=1,nko
+                 do j= 1, l_nj
+                    do i= 1, l_ni
+                       px_pres(i,j,k) = exp(px_pres(i,j,k))
+                    enddo
+                 enddo
+              enddo
+           end if
+           call out_padbuf(px_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
+           call out_padbuf(tt_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
+           call out_padbuf(hu_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
         end if
 
+        if (pnpx /= 0 .and. .not. is_pressure_L) then
+           call out_fstecr(px_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+                'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set), &
+                knd,-1,nko,indo, nko, Outd_nbit(pnpx,set),.false.)
+        endif
+        
         if (pntw /= 0) then
 ! Compute THETAW TW (w5=TW_pres) (px_pres=PX)
             call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
@@ -631,7 +717,7 @@
             call mthtaw4 (w5,hu_pres,w6, &
                            px_pres,satues_l, &
                            .true.,trpl_8,l_ninj,nko,l_ninj)
-            if (Outd_filtpass(pntw,set) > 0) &
+            if (Outd_filtpass(pntw,set) > 0 .and. is_pressure_L) &
                 call filter( w5,Outd_filtpass(pntw,set),Outd_filtcoef(pntw,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
@@ -646,7 +732,6 @@
             call out_padbuf(w6,l_minx,l_maxx,l_miny,l_maxy,nko)
             call mhuaes3 (w5, hu_pres,w6, px_pres,satues_l, &
                           l_ninj, nko, l_ninj)
-            w5(1:l_ni,1:l_nj,1:nko) = min(w5(1:l_ni,1:l_nj,1:nko), ES_MAX)
             if ( Out3_cliph_L ) then
                w5(1:l_ni,1:l_nj,1:nko) = max(w5(1:l_ni,1:l_nj,1:nko),0.)
             end if
@@ -660,15 +745,17 @@
                  end do
                  end do
               end do
-              call filter( td_pres,Outd_filtpass(pntd,set),Outd_filtcoef(pntd,set), &
-                            l_minx,l_maxx,l_miny,l_maxy, nko )
+              if(is_pressure_L)then
+                 call filter( td_pres,Outd_filtpass(pntd,set),Outd_filtcoef(pntd,set), &
+                      l_minx,l_maxx,l_miny,l_maxy, nko )
+              end if
               call out_fstecr(td_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
                 knd,-1,nko,indo,nko,Outd_nbit(pntd,set),.false. )
             end if
 
             if (pnes /= 0) then
-                if (Outd_filtpass(pnes,set) > 0) &
+                if (Outd_filtpass(pnes,set) > 0 .and. is_pressure_L) &
                     call filter( w5,Outd_filtpass(pnes,set),Outd_filtcoef(pnes,set), &
                                   l_minx,l_maxx,l_miny,l_maxy,nko )
                 call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
@@ -690,7 +777,7 @@
                  end do
               end do
            end if
-           if (Outd_filtpass(pnhr,set) > 0) &
+           if (Outd_filtpass(pnhr,set) > 0 .and. is_pressure_L) &
                 call filter( w5,Outd_filtpass(pnhr,set),Outd_filtcoef(pnhr,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
            call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
@@ -699,7 +786,7 @@
         end if
 
         if (pnvt /= 0) then
-            if (Outd_filtpass(pnvt,set) > 0) &
+            if (Outd_filtpass(pnvt,set) > 0 .and. is_pressure_L) &
                 call filter( vt_pres,Outd_filtpass(pnvt,set),Outd_filtcoef(pnvt,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call out_fstecr(vt_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
@@ -717,7 +804,7 @@
          end if
 
         if (pntt /= 0) then
-            if (Outd_filtpass(pntt,set) > 0) &
+            if (Outd_filtpass(pntt,set) > 0 .and. is_pressure_L) &
                 call filter( tt_pres,Outd_filtpass(pntt,set),Outd_filtcoef(pntt,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call out_fstecr(tt_pres,l_minx,l_maxx,l_miny,l_maxy,rf,  &
@@ -729,7 +816,7 @@
             call vertint2 ( w5,cible,nko, myomega,wlnph_ta,G_nk         ,&
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                             inttype=Out3_vinterp_type_S )
-            if (Outd_filtpass(pnww,set) > 0) &
+            if (Outd_filtpass(pnww,set) > 0 .and. is_pressure_L) &
                 call filter( w5,Outd_filtpass(pnww,set),Outd_filtcoef(pnww,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
              call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
@@ -741,7 +828,7 @@
            call vertint2 ( w5,cible,nko, wt1,wlnph_ta,G_nk         ,&
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                             inttype=Out3_vinterp_type_S )
-            if (Outd_filtpass(pnzz,set) > 0) &
+            if (Outd_filtpass(pnzz,set) > 0 .and. is_pressure_L) &
                 call filter( w5,Outd_filtpass(pnzz,set),Outd_filtcoef(pnzz,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
              call out_fstecr(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
@@ -749,7 +836,7 @@
                   knd,-1,nko, indo, nko, Outd_nbit(pnzz,set),.false. )
         end if
 
-        deallocate(indo,rf,prprlvl,cible)
+        deallocate(prprlvl)
         deallocate(w5,w6,px_pres,hu_pres,td_pres,tt_pres,vt_pres)
       end if
 

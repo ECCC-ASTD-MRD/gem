@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module soili_svs_mod
+  implicit none
+  public
+contains
       SUBROUTINE SOILI_SVS (WD, &
            WF, SNM, SVM, RHOS, RHOSV, & 
            VEGH, VEGL, &  
@@ -22,15 +26,16 @@
            GAMVH,GAMVL, &  
            LAIVH, LAIVL, &   
            Z0MVH, Z0MVL, Z0, CLAY, SAND, DECI, EVER,LAID,  &  
-           CONDDRY, CONDSLD, &  
+           CONDDRY, CONDMINFAC, CONDSLD, &  
            WTA, CG, PSNGRVL,  & 
            Z0H, ALGR, EMGR, PSNVH, PSNVHA,   &
            ALVA, LAIVA, CVPA, EVA, Z0HA, Z0MVG, RGLA, STOMRA ,&  
-           GAMVA, SOILHCAPZ, SOILCONDZ, N )
+           GAMVA, SOILHCAPZ, SOILCONDZ, SIG_TOPO, N )
          !
         use tdpack_const, only: PI
         use svs_configs
-        use sfc_options, only: read_emis, svs_urban_params
+        use sfc_options, only: read_emis, svs_urban_params, soil_cond, svs_snowfrac_ground, svs_cg_depth, svs_cg_ice, &
+                               vf_type, z0min_la23, z0max_la23, z0exp_la23, critwater, lmodwsat_ice_svs1
      implicit none
 !!!#include <arch_specific.hf>
 
@@ -40,11 +45,11 @@
 
       REAL SNM(N), RHOS(N)
       REAL RHOSV(N), Z0MVH(N), VEGH(N), VEGL(N), SVM(N)
-      REAL CGSAT(N), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
+      REAL CGSAT(N,NL_SVS), WSAT(N,NL_SVS), WWILT(N,NL_SVS), BCOEF(N,NL_SVS)
       REAL Z0(N)
       REAL CG(N), WTA(N,svs_tilesp1)
       REAL PSNGRVL(N)
-      REAL Z0H(N), ALGR(N), CLAY(N), SAND(N)
+      REAL Z0H(N), ALGR(N), CLAY(N), SAND(N), SIG_TOPO(N)
       REAL DECI(N), EVER(N), LAID(N)
       REAL EMGR(N), PSNVH(N), PSNVHA(N),  LAIVH(N)
       REAL ALVA(N), LAIVA(N), CVPA(N), EVA(N)
@@ -53,7 +58,7 @@
       REAL Z0HA(N), Z0MVG(N), RGLA(N), STOMRA(N), STOMRVH(N), STOMRVL(N)
       REAL GAMVL(N), GAMVH(N), GAMVA(N)
       REAL SOILHCAPZ(N,NL_SVS), SOILCONDZ(N,NL_SVS)
-      REAL CONDDRY(N,NL_SVS), CONDSLD(N,NL_SVS)
+      REAL CONDDRY(N,NL_SVS), CONDMINFAC(N,NL_SVS), CONDSLD(N,NL_SVS)
       
 !Author
 !          S. Belair et al. (January 2009)
@@ -88,6 +93,7 @@
 !          orography)
 ! Z0MVL    Local roughness associated with LOW vegetation only (no
 !          orography)
+! SIG_TOPO Standard deviation of subgrid topo [m]
 ! CV       heat capacity of the vegetation
 ! CVH      heat capacity of HIGH vegetation
 ! CVL      heat capacity of LOW  vegetation
@@ -103,13 +109,14 @@
 ! GAMVH    stomatal resistance param. for HIGH vegetation
 ! GAMVL    stomatal resistance param. for LOW  vegetation
 ! Z0       momentum roughness length (no snow)
-! CLAY     percentage of clay in soil (mean of 3 layers)
-! SAND     percentage of sand in soil (mean of 3 layers)  
+! CLAY     percentage of clay of surface soil layer 
+! SAND     percentage of sand of surface soil layer   
 ! DECI     fraction of high vegetation that is deciduous
 ! EVER     fraction of high vegetation that is evergreen
 ! LAID     LAI of deciduous trees
 ! CONDSLD  Soil thermal conductivity
 ! CONDDRY  Dry thermal conductivity
+! CONDMINFAC  Factor applied to the thermal conductivity of minerals (only when optsoilcond = 1)
 !
 !           - Output -
 ! WTA      Weights for SVS surface types as seen from SPACE
@@ -139,57 +146,32 @@ include "isbapar.cdk"
 
 !
       INTEGER I, K
-!
-      REAL LAMI, CI, DAY, RHOI, RHOW, CW, LAMW
-! 
-      REAL ADRYSAND, AWETSAND, ADRYCLAY, AWETCLAY
-      REAL EDRYSAND, EWETSAND, EDRYCLAY, EWETCLAY
-!      
+!    
       REAL LOG_CONDI, LOG_CONDW, XF, XU, WORK1, WORK2, WORK3, CONDSAT
+      REAL LAM_ZERO, k_min, k_air, k_ice 
       REAL SATDEG, KERSTEN
+      REAL C_ICE
+
+      REAL COEF1,COEF2
 !
       real, dimension(n) :: a, b, cnoleaf, cva, laivp, lams, lamsv, &
-           zcs, zcsv, z0_snow_low
+           zcs, zcsv, z0_snow_low, sd_opn, sd_for, z0vl_frac, wsatc, wwilt_eff
+
+      real, dimension(n,nl_svs) :: cgk
 
       REAL :: CVAMIN = 1.0E-5
 
       IF (SVS_URBAN_PARAMS) THEN
          CVAMIN = 0.3E-5   ! matches value of CVDAT(21) reset in inicover_svs.F90
       ENDIF
+
+      IF(SVS_SNOWFRAC_GROUND=='LA23' .AND.  VF_TYPE .eq. 'CCILC_WE') THEN
+         COEF1 = (Z0MAX_LA23-Z0MIN_LA23)/(0.15**Z0EXP_LA23 - 0.01**Z0EXP_LA23)
+         COEF2 = Z0MIN_LA23 - COEF1 * 0.01**Z0EXP_LA23
+      ENDIF
+
 !
 !***********************************************************************
-!
-!
-!
-!
-!
-!                                    Define some constants for
-!                                    the ice
-!
-!                                    NOTE:  these definitions should
-!                                           be put in a COMMON
-!
-      LAMI   = 2.22
-      CI     = 2.106E3
-      RHOI   = 917.  
-      DAY    = 86400.
-
-      LAMW = 0.57 ! Thermal conductivity of water
-      CW   = 4.218E+3
-      RHOW = 1000
-!                       Albedo values from literature
-      ADRYSAND = 0.35
-      AWETSAND = 0.24
-      ADRYCLAY = 0.15
-      AWETCLAY = 0.08
-!                       Emissivity values from van Wijk and Scholte Ubing (1963)
-      EDRYSAND = 0.95
-      EWETSAND = 0.98
-      EDRYCLAY = 0.95
-      EWETCLAY = 0.97
-
-!
-!
 !
 !
 !
@@ -206,11 +188,43 @@ include "isbapar.cdk"
 !                          result in great temperature variations
 !                          (for drier soils).
 !
-      DO I=1,N
-        CG(I) = CGSAT(I) * ( WSAT(I,1)/ MAX(WD(I,1)+WF(I,1),0.001))** &
-                      ( 0.5*BCOEF(I,1)/LOG(10.) )
-        CG(I) = MIN( CG(I), 2.0E-5 )      
 !
+      IF (svs_cg_ice .EQ. 'BELAIR2003') THEN
+        DO I=1,N
+          DO K=1,NL_SVS
+            CGK(I,K) = CGSAT(I,K) * ( WSAT(I,K)/ MAX(WD(I,K)+WF(I,K),0.001))** &
+                    ( 0.5*BCOEF(I,K)/LOG(10.) )
+            CGK(I,K) = MIN( CGK(I,K), 2.0E-5 )
+          END DO
+        END DO
+      ELSE IF (svs_cg_ice .EQ. 'BOONE2000') THEN
+        ! Boone et al. (2000), eq. B3
+        C_ICE = 2 * (PI / (LAMI*CICE*RHOI*DAY))**0.5
+        DO I=1,N
+          DO K=1,NL_SVS
+            ! Boone et al. (2000), eq. B2
+            CGK(I,K) = CGSAT(I,K) * ((WSAT(I,K)-WF(I,K)) / MAX(WD(I,K),0.001))** &
+                    ( 0.5*BCOEF(I,K)/LOG(10.) )
+            CGK(I,K) = MIN( CGK(I,K), 2.0E-5 )
+            CGK(I,K) = (1-WF(I,K)) * CGK(I,K) + WF(I,K) * C_ICE
+          END DO
+        END DO
+      ELSE
+         ! Unknown option for svs_cg_ice
+         STOP
+      END IF
+!
+!     Average value of Cg computed using weights for each layer
+!     that decrease exponentially with a constant characteristic length
+!     defined by option svs_cg_depth. Weights are constant
+!     and computed in svs_configs.
+      DO I=1,n
+        CG(I) = CGK(I,1)
+        IF (svs_cg_depth.GT.0.) THEN
+          DO K=2,NL_SVS
+            CG(I) = CG(I)*(1.-WEIGHT_CG(K)) + CGK(I,K)*WEIGHT_CG(K)
+          END DO
+        END IF
       END DO
 !
 !
@@ -227,10 +241,10 @@ include "isbapar.cdk"
 !
       DO I=1,N
         LAMS(I) = LAMI * RHOS(I)**1.88
-        ZCS(I) = 2.0 * SQRT( PI/( LAMS(I) * 1000* RHOS(I) *CI*DAY) )
+        ZCS(I) = 2.0 * SQRT( PI/( LAMS(I) * 1000* RHOS(I) *CICE*DAY) )
 !
         LAMSV(I) = LAMI * RHOSV(I)**1.88
-        ZCSV(I) = 2.0 * SQRT( PI/(LAMSV(I)* 1000*RHOSV(I) *CI*DAY) )
+        ZCSV(I) = 2.0 * SQRT( PI/(LAMSV(I)* 1000*RHOSV(I) *CICE*DAY) )
 !
       END DO    
 !
@@ -246,32 +260,106 @@ include "isbapar.cdk"
 !                        average snow cover fraction of bare ground and low veg
          IF(SNM(I).GE.CRITSNOWMASS ) THEN
 
-            ! use z0=0.03m for bare ground, 0.1m for low veg
-             z0_snow_low(i) = exp (  (  (1-VEGH(I) -VEGL(I)) * log( 0.03) &
+
+             IF(SVS_SNOWFRAC_GROUND=='NIL') THEN   
+               ! use z0=0.03m for bare ground, 0.1m for low veg
+               z0_snow_low(i) = exp (  (  (1-VEGH(I) -VEGL(I)) * log( 0.03) &
                                   +  VEGL(I) * log(0.1) ) / ( 1 - VEGH(I) ) )
              
 
-             PSNGRVL(I) = MIN( SNM(I) / (SNM(I) + RHOS(I)* 5000.* z0_snow_low(i) ) , 1.0)
+               PSNGRVL(I) = MIN( SNM(I) / (SNM(I) + RHOS(I)* 5000.* z0_snow_low(i) ) , 1.0)
+
+
+             ELSE IF(SVS_SNOWFRAC_GROUND=='LA23') THEN 
+
+               ! Snow depth in open terrain [m]      
+               SD_OPN(I) = SNM(I) / (RHOS(I)*1000.)
+
+
+               ! Roughness parameter used in the snow cover fraction 
+               !   - with VF_TYPE = 'CCILC_WE' it depends on the momentum roughness length for low vegetation (Z0MVL)
+               !        parameters Z0MIN_LA23, Z0MAX_LA23 and Z0EXP_LA23  can be set in namelist
+               !   - with VF_TYPE != 'CCILC_WE', it depends on the fraction of open terrain covered by low vegtation VS bare ground
+               !        to be consistent with the inital approach used in SVS (see NIL above) to account for the effect of the presence of low 
+               !        vegetation on the snow cover fraction. 
+               IF( VF_TYPE .eq. 'CCILC_WE') THEN
+                   ! Value of Z0MVL(I)> 0.5 corresponds to values without low vegetation (only bare ground)
+                   ! Used a default value of 0.01 m (consistent with the minimal value for Z0MVL in CCILC_WE
+                   IF(Z0MVL(I)> 0.5) THEN
+                       Z0VL_FRAC(I) = 0.01 
+                   ELSE
+                       Z0VL_FRAC(I) = Z0MVL(I)
+                   ENDIF
+               
+                   Z0_SNOW_LOW(I) = MAX(Z0MIN_LA23, MIN(COEF1*Z0VL_FRAC(I)**Z0EXP_LA23 +COEF2, Z0MAX_LA23))
+               ELSE
+                   ! Roughness parameter accounting for the fraction of low veg. 
+                   Z0_SNOW_LOW(I) = EXP (  (  (1-VEGH(I) -VEGL(I)) * LOG(Z0BG_LA23) &
+                                 +  VEGL(I) * LOG(Z0LV_LA23)) / ( 1 - VEGH(I) ) )
+               ENDIF
+
+               ! Snow cover fraction accounting for sugbrid topography as in Lalande et al. (2023)
+               PSNGRVL(I) = MIN(1.0, TANH(SD_OPN(I)/                                          &
+                          (2.5 * Z0_SNOW_LOW(I)  * (RHOS(I)*1000./RHON_LA23)**MFAC_LA23)      & 
+                            +  BETA_LA23 * SIG_TOPO(I) * (RHOS(I)*1000./RHON_LA23)**NFAC_LA23)) 
+
+             ELSE IF(SVS_SNOWFRAC_GROUND=='AR25') THEN
+
+               ! Snow depth in open terrain [m]  
+               SD_OPN(I) = SNM(I) / (RHOS(I)*1000.)
+
+               ! Snow cover fraction optimized for a resolution of 2.5 km taken from Abolafia-Rosenzweig et al. (2025)
+               PSNGRVL(I) = MIN(1.0, TANH(SD_OPN(I)/( SCF_AR25  * (RHOS(I)*1000./RHON_AR25)**MFAC_AR25)))
+
+             ENDIF               
 
          ELSE
 
-            PSNGRVL(I) = 0.0
+             PSNGRVL(I) = 0.0
            
          ENDIF
             
        
 
-
          IF(SVM(I).GE.CRITSNOWMASS ) THEN
 !
 !                       SNOW FRACTION AS SEEN FROM THE GROUND
 !
+            IF(SVS_SNOWFRAC_GROUND=='NIL') THEN   
 
-            PSNVH(I)  =  MIN( SVM(I) / (SVM(I)+ RHOSV(I)*5000.*0.1 ), 1.0)
+               ! Snow cover fraction seen from the ground for snow below high vegetation [-]
+               PSNVH(I)  =  MIN( SVM(I) / (SVM(I)+ RHOSV(I)*5000.*0.1 ), 1.0)
+
+            ELSE IF(SVS_SNOWFRAC_GROUND=='LA23') THEN 
+
+               ! Snow depth below high vegetation [m]                   
+               SD_FOR(I) = SVM(I) / (RHOSV(I)*1000.) 
+
+               ! Snow cover fraction seen from the ground for snow below high vegetation [-]
+               ! Effect of subgrid topo are not taken into account in the forest
+               PSNVH(I) = MIN(1.0, TANH(SD_FOR(I)/(2.5 * Z0HV_LA23  * (RHOSV(I)*1000./RHON_LA23)**MFAC_LA23)))
+
+             ELSE IF(SVS_SNOWFRAC_GROUND=='AR25') THEN 
+
+               ! Snow depth below high vegetation [m]   
+               SD_FOR(I) = SVM(I) / (RHOSV(I)*1000.) 
+
+               ! Snow cover fraction seen from the ground for snow below high vegetation [-]
+               PSNVH(I) = MIN(1.0, TANH(SD_FOR(I)/( SCF_AR25  * (RHOSV(I)*1000./RHON_AR25)**MFAC_AR25)))
+               
+            ENDIF
+
 !                       SNOW FRACTION AS SEEN FROM THE SPACE
 !                       NEED TO ACCOUNT FOR SHIELDING OF LEAVES/TREES
 !
-            PSNVHA(I) = (EVER(I) * 0.2 + DECI(I) * MAX(LAI0 - LAID(I), 0.2)) * PSNVH(I)
+            IF(SVS_SNOWFRAC_GROUND=='NIL') THEN
+               ! Original formulation used in SVS     
+               PSNVHA(I) = (EVER(I) * 0.2 + DECI(I) * MAX(LAI0 - LAID(I), 0.2)) * PSNVH(I)
+
+            ELSE IF(SVS_SNOWFRAC_GROUND=='LA23' .OR. SVS_SNOWFRAC_GROUND=='AR25') THEN 
+               ! Revised formulation to be compatible with LA23 and AR25     
+               PSNVHA(I) = (EVER(I) * 0.15 + DECI(I) * MAX(0.8 - LAID(I), 0.15)) * PSNVH(I)
+            ENDIF
 
          ELSE
             PSNVH(I)  = 0.0
@@ -464,8 +552,24 @@ include "isbapar.cdk"
 !                       database unto model layer, use 1st layer texture from 
 !                       database as is here... 
 !
+
+      IF(LMODWSAT_ICE_SVS1) THEN              
+         DO I=1,N
+            !Adjust wsat for presence of ice as
+            WSATC(I)= MAX((WSAT(I,1)-WF(I,1)-0.00001), CRITWATER)
+            !Wilting point with respect to the liquid water using modified soil porosity
+            WWILT_EFF(I) = WWILT(I,1) * WSATC(I)/WSAT(I,1)
+         END DO
+      ELSE
+         DO I=1,N
+            WSATC(I) = WSAT(I,1)
+            WWILT_EFF(I) = WWILT(I,1) 
+         END DO
+      ENDIF
+      
       DO I=1,N
-!                      A few constraints 
+!        A few constraints
+!	     Take the texture of the surface soil layer 
          IF((CLAY(I)+SAND(I)).gt.0.0) THEN         
             A(I)= SAND(I) / ( CLAY(I) + SAND(I) ) 
          ELSE         
@@ -474,8 +578,8 @@ include "isbapar.cdk"
 !                      If  superficial soil layer dryer than wilting point
 !                      set it to wilting points ...and so get 0.0 for B(I)
 !
-         IF((WSAT(I,1)-WWILT(I,1)).gt.0.0.and.WD(I,1).ge.WWILT(I,1)) THEN         
-            B(I) = ( WD(I,1) - WWILT(I,1) ) / ( WSAT(I,1) - WWILT(I,1))
+         IF((WSATC(I)-WWILT_EFF(I)).gt.0.0.and.WD(I,1).ge.WWILT_EFF(I)) THEN         
+            B(I) = ( WD(I,1) - WWILT_EFF(I) ) / ( WSATC(I) - WWILT_EFF(I))
          ELSE
             B(I) = 0.0 
          ENDIF
@@ -542,44 +646,69 @@ include "isbapar.cdk"
 
 !
 !
-!       10.      SOIL THERMAL PROPERTIES PROFILE using PL98
+!       10.      SOIL THERMAL PROPERTIES PROFILE (either PL98 or Tian2016)
 !               ------------------------------------------
 !
 !
        LOG_CONDI = LOG(LAMI)
        LOG_CONDW = LOG(LAMW)
-
        DO I=1,N
 
           DO K=1,NL_SVS
 
-!                        Kersten parameter for thermal conductivity
-             XF = WF(I,K) / (WF(I,K) + MAX(WD(I,K),0.001))
-             XU = (1.0-XF) * WSAT(I,K)
+              IF (soil_cond == 'PL1998') THEN     !use the model from Peters-Lidard et al. (1998) for frozen soil that involve the Kersten number (Johanssen, 1975)
+    
+!                Kersten parameter for thermal conductivity
+                 XF = WF(I,K) / (WF(I,K) + MAX(WD(I,K),0.001))
+                 XU = (1.0-XF) * WSAT(I,K)
+    
+                 WORK1   = LOG(CONDSLD(I,K))*(1.0-WSAT(I,K))
+                 WORK2   = LOG_CONDI*(WSAT(I,K)-XU)
+                 WORK3   = LOG_CONDW*XU
+                 CONDSAT = EXP(WORK1+WORK2+WORK3)
+                 SATDEG  = MAX(0.1, (WF(I,K) + WD(I,K))/WSAT(I,K))  ! degree of saturation
+                 SATDEG  = MIN(1.0,SATDEG)
+                 KERSTEN  = LOG10(SATDEG) + 1.0               ! Kersten number
+    
+!                Put in a smooth transition from thawed to frozen soils:
+!                simply linearly weight Kersten number by frozen fraction
+!                in soil:
+                 KERSTEN  = (1.0-XF)*KERSTEN + XF *SATDEG
+    
+!                Thermal conductivity
+                 SOILCONDZ(I,K) = KERSTEN*(CONDSAT-CONDDRY(I,K)) + CONDDRY(I,K)
 
-             WORK1   = LOG(CONDSLD(I,K))*(1.0-WSAT(I,K))
-             WORK2   = LOG_CONDI*(WSAT(I,K)-XU)
-             WORK3   = LOG_CONDW*XU
-             CONDSAT = EXP(WORK1+WORK2+WORK3)
-             SATDEG  = MAX(0.1, (WF(I,K) + WD(I,K))/WSAT(I,K))  ! degree of saturation
-             SATDEG  = MIN(1.0,SATDEG)
-             KERSTEN  = LOG10(SATDEG) + 1.0               ! Kersten number
+              ELSE IF (soil_cond == 'TIAN2016') THEN     !use the physical model from Tian et al. (2016) [https://doi.org/10.1111/ejss.12366]
+                  IF (WD(I,K) > 0.2*WSAT(I,K)) THEN
+                      LAM_ZERO = LAMW
+                  ELSE
+                      IF (WF(I,K) > 0.5*WSAT(I,K)) THEN
+                          LAM_ZERO = LAMI
+                      ELSE
+                          LAM_ZERO = 0.025 !thermal conductivity of air
+                      ENDIF
+                  ENDIF
 
-!                       Put in a smooth transition from thawed to frozen soils:
-!                       simply linearly weight Kersten number by frozen fraction
-!                       in soil:
-             KERSTEN  = (1.0-XF)*KERSTEN + XF *SATDEG
+                  k_min = (2/3)*(1+(CONDSLD(I,K)/LAM_ZERO-1)*CONDMINFAC(I,K))**(-1) + &
+                          (1/3)*(1+(CONDSLD(I,K)/LAM_ZERO-1)*(1-2*CONDMINFAC(I,K)))**(-1)
 
-!                       Thermal conductivity
-             SOILCONDZ(I,K) = KERSTEN*(CONDSAT-CONDDRY(I,K)) + CONDDRY(I,K)
+                  k_ice = (2/3)*(1+(LAMI/LAM_ZERO-1)*0.333*(1-WF(I,K)/WSAT(I,K)))**(-1) + (1/3)*(1+(LAMI/LAM_ZERO-1)*(1-2*0.333*(1-WF(I,K)/WSAT(I,K))))**(-1)
+                  
+                  k_air = (2/3)*(1+(0.025/LAM_ZERO-1)*0.333*(1-(WSAT(I,K)-WD(I,K)-WF(I,K))/WSAT(I,K)))**(-1) + &
+                          (1/3)*(1+(0.025/LAM_ZERO-1)*(1-2*0.333*(1-(WSAT(I,K)-WD(I,K)-WF(I,K))/WSAT(I,K))))**(-1)
 
-!                       Heat capacity (J m-3 K-1)
-             SOILHCAPZ(I,K) = (1. - WSAT(I,K)) * 2700. * 733. + WD(I,K) * CW * RHOW &
-                             + WF(I,K) * CI * RHOI
+                  SOILCONDZ(I,K) = (WD(I,K)*LAMW + k_ice*WF(I,K)*LAMI + k_air*(WSAT(I,K) - WD(I,K) - WF(I,K))*0.025 + k_min*(1 - WSAT(I,K))*CONDSLD(I,K)) / &
+                                  (WD(I,K) +k_ice*WF(I,K)+k_air*(WSAT(I,K)-WD(I,K)-WF(I,K))+k_min*(1-WSAT(I,K)))
+              ENDIF
+
+!             Heat capacity (J m-3 K-1)
+              SOILHCAPZ(I,K) = (1. - WSAT(I,K)) * 2700. * 733. + WD(I,K) * CWAT * RHOW &
+                             + WF(I,K) * CICE * RHOI
 
           END DO
 
        END DO
 
       RETURN
-      END
+    END SUBROUTINE SOILI_SVS
+  end module soili_svs_mod

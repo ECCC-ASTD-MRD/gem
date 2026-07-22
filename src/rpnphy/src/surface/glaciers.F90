@@ -15,11 +15,18 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module glaciers_mod
+  implicit none
+  public
+contains
+  
 subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
    use tdpack
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
+   use phy_status, only: physeterror
+   use fillagg_mod, only: fillagg
    implicit none
 !!!#include <arch_specific.hf>
    !@Object Calculate the surface temperature (and specific humidity) and
@@ -71,9 +78,9 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
    real,dimension(n) :: scr1, scr2,  scr3,  scr4, scr5, scr6, scr7, scr8
    real,dimension(n) :: scr10, scr11, t2, vmod, vdir, zsnodp_m, vmod0
    real, dimension(n) :: zu10, zusr    ! wind at 10m and at the sensor level
-   real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
+   real, dimension(n) :: zref_sw_surf, zemit_lw_surf
    real, dimension(n) :: my_ta, my_qa
-   real, dimension(n) :: zusurfzt, zvsurfzt, zqd
+   real, dimension(n) :: zusurfzt, zvsurfzt
 
    real,pointer,dimension(:) :: albsfc, cmu, ctu, fc_glac
    real,pointer,dimension(:) :: fsol, fv_glac, zemisr
@@ -81,7 +88,7 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
    real,pointer,dimension(:) :: ps, qsice, th, snorate, tdeep, ts, tt, uu, vv
    real,pointer,dimension(:) :: z0h, z0m
    real,pointer,dimension(:) :: zalfaq, zalfat, zdlat, zfcor, zfdsi
-   real,pointer,dimension(:) :: zftemp, zfvap, zqdiag, zrunofftot, zsnodp, ztdiag
+   real,pointer,dimension(:) :: zftemp, zfvap, zqdiag, zrunofftot, zsnodp, zsnowe, ztdiag
    real,pointer,dimension(:) :: ztsurf, ztsrad, zudiag, zvdiag
    real,pointer,dimension(:) :: zfrv, zzusl, zztsl
    real,pointer,dimension(:) :: zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
@@ -102,7 +109,7 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
          0.17  ,  2.034    /
    data  TMELICE , TMELSNO  /  273.05 , 273.15  /
    data  ALBDI   ,  ALBMI ,  ALBDS  ,  ALBMS / &
-         0.57    ,  0.50  ,  0.83   ,  0.77  /
+         0.57    ,  0.50  ,  0.87   ,  0.82  /
    data  COEFEXT / &
          1.5     /
    data  ROICE  / &
@@ -150,6 +157,7 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
    zfvap    (1:n) => bus( x(fvap,1,indx_sfc)  : )
    zrunofftot(1:n) => bus( x(runofftot,1,indx_sfc) : )
    zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )
+   zsnowe   (1:n) => bus( x(snowe,1,indx_sfc) : )
    ztsrad   (1:n) => bus( x(tsrad,1,1)        : )
    ztsurf   (1:n) => bus( x(tsurf,1,indx_sfc) : )
    zudiag   (1:n) => bus( x(udiag,1,1)        : )
@@ -526,6 +534,11 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
           ZALFAT    (I) = - CTU(I) *  TS(I)
           ZALFAQ    (I) = - CTU(I) *  QSICE(I)
         endif
+
+        ! Compute SWE over glacier using assumption of a constant snow density in the glacier scheme
+        ! ROSNOW(1) is used since it corresponds to the value used when computing the changes in snow depth
+        ! due to snowfall and snow melt. 
+        ZSNOWE  (I)  =  ZSNODP  (I) * ROSNOW(1)
 !***
 
       end do
@@ -561,23 +574,20 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
                zusr(i) = zu10(i)
             endif
 
-            zqd(i) =  max(ZQDIAG(i) , 1.e-6)
+            if (atm_external) then
+      !# if direct/diffuse solar radiation not in forcing used default partitionning
+              zfsd(i) = 0.85*fsol(i) 
+              zfsf(i) = 0.15*fsol(i)
+            endif
 
             zref_sw_surf(i) = albsfc(i) * fsol(i)
             zemit_lw_surf(i) = (1. -zemisr(i)) * zfdsi(i) + zemisr(i)*stefan*ztsurf(i)**4
 
-            zzenith(i) = acos(zcoszeni(i))
-            if (fsol(i) > 0.0) then
-               zzenith(i) = min(zzenith(i), pi/2.)
-            else
-               zzenith(i) = max(zzenith(i), pi/2.)
-            endif
-
          end do
 
-         call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+         call SURF_THERMAL_STRESS(ZTDIAG, zqdiag,         &
               ZU10,ZUSR,  ps,                             &
-              ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+              ZFSD, ZFSF, ZFDSI, acos(zcoszeni),          &
               ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
               Zutcisun ,Zutcishade,                       &
               zwbgtsun, zwbgtshade,                       &
@@ -593,4 +603,5 @@ subroutine glaciers2(BUS, BUSSIZ, PTSURF, PTSURFSIZ, N, M, NK)
            SURFLEN)
 
    return
-end subroutine glaciers2
+ end subroutine glaciers2
+end module glaciers_mod

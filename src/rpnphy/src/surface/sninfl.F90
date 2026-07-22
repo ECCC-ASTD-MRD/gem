@@ -1,4 +1,9 @@
-      SUBROUTINE SNINFL(R,TR,ZSNOW,TSNOW,RHOSNO,HCPSNO,WSNOW,       &
+module sninfl_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE SNINFL(R,TR,ZSNOW,TSNOW,RHOSNO,HCPSNO,WSNOW,       &
                         HTCS,HMFN,PCPG,ROFN,FI,ILG,IL1,IL2,JL)     
 !
 !     * DEC 23/09 - D.VERSEGHY. RESET WSNOW TO ZERO WHEN SNOW
@@ -134,4 +139,5 @@
   100 CONTINUE
 !                                                                          
       RETURN                                                   
-      END        
+    END SUBROUTINE SNINFL
+  end module sninfl_mod

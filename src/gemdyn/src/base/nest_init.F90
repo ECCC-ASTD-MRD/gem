@@ -21,18 +21,18 @@
       use mem_nest
       use gmm_geof
       use lun
-      use step_options
       use tr3d
       use mem_tracers
       implicit none
-#include <arch_specific.hf>
 
-      integer n,yy,mo,dd,hh,mm,ss,dum,deb
+      integer n,deb
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write(Lun_out,1000)
-
+      
+      if (.not.associated(nest_now)) call nest_set_mem (G_nk)
+      
       if (Lam_ctebcs_L) then
 !     LAM with same (constant) pilot conditions
          nest_u  = ut1
@@ -47,7 +47,8 @@
 
          do n=1,Tr3d_ntr
             deb = (n-1) * l_nk
-            nest_tr(l_minx:l_maxx,l_miny:l_maxy,deb+1:deb+l_nk) = tracers_P(n)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)
+            nest_tr(l_minx:l_maxx,l_miny:l_maxy,deb+1:deb+l_nk) = &
+            tracers_P(n)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)
          end do
 
       else
@@ -63,15 +64,13 @@
          nest_fullme_fin(:,:,2) = orols(:,:)
          do n=1,Tr3d_ntr
             deb = (n-1) * l_nk + 1
-            nest_tr_fin(l_minx:l_maxx,l_miny:l_maxy,deb:deb+l_nk-1) = tracers_P(n)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)
+            nest_tr_fin(l_minx:l_maxx,l_miny:l_maxy,deb:deb+l_nk-1) =&
+            tracers_P(n)%pntr(l_minx:l_maxx,l_miny:l_maxy,1:l_nk)
          end do
 
       endif
-
-      Lam_current_S = Step_runstrt_S
-      call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
-      call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)
-      Lam_tdeb      = Lam_tfin
+      
+      call nest_init_current ()
 !
 !     ---------------------------------------------------------------
 !

@@ -1,21 +1,7 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module microphy_consun
   use phymem, only: phyvar
+  use phy_status, only: PHY_OK, PHY_ERROR, physeterror
   implicit none
   private
 
@@ -24,6 +10,8 @@ module microphy_consun
   public :: consun_phybusinit   !Define bus requirements
   public :: consun_lwc          !Compute liquid water content
   public :: consun_iwc          !Compute ice water content
+  public :: compute_rhc         !Compute critical relative humidity
+  public :: compute_cloudfrac   !Compute cloud fraction
   
 #include "phymkptr.hf"
 
@@ -33,10 +21,10 @@ contains
        tp, tm, qp, qm, cwp, cwm, &
        psp, psm, s, tau, &
        prflx, swflx, f12, fevp, icefrac, &
-       pblsigs, mrk2, ni, nlev)
-    use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, PI, foqst, fodqs
+       sigmas, mrk2, ni, nlev)
+    use tdpack, only: CHLC, CHLF, CPD, DELTA, EPS1, GRAV, RGASD, TRPL, foqst, fodqs
     use phy_options, only: cond_evap, cond_hmrst, cond_hu0max, cond_hu0min, cond_iceacc, &
-         cond_sgspdf, cond_drhc, cond_rhminus
+         cond_sgspdf, cond_drhc, cond_rhminus, cond_updatefn
     use ens_perturb, only: ens_nc2d, ens_spp_get
     implicit none
 !!!#include <arch_specific.hf>
@@ -52,7 +40,7 @@ contains
          s(ni,*)         , rhc(ni,nlev)    , &
          tau             , f12(ni,nlev)    , fevp(ni,nlev), &
          icefrac(ni,nlev), mrk2(ni,ens_nc2d), &
-         pblsigs(ni,nlev)
+         sigmas(ni,nlev)
 
     !@Authors Claude Girard and Gerard Pellerin (1995)
     !@Revision
@@ -157,7 +145,7 @@ contains
          XP     , QINCR  , HP0    , HE273  , HEDR   , &
          HDLDCP , HELDR  , HEDLDR , CONAE  , AECON  , CFREEZ , &
          COALES , SIGMIN , XKM    , XKC    , XADIST , &
-         XBDIST 
+         XBDIST , TSTAR  , QSTAR
     real    CBFEFF , CTFRZ1 ,  & 
          HKMELT , XDT    , DSNMAX , XSNOW  , &
          rTAU   , SNOW   , PRCP   , CONET  , &
@@ -206,23 +194,6 @@ contains
     real, dimension(NI,NLEV) :: RHCRIT
     real, dimension(NI,NLEV) :: DRHC
     real, dimension(NI     ) :: XBHU
-
-    !-----------------------------------------------------------------------
-    ! III) STATEMENT FUNCTIONS
-
-    real    Z1, Z2, Z3, Z4, Z5
-
-    ! TEMPERATURE FUNCTION TO MULTIPLY HMRST FOR T<273
-
-    Z1(XT) = min(1.33*exp(-(min(0.,(XT-TRPL))*.066)**2), 1.0)
-
-    Z2(XT) = abs(XT - 232.) / 18.
-
-    Z3(XT) = Z2(XT) * (1. + Z2(XT) * (1. + 1.333 * Z2(XT)))
-
-    Z4(XT) = Z3(XT) / (1. + Z3(XT)) * sign(1.0, XT-232.)
-
-    Z5(XT) = max(0.5*0.15*(1.07+Z4(XT)), 0.03)
 
     !-----------------------------------------------------------------------
     ! IV) VALUES OF CONSTANTS - IN SI UNITS - INCLUDING DERIVED ONES
@@ -276,32 +247,9 @@ contains
     ! ------------------------------------------------------------
 
     ! A) PARAMATER VALUES IN SI UNITS
-
-    HU0MIN(:) = ens_spp_get('hu0min', mrk2, default=cond_hu0min)
-    HU0MAX(:) = ens_spp_get('hu0max', mrk2, default=cond_hu0max)
-    SIGMIN = 0.7
-    SIGMAX = 0.9
-    XBHU(:) = ( HU0MAX(:) - HU0MIN(:) ) / ( SIGMAX - SIGMIN )
-    do jk=1,nlev
-       do il=1,ni
-          ! Set basic profile of rhcrit
-          rhcrit(il,jk) = HU0MIN(il) + XBHU(il) * ( S(il,jk) - SIGMIN )
-          rhcrit(il,jk) = max(HU0MIN(il), min(HU0MAX(il), rhcrit(il,jk)))
-          ! Adjust rhcrit for cold temperatures
-          x = 1.+ 0.15 * max( 0., 238. - TM(il,jk) )
-          x = ( HU0MAX(il) - rhcrit(il,jk) ) * ( 1. - 1. / x )
-          rhcrit(il,jk)= min(rhcrit(il,jk) + x, HU0MAX(il))
-          x = 1. !apply variance-based RHc for full column
-          if (cond_sgspdf == 'TRIANGULAR') then
-             xwrk = max(1. - sqrt(6.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
-          elseif (cond_sgspdf == 'UNIFORM') then
-             xwrk = max(1. - sqrt(3.)*pblsigs(il,jk)/foqst(TP(il,jk),S(il,jk)*PSP(il)), 0d0)
-          else
-             x = 0.  !do not use PBL SGS variance estimate 
-          endif
-          rhcrit(il,jk) = min(x * xwrk + (1. - x) * rhcrit(il,jk), 0.999)
-       enddo
-    enddo
+    
+    ! Compute critical relative humidity profile
+    call compute_rhc(rhcrit, TM, TP, sigmas, PSP, S, mrk2, ni, nlev)
 
     ! Compute change in critical relative humidity for condensation
     if (minval(rhc) >= 0. .and. cond_drhc) then
@@ -374,31 +322,8 @@ contains
           HU = amin1( HU, 1. )
           HU = amax1( HU, 0. )
 
-          ! Diagnose cloud fraction and PDF-dependent SCF-based parameters (A and B)        
-          if (cond_sgspdf == 'TRIANGULAR') then
-             if (HU <= rhcrit(il,jk)) then
-                SCF(il,jk) = 0.
-             elseif (HU < (5. + rhcrit(il,jk)) / 6.) then
-                xwrk = acos(3./(2.*sqrt(2.)) * (HU-rhcrit(il,jk))/(1.-rhcrit(il,jk)))
-                SCF(il,jk) = 4.*cos(PI/3. + xwrk/3.)**2
-                
-             else
-                SCF(il,jk) = 1. - (3./sqrt(2.) * (1.-HU)/(1.-rhcrit(il,jk)))**(2./3.)
-             endif
-             SCF(il,jk) = max(SCF(il,jk) , 0.)
-             if (SCF(il,jk) < 0.5) then
-                XADIST = 1. - sqrt(2.)/3. * (3.-SCF(il,jk)) * sqrt(SCF(il,jk))
-                XBDIST = (1. - rhcrit(il,jk)) * sqrt(2.)/2. * (1.-SCF(il,jk)) * sqrt(SCF(il,jk))
-             else
-                XADIST = sqrt(2.)/3. * (1.-SCF(il,jk))**1.5
-                XBDIST = SCF(il,jk) * (1.-rhcrit(il,jk)) * sqrt(2.)/2. * sqrt(1.-SCF(il,jk))
-             endif
-          else
-             SCF(il,jk) = 1. - sqrt( (1.-HU) / (1.-rhcrit(il,jk)) )
-             SCF(il,jk) = max(SCF(il,jk) , 0.)
-             XADIST = (1.-SCF(il,jk))**2
-             XBDIST = SCF(il,jk) * (2. * (1.-rhcrit(il,jk)) * (1.-SCF(il,jk)))
-          endif
+          ! Compute cloud fraction
+          call compute_cloudfrac(SCF(il,jk), XADIST, XBDIST, HU, rhcrit(il,jk))
           
           ! Full evaporation of any existing condensate when there are no clouds
           if( SCF(il,jk) .eq. 0. ) then
@@ -627,6 +552,18 @@ contains
           PRFLX(il,jk+1) =  PRCPST(il)
           SWFLX(il,jk+1) =  STSNOW(il)
 
+          ! -----------------------------------------------------------
+          ! FINALIZE CLOUD FRACTION
+          ! -----------------------------------------------------------
+
+          if (cond_updatefn) then
+             TSTAR = TP(il,jk) + TAU * STT(il,jk)
+             QSTAR = QP(il,jk) + TAU * SQT(il,jk)
+             HQSATP(il,jk) = foqst(TSTAR, PRESP(il,jk))
+             HU = max(min(QSTAR/HQSATP(il,jk), 1.), 0.)
+             call compute_cloudfrac(SCF(il,jk), XADIST, XBDIST, HU, rhcrit(il,jk))
+          endif
+             
        enddo DO_IL3
 
     enddo DO_JK
@@ -651,9 +588,111 @@ contains
     return
   end subroutine consun
 
+  ! Critical relative humidity calculation
+  subroutine compute_rhc(F_rhcrit, F_ttm, F_ttp, F_sigmas, F_ps, F_sigt, F_mrk2, F_ni, F_nkm1)
+    use phy_options, only: cond_hu0min, cond_hu0max, cond_sgspdf
+    use ens_perturb, only: ens_nc2d, ens_spp_get
+    use tdpack, only: foqst
+
+    ! Input arguments
+    integer, intent(in) :: F_ni                                 !Horizontal dimension
+    integer, intent(in) :: F_nkm1                               !Vertical dimension
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_ttm           !Dry air temperature at time-minus (K)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_ttp           !Dry air temperature at time-plus (K)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_sigmas        !Subgrid moisture std dev (kg/kg)
+    real, dimension(F_ni), intent(in) :: F_ps                   !Surface pressure (Pa)
+    real, dimension(F_ni,F_nkm1), intent(in) :: F_sigt          !Sigma for thermo levels
+    real, dimension(F_ni,ens_nc2d), intent(in) :: F_mrk2        !Markov chains for stochastic parameters
+
+    ! Output arguments
+    real, dimension(:,:), intent(out) :: F_rhcrit               !Critical relative humidity
+
+    ! Internal parameters
+    real, parameter :: SIGMIN=0.7, SIGMAX = 0.9
+    
+    ! Internal variables
+    integer :: i, k
+    real :: x, xwrk
+    real, dimension(F_ni) :: hu0min, hu0max, xbhu
+
+    ! Estimate critical relative humidity
+    HU0MIN(:) = ens_spp_get('hu0min', F_mrk2, default=cond_hu0min)
+    HU0MAX(:) = ens_spp_get('hu0max', F_mrk2, default=cond_hu0max)
+    XBHU(:) = ( HU0MAX(:) - HU0MIN(:) ) / ( SIGMAX - SIGMIN )
+    do k=1,F_nkm1
+       do i=1,F_ni
+          ! Set basic profile of rhcrit
+          F_rhcrit(i,k) = HU0MIN(i) + XBHU(i) * ( F_sigt(i,k) - SIGMIN )
+          F_rhcrit(i,k) = max(HU0MIN(i), min(HU0MAX(i), F_rhcrit(i,k)))
+          ! Adjust rhcrit for cold temperatures
+          x = 1.+ 0.15 * max( 0., 238. - F_ttm(i,k) )
+          x = ( HU0MAX(i) - F_rhcrit(i,k) ) * ( 1. - 1. / x )
+          F_rhcrit(i,k)= min(F_rhcrit(i,k) + x, HU0MAX(i))
+          x = 1. !apply variance-based RHc for full column
+          if (cond_sgspdf == 'TRIANGULAR') then
+             xwrk = max(1. - sqrt(6.)*F_sigmas(i,k)/foqst(F_ttp(i,k),F_sigt(i,k)*F_ps(i)), 0d0)
+          elseif (cond_sgspdf == 'UNIFORM') then
+             xwrk = max(1. - sqrt(3.)*F_sigmas(i,k)/foqst(F_ttp(i,k),F_sigt(i,k)*F_ps(i)), 0d0)
+          else
+             xwrk = 0.
+             x = 0.  !do not use PBL SGS variance estimate 
+          endif
+          F_rhcrit(i,k) = min(x * xwrk + (1. - x) * F_rhcrit(i,k), 0.999)
+       enddo
+    enddo
+
+    ! End of subprogram
+    return
+  end subroutine compute_rhc
+  
+  ! Cloud fraction calculation
+  subroutine compute_cloudfrac(F_scf, F_xadist, F_xbdist, F_hu, F_rhcrit)
+    use phy_options, only: cond_sgspdf
+    use tdpack, only: PI
+
+    ! Input Arguments
+    real, intent(in) :: F_hu            !Relative humidity
+    real, intent(in) :: F_rhcrit        !Critical relative humidity
+
+    ! Output Arguments
+    real, intent(out) :: F_scf          !Cloud fraction
+    real, intent(out) :: F_xadist       !Distribution "A" value
+    real, intent(out) :: F_xbdist       !Distribution "B" value
+
+    ! Internal Variables
+    real :: xwrk
+    
+    ! Compute cloud fraction for prescribed SGS distribution
+    if (cond_sgspdf == 'TRIANGULAR') then
+       if (F_hu <= F_rhcrit) then
+          F_scf = 0.
+       elseif (F_hu < (5. + F_rhcrit) / 6.) then
+          xwrk = acos(3./(2.*sqrt(2.)) * (F_hu-F_rhcrit)/(1.-F_rhcrit))
+          F_scf = 4.*cos(PI/3. + xwrk/3.)**2   
+       else
+          F_scf = 1. - (3./sqrt(2.) * (1.-F_hu)/(1.-F_rhcrit))**(2./3.)
+       endif
+       F_scf = max(F_scf , 0.)
+       if (F_scf < 0.5) then
+          F_xadist = 1. - sqrt(2.)/3. * (3.-F_scf) * sqrt(F_scf)
+          F_xbdist = (1. - F_rhcrit) * sqrt(2.)/2. * (1.-F_scf) * sqrt(F_scf)
+       else
+          F_xadist = sqrt(2.)/3. * (1.-F_scf)**1.5
+          F_xbdist = F_scf * (1.-F_rhcrit) * sqrt(2.)/2. * sqrt(1.-F_scf)
+       endif
+    else
+       F_scf = 1. - sqrt( (1.-F_hu) / (1.-F_rhcrit) )
+       F_scf = max(F_scf , 0.)
+       F_xadist = (1.-F_scf)**2
+       F_xbdist = F_scf * (2. * (1.-F_rhcrit) * (1.-F_scf))
+    endif
+
+    ! End of subprogram
+    return
+  end subroutine compute_cloudfrac
+    
   ! External diagnostic liquid-solid partitioning
   function consun_ice_partition(F_tt, F_qc, F_qliqs, F_qices) result(F_istat)
-    use phy_status, only: PHY_OK
     use tdpack, only: TCDK
     ! Compute fractional ice content (Rockel et al. Beitr. Atmos. Phy. 1991)
     implicit none
@@ -670,15 +709,14 @@ contains
        wfrac(:,:) = 0.0059 + 0.9941*exp(-0.003102*(F_tt(:,:)-TCDK)**2)
     endwhere
     where (wfrac(:,:) < 0.01) wfrac(:,:) = 0.
-    if (present(F_qices)) F_qices = (1.-wfrac) * F_qc
-    if (present(F_qliqs)) F_qliqs = wfrac * F_qc
+    if (present(F_qices)) F_qices = max((1.-wfrac) * F_qc, 0.)
+    if (present(F_qliqs)) F_qliqs = max(wfrac * F_qc, 0.)
     ! End of subprogram
     return
   end function consun_ice_partition
   
   ! Define bus requirements
   function consun_phybusinit() result(F_istat)
-    use phy_status, only: PHY_OK, PHY_ERROR
     use bus_builder, only: bb_request
     implicit none
     integer :: F_istat                          !Function return status
@@ -695,7 +733,6 @@ contains
   ! Compute total water mass
   function consun_lwc(F_qltot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
-    use phy_status, only: PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qltot        !Total water mass (kg/kg)
     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
@@ -722,7 +759,6 @@ contains
   ! Compute total ice mass
   function consun_iwc(F_qitot, F_pvars, F_tminus) result(F_istat)
     use phybusidx
-    use phy_status, only: PHY_ERROR
     implicit none
     real, dimension(:,:), intent(out) :: F_qitot        !Total ice mass (kg/kg)
     type(phyvar), pointer, contiguous :: F_pvars(:)     !All phy vars (meta + slab data)
@@ -745,5 +781,28 @@ contains
     F_istat = consun_ice_partition(zt, zqc, F_qices=F_qitot)
     return
   end function consun_iwc
+
+  ! Functions for HMRST for T<273
+  real function Z1(XT)
+    use tdpack, only: TRPL
+    real :: XT
+    Z1 = min(1.33*exp(-(min(0.,(XT-TRPL))*.066)**2), 1.0)
+  end function Z1
+  real function Z2(XT)
+    real :: XT
+    Z2 = abs(XT - 232.) / 18.
+  end function Z2
+  real function Z3(XT)
+    real :: XT
+    Z3 = Z2(XT) * (1. + Z2(XT) * (1. + 1.333 * Z2(XT)))
+  end function Z3
+  real function Z4(XT)
+    real :: XT
+    Z4 = Z3(XT) / (1. + Z3(XT)) * sign(1.0, XT-232.)
+  end function Z4
+  real function Z5(XT)
+    real :: XT
+    Z5 = max(0.5*0.15*(1.07+Z4(XT)), 0.03)
+  end function Z5
   
 end module microphy_consun

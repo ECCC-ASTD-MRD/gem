@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_ROAD_WALL_LAYER_E_BUDGET
+  implicit none
+  public
+contains
 !   ##########################################################################
     SUBROUTINE ROAD_WALL_LAYER_E_BUDGET(PT_ROAD, PT_WALL, PQSAT_ROAD,          &
                                       PT_CANYON, PQ_CANYON,                    &
@@ -628,6 +632,9 @@ PT_CANYON(:) = (  PT_ROAD    (:,1) * PAC_ROAD(:) * ZDF(:)             &
                 + PH_TRAFFIC (:)   / (1.-PBLD(:)) / PRHOA(:) / XCPD   &
                 + PHSNOW_ROAD(:)   * ZDN(:)       / PRHOA(:) / XCPD  )&
                / ZSAC_T(:)
+
+!! patch to prevent numerical instability
+WHERE( (PT_CANYON(:)-PTA(:)) > 15) PT_CANYON(:) = PTA(:) + 10. 
 !
 !-------------------------------------------------------------------------------
 !
@@ -665,6 +672,10 @@ zqsat(:) = QSAT(PT_CANYON(:),PPS(:))
 WHERE(PQ_CANYON(:) > zqsat(:)) PQ_CANYON(:) = zqsat(:)
 
 !
+! If canyon specific humidity gets too small or even negative                                                                                                                                                       
+WHERE(PQ_CANYON(:) <= 1.e-6) PQ_CANYON(:) = PQA(:)                                                                                                                                                                  
+
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ROAD_WALL_LAYER_E_BUDGET
+end module MODI_ROAD_WALL_LAYER_E_BUDGET

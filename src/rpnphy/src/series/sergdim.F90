@@ -1,22 +1,15 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------
+module sergdim_mod
+   implicit none
+   public
+   
+contains
+
 
 integer function sergdim3 ( inpunit, mstat, msurf, mprof,&
      nk_hybm, nk_hybt )
    use, intrinsic :: iso_fortran_env, only: REAL64
+   use seralc_mod, only: seralc2
+   use serdim_mod, only: serdim
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -38,7 +31,7 @@ integer function sergdim3 ( inpunit, mstat, msurf, mprof,&
    INTEGER NK
    INTEGER NSTT,NSRF,NPRF,MSTT,MSRF,MPRF
 
-   INTEGER SERDIM, DIMSERS, DIMSERP
+   INTEGER DIMSERS, DIMSERP
 
    !     ---------------------------------------------------------------
 
@@ -91,3 +84,5 @@ integer function sergdim3 ( inpunit, mstat, msurf, mprof,&
 
    return
 end function sergdim3
+
+end module sergdim_mod

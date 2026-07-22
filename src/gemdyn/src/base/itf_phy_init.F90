@@ -42,6 +42,7 @@
       use wb_itf_mod
       use ptopo_utils, only: ptopo_io_set !#TODO: should the phyics define its own?
       use dcmip_options, only: dcmip_case
+      use ens_options
       implicit none
 #include <arch_specific.hf>
 
@@ -115,10 +116,14 @@
             end if
          end do
       end do
+      !# Add UDIS,VDIS if needed by Ens_skeb
+      if ((ens_skeb_conf .and. Ens_skeb_gwd) .or. .not. ens_skeb_tndfix) then
+         varlist_S(n+1) = 'udis'
+         varlist_S(n+2) = 'vdis'
+         n = n + 2
+      endif
       !#TODO: trim the output list to the ones actually requested within the run
-      if (n > 0) then
-         err = wb_put('itf_phy/PHYOUT', varlist_S(1:n), WB_REWRITE_AT_RESTART)
-      end if
+      err = wb_put('itf_phy/PHYOUT', varlist_S(1:(max(1,n))), WB_REWRITE_AT_RESTART)
 
 ! We put mandatory variables in the WhiteBoard
 
@@ -130,6 +135,7 @@
 ! Complete physics initialization (see phy_init for interface content)
 
       istat = ptopo_io_set(Inp_npes) !#TODO mv this in phy... pass npes as arg
+      call gemtime ( Lun_out, 'PHY_INIT', .false. )
       call timing_start2(41, 'PHY_init', 40 )
       err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
                       'model/Hgrid/lclphy', 'model/Hgrid/lclcore', &
@@ -137,6 +143,7 @@
                       'model/Hgrid/glbphy', 'model/Hgrid/glbphycore', &
                       G_nk+1, Ver_std_p_prof%m, &
                       VGRID_M_S, VGRID_T_S)
+      call gemtime ( Lun_out, 'PHY_INIT ...DONE', .false. ) !surprisingly long'
       call timing_stop(41)
 
 ! Option consistency check
@@ -192,6 +199,8 @@
          err = min(err, &
               vgrid_wb_put(VGRID_T_S, vcoordt, ip1t, rfld_S, rfldls_S, &
               F_overwrite_L=.true., F_altfld_S=altfld_T_S, F_restart_L=.false.))
+         err = vgd_put(Ver_vgdobj, 'DIPM - IP1 of diagnostic level (m)',zuip)
+         err = vgd_put(Ver_vgdobj, 'DIPT - IP1 of diagnostic level (t)',ztip)
          err = vgd_free(vcoord)
          err = vgd_free(vcoordt)
          if (associated(ip1m)) deallocate(ip1m,stat=err)

@@ -29,18 +29,19 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer, external :: fnom, wkoffit!, get_file_unit
 
       character(len=3)   :: mycol_S, myrow_S
       character(len=1024):: fn!, scratch_dir
-      integer :: nc, err, unf
+      integer :: nc, err
       integer, dimension(0:Ptopo_ncolors-1,-1:Ptopo_npex,-1:Ptopo_npey) :: colrow
 !
 !-------------------------------------------------------------------
 !
-      call gemtime ( Lun_out, 'STARTING GEMDM', .false. )
+      call gemtime ( Lun_out, 'STARTING MY GEMDM DOMAIN', .false. )
       call gtmg_start ( 2, 'INIT_GEM', 1)
 
       colrow = 0
@@ -92,15 +93,12 @@
 !
 ! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
 !
-      unf=0
       Ctrl_theoc_L = .false.
       fn=trim(Path_work_S)//'/theoc'
       if (wkoffit(fn) > -3) then
          if (Ptopo_myproc == 0) write (Lun_out,*) &
                                 'Assume Theoretical case'
          Ctrl_theoc_L = .true.
-      else
-         call fclos (unf)
       end if
 !
 !-------------------------------------------------------------------

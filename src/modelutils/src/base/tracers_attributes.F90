@@ -129,6 +129,7 @@ end subroutine tracers_attributes2
 module tracers_attributes_mod
    use, intrinsic :: iso_fortran_env, only: INT64
    use str_mod, only: str_tab2space, str_toint, str_toreal
+   use str_split_mod
    private
    public :: tracers_attributes
 

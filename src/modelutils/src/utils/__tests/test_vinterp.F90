@@ -24,6 +24,7 @@ subroutine test_vinterp()
    use vGrid_Descriptors
    use vgrid_wb
    use vinterp_mod
+   use gmm_build_meta_mod
    implicit none
    !@objective 
    !@author Stephane Chamberland, 2021-04

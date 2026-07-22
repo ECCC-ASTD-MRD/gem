@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module ccc1_cccmarad
    implicit none
@@ -28,7 +13,7 @@ contains
         trnch, ni, nkm1, nk, &
         liqwcin, icewcin, liqwpin, icewpin, cldfrac)
       use iso_c_binding
-      use, intrinsic :: iso_fortran_env, only: REAL64
+      use, intrinsic :: iso_fortran_env, only: INT64, REAL64
       use debug_mod, only: init2nan
       use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
       use tdpack_const, only: CAPPA, CONSOL, GRAV, PI, STEFAN
@@ -39,11 +24,14 @@ contains
       use sfclayer, only: sl_prelim, sl_sfclayer, SL_OK
       use series_mod, only: series_xst, series_isstep
       use phy_options
-      use phy_status, only: phy_error_L
-      use phybusidx
+      use phy_status, only: phy_error_L, physeterror
+      use phybusidx, except=>znt
       use phymem, only: phyvar
       use ens_perturb, only: ens_spp_get
       use suncos, only: suncos3
+      use radfac_mod, only: radfac4
+      use ccc1_raddriv_mod, only: ccc1_raddriv3
+      use ccc_aerooppro_mod, only: ccc_aerooppro2
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -133,11 +121,11 @@ contains
       real,dimension(ni,nkm1,nbs) :: exta,exoma,exomga,fa,taucs,omcs,gcs
       real,dimension(ni,nkm1,nbl) :: absa,taucl,omcl,gcl
 
-      integer(INT64) :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder
+      integer(INT64) :: ncsec_deb, ncsec_now, timestep, csec_in_day, day_reminder, taui64
       real(REAL64) :: hz_8
       real :: hz, hzp, ptopoz, alwcap, fwcap, albrmu, ws
       integer :: i, k, l, iuv, yy, mo, dd, hh, mn, ss
-      logical :: lcsw, lclw, aerosolback
+      logical :: lcsw, lclw, aerosolback, dontneedall
       integer :: il1,il2
       character(len=1) :: niuv
 
@@ -214,11 +202,13 @@ contains
       zfctb = 0.0
       zfcdb = 0.0
       zfcfb = 0.0
+      if (associated(zstrfr)) zstrfr = 0.0
 
 
       ! calculate the variation of solar constant
 
-      julien = real(jdate_day_of_year(jdateo + kount*int(tau) + MU_JDATE_HALFDAY))
+      taui64 = int(tau)
+      julien = real(jdate_day_of_year(jdateo + kount*taui64 + MU_JDATE_HALFDAY))
       alf = julien / 365. * 2 * PI
       r0r = solcons(alf)
 
@@ -230,12 +220,13 @@ contains
       ! cloud variables
       ! such as cloud cover, effective and true; cloud top temp and pressure
       ! called every timestep
+      dontneedall=.false.
       if (stcond(1:3)=='MP_') then
          call cldoppro_MP3(pvars, &
               taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, ni, nkm1, nk, kount)
+              temp, sig, ps, dontneedall, ni, nkm1, nk, kount)
          if (phy_error_L) return
 
       else
@@ -247,7 +238,7 @@ contains
          call cldoppro_noMP1(pvars, taucs, omcs, gcs, taucl, omcl, gcl, &
               liqwcin, icewcin, &
               liqwpin, icewpin, cldfrac, &
-              temp, sig, ps, trnch, ni, &
+              temp, sig, ps, dontneedall, trnch, ni, &
               ni, nkm1, nk)
 
       endif
@@ -325,7 +316,7 @@ contains
 
          call radfac4(zo3fk,zoztoit,sig,nk,nkm1,npcl,zdlat,ps,ni,ni, &
               p2, p3, p4, p5, p6, p7, p8, nlacl, &
-              goz(fozon), goz(clat), goz(pref))
+              goz(fozon:), goz(clat:), goz(pref:))
          if (phy_error_L) return
 
          ! must modify oztoit to fit the needs of raddriv who expects an average
@@ -406,7 +397,7 @@ contains
 
          ! actual call to the Li & Barker (2005) radiation
 
-         call ccc1_raddriv3 (zfsg,zfsd0,zfsf0,zfsv0,zfsi0, &
+         call ccc1_raddriv3 (zfdss0,zfsd0,zfsf0,zfsv0,zfsi0, &
               zfatb0,zfadb0,zfafb0,zfctb0,zfcdb0,zfcfb0, &
               albpla,fdl,ful,zt20, zti, &
               zcstt,zcsb,zclt,zclb,zparr0, &
@@ -415,7 +406,7 @@ contains
               tfull, temp, ztsrad, zo3s,zoztoit, &
               qq, zcosas, r0r, salb, zemisr, taucs, &
               omcs, gcs, taucl, omcl, gcl, &
-              cldfrac, tauae, exta, exoma, exomga, &
+              cldfrac, zstrfr, tauae, exta, exoma, exomga, &
               fa, absa, lcsw, lclw, zmrk2, &
               il1, il2, ni, nkm1, nk)
 
@@ -431,7 +422,7 @@ contains
             zfdsi(i)  = fdl(i)
             zfusi(i)  = zfluxul(i, nk)
             zei(i)    = ful(i)
-            zfdss0(i) = zfsg(i)
+
             zev0(i)   = CONSOL * r0r * zcosas(i) * albpla(i)
 
             ! moduler les flux et les taux par le cosinus de l'angle solaire.
@@ -579,11 +570,11 @@ contains
          call series_xst(ziv    , 'iv', trnch)
          call series_xst(p1     , 'nr', trnch)
          if (associated(ztcc)) call series_xst(ztcc   , 'tcc',  trnch)
-         if (associated(znt)) call series_xst(znt    , 'nt', trnch)
+         if (associated(znt)) call series_xst(znt     , 'nt', trnch)
          if (associated(zecc)) call series_xst(zecc   , 'ecc',  trnch)
-         if (associated(zeccl)) call series_xst(zeccl  , 'eccl', trnch)
-         if (associated(zeccm)) call series_xst(zeccm  , 'eccm', trnch)
-         if (associated(zecch)) call series_xst(zecch  , 'ecch', trnch)
+         if (associated(zeccl)) call series_xst(zeccl , 'eccl', trnch)
+         if (associated(zeccm)) call series_xst(zeccm , 'eccm', trnch)
+         if (associated(zecch)) call series_xst(zecch , 'ecch', trnch)
          call series_xst(zev    , 'ev', trnch)
          call series_xst(zei    , 'ei', trnch)
          call series_xst(zap    , 'ap', trnch)

@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module MODI_URBAN_LW_COEF
+  implicit none
+  public
+contains
 !   ##########################################################################
     SUBROUTINE URBAN_LW_COEF(PEMIS_ROAD, PSVF_ROAD, PEMIS_WALL, PSVF_WALL,   &
                              PDN, PDF, PESNOW_ROAD,                          &
@@ -167,3 +171,4 @@ PLW_N_TO_R(:) = XSTEFAN * PEMIS_ROAD(:)     * (1.-PEMIS_WALL(:)) &
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE URBAN_LW_COEF
+end module MODI_URBAN_LW_COEF

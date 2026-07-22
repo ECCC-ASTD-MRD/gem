@@ -1,23 +1,9 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module sfclayer
   use, intrinsic :: iso_fortran_env, only: REAL64
   use tdpack
   use sfclayer_funcs
+  use sfclayer_compz0, only: compz0_a, compz0_s
   implicit none
   private
 
@@ -30,6 +16,10 @@ module sfclayer
 
   ! Private parameters
   integer, parameter :: SL_LONG = 1024                      !Maximum string length
+  integer, parameter :: DIAG_TYPE_FLUX = 0                  !Diagnostic type: 'flux'
+  integer, parameter :: DIAG_TYPE_INTERP = 1                !Diagnostic type: 'interp'
+  integer, parameter :: LMIN_TYPE_SHEAR = 0                 !Lmin calculation type: 'shear'
+  integer, parameter :: LMIN_TYPE_SFO = 1                   !Lmin calculation type: 'sfo'
   real,    parameter :: FACTN = 1.2                         !PBL height scaling factor
   real,    parameter :: HMIN = 30.                          !Minimum PBL height
   real,    parameter :: DEFAULT_HGHTT_DIAG = 1.5            !Default screen level
@@ -37,8 +27,14 @@ module sfclayer
   real,    parameter :: DEFAULT_L_MIN = -1.                 !Default minimum M-O length
 
   ! Private variables
+  integer, save :: diag_type=DIAG_TYPE_FLUX                 !Default type of diag-level calculations
+  integer, save :: lmin_type=LMIN_TYPE_SHEAR                !Default type of L_min calculations
   real, save    :: beta = 1.                                !Prandtl number for a neutral profile
   real, save    :: rineutral = 0.                           !Width of neutral Ri regime
+  real, save    :: re2 = -1.                                !Diagnostic interpolation adjustment coefficient (recommended value: 0.25)
+  real, save    :: tdlrate = 0.2                            !Diagnostic temperature lapse rate (K/m)
+  real, save    :: ximax = -1.                              !Maximum scale height for stability functions (recommended value: 5.)
+  real, save    :: afd = 1.                                 !Adjustment factor (to z0ref) for the displacement height (recommended value: 8.)
   logical, save :: tdiaglim_default = .false.               !Default value for inversion limiter
   logical, save :: z0ref = .true.                           !Use a reference roughness (max of z0m and z0t)
 
@@ -114,10 +110,23 @@ contains
 
      ! Attempt to set value of requested key
      select case (key)
+     case ('afd','AFD')
+        afd = val
+        if (afd < 0.) afd = 1. 
      case ('beta','BETA')
         beta = val
+     case ('re2','RE2')
+        re2 = val
+        if (re2 > 0. .and. ximax < 0.) then
+           call msg_toall(MSG_WARNING,'(sl_put_r4) ximax cannot be negative with re2>0.')
+           return
+        endif
      case ('rineutral','RINEUTRAL')
         rineutral = val
+     case ('tdlrate','TDLRATE')
+        tdlrate = val
+     case ('ximax','XIMAX')
+        ximax = val
      case DEFAULT
         call msg_toall(MSG_WARNING,'(sl_put_r4) cannot set '//trim(key))
         return
@@ -195,6 +204,18 @@ contains
            call msg_toall(MSG_WARNING,'(sl_put_s) cannot acquire unstable SF for '//trim(val))
            return
         endif
+     case ('diag_type','DIAG_TYPE')
+        if (val == 'INTERP') then
+           diag_type = DIAG_TYPE_INTERP
+        else
+           diag_type = DIAG_TYPE_FLUX
+        endif
+     case ('lmin_type','LMIN_TYPE')
+        if (val == 'SFO') then
+           lmin_type = LMIN_TYPE_SFO
+        else
+           lmin_type = LMIN_TYPE_SHEAR
+        endif
      case DEFAULT
         call msg_toall(MSG_WARNING,'(sl_put_s) cannot set '//trim(key))
        return
@@ -223,8 +244,14 @@ contains
 
      ! Attempt to return value of requested key
      select case (key)
+     case ('afd','AFD')
+        val = afd
      case ('beta','BETA')
         val = beta
+     case ('re2','RE2')
+        val = re2
+     case ('tdlrate','TDLRATE')
+        val = tdlrate   
      case ('bh91_a','BH91_A')
         val = BH91_A
      case ('bh91_b','BH91_B')
@@ -243,6 +270,8 @@ contains
         val = L07_AM
      case ('rineutral','RINEUTRAL')
         val = rineutral
+     case ('ximax','XIMAX')
+        val = ximax
      case DEFAULT
         call msg_toall(MSG_WARNING,'(sl_get_r4) cannot retrieve '//trim(key))
         return
@@ -284,9 +313,9 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   function sl_sfclayer(t_air,q_air,spd_air,dir_air,hghtm_air,hghtt_air,t_sfc,q_sfc,z0m,z0t,lat,fcor, &
-       coefm,coeft,rib,flux_t,flux_q,ilmo,ue,h,lzz0m,lzz0t,stabm,stabt,spdlim, &
+       coefm,coeft,rib,ribr,flux_t,flux_q,ilmo,ue,h,lzz0m,lzz0t,stabm,stabt,spdlim, &
        t_diag,q_diag,u_diag,v_diag,hghtm_diag,hghtm_diag_row,hghtt_diag, &
-       hghtt_diag_row,tdiaglim,L_min,L_minv,optz0,z0mloc,z0t_optz0) result(status)
+       hghtt_diag_row,tdiaglim,L_min,L_minv,optz0,z0mloc,z0m_optz0,z0t_optz0,sl_mask) result(status)
     ! Surface layer parameterization
 
     ! Input arguments
@@ -311,7 +340,7 @@ contains
     real, intent(in), optional :: hghtt_diag                    !Diagnostic level height for thermdynamics (m) [1.5]
     real, dimension(:), intent(in), optional :: hghtt_diag_row  !Diagnostic heights for thermdynamics (m; supercedes hghtt_diag)
     real, dimension(:), intent(in), optional :: z0mloc          !Local Momentum roughness length (no orography) (m)
-
+    real, dimension(:), intent(in), optional :: sl_mask         !Mask for surface-layer calculations [1.]
 
     ! Output arguments
     integer :: status                                           !Return status of function
@@ -323,6 +352,7 @@ contains
     real, dimension(:), intent(out), optional :: coefm          !Momentum exchange coefficient (m/s)
     real, dimension(:), intent(out), optional :: coeft          !Thermal exchange coefficient (m/s)
     real, dimension(:), intent(out), optional :: rib            !Bulk Richardson number
+    real, dimension(:), intent(out), optional :: ribr           !Reference bulk Richardson number
     real, dimension(:), intent(out), optional :: lzz0m          !Log of adjusted momentum roughness
     real, dimension(:), intent(out), optional :: lzz0t          !Log of adjusted thermodynamic roughness
     real, dimension(:), intent(out), optional :: stabm          !Integrated momentum stability function
@@ -332,16 +362,17 @@ contains
     real, dimension(:), intent(out), optional :: q_diag         !Diagnostic level moisture (kg/kg)
     real, dimension(:), intent(out), optional :: u_diag         !Diagnostic level u-wind (m/s)
     real, dimension(:), intent(out), optional :: v_diag         !Diagnostic level v-wind (m/s)
+    real, dimension(:), intent(out), optional :: z0m_optz0      !Momentum roughness calculated using optz0
     real, dimension(:), intent(out), optional :: z0t_optz0      !Thermodynamic roughness calculated using optz0
 
 
     ! Internal variables
     integer :: my_optz0
     real :: my_L_min
-    real, dimension(size(t_air)) :: my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q, &
+    real, dimension(size(t_air)) :: my_coefm,my_coeft,my_rib,my_ribr,my_flux_t,my_flux_q, &
          my_ilmo,my_ue,my_h,my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_t_diag,my_q_diag, &
          my_u_diag,my_v_diag,my_hghtm_diag,my_hghtt_diag,my_spdlim, my_z0mloc, &
-         my_z0t_optz0,my_L_minv
+         my_z0t_optz0,my_L_minv,my_sl_mask, z0m_updated, z0t_updated
     logical :: my_tdiaglim
 
     ! Initialize return value
@@ -364,7 +395,9 @@ contains
     if (present(L_minv)) my_L_minv(:) = L_minv(:)
     my_z0mloc(:) = z0m(:)
     if (present(z0mloc)) my_z0mloc(:) = z0mloc(:)
-
+    my_sl_mask(:) = 1.
+    if (present(sl_mask)) my_sl_mask(:) = sl_mask(:)
+    
     ! Initialize stability functions if required
     if (stabfunc_init() /= SL_OK) then
        call msg_toall(MSG_ERROR,'(sl_sfclayer) could not initialize default stability functions')
@@ -375,14 +408,21 @@ contains
     call flxsurf(my_coefm,my_coeft,my_rib,my_flux_t,my_flux_q,my_ilmo,my_ue, &
          fcor,t_air,q_air,hghtm_air,hghtt_air,spd_air,t_sfc,q_sfc,my_h,z0m,z0t,my_L_min, &
          my_L_minv,my_lzz0m,my_lzz0t,my_stabm,my_stabt,my_spdlim,size(t_air),my_optz0, &
-         my_z0mloc,my_z0t_optz0)
+         my_z0mloc,my_sl_mask)
 
+    ! Update roughness lengths on request
+    z0m_updated = z0m
+    z0t_updated = z0t
+    if(my_optz0 > 0) then
+       call compz0_a(my_optz0, z0m_updated, my_z0mloc, z0t_updated, my_stabm, my_spdlim, fcor, size(t_air))
+    endif
+    
     ! Diagnostic level calculations
     if (any((/present(hghtm_diag),present(hghtt_diag),present(hghtm_diag_row),present(hghtt_diag_row)/))) then
        ! Compute diagnostic level quantities
-       call diasurf(my_u_diag,my_v_diag,my_t_diag,my_q_diag,size(t_air), &
-            dir_air,t_sfc,q_sfc,z0m,z0t,my_ilmo,hghtm_air,my_h,my_ue,my_flux_t, &
-            my_flux_q,my_hghtm_diag,my_hghtt_diag,lat)
+       call diasurf(my_u_diag,my_v_diag,my_t_diag,my_q_diag,my_ribr,size(t_air), &
+            dir_air,t_sfc,q_sfc,z0m_updated,z0t_updated,my_ilmo,hghtm_air,my_h,my_ue,my_flux_t, &
+            my_flux_q,my_hghtm_diag,my_hghtt_diag,lat,spd_air,t_air,q_air,hghtt_air,my_rib,my_sl_mask)
        ! Apply diagnostic adjustments if requested
        if (sl_adjust(t_air,hghtt_air,my_t_diag,hghtt_diag_row=my_hghtt_diag,tdiaglim=my_tdiaglim, &
             adj_t_diag=my_t_diag) /= SL_OK) then
@@ -400,6 +440,7 @@ contains
     if (present(coefm)) coefm = my_coefm
     if (present(coeft)) coeft = my_coeft
     if (present(rib)) rib = my_rib
+    if (present(ribr)) ribr = my_ribr
     if (present(flux_t)) flux_t = my_flux_t
     if (present(flux_q)) flux_q = my_flux_q
     if (present(ilmo)) ilmo = my_ilmo
@@ -414,14 +455,9 @@ contains
     if (present(q_diag)) q_diag = my_q_diag
     if (present(u_diag)) u_diag = my_u_diag
     if (present(v_diag)) v_diag = my_v_diag
-    if (present(z0t_optz0)) then
-       if (my_optz0 > 0) then
-          z0t_optz0 = my_z0t_optz0
-       else
-          call msg_toall(MSG_ERROR,'(sl_sfclayer) optz0 > 0 must be provided for z0t_optz0 calculation')
-          return
-       endif
-    endif
+    if (present(z0t_optz0)) z0t_optz0 = z0t_updated
+    if (present(z0m_optz0)) z0m_optz0 = z0m_updated
+
     ! Successful completion of subprogram
     status = SL_OK
 
@@ -560,8 +596,8 @@ contains
     if (present(hghtt_diag_row)) my_hghtt_diag(:) = hghtt_diag_row(:)
     my_adj_t_diag(:) = t_diag(:)
 
-    ! Modify diagnostic level temperature on request (~ 8K/40m maximum)
-    if (my_tdiaglim) my_adj_t_diag(:) = max(t_diag(:),t_air(:)-0.2*(hghtt_air(:)-my_hghtt_diag(:)))
+    ! Modify diagnostic level temperature on request (maximum lapse rate set by parameter tdlrate)
+    if (my_tdiaglim) my_adj_t_diag(:) = max(t_diag(:),t_air(:)-tdlrate*(hghtt_air(:)-my_hghtt_diag(:)))
     if (present(adj_t_diag)) adj_t_diag(:) = my_adj_t_diag(:)
 
     ! Succesful completion of subprogram
@@ -595,7 +631,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine flxsurf(cmu, ctu, rib, ftemp, fvap, ilmo, &
        ue, fcor, ta , qa , zu, zt, vmod, tg , qg , h , z0 , z0t,  &
-       lmin, lminv, lzz0, lzz0t, fm, fh, va, n, optz0, z0loc, optz0_z0t)
+       lmin, lminv, lzz0, lzz0t, fm, fh, va, n, optz0, z0loc, sl_mask)
     use sfclayer_funcs, only: D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
     ! Represent surface layer similarity state, turbulent tranfer coefficients and fluxes
@@ -616,7 +652,8 @@ contains
     real, dimension(:), intent(in) :: lminv                     !Vector of minimum stable Obukhov lengths [none]
     integer, intent(in) :: optz0                                !Alternative roughness length adjustment [0]
     real, dimension(:), intent(in) :: z0loc                     !Local momentum roughness length (m) for compz0() calc.
-
+    real, dimension(:), intent(in) :: sl_mask                   !Mask for surface-layer calculations
+    
     ! Output arguments
     real, dimension(:), intent(out) :: ilmo                     !Inverse of the Obukov length (/m)
     real, dimension(:), intent(out) :: h                        !Boundary layer height (m)
@@ -631,7 +668,6 @@ contains
     real, dimension(:), intent(out) :: fm                       !Integrated momentum stability function
     real, dimension(:), intent(out) :: fh                       !Integrated thermodynamic stability function
     real, dimension(:), intent(out) :: va                       !Adjusted lowest-level wind speed (m/s)
-    real, dimension(:), intent(out) :: optz0_z0t                !Thermal roughness length (m) calculated with compz0()
 
     ! Internal parameters
     real, parameter :: VMIN=1.e-6                               !Minimum wind speed
@@ -639,7 +675,7 @@ contains
     real, parameter :: RIBMAX=1.e5                              !Maximum absolute bulk Richardson number
     real, parameter :: HMAX=1500.                               !Maximum PBL height estimate
     real, parameter :: EPSLN=1e-5                               !Small value
-
+    
     ! Internal variables
     integer :: j, it, itmax
     real :: cm, ct, zp
@@ -665,25 +701,28 @@ contains
     endif
 
     ! Establish reference roughness length estimates
-    if (z0ref) then
-       do j=1,n
-          z0rm(j) = max(z0(j),z0t(j))
-          z0rt(j) = z0rm(j)
-       enddo
-    else
-       z0rm(:) = z0(:)
-       z0rt(:) = z0t(:)
-    endif
+    call calc_z0ref(z0rm, z0rt, z0, z0t)
 
+    ! Variable Lmin
+    if (ximax > 0.) then
+       ilmax(:) = ximax/(zt(:) + z0rt(:))
+       itmax = 5
+    endif
+    
+    ! Initialize return values if needed
+    rib = 0.
+    
     ! Compute neutral stability functions
     do j=1,n
+       if (sl_mask(j) <= 0.) cycle
        lzz0(j) = log((z0rm(j) + zu(j)) / z0(j))
        lzz0t(j) = log((z0rt(j) + zt(j)) / z0t(j))
     enddo
 
     ! Update estimate of the Obukhov length and stability functions
     ROW: do j=1,n
-
+       if (sl_mask(j) <= 0.) cycle
+       
        ! Copy inputs to scalars as an optimization
        z0j = z0(j)
        z0locj = z0loc(j)
@@ -704,7 +743,7 @@ contains
        dthv   = tva - tvs
        vlmin  = 0.
        ! Apply Obukhov length limiter under stable conditions
-       if (ilmax(j) > 0. .and. dthv > 0.) then
+       if (ilmax(j) > 0. .and. dthv > 0.  .and. lmin_type == LMIN_TYPE_SHEAR) then
           ilmm = sign(ilmax(j), real(dthv))
           hc = pblheight(zuj, z0j, vaj, ilmm, fcorj, lzz0j)
           sf = sf_stable
@@ -742,14 +781,16 @@ contains
 
           ! Update roughness and neutral stability functions on request
           if(optz0 > 0) then
-             call compz0_a(optz0, z0j, z0locj, z0tj, fmij, vaj, fcorj, 1)
+             call compz0_s(optz0, z0j, z0locj, z0tj, fmij, vaj, fcorj)
              lzz0j = log((z0rmj + zuj) / z0j)
              lzz0tj = log((z0rtj + ztj) / z0tj)
           endif
 
           ! Ensure that the Obukhov length is finite
           ilmoj = sign(max(abs(ilmoj), EPSLN), ilmoj)
-
+          if (lmin_type == LMIN_TYPE_SFO .and. ilmax(j) > 0. .and. ilmoj > 0.) &
+               ilmoj = min( ilmoj, ilmax(j) )
+          
           ! Estimate PBL height based on surface layer properties
           hj  = pblheight(zuj, z0j, vaj, ilmoj, fcorj, fmij)
 
@@ -759,6 +800,7 @@ contains
           else
              sf = sf_unstable
           endif
+          
           ff_zm = (/zuj+z0rmj, z0j/)
           ff_zh = (/ztj+z0rtj, z0tj/)
           call sf%isf(fmij, fhij, lzz0j, lzz0tj, ilmoj, hj, beta, &
@@ -781,7 +823,7 @@ contains
           endif
 
        enddo ITERATIONS
-       
+
        ! Diagnose surface layer properties
        fm(j) = fmij                             !Integrated momentum stability function
        fh(j) = fhij                             !Integrated heat stability function
@@ -802,23 +844,13 @@ contains
 
     enddo ROW
 
-    ! Recompute consistent roughness length estimates on request
-    if(optz0.gt.0) then
-       call compz0_a(optz0, z0, z0loc, z0t, fm, va, fcor, n)
-       optz0_z0t = z0t
-!!$       lz0(1:n) = z0(1:n)
-!!$       lz0t(1:n) = z0t(1:n)
-!!$       call compz0(optz0, lz0, z0loc, lz0t, fm, va, fcor, n)
-!!$       optz0_z0t = lz0t
-    endif
-
     ! End of subprogram
     return
   end subroutine flxsurf
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine diasurf(uz, vz, tz, qz, ni, angi, tg, qg, z0, z0t, ilmo, za, &
-       h, ue, ftemp, fvap, zu, zt, lat)
+  subroutine diasurf(uz, vz, tz, qz, ribr, ni, angi, tg, qg, z0, z0t, ilmo, za, &
+       h, ue, ftemp, fvap, zu, zt, lat, ua, ta, qa, zat, rib, sl_mask)
     use sfclayer_funcs, only: D97_AS, SF_MOMENTUM, SF_HEAT
 !!!#include <arch_specific.hf>
     ! Compute state variables at the diagnostic level
@@ -839,32 +871,58 @@ contains
     real, dimension(:), intent(in) :: zu                        !Diagnostic heights for momentum (m)
     real, dimension(:), intent(in) :: zt                        !Diagnostic heights for thermdynamics (m)
     real, dimension(:), intent(in) :: lat                       !Latitude (rad)
-
+    real, dimension(:), intent(in) :: ua                        !Lowest level wind directionspeed (m/s)
+    real, dimension(:), intent(in) :: ta                        !Lowest level potential temperature (K)
+    real, dimension(:), intent(in) :: qa                        !Lowest level temperaturespecific humidity (kg/kg)
+    real, dimension(:), intent(in) :: zat                       !Height of the lowest thermo level (m)
+    real, dimension(:), intent(in) :: rib                       !Bulk Richardson number
+    real, dimension(:), intent(in) :: sl_mask                   !Mask for surface-layer calculations
+    
     ! Output arguments
     real, dimension(:), intent(out) :: tz                       !Diagnostic level temperature (K)
     real, dimension(:), intent(out) :: qz                       !Diagnostic level moisture (kg/kg)
     real, dimension(:), intent(out) :: uz                       !Diagnostic level u-wind (m/s)
     real, dimension(:), intent(out) :: vz                       !Diagnostic level v-wind (m/s)
+    real, dimension(:), intent(out) :: ribr                     !Reference bulk Richardson number
 
     ! Internal parameters
     real, parameter :: ANGMAX = 0.85                            !Maximum frictional deflection (rad)
+    real, parameter :: RA1 = 0.756                              !Tuning parameter for Rib adjustment   
+    real, parameter :: RE1 = 1.51                               !Tuning parameter for Rib adjustment
+    real, parameter :: RE3 = 10.                                !Tuning parameter for Rib adjustment
 
     ! Internal variables
     integer :: j
-    real :: fh, fm, h1, h2, h3, hh, ct, ctu, cm, vits, dang, ang, hi
-    real, dimension(ni) :: lzz0t, lzz0
+    real :: fh, fm, h1, h2, h3, hh, hh2, ct, ctu, cm, vits, dang, ang, hi
+    real :: fh0, fm0, ww, wwa, zp, ilmoc, ribc, fmc, fhc
+    real, dimension(ni) :: lzz0t, lzz0, z0rt, z0rm
     real, dimension(2) :: ff_zm, ff_zh
     type(stabfunc) :: sf
 
     ! Initialize neutral stability functions
+    if (diag_type == DIAG_TYPE_FLUX) then
+       z0rm(:) = z0(:)
+       z0rt(:) = z0t(:)
+    else
+       call calc_z0ref(z0rm, z0rt, z0, z0t)
+    endif
     do j=1,ni
-       lzz0(j) = log(1 + zu(j) / z0(j))
-       lzz0t(j) = log(1 + zt(j) / z0t(j))
+       if (sl_mask(j) <= 0.) cycle
+       lzz0(j)  = log((z0rm(j) + zu(j)) / z0(j) )
+       lzz0t(j) = log((z0rt(j) + zt(j)) / z0t(j))
     enddo
-
+    
     ! Compute state variables at the diagnostic levels
     ROW: do j=1,ni
-
+       if (sl_mask(j) <= 0.) then
+          tz(j) = 0.
+          qz(j) = 0.
+          uz(j) = 0.
+          vz(j) = 0.
+          ribr(j) = 0.
+          cycle
+       endif
+       
        ! Combine boundary layer height estimates under stable conditions
        if (ilmo(j) > 0.) then
           h1 = (za(j) + 10.*z0(j)) * factn
@@ -875,31 +933,84 @@ contains
           hh = h(j)
        endif
 
-       ! Compute integrated stability functions
+       ! Select regime-depenent stability functions
        if (ilmo(j) > 0.) then
           sf = sf_stable
        else
           sf = sf_unstable
        endif
-       ff_zm = (/zu(j)+z0(j), z0(j)/)
-       ff_zh = (/zt(j)+z0t(j), z0t(j)/)
+       ribc = 0.
+
+       ! Compute integrated stability functions
+       ff_zm = (/zu(j)+z0rm(j), z0(j)/)
+       ff_zh = (/zt(j)+z0rt(j), z0t(j)/)
        call sf%isf(fm, fh, lzz0(j), lzz0t(j), ilmo(j), hh, beta, &
             F_zm=ff_zm, F_zh=ff_zh)
 
-       ! Compute exchange coefficients
-       ct = karman / fh
-       cm = karman / fm
+       DIAG_CALC: if (diag_type == DIAG_TYPE_INTERP) then
 
-       ! Diagnose temperature and moisture by reversing the bluk flux equations
-       !   ftemp = -ctu*((tz + g*zt/cp) - tg) ==> tz = tg - ftemp/ctu - g*zt/cp
-       !   fvap  = -ctu*( qz            - qg) ==> qz = qg - fvap /ctu
-       ctu = ct * ue(j)
-       tz(j) = tg(j) - ftemp(j)/ctu - GRAV/CPD * zt(j)
-       qz(j) = qg(j) - fvap (j)/ctu
+          ! Stability functions for first prognostic levels
+          lzz0(j)  = log((z0rm(j) + za(j) ) / z0(j) )
+          lzz0t(j) = log((z0rt(j) + zat(j)) / z0t(j))
+          ff_zm = (/za(j)+z0rm(j), z0(j)/)
+          ff_zh = (/zat(j)+z0rt(j), z0t(j)/)
+          call sf%isf(fm0, fh0, lzz0(j), lzz0t(j), ilmo(j), hh, beta, &
+               F_zm=ff_zm, F_zh=ff_zh)
 
-       ! Diagnose wind speed by reversing the friction velocity equation
-       !   ue = cm*vits ==> vits = ue/cm
-       vits  = ue(j)/cm
+          ! Wind interpolation for diagnostics
+          ww = fm/fm0
+          vits = ww*ua(j)
+
+          ! Temperature and moisture interpolation for diagnostics
+          ww = fh/fh0
+
+          ! Optional Rib-based adjustment of weights for scalars
+          RIB_ADJ: if (re2 > 0.) then
+
+             ! Apply Rib-based adjustments only in the stable case
+             if ( ilmo(j) > 0. ) then
+
+                ! Compute "critical" Rib for adjustments
+                zp = (za(j)*za(j))/zat(j)
+                ilmoc = ximax/(zat(j)+z0rt(j))
+                h3 = factn / (4.*D97_AS*beta * ilmoc)
+                hh2 = max(hh, h3)
+                call sf%isf(fmc, fhc, lzz0(j), lzz0t(j), ilmoc, hh2, beta, &
+                     F_zm=ff_zm, F_zh=ff_zh)
+                ribc = max(0., fhc/(fmc*fmc) * zp*ilmoc)
+
+                ! Adjust interpolating weights
+                hh = hh2
+                wwa = 1. - RA1 * (1.-zt(j)/zat(j))**RE1 * (ribc/rib(j))**re2
+                wwa = max(0., min(1., wwa))
+                ww  = ( ww**RE3 + wwa**RE3 )**(1./RE3)
+                
+             endif
+             
+          endif RIB_ADJ
+
+          ! Scalar interpolations for diagnostics
+          tz(j) = ww*ta(j) + (1.-ww)*tg(j) - GRAV/CPD * zt(j)         
+          qz(j) = ww*qa(j) + (1.-ww)*qg(j)
+
+       else
+       
+          ! Compute exchange coefficients
+          ct = karman / fh
+          cm = karman / fm
+
+          ! Diagnose temperature and moisture by reversing the bulk flux equations
+          !   ftemp = -ctu*((tz + g*zt/cp) - tg) ==> tz = tg - ftemp/ctu - g*zt/cp
+          !   fvap  = -ctu*( qz            - qg) ==> qz = qg - fvap /ctu
+          ctu = ct * ue(j)
+          tz(j) = tg(j) - ftemp(j)/ctu - GRAV/CPD * zt(j)
+          qz(j) = qg(j) - fvap (j)/ctu
+
+          ! Diagnose wind speed by reversing the friction velocity equation
+          !   ue = cm*vits ==> vits = ue/cm
+          vits  = ue(j)/cm
+
+       endif DIAG_CALC
 
        ! Frictional turning only under stable conditions
        if (ilmo(j).gt.0.) then
@@ -913,6 +1024,9 @@ contains
        ang = angi(j) + dang
        uz(j) = vits*COS(ang)
        vz(j) = vits*SIN(ang)
+
+       ! Reference Rib for output
+       ribr(j) = ribc
 
     enddo ROW
 
@@ -961,5 +1075,23 @@ contains
     ! End of subprogram
     return
   end function pblheight
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine calc_z0ref(z0rm, z0rt, z0, z0t)
+    ! Compute reference roughness lengths
+    real, dimension(:), intent(in) :: z0, z0t
+    real, dimension(:), intent(out) :: z0rm, z0rt
+    integer :: j
+    
+    if (z0ref) then
+       do j=1,size(z0)
+          z0rm(j) = afd*max(z0(j),z0t(j))
+          z0rt(j) = z0rm(j)
+       enddo
+    else
+       z0rm(:) = z0(:)
+       z0rt(:) = z0t(:)
+    endif
+  end subroutine calc_z0ref
 
 end module sfclayer

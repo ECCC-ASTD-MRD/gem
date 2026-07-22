@@ -1,0 +1,91 @@
+
+__comment__=_________________  GRIDS, LEVELS, STEPS  __________________;
+
+ grid=1,free;
+
+ levels=1, eta,-1;
+ levels=2,pres, [1015., 1000., 985., 975., 970., 950., 925., 900., 875.,
+                  850.,  825., 800., 775., 750., 725., 700., 675., 650.,
+                  625.,  600., 550., 500., 450., 400., 350., 300., 275.,
+                  250.,  225., 200., 175., 150., 100.,  70.,  50.,  30.,
+                   20.,   10.];
+ levels=4, bot, <1,6,1>;
+ levels=5, bot, <1,8,1>;
+ levels=6,pres, [850.,500.];
+
+ steps=1, hour,                          0.;
+ steps=2, hour,              <  -3,   5, 1>;
+ steps=3, step,              <-180,9999,60>;
+ steps=4, step,              <-180,9999,30>;
+ steps=5, step,              <-180,9999,15>;
+ steps=6, hour,              <  -3,   6, 1>;
+ steps=7, step,              <-180,1440,30>;
+ steps=8, step,              <1500,9999,60>;
+ steps=9, step,              <-180,9999,10>;
+
+
+__comment__=___________________  DYNAMICS VARIABLES  __________________;
+
+__comment__=  hybrid-level outputs                                     ;
+ sortie([LA,LO,ME,MX]                    , grid, 1, levels, 1, steps, 1)
+
+ sortie([TD,TH,ES,PN,PT,MX,ME,MT,QMI1,
+         NTI1,BMI1]                      , grid, 1, levels, 1, steps, 3)
+ sortie([P0,PX]                          , grid, 1, levels, 1, steps, 4)
+ sortie([TT,GZ,HR,HU,UU,VV,WW,QR,WE,
+         MPQC,MPQR,MPNC,MPNR,QTI1]       , grid, 1, levels, 1, steps, 7)
+ sortie([TT,GZ,HR,HU,UU,VV,WW,QR,WE,
+         MPQC,MPQR,MPNC,MPNR,QTI1]       , grid, 1, levels, 1, steps, 8)
+ sortie([ZZ]                             , grid, 1, levels, 5, steps, 7)
+ sortie([ZZ]                             , grid, 1, levels, 5, steps, 8)
+
+
+__comment__=  pressure-level outputs                                   ;
+ sortie([TT,UU,VV,TD]                    , grid, 1, levels, 2, steps, 7)
+ sortie([TT,UU,VV,TD]                    , grid, 1, levels, 2, steps, 8)
+ sortie([GZ,ES,HU,WW,QQ,P0]              , grid, 1, levels, 2, steps, 3)
+
+
+__comment__=___________________  PHYSICS VARIABLES  ___________________;
+
+__comment__=  hybrid-level outputs                                     ;
+ sortie_p([2F,HS,GL,LG,MF,MG]            , grid, 1, levels, 1, steps, 2)
+ sortie_p([TJST,TDST,DQST,UDST,VDST,
+           FATB,FCTB]                    , grid, 1, levels, 1, steps, 3)
+ sortie_p([Z0,A2,A4,P2,P4,PR,PC,PZ,RR,
+           RT,RZ,AB,AD,AG,AH,AI,AL,AP,AS,
+           AU,AV,ECTP,FB,FC,FV,FH,FI,FL,
+           FQ,TG,TJ,DQ,UD,VD,NT,EI,EV,I0,
+           I1,I2,I3,I4,I5,I6,I7,I8,I9,H,
+           IH,IO,SI,UE,N1,N4,DN,SD,O1,N0,
+           TN,PS,NR,TM,LH,J8,J9,RH,RN,SN,
+           FR,PE,IY,RC,RN1,RN2,FR1,FR2,
+           SN1,SN2,SN3,PE1,PE2,PE2L,S2L,
+           SND,AMX,RS2L,RRN1,RRN2,RFR1,
+           RFR2,RSN1,RSN2,RSN3,RSND,RPE1,
+           RPE2,RPEL,RMX,WGE,WGN,WGX,
+           SDWD,SDWS,H_CB,H_ML,H_M2,H_SN,
+           IC,IE,ICR,IIR,DLIM,TNOL,ECC,
+           TCC,ECCL,ECCM,ECCH,AFSD,AFSF,
+           AFSI,AFSV,APAR,FS,FSD,FSF,FSI,
+           FSV,PARR,NS,NC,FN,ZET,EN,SLW,
+           IB,VIS1,VIS2,VIS3,VIS,QLDI,
+           QSDI,CX,ZEC,W3,W4,
+           FDAC,FDRE,WT,RTSU,RTHD,
+            TCAN,QCAN,TBLD,SARF,SERF,
+           SSRF,TIRD,SARD,SERD,SSRD,
+           DXSU,GXSU,DXHD,GXHD,
+           QI_1,QI_2,QI_3,QI_4,QI_5,QI_6], grid, 1, levels, 1, steps, 4)
+ sortie_p([QD]                           , grid, 1, levels, 1, steps, 7)
+ sortie_p([QD]                           , grid, 1, levels, 1, steps, 8)
+ sortie_p([TREE]                         , grid, 1, levels, 1, steps, 9)
+
+
+__comment__=_____________  CUSTOMIZE OUTPUT PRECISION  ________________;
+
+ xnbit([P0,UU,VV,TT,ES,HU]                                     , bits,16)     
+ xnbit([Z0,MX]                                                 , bits,24)     
+ xnbit([AMX,FR,S2L,SND,PZ,PC,PR,AFSD,AFSF]                     , bits,32)  
+ xnbit([A2,A4,P2,P4,RN,RN1,RN2,FR1,FR2]                        , bits,32)  
+ xnbit([SN,SN1,SN2,SN3,PE,PE1,PE2,PE2L]                        , bits,32)  
+ xnbit([QCAN,DQ]                                               , bits,32)

@@ -32,12 +32,14 @@ contains
 
       subroutine numa_init
       use hwdetect
+      use rpn_comm
       implicit none
 
       character(len=64) fmt,ni
       integer ierr, isiz, col, row
       integer(c_int) ns
       integer, dimension(2,0:Ptopo_npey-1,0:Ptopo_npex-1) :: NuRNuP,GNU
+      integer :: model_comm
 !
 !     ---------------------------------------------------------------
 !      
@@ -49,7 +51,9 @@ contains
                       "MPI_INTEGER","MPI_MAX","grid",ierr)
       Numa_active_cores_per_socket= ns
 
-      ns = cpu_per_numa() ! Returns -1 on error such as nonuniform allocation
+      call RPN_COMM_world_get(model_comm)
+
+      ns = cpu_per_numa(model_comm) ! Returns -1 on error such as nonuniform allocation
 
       if (ns <= 0) then
          Numa_uniform_L = .false.

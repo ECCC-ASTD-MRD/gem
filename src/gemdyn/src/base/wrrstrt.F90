@@ -29,6 +29,7 @@
       implicit none
 #include <arch_specific.hf>
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer, external :: fnom,fclos
@@ -55,12 +56,12 @@
 
             ier = fclos(Lun_rstrt)
 
+            ier = phy_restart ('W', .false.)
+
             ! Write Gmm-files
 
             gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
             ier = wb_checkpoint()
-
-            ier = phy_restart ('W', .false.)
 
          end if
 

@@ -47,26 +47,44 @@ module out_mod
 ! ---------------------------------------------------------------------
 
    character(len=1024) :: Out_dirname_S
+   character(len=32)   :: Out_filenames_S(10)
    character(len=19)   :: Out_laststep_S
    character(len=12)   :: Out_etik_S
    character(len=6)    :: Out_type_S
    character(len=1)    :: Out_gridtyp_S, Out_proj_S,Out_unit_S
-   character(len=2)    :: Out_typvar_S,Out_prefix_S
+   character(len=2)    :: Out_typvar_S
    character(len=3)    :: Out_ext_S
+   character(len=4)    :: Out_prefix_S
+   character(len=4)    :: Out_stag_S
+   logical :: Out_rewrit_L, Out_sigready_L
    logical :: Out_post_L, Out_diruse_L, Out_reduc_l
    real    :: Out_rot(8)
 
    logical :: success
+   integer Out_nfiles, Out_nplans, Out_cntM, Out_nfstecr
    type(fst_file)   :: Out_file   !! Out_unf
    type(fst_record) :: Out_rec
-   integer Out_ig1, Out_ig2, Out_ig3, Out_ig4 , Out_ip2, Out_ip3, Out_dateo, Out_deet,Out_npas
-
+   integer Out_ig1, Out_ig2, Out_ig3, Out_ig4 
+   integer Out_ip2, Out_ip3 
+   integer Out_dateo, Out_deet,Out_npas
+   integer, dimension(:), pointer :: List_nk
+   real   , dimension(:), pointer :: Glb_fld
+   real   , dimension(:), pointer :: Reduc_fld
+      
    integer Out_endstepno
    integer Out_gridi0,Out_gridin
    integer Out_gridj0,Out_gridjn
-   integer Out_stride
+   integer Out_stride,Out_Hmaxdim
    integer Out_ixg(8)
 
    integer Out_stk_full, Out_stk_part, Out_stk_size
+
+   integer :: OUT_OK=1
+   integer :: OUT_ERROR=0
+   
+   type :: horizontal_z_grid
+      logical :: usr_grid_L
+      character(len=1) :: usr_grid_index_S
+   end type horizontal_z_grid
 
 end module out_mod

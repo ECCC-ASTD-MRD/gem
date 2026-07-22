@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END -------------------------------
 
 module phygridmap
    implicit none
@@ -30,6 +15,14 @@ module phygridmap
    integer, save, public :: drv_glb_gid = 0
    integer, save, public :: drv_glb_ni = 0
    integer, save, public :: drv_glb_nj = 0
+   integer, save, public :: drv_glb_hx = 0
+   integer, save, public :: drv_glb_hy = 0
+
+   ! Possibly inappropriate names for indices that won't be the same
+   ! for all PE's but since we used the global grid 'model/Hgrid/global'
+   ! to pass them, that is the name that was chosen.
+   integer, save, public :: drv_glb_i0 = 0
+   integer, save, public :: drv_glb_j0 = 0
 
    integer, save, public :: drv_lcl_gid = 0
    integer, save, public :: drv_lcl_ni = 0
@@ -50,6 +43,11 @@ module phygridmap
    integer, save, public :: phy_glbcore_gid = -1
    integer, save, public :: phy_comm_io_id = -1
 
+#ifdef HAVE_NEMO
+   character(len=3), save, public :: phy_yinyang_S = ''
+   logical         , save, public :: phy_yinyang_L = .false.
+#endif
+   
    integer, pointer, save, public :: ijdrv_mod(:,:,:) => NULL()
    integer, pointer, save, public :: ijdrv_phy(:,:,:)  => NULL()
    integer, pointer, save, public :: ijphy(:,:,:) => NULL()

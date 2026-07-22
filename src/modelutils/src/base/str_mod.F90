@@ -33,8 +33,6 @@ module str_mod
 #include <rmnlib_basics.hf>
 
 contains
-
-   !TODO: include str_split fn
  
    !/@*
    subroutine str_normalize(F_str)

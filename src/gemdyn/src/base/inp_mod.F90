@@ -17,35 +17,39 @@ module inp_mod
       use vGrid_Descriptors
       use rmn_fst24
       use, intrinsic :: iso_fortran_env
-
       implicit none
       public
       save
 
       character(len=1 ) :: Inp_levtype_S
       character(len=16) :: Inp_datev
-      logical Inp_src_hauteur_L, Inp_dst_hauteur_L, Inp_src_PX_L,&
-              Inp_src_GZ_L, Inp_zd_L, Inp_w_L, Inp_qt_L
-      integer Inp_nfiles , Inp_comm_id, Inp_comm_setno        ,&
-              Inp_iome   , Inp_comm_io, Inp_iobcast, Inp_kind ,&
-              Inp_version, Inp_cmcdate
-
+      logical :: Inp_src_PX_L=.false. , Inp_src_GZ_L=.false.
+      logical Inp_src_hauteur_L, Inp_zd_L, Inp_w_L, Inp_qt_L
+      integer Inp_nfiles , Inp_kind ,&
+              Inp_version, Inp_handle , Inp_cmcdate
+      integer :: Inp_iope, Inp_bcast, Inp_gtmg(2)
       type(fst_file) :: Inp_file  
       type(fst_file), dimension(:), contiguous,pointer :: Inp_list_files => null()
-      
       integer :: Inp_PX_kind, Inp_GZ_kind, Inp_PX_nka, Inp_GZ_nka
-      integer :: Inp_comm, Inp_window
+      integer :: Inp_comm=0, Inp_window=0
       integer, parameter :: Inp_maxNKA=200
       real, dimension (:), pointer :: Inp_recv
       type(vgrid_descriptor) :: Inp_vgd_src
       real(kind=REAL64) Inp_pref_a_8
-
+      
+      integer:: Inp_iome,Inp_iobcast,Inp_comm_id,Inp_comm_setno,Inp_comm_io
+      logical :: Inp_dst_hauteur_L
+      real, dimension(:,:,:), pointer :: Inp_meqr
+      
       type Inp_vrt3d
+         logical me_L, mels_L
          integer nk,kind
          integer, dimension(:), pointer :: ip1
-         real, dimension(:,:,:), pointer :: valq,valu,valv
+         real, dimension(:,:,:), pointer :: valq,valu,valv,sfc
       end type Inp_vrt3d
       type(Inp_vrt3d) :: GZ3d, PX3d
+
+      integer, dimension(:), contiguous,pointer :: Inp_list_unf => null()
       
 contains
 
@@ -80,6 +84,7 @@ contains
                              basepntr, Inp_window, err)
       call C_F_POINTER ( basepntr, Inp_recv, [dim] )
       Inp_recv= 0.
+      call MPI_Win_fence(0, Inp_window, err)
 !
 !-------------------------------------------------------------------
 !

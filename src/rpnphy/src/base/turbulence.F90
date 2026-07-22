@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN --------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ----------------------------
 
 module turbulence
    implicit none
@@ -29,11 +14,12 @@ contains
       use integrals, only: int_profile, INT_OK
       use form_drag, only: form_drag1
       use phy_options
-      use phy_status, only: phy_error_L
+      use phy_status, only: phy_error_L, physeterror
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
       use vintphy, only: vint_mom2thermo
+      use timing_omp
       implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -59,7 +45,7 @@ contains
       include "surface.cdk"
 
       ! Internal variables
-      integer :: istat, istat1, j, k
+      integer :: istat, istat1, j, k, i
       real dsig
       real, dimension(ni,nk) :: dkem, dket, rho
       real, dimension(:), pointer, contiguous :: ztsrad, zpplus, zutautofd, zvtautofd, zsigs, zgzmom1, zgzmom2, ztdmaskxdt
@@ -119,16 +105,18 @@ contains
          call apply_tendencies(ztplus, zttofd, ztdmaskxdt, ni, nk, nk)
          
          ! Diagnose surface stress
-         zgzmom1 => zgzmom(:,1)
-         zgzmom2 => zgzmom(:,nk-1)
-         do k=1,nk
-            rho(:,k) = zpplus(:) * zsigm(:,k) / (RGASD * ztplus(:,k))
-         enddo
-         istat  = int_profile(zutautofd, -rho*zutofd, zgzmom, zgzmom2, zgzmom1)
-         istat1 = int_profile(zvtautofd, -rho*zvtofd, zgzmom, zgzmom2, zgzmom1)
-         if (istat /= INT_OK .or. istat1 /= INT_OK) then
-            call physeterror('turbulence', 'Problem in int_profile')
-            return
+         if (ISREQSTEPL((/"UTFD", "VTFD"/))) then
+            zgzmom1 => zgzmom(:,1)
+            zgzmom2 => zgzmom(:,nk-1)
+            do k=1,nk
+               rho(:,k) = zpplus(:) * zsigm(:,k) / (RGASD * ztplus(:,k))
+            enddo
+            istat  = int_profile(zutautofd, -rho*zutofd, zgzmom, zgzmom2, zgzmom1)
+            istat1 = int_profile(zvtautofd, -rho*zvtofd, zgzmom, zgzmom2, zgzmom1)
+            if (istat /= INT_OK .or. istat1 /= INT_OK) then
+               call physeterror('turbulence', 'Problem in int_profile')
+               return
+            endif
          endif
 
       endif

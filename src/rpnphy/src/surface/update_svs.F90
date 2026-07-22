@@ -1,7 +1,12 @@
 !copyright (C) 2001  MSC-RPN COMM  %%%RPNPHY%%%
 !!! S/P UPDATE_SVS
 !
-      SUBROUTINE UPDATE_SVS( WDT, WFT, WRT, &
+module update_svs_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE UPDATE_SVS( WDT, WFT, WRT, &
            WD, WF, WR, WDM, N )
 
 
@@ -64,4 +69,5 @@
 !
 !
       RETURN
-      END
+    END SUBROUTINE UPDATE_SVS
+  end module update_svs_mod

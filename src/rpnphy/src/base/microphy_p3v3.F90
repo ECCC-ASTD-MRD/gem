@@ -1023,7 +1023,8 @@ function mp_p3_wrapper_gem(ttend,qtend,qctend,qrtend,qitend,                    
 ! computes various diagnostics fields (precipitation rates, reflectivity, etc.) -- and     !
 ! finally converts the updated potential temperature to temperature.                       !
 !------------------------------------------------------------------------------------------!
-
+ use phy_status, only: physeterror
+   
  implicit none
 
 !----- input/ouput arguments:  ------------------------------------------------------------!
@@ -6202,7 +6203,7 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
 
   ! Define bus requirements
   function p3_phybusinit() result(F_istat)
-    use phy_status, only: PHY_OK, PHY_ERROR
+    use phy_status, only: PHY_OK, PHY_ERROR, physeterror
     use bus_builder, only: bb_request
     implicit none
     integer :: F_istat                          !Function return status
@@ -6222,8 +6223,6 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
          'ICE_MASS_TEND    ', &
          'ICE_EFF_RAD      ', &
          'RATE_PRECIP_TYPES', &
-         'PARTICLE_DIAMETER', &
-         'CCN_NUM          ', &
          'MPDIAG_2D        ', &
          'MPDIAG_3D        ', &
          'MPVIS            ', &
@@ -6279,7 +6278,7 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
        MKPTR2Dm1(zqc, qcplus, F_pvars)
        MKPTR2Dm1(zqr, qrplus, F_pvars)
     endif
-    F_qltot(:,:) = zqc(:,:) + zqr(:,:)
+    F_qltot(:,:) = max(zqc(:,:), 0.) + max(zqr(:,:), 0.)
     F_istat = PHY_OK
     return
   end function p3_lwc
@@ -6313,10 +6312,10 @@ SUBROUTINE access_lookup_table_coll(dumjj,dumii,dumj,dumi,index,dum1,dum3,      
        MKPTR2Dm1(zqti4, qti4plus, F_pvars)
     endif
     F_qitot = 0.
-    if (associated(zqti1)) F_qitot = F_qitot + zqti1
-    if (associated(zqti2)) F_qitot = F_qitot + zqti2
-    if (associated(zqti3)) F_qitot = F_qitot + zqti3
-    if (associated(zqti4)) F_qitot = F_qitot + zqti4
+    if (associated(zqti1)) F_qitot = F_qitot + max(zqti1, 0.)
+    if (associated(zqti2)) F_qitot = F_qitot + max(zqti2, 0.)
+    if (associated(zqti3)) F_qitot = F_qitot + max(zqti3, 0.)
+    if (associated(zqti4)) F_qitot = F_qitot + max(zqti4, 0.)
     F_istat = PHY_OK
     return
   end function p3_iwc

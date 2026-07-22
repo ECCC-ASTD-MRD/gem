@@ -20,12 +20,15 @@
       use gem_options
       use HORgrid_options
       use step_options
+      use spn_options
       use theo_options
       use omp_timing
       use gmm_pw
+      use init_options
       implicit none
 
       integer icn, keep_itcn
+      logical apply_iau
 !
 !     ---------------------------------------------------------------
 !
@@ -34,16 +37,19 @@
 !$omp parallel
       call psadj_init_hlt ( Step_kount )
 
+      apply_iau=.false.
+      if (Step_kount*Cstv_dt_8 <= Iau_period .and. Step_kount>1) apply_iau=.true.
+
       call gtmg_start (10, 'DYNSTEP', 1)
       do icn = 1,Schm_itcn-1
 
-         call fislh_tstpdyn (icn) ! Solver NOT done yet
+         call fislh_tstpdyn (icn,apply_iau) ! Solver NOT done yet
 
          call hzd_momentum_hlt ()
 
       end do
 
-      call fislh_tstpdyn (Schm_itcn)
+      call fislh_tstpdyn (Schm_itcn,apply_iau)
 
       if (Ctrl_theoc_L .and. .not.Grd_yinyang_L) call theo_bndry ()
 
@@ -55,7 +61,9 @@
 
       call t02t1()
 
-      call HOR_bndry_hlt ()
+      call HOR_bndry ()
+
+      if (spn_ON_L) call spn_main ()
 
       call canonical_cases ("VRD")
 

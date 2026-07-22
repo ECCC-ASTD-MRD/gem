@@ -13,6 +13,11 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+
+module phtsyn_svs_ccilceco_mod
+  implicit none
+  public
+contains
       SUBROUTINE PHTSYN_SVS_CCILCECO ( LAI_NCLASS, VEGFRAC, &
                TCAN,  PRESSG,  RESAVG,  QA, QSWV1,  WD, &
                FCD, COSZS, WFC, WWILT, MASKLAT, &
@@ -28,14 +33,14 @@
       REAL LAI_NCLASS(N,NCLASS),VEGFRAC(N,NCLASS)
       REAL WD(N,NL_SVS),FCD(N,NL_SVS),WFC(N,NL_SVS), WWILT(N,NL_SVS)
    
-      INTEGER KK,ICC,IG, IC, L2MAX, NN, MASKLAT(N), GEXP
+      INTEGER KK,ICC,IG, IC, L2MAX, NN, MASKLAT(N), GEXP_CST
       PARAMETER (KK=12)  ! PRODUCT OF CLASS PFTs AND L2MAX (4 x 3 = 12)
       PARAMETER (ICC=9)  ! 9 types of vegetation CCMA land surface model
       PARAMETER (IG=3)  ! 
       PARAMETER (IC=4)  ! Number of plant functional types PFTS:
       ! NEEDLE LEAF , BROAD LEAF , CROPS, GRASSES
       PARAMETER (L2MAX=3)  !
-      PARAMETER (GEXP=2) ! !     EXPONENT FOR SOIL MOISTURE STRESS. FOR SN EQUAL TO 1, PHOTOSYNTHESIS
+      PARAMETER (GEXP_CST=2) ! !     EXPONENT FOR SOIL MOISTURE STRESS. FOR SN EQUAL TO 1, PHOTOSYNTHESIS
 !     DECREASES LINEARLY WITH SOIL MOISTURE, AND OF COURSE NON-LINEARLY
 !     FOR VALUES HIGHER THAN 1. WHEN SN IS ABOUT 10, PHOTOSYNTHESIS DOES
 !     NOT START DECREASING UNTIL ABOUT SOIL MOISTURE IS HALF WAY BETWEEN
@@ -70,7 +75,7 @@
       REAL   TEMP_B, TEMP_C, TEMP_R, TEMP_Q1, TEMP_Q2,  TEMP_JP
       REAL   BETA1,  BETA2,   GAMMA_W, GAMMA_M, CO2IMAX
 !
-      REAL VPD0(KK), OMEGA(KK),VMAX(KK)
+      REAL VPD0(KK), OMEGA_PHT(KK),VMAX(KK)
       REAL TUP(KK), TLOW(KK), KN(KK)
       REAL INICO2I(KK), ALPHA(KK), RMLCOEFF(KK), BB(KK), MM(KK)
       REAL CO2CC, DELTA_CO2, N_EFFECT
@@ -224,10 +229,10 @@
 !!
 !     LEAF SCATERRING COEFFICIENTS, VALUES OF 0.15 & 0.17 ARE USED
 !     FOR C3 AND C4 PLANTS, RESPECTIVELY
-      DATA  OMEGA/0.15, 0.15, 0.00,   &
-                  0.15, 0.15, 0.15,   &
-                  0.15, 0.17, 0.00,   &
-                  0.15, 0.17, 0.00/
+      DATA  OMEGA_PHT/0.15, 0.15, 0.00,   &
+                      0.15, 0.15, 0.15,   &
+                      0.15, 0.17, 0.00,   &
+                      0.15, 0.17, 0.00/
 !                  
 !     PARAMETER M USED IN BWB PHOTOSYNTHESIS-STOMATAL CONDUCTANCE
 !     COUPLING. 
@@ -737,7 +742,7 @@
             ! beta between 0. an 1.  , 
             BETA_WSOL(I,K) =  min( max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) , 1.0)
             ! soil moisture stress term per layer
-            G_WSOL(i,k) = 1.0 - ( 1.0 - BETA_WSOL(I,K) ) ** GEXP
+            G_WSOL(i,k) = 1.0 - ( 1.0 - BETA_WSOL(I,K) ) ** GEXP_CST
          ENDDO
          ! average soil moisture term ... weighted by root fractions 
          ! Total roots = 1.0 if vegetation present ... set the term=0.0 if no vegetation
@@ -841,7 +846,7 @@
             DO  I = 1, N
                IF((FCANC(I,J).GT.ZERO).AND.(COSZS(I).GT.0.0)) THEN
                   
-                  JE1(I,J)= FPAR(I,J)*ALPHA(KK_TO_ICC(J))*(1.0-OMEGA(KK_TO_ICC(J)))
+                  JE1(I,J)= FPAR(I,J)*ALPHA(KK_TO_ICC(J))*(1.0-OMEGA_PHT(KK_TO_ICC(J)))
                   JE2(I,J)=( CO2I(I,J)-TGAMMA(I) ) /              &
                        ( CO2I(I,J)+ (2.0*TGAMMA(I)) )
 !
@@ -1084,3 +1089,4 @@
 
       RETURN
     END SUBROUTINE PHTSYN_SVS_CCILCECO
+  end module phtsyn_svs_ccilceco_mod

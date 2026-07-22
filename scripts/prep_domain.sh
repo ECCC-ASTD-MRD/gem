@@ -106,7 +106,7 @@ if [ -e "${anal}" ] ; then
      set +x
    else
       is_cmcarc=${work}/.is_cmcarc ; rm -f ${is_cmcarc}
-      if r.filetype ${analysis} -t 36 37 ; then touch ${is_cmcarc} ; fi
+      if r.filetype ${analysis} -t 36 37; then touch ${is_cmcarc} ; fi
       if [[ -e ${is_cmcarc} ]] ; then
         mkdir -p ${work}/unpack_archive
         cd ${work}/unpack_archive
@@ -133,7 +133,7 @@ if [ -e "${anal}" ] ; then
    fi
    cd ${work}
 
-   if r.filetype ${local_anal_file} -t 1 33 ; then
+   if r.filetype ${local_anal_file} -t 1 33 39; then
 
    # Run the user-defined headscript
    final_file=${o}/ANALYSIS
@@ -200,6 +200,9 @@ if [[ -e ${final_file} ]] ; then
       fi
       if [ $(r.fstliste -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
          varname='VT'
+      fi
+      if [ $(r.fstliste -izfst $i -nomvar ${varname} | wc -l) -le 0 ] ; then
+         varname='P0'
       fi
       valid=$(r.fstliste -izfst $i -nomvar ${varname} | head -1 | cut -d ":" -f 11)
       if [ -n "${valid}" ] ; then

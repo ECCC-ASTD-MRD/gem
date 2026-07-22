@@ -20,12 +20,14 @@
       use adz_mem
       use geomh
       use gem_options
+      use dyn_fisl_options
       use ctrl
       use lun
       use rstr
       use tr3d
       use clib_itf_mod
       use tracers_attributes_mod, only: tracers_attributes
+      use gmmx_name_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -114,6 +116,14 @@
       else
          Tr3d_wload(dejala)= .false.
       end if
+
+      if (Schm_psadj == 2) then
+        do j=1,Tr3d_ntr
+                if ((trim(Tr3d_name_S(j))=='HU'.or.trim(Tr3d_name_S(j))=='QC').and.Tr3d_mass(j)==1) &
+                        call gem_error (-1, 'TRACERS', "PSADJ=2 and MASS=1 for HU or QC &
+                                        is not allowed")
+        end do
+      endif
 
       Tr3d_ntrTRICUB_NT= 0 ; Tr3d_ntrTRICUB_WP= 0
       Tr3d_ntrBICHQV_NT= 0 ; Tr3d_ntrBICHQV_WP= 0

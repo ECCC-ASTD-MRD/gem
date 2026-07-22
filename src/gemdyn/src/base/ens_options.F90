@@ -24,7 +24,7 @@ module ens_options
 
    ! Internal variables
    integer, public :: nchains
-   logical, public :: spp_L
+   logical, public :: spp_L, NO_nml_L=.false.
 
    !# Switch to activate generation of Markov chains, use of SKEB
    !# and use of PTP
@@ -45,6 +45,12 @@ module ens_options
    !# (3D MARKOV CHAINES)
    logical :: Ens_stat = .false.
    namelist /ensembles/ Ens_stat
+
+   !# Reference timestep for Markov Chains time interpolation
+   !# (3D MARKOV CHAINES)
+   real ::Ens_cstv_dt_ref = -1.d0
+   namelist /ensembles/Ens_cstv_dt_ref
+
 
    !# switch to do the calculation of the divergence due to SKEB forcing
    !# (3D MARKOV CHAINES)
@@ -294,7 +300,7 @@ contains
       ens_nml= 0 ; goto 1000
  1001 if (Lun_out >= 0) write (Lun_out, 6005) trim(nml_S)
       if (.not.nml_must) then
-         ens_nml= 1
+         ens_nml= 1 ; NO_nml_L= .true.
          if (Lun_out >= 0) write (Lun_out, 6002) trim(nml_S)
       end if
       goto 1000
@@ -382,6 +388,7 @@ contains
 !!$            write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_tlc = ',Ens_ptp_tlc
             write(Lun_out,'(a,f12.5)' )'Ens_ens_ptp_crit_w = ',Ens_ptp_crit_w
             write(Lun_out,'(a,f8.5)' )'Ens_ens_ptp_fac_reduc = ',Ens_ptp_fac_reduc
+            write(Lun_out,'(a,f8.2)' )'Ens_cstv_dt_ref = ', Ens_cstv_dt_ref
          end if
 
       end if

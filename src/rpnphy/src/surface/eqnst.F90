@@ -1,4 +1,9 @@
-      SUBROUTINE EQNST(EXPW,RHO,TCEL,H)
+module eqnst_mod
+  implicit none
+  public
+contains
+
+SUBROUTINE EQNST(EXPW,RHO,TCEL,H)
 !======================================================================
 !     * AUG  2/16 - M.MACKAY.  	Equation of state moved to subroutine
 !
@@ -37,4 +42,5 @@
        EXPW = (2.*RHO0*BETA*T + RHO0*P*ALPHA )/RHO
 
       RETURN
-      END
+    END SUBROUTINE EQNST
+  end module eqnst_mod

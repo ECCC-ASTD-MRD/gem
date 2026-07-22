@@ -6,6 +6,7 @@
 | bkf_detrains | Select formulation of fractional detrainment rate for shallow convection<br>- 'BECHTOLD01'<br>- 'CUIJPERS95'<br>- 'DEROOY10' | 'BECHTOLD01' | character(len=16) |
 | bkf_entrains | Select formulation of fractional entrainment rate for shallow convection<br>- 'BECHTOLD01'<br>- 'BECHTOLD08'<br>- 'DEROOY11'<br>- 'SIEBESMA03' | 'BECHTOLD01' | character(len=16) |
 | bkf_evaps | Evaporate detrained condensate in shallow convection | .false. | logical |
+| bkf_fnfacs | Scaling of shallow convection cloud fraction | 1. | real |
 | bkf_kch | Number of species for convective transport (never tested) | 0 | integer |
 | bkf_kens | Number of additional ensemble members (max 3) for deep bkf convection | 0 | integer |
 | bkf_kice | Take ice phase into account in deep bkf (yes=1) | 1 | integer |
@@ -26,6 +27,7 @@
 | deep_timeconv |  | -1. | real |
 | deep_timeent |  | -1. | real |
 | deep_timerefresh |  | -1. | real |
+| deep_wavg | Use time-averaged vertical motion for deep convection trigger | .false. | logical |
 | kfcdepth | Minimum depth of conv. updraft for KFC  trigger (m) | 4000. | real |
 | kfcdpdd | Maximum depth of the downdraft detrainment layer (Pa) for 'kfc2' | 10000. | real |
 | kfcprod | Compute production terms for Kain-Fritsch scheme | .false. | logical |
@@ -36,6 +38,8 @@
 | kfctriga | Nominal resolution for which KFCTRIG4 is set.<br>This is inactive if value <= 0. | -1.0 | real |
 | kfctrigl | Over land and lakes we keep the value set by the "ramp" above over sea water:<br>- for :lat: >= TRIGLAT(2) we keep value set by the "ramp" KFCTRIG4<br>- for :lat: <= TRIGLAT(1) we use the new value KFCTRIGL [m/s]<br>- and linear interpolation in between TRIGLAT(1) and TRIGLAT(2) | 0.05 | real |
 | kfctriglat | Logical key for variation of the trigger function depending on latitude and land-sea-lake mask | .false. | logical |
+| kfctrigsgo | Coefficient for trigger adjustment by subgrid-scale orography (sgo) | 0. | real |
+| kfctrigsgop | Exponent (power) applied to subgrid-scale orography (sgo) when computing<br>sgo-based trigger adjustment | 1. | real |
 | kfctrigtau | Relaxation timescale for trigger velocity | -1. | real |
 | kfctrigw | Trigger parameter of Kain-Fritsch convection scheme (WKLCL).<br>Trigger parameter will increase from kfctrigw(3) to kfctrigw(4) [m/s]<br>between wstar values kfctrigw(1) and kfctrigw(2) | (/0., 0., 0., 0./) | real |
 | mid | Switch for mid-level convection<br>- 'NIL' : No mid-level convective scheme<br>- 'KF ' : Kain-Fritsch-based mid-level convective scheme | 'nil' | character(len=16) |
@@ -48,10 +52,12 @@
 | mid_minbase | Minimum parcel departure level for mid-level convection (m) | 500. | real |
 | mid_minemf | Minimum environmental mass flux for mid-level convection (kg/s) | 1e7 | real |
 | mid_peff |  | -1. | real |
+| mid_wavg | Use time-averaged vertical motion for mid-level trigger | .false. | logical |
 | shal | Switch for shallow convection<br>- 'NIL'<br>- 'KTRSNT'<br>- 'BECHTOLD' | 'nil' | character(len=16) |
 | shal_conserve | Conservation corrections for shallow convective scheme<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
 | shal_timeconv |  | -1. | real |
 | triglat | Over land and lakes we keep the value set by the "ramp" above over sea water:<br>- for :lat: >= TRIGLAT(2) we keep value set by the "ramp" KFCTRIG4<br>- for :lat: <= TRIGLAT(1) we use the new value KFCTRIGL<br>- and linear interpolation in between TRIGLAT(1) and TRIGLAT(2) | 0.0 | real |
+| trigtauw | Vertical motion relaxation for trigger tests (s) | 3600. | real |
 
 
 ### physics_cfgs Namelist
@@ -70,6 +76,7 @@
 | cond_iceacc | Dry accretion of ice crystals by snow in Sundqvist (factor) | 5. | real |
 | cond_rhminus | Use time-minus for relative humidity in Sundqvist | .false. | logical |
 | cond_sgspdf | Distribution of subgrid-scale moisture variance assumed for cloud fraction | 'NIL' | character(len=16) |
+| cond_updatefn | Update cloud fraction at the end of the microphysics | .false. | logical |
 | debug_alldiag_l | Activate computing of all diags, requested for output or not. | .false. | logical |
 | debug_initonly_l | Run only the physics nml+init (skip input and step) | .false. | logical |
 | debug_mem_l | Activate Debug memory mode | .false. | logical |
@@ -96,6 +103,7 @@
 | lhn_stop_s | last time step at which LHN is applied | '360p' | character(len=16) |
 | lhn_weight | Modulation factor for the magnitude of Latent Heat Nudging being applied<br>modulated_tendencies = lhn_weight*(LHN tendencies) | 0. | real |
 | linoz_chm | LINOZ prognostic stratospheric ozone<br>- 'NIL     ' :<br>- 'OZONE   ' :<br>- 'GHG     ' :<br>- 'OZONEGHG' : | 'NIL' | character(len=10) |
+| linoz_het | LINOZ: Use heterogeneous ozone version | .false. | logical |
 | lmetox | Add methane oxydation as source of humidity in the stratosphere if .true. | .false. | logical |
 | longmel | Mixing length calc. scheme<br>- 'BLAC62  ': mixing length calc. using Blackadar<br>- 'BOUJO   ': mixing length calc. using Bougeault<br>- 'TURBOUJO': mixing length calc. using Bougeault in turbulent regimes (otherwise Blackadar)<br>- 'LH      ': mixing length calc. using Lenderink and Holtslag<br>- 'MBOUJO  ': mixing length calc. using moist Bougeault | 'BLAC62' | character(len=16) |
 | moyhr | Time length (hours) for special time averaged physics variables | 0 | integer |
@@ -112,41 +120,53 @@
 | ninblocy | Physic input blocking along Y | 1 | integer |
 | non_oro | Hines non-orographic GWD scheme is active if .true. | .false. | logical |
 | non_oro_pbot | Pressure (in Pa) that defines the bottom emission level for gravity waves | 61000.0 | real |
-| nsloflux | Number of timesteps for which surface fluxes "FC" and "FV" are<br>gradually set from 0 to their full value in a "slow start fashion"<br>at the beginning of a time integration | 0 | integer |
+| nsloflux |  | 0 | integer |
+| p3_autoaccr | Switch for parameterization of autoconversion/accretion/self-collection in P3 microphysics<br>- 'SEIFERT2001 ': Seifert & Beheng 2001 (recommanded)<br>- 'BEHENG1994  ': Beheng, 1994<br>- 'KHAIROUT2000': Khairoutdinov & Kogan, 2000 (default)<br>- 'KOGAN2013   ': Kogan 2013 | 'KHAIROUT2000' | character(len=16) |
 | p3_debug | switch for real-time debugging in microphysics (P3) | .false. | logical |
 | p3_depfact | calibration factor for ice deposition in microphysics (P3) | 1.0 | real |
-| p3_dtmax | Maximum time step (s) to be taken by the microphysics (P3) scheme, with time-splitting<br>used to reduce step to below this value if necessary | 60. | real |
+| p3_dtmax | Maximum time step (s) to be taken by the microphysics (P3), with time-splitting<br>used to reduce step to below this value if necessary | 60. | real |
+| p3_freq3ddiag | frequency (min) for calculating 3D diagnostic output in microphysics (P3) | 60. | real |
 | p3_liqfrac | For predicting the liquid fraction of mixed-phase particles in microphysics (P3) | .false. | logical |
+| p3_mixratio | assume P3 works with mixing ratios instead of specififc mass | .true. | logical |
+| p3_msecons | apply temperature-tendency adjustment in P3 to improve energy conservation | .false. | logical |
 | p3_ncat | Number of ice-phase hydrometeor categories to use in the P3 microphysics<br>scheme (currently limited to <5) | 1 | integer |
 | p3_pfrac | precipitation fraction factor used by SCPF in microphysics (P3) | 1.0 | real |
 | p3_resfact | model resolution factor used by SCPF in microphysics (P3) | 1.0 | real |
 | p3_scpf_on | switch for subgrid cloud/precipitation fraction scheme (SCPF) in microphysics (P3) | .false. | logical |
 | p3_subfact | calibration factor for ice sublimation in microphysics (P3) | 1.0 | real |
+| p3_supid | Ice supersaturation threshold for deposition ice nucleation (P3) | 0.05 | real |
 | p3_trplmomi | For triple-moment ice in microphysics (P3) | .false. | logical |
 | p_runlgt | Vector length physics memory space folding for openMP | -1 | integer |
 | pbl_ae | Coefficient controlling strength of TKE diffusion | 0.07 | real |
+| pbl_cldnk_l | Estimate pbl-cloud properties at lowest prognostic level | .false. | logical |
 | pbl_cmu_timeavg | Time-averaging of transfer coefficient for momentum to reduce 2-dt<br>oscillations in fluxes | .false. | logical |
 | pbl_conserve | Conservation corrections for PBL scheme<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
-| pbl_cucloud | Include the turbulent effects of trade wind cumulus clouds | .true. | logical |
 | pbl_diff_condens | Diffuse condensate fields | .false. | logical |
 | pbl_diss | Run with a modified closure for the dissipation length scale<br>- 'NIL  ' : No modified closure for the dissipation length scale<br>- 'LIM50' : A maximum value of 50m is imposed on dissipation length | 'NIL' | character(len=16) |
 | pbl_dissheat | Dissipative heating tendencies are computed for the PBL scheme such<br>that total energy (kinetic + internal) is conserved<br>- 'NIL       ' : No dissipative heating is computed<br>- 'LOCAL_K   ' : Local total energy conservation based on diffusion coefficients<br>- 'LOCAL_TEND' : Local total energy conservation based on wind tendencies | 'NIL' | character(len=16) |
+| pbl_dxref | Reference length (m) for variance power law scaling | -1. | real |
+| pbl_fnn | Define the flux enhancement factor for PBL clouds (FnN)<br>- 'BECHTOLD98' : Use the flux enhancement factor of Bechtold and Sibesma (1998; JAS)<br>- 'LOCK06    ' : Use the shifted flux enhancement of Lock and Mailhot (2006; BLM)<br>- 'GAUSSIAN  ' : Use flux enhancment consistent with Gaussian cloud fraction | 'BECHTOLD98' | character(len=16) |
 | pbl_func_stab | Class of stability functions (stable case) to use in the PBL<br>- 'DELAGE97  ' : Use functions described by Delage (1997; BLM)<br>- 'BELJAARS91' : Use functions described by Beljaars and Holtslag (1991; JAM)<br>- 'LOCK07    ' : Use functions described by Lock (2007; Tech Report) employed at UKMO | 'DELAGE97' | character(len=16) |
 | pbl_func_unstab | Class of stability functions (unstable case) to use in the PBL<br>- 'DELAGE92' : Use functions described by Delage and Girard (1992; BLM)<br>- 'DYER74  ' : Use functions described by Dyer (1974; BLM) | 'DELAGE92' | character(len=16) |
 | pbl_mlblac_max | Choose form of asymptotic mixing length for Blacadar-type estimates<br>- 'BLAC62' : Asymptotic 200 m proposed by Blackadar (1962; JGR) with clipping<br>- 'LOCK07' : Diagnosed asymptotic scale of Lock (2007; Tech Report) used at UKMO | 'BLAC62' | character(len=16) |
 | pbl_mlturb_diss | Apply "turboujo" turbulence conditions to dissipation length scale | .false. | logical |
 | pbl_moistke_legacy_cloud | Run with legacy moistke clouds (no limits on cloud effects) | .false. | logical |
-| pbl_nonloc | Use the non-local PBL cloud formulation<br>- 'NIL   ' : no non-local PBL cloud formulation<br>- 'LOCK06' : Non-local cloud scheme of Lock and Mailhot (2006) | 'NIL' | character(len=16) |
+| pbl_nonloc | Use the non-local PBL cloud formulation<br>- 'NIL   ' : no non-local PBL cloud formulation<br>- 'LOCK06' : Non-local cloud scheme of Lock and Mailhot (2006)<br>- 'DEROOY22'   : Use a mass-flux scheme based on de Rooy et al. (2022; GMD) | 'NIL' | character(len=16) |
 | pbl_progvar | Use prognostic equations for subgrid-scale variances of conserved variables | .false. | logical |
+| pbl_q1gauss_l | Use gaussian-distribution formulas to derive cloud-fraction and condensate from Q1 | .false. | logical |
+| pbl_q1max_l | Apply a maximum value to the normalized saturation surplus Q1 | .true. | logical |
 | pbl_ribkg | Use the mixing length to average the Richardson number profile of (potentially)<br>many layers to derive a "background" Ri estimate | .false. | logical |
 | pbl_ricrit | Richardson num. critical values for hysteresis | 1. | real |
+| pbl_ritau | Relaxation time scale for buoyancy frequency calculation | -1. | real |
 | pbl_shal | PBL representation of boundary layer clouds<br>- 'NIL     ': No Shallow convection<br>- 'CONRES  ': Bulk Richardson number-based turbulent enhancement<br>- 'SHALOW  ': Deprecated (see 1998 RPN physics doc)<br>- 'SHALODQC': Deprecated (see 1998 RPN physics doc)<br>- 'GELEYN  ': Deprecated (see 1998 RPN physics doc) | 'NIL' | character(len=16) |
 | pbl_slblend_layer | Layer over which to adjust from SL to PBL stability functions [(bot,top) in m] |  |  |
+| pbl_supid | Allowable ice supersaturation for PBL clouds | 0. | real |
 | pbl_tkediff | Adjustment to coefficient for TKE diffusion | 1. | real |
 | pbl_tkediff2dt | Control of time scale for TKE diffusion | .false. | logical |
 | pbl_turbsl_depth | Depth (Pa) of the always-turbulent near-surface layer in the PBL | 3000. | real |
 | pbl_ysu_rpnsolve | Use RPNphy solver for diffusion equations from YSU coefficients | .false. | logical |
 | pbl_zerobc | Use true (motionless) surface boundary conditions for TKE diffusion | .false. | logical |
+| pbl_znfilt | Filtering condition for mixing length consistency check (e.g. pbl_znfilt=1.1) | -1. | real |
 | pbl_zntau | Relaxation timescale (s) for mixing length smoothing | 7200. | real |
 | pcptype | Scheme to determine precipitation type<br>- 'NIL     ': no call to bourge<br>- 'BOURGE  ': use Bourgouin algorithm (bourge1) to determine precip. types.<br>- 'BOURGE3D':<br>- 'SPS_W19 ': phase separation based on near-surface wet-bulb temperature (from Wang et al., 2019). Only for SPS<br>- 'SPS_FRC ': fraction of each precipitation type is read directly in the atmospheric forcing (for SPS only)<br>- 'SPS_H13 ': phase separation based on near-surface hydrometeor temperature (from Harder and Pomeroy, 2013). Only for SPS | 'NIL' | character(len=16) |
 | phystat_2d_l | Physic statistics output for 3d varables:<br>- .false. : mean, var, min and max for the whole 3d fiels<br>- .true.  : mean, var, min and max are done for each levels independently | .false. | logical |
@@ -159,14 +179,18 @@
 | qch4 | CH4 bckgrnd atmospheric concentration (PPMV) | -1. | real |
 | qco2 | CO2 bckgrnd atmospheric concentration (PPMV) | -1. | real |
 | qn2o | N2O bckgrnd atmospheric concentration (PPMV) | -1. | real |
+| rad_anu | Cloud internal homogeneity (ANU) factor : Set ANU as a fonction of cloud fraction (ccc_cldifm.F90)<br>Default below will reproduce pre gem5.3.0-a21 hard coded values<br>Higher anu implies more homogeneous clouds<br>rad_anu(1) : first boundary in cldfrac<br>rad_anu(2) : second boundary in cldfrac<br>rad_anu(3) : anu for cldfrac <= rad_anu(1)<br>rad_anu(4) : anu for rad_anu(1) < cldfrac < rad_anu(2)<br>rad_anu(5) : anu for cldfrac >= rad_anu(2) |  |  |
+| rad_anuexp | modify anu if clouds are mostly explicit - strfr>threshold<br>rad_anuexp(1) : threshold value of strfr(e.g. 0.99)<br>rad_anuexp(2) : anu value used above threshold strfr<br>-1. values means is not used | (/ -1., -1./) | real |
 | rad_atmpath | Atmospheric path length for solar radiation<br>- 'RODGERS67' : Formulation used by Li and Barker (2005)<br>- 'LI06' : Estimate of  Li and Shibata (2006) | 'RODGERS67' | character(len=16) |
 | rad_cond_rei |  | -1. | real |
 | rad_cond_rew |  | -1. | real |
 | rad_conserve | Conservation corrections for radiation scheme<br>- 'NIL ' : No conservation correction applied<br>- 'TEND' : Temperature and moisture tendencies corrected | 'NIL' | character(len=16) |
 | rad_esfc | Use emissivity computed by the surface schemes | .false. | logical |
+| rad_exp_rei |  | -1. | real |
+| rad_exp_rew |  | -1. | real |
 | rad_linoz_l | Use LINOZ prognostic Ozone in radiation (CCCMARAD2 .and. LINOZ only) | .false. | logical |
 | rad_lw | Compute and apply tendencies from longwave radiation | .true. | logical |
-| rad_mpagg_l | use relative weigthing when combining opt props from implicit and explicit clouds | .false. | logical |
+| rad_mpagg | Formulation for combining implicit and explicit clouds in microphysics-based configurations<br>- 'BINARY  ' : All cloud fractions are assumed to be 1 when cloud is present (incorrect)<br>- 'RELATIVE' : Cloud weighting is normalized by the total cloud fraction so that they sum to 1<br>- 'MERGED  ' : Cloud weighting is adjusted to account for "merged" volumes in which clouds from different sources coexist | 'BINARY' | character(len=16) |
 | rad_part_nomp | Phase partition of total water content for radiation when CONSUN is used<br>- 'BOUOPS' : Boudala et al. (2004), QJRMS, 130, pp. 2919-2931 - bugged<br>- 'BOUDALA' :Boudala et al. (2004), QJRMS, 130, pp. 2919-2931<br>- 'ECMWF' : IFS docu CY25R1<br>- 'Rockel' : Rockel et al. Beitr. Atmos. Phy. 1991 | 'BOUOPS' | character(len=16) |
 | rad_siglim | For calculation of DIAGNOSTIC low, mid and high TRUE and EFFECTIVE cloud covers in cldoppro and cldoppro_mp<br>TRUE:      rad_siglim(1)=limit between low and mid clouds in sigma; rad_siglim(2)=limit between mid and high clouds in sigma;<br>EFFECTIVE: rad_siglim(3)=limit between low and mid clouds in sigma; rad_siglim(4)=limit between mid and high clouds in sigma; |  |  |
 | rad_sw | Compute and apply tendencies from shortwave radiation | .true. | logical |
@@ -186,10 +210,15 @@
 | sgo_stabfac | Turns on/off the amplification factor (due to stability) of the drag<br>coefficient in the orographic blocking scheme | .true. | logical |
 | sgo_tdfilter | Standard deviation length scale (gridpoints) of Gaussian smoother<br>applied to wind GWD tendencies | 1. | real |
 | sgo_windfac | Description of threshold for mean wind speed for blocking |  |  |
-| stcond | Condensation scheme name<br>- 'NIL       ' : No explicit condensation scheme used<br>- 'CONSUN    ' : Sunqvist type condensation scheme<br>- 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme<br>- 'MP_P3     ' : P3 microphysics scheme (v5)<br>- 'MP_P3V3   ' : P3 microphysics scheme (v3)<br>- 'KESSLER   ' : Kessler warm rain scheme | 'NIL' | character(len=16) |
+| sgs_gwfac | Modulation of variance generated by diagnosed subgrid-scale gravity waves | -1. | real |
+| stcond | Condensation scheme name<br>- 'NIL       ' : No explicit condensation scheme used<br>- 'CONSUN    ' : Sunqvist type condensation scheme<br>- 'MP_MY2    ' : Milbrandtl and Yau microphysics scheme<br>- 'MP_P3     ' : P3 microphysics scheme (v5.3)<br>- 'MP_P3V3   ' : P3 microphysics scheme (v3)<br>- 'MP_P3X    ' : P3 microphysics scheme (v5.5)<br>- 'KESSLER   ' : Kessler warm rain scheme<br>- 'THOMPSON  ' : Thompson microphysics scheme | 'NIL' | character(len=16) |
 | stratos | Special treatment of stratosphere;<br>if .true. ignore convection/condensation tendencies where pressure is lower<br>than topc as specified in nocld.cdk | .false. | logical |
 | taufac | Factor used in the gwd formulation = 1/(LENGTH SCALE) | 8.E-6 | real |
 | test_phy | Run the physics in test harness mode | .false. | logical |
+| thompson_cldfrac | Cloud fraction composition for microphysics Thompson | "liq_ice_snow" | character(len=20) |
+| thompson_decfl | Deformation CFL (decfl) for microphysics Thompson | 1 | integer |
+| thompson_dt_inner | Inner time step for microphysics Thompson, default -1 fo model time step | -1.0 | real |
+| thompson_sedi_semilag_l | Semi-Lagrangian Sedimentation for microphysics Thompson | .true. | logical |
 | timings_l | Print runtime timings | .false. | logical |
 | tofd | Select a turbulent orographic form drag scheme<br>- 'NIL'        : No turbulent orographic form drag scheme<br>- 'BELJAARS04' : Form drag scheme described by Beljaars et al. (2006; QJRMS)<br>WARNING: This option is broken thus disabled- will be fixed in dev branch | 'NIL' | character(len=16) |
 | tofd_alpha | BELJAARS04 turbulent orographic form drag scheme alpha parameter | 12. | real |
@@ -206,22 +235,60 @@
 | xst_stn_latlon | Stations chosen in lat,lon for time-series<br>Format: "STN1_NAME",lat1,lon1, "STN2_NAME",lat2,lon2, ... |  |  |
 
 
+### nam_reprod_oper Namelist
+
+| Name          | Description            |  Default Value | Type |
+| ------------- | ---------------------- | -------------- | ---- |
+| lreprod_oper, |  |  |  |
+
+
+### nam_surf_csts Namelist
+
+| Name          | Description            |  Default Value | Type |
+| ------------- | ---------------------- | -------------- | ---- |
+| xemissn, |  |  |  |
+
+
+### nam_surf_snow_csts Namelist
+
+| Name          | Description            |  Default Value | Type |
+| ------------- | ---------------------- | -------------- | ---- |
+| xz0icez0snow, |  |  |  |
+
+
 ### surface_cfgs Namelist
 
 | Name          | Description            |  Default Value | Type |
 | ------------- | ---------------------- | -------------- | ---- |
 | adj_i0_snow | Adjust surface temperature over snow after reading (coherency check) | .true. | logical |
 | beta | Prandtl number for neutral stability (initialized by SL module) | 0. | real |
+| cano_ref_forcing | (SVS2) Options for transfer of the forcing in the canopy module of SVS2<br>- 'FOR'   :  forcing is below the canopy<br>- 'O2F'   :  met forcing is below canopy height in the open and is transfered below canopy<br>- 'ABV'   :  met forcing is above canopy | 'ABV' | character(len=3) |
+| chi_min | chi_min parameter: the minimal efficiency factor for phase change in the soil_freezing scheme (the same concept as in Surfex and described in Pitman et al., 1991, Slater et al., 1998. | 0.6 | real |
+| cslm_nlakmax | CSLM: maximum number of lake layers | 20 | integer |
 | diusst | Diurnal SST scheme<br>- 'NIL    ' : No Diurnal SST scheme<br>- 'FAIRALL' : #TODO: define | 'NIL' | character(len=16) |
 | diusst_lakes | Diurnal SST scheme active over freshwater lakes if .true. | .true. | logical |
 | diusst_ocean | Diurnal SST scheme active over ocean if .true. | .true. | logical |
 | diusst_warmlayer_lakes | Diurnal SST scheme active warmlayer over freshwater lakes if .true. | .true. | logical |
 | dp_svs | Depth of soil layers in [METERS] in SVS land surface scheme (schmsol=SVS) | -1.0 | real |
+| hsnowcomp | (SVS2) Option for the compaction scheme for Crocus<br>- 'B92' :  default Crocus from Brun et al. 1992 or Vionnet et al. 2012 (Default in SVS2)<br>- 'S14' : use the settling param of Schleef et al. (2014) for fresh snow (less than 2 days)<br>- 'T11' : param of snow viscosity from Teufelsbauer (2011)<br>- 'R21' :  Reduction in snow compaction due to basal vegetation and no snowdrift below veg height (Royer 2021 & Lackner 2022)<br>- 'R2V' : Reduction in snow compaction due to basal vegetation only  (Royer 2021 & Lackner 2022)<br>- 'R2D' : No snowdrift below veg height (Royer 2021) | 'B92' | character(len=16) |
+| hsnowcond | (SVS2) Option for the thermal conductivity scheme for Crocus<br>- 'Y81': default Crocus from Yen et al. 1981 (Default in SVS2)<br>- 'I02': ISBA_ES snow conductivity parametrization (Boone et al. 2002)<br>- 'C11': Calonne et al. 2011 snow conductivity parametrization<br>- 'S97': Sturm et al. 1997<br>- 'J91': Jordan et al. 1991<br>- 'F21': Fourteau et al. 2021 | 'Y81' | character(len=16) |
+| hsnowdrift_cro | (SVS2)  Option for the snowdrift scheme for Crocus: Mechanical transformation of snow grain and compaction<br>and effect of wind  on falling snow properties<br>- 'NONE': No snowdrift scheme<br>- 'DFLT': falling snow falls as purely dendritic<br>- 'GA01': Gallee et al 2001<br>- 'VI13': Vionnet et al 2013 (Default in SVS2)<br>- 'R21R': Royer et al 2021 (Increase in Maximum Density)<br>- 'R21W': Royer et al 2021 (Increase in Wind_Effect)<br>- 'R21F': Royer et al 2021 (Increase in Max Density and Wind Effect) | 'VI13' | character(len=16) |
+| hsnowdrift_es | (SVS2) Option for the snowdrift scheme for ES: Mechanical transformation of snow grain and compaction<br>- 'DFLT': Snowdrift scheme activated  (Default in SVS2)<br>- 'NONE': No snowdrift scheme | 'DFLT' | character(len=16) |
+| hsnowfall | (SVS2) Option for the falling snow density for Crocus<br>- 'V12': Vionnet et al. 2012 from Brun et al. 1989 (Default in SVS2)<br>- 'A76': Anderson et al. 1976<br>- 'S02': Lehning el al. 2002<br>- 'P75': Pahaut 1975<br>- 'NZE': Constant density 200 kg/m3 (defined snowcro.F90 )<br>- 'R21': Royer et al. 2021<br>- 'L22': Lackner et al. 2022<br>- 'GW1':<br>- 'GW2': | 'V12' | character(len=16) |
+| hsnowhold | (SVS2) Option for the liquid water content scheme for Crocus<br>- 'B92': default Crocus from Brun et al. 1992 or Vionnet et al. 2012<br>- 'B02': ISBA_ES  parametrization (Boone et al. 2002)<br>- 'CLM': parametrization (Oleson et al 2004)<br>- 'SPK': SNOWPACK parametrization (Lehning et al 2002) | 'B92' | character(len=16) |
+| hsnowmetamo | * 'T07': Taillandier et al 2007<br>- 'F06': Flanner et al 2006<br>- 'S-F': Schlef et al 2014<br>- 'S-B': Schlef et al 2014 | 'B21' | character(len=16) |
+| hsnowrad | (SVS2) Option for the radiative transfer scheme for Crocus<br>- 'B92':  Brun et al 1992  (Default in SVS-Cro)<br>- 'T17': (Tuzet et al. 2017) (Libois et al. 2013) TARTES with impurities content scheme | 'B92' | character(len=16) |
+| hsnowres | (SVS2) Option for the turbulent fluxes in Crocus<br>- 'DEF' : Default: Louis (ISBA: Noilhan and Mahfouf 1996)<br>- 'RIL' : Limit Richarson number under very stable conditions to 0.2 (currently testing)<br>- 'RI1' : Limit Richarson number under very stable conditions to 0.1<br>- 'RI2' : Limit Richarson number under very stable conditions to 0.026<br>- 'M98' : Martin et Lejeune 1998 : older computation for turbulent fluxes coefficents in Crocus | 'RIL' | character(len=16) |
+| hsnowscheme | (SVS2) Option for the snowpack representation in SVS-2<br>- 'ES' : Explicit snow scheme<br>- 'CRO': Crocus | 'CRO ' | character(len=16) |
 | ice_emiss |  | -1. | real |
 | icelac | Set water temperature of ice-covered lakes to 0C for points north of<br>ice line if .true.<br>needs an initialization file otherwise the model stops | .false. | logical |
 | icemelt | Sea ice melting | .false. | logical |
 | impflx | Implicit surface fluxes if .true.; explicit fluxes if .false. | .false. | logical |
+| isba_hrsurf_method | Specify which method is used to compute hrsurf<br>- ALPHA_JN90  : (default) [pending description]<br>- BETA_ECMWF12: [pending description] | 'ALPHA_JN90' | character(len=16) |
+| isba_hrsurf_power | Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method) | 1. | real |
+| isba_hrsurf_rs | Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m] | 50. | real |
 | isba_melting_fix | If .true. apply temporary fix to ISBA<br>- timestep dependent KCOEF<br>- No PSN factor for meting and freezing | .false. | logical |
+| isba_modwsat_ice |  | .false. | logical |
 | isba_snow_melt_t2veg | Snow melt/freeze under vegetation impact T2 instead of TST | .false. | logical |
 | isba_snow_z0veg | Use the vegetation-only roughness length to compute vegetation snow fraction | .false. | logical |
 | isba_snowfrac_bare | Computation of bare ground snow fraction<br>- 'NIL'   : Legacy approach implemented in ISBA (Belair et al. 003)<br>- 'PHY98' : Use the same definition as in Physics 1998 documentation, Douville 1995 and Pitman 1991<br>- 'SVS1'  : Use the same definition as in SVS1 | 'NIL' | character(len=16) |
@@ -230,39 +297,127 @@
 | kdp | OBSOLETE, REPLACED by KHYD !!! WILL BE EVENTUALLY REMOVED<br>Deepest active (permeable) soil layer in SVS land surface scheme (schmsol=SVS) | -1 | integer |
 | khyd | Last/Deepest soil layer considered during the accumulation of<br>lateral flow and drainage. Drainage is taken as the vertical flux<br>leaving layer KHYD, and lateral flow as the sum of lateral flows from<br>layers 1 to KHYD | -1 | integer |
 | kntveg_s | Vegetation field update frequency (units D,H,M,S,P) | '' | character(len=16) |
+| kplough | Last/Deepest soil layer where ploughing has an effet<br>when activating the option "svs_tdrains_plough".<br>Ploughing generally affects soils down to 20/40 cm | -1 | integer |
+| ktdrains | Number of the soil layer containing the Tile Drains,<br>when activating the option "svs_tdrains_plough".<br>Tile Drains generally located between 90 and 200 cm deep.<br>(generally 90/100cm in Canada, sometimes deeper in the US). | -1 | integer |
+| lake_icefrac_legacy_l | Use legacy calculation for lake ice fraction | .true. | logical |
 | lake_leadfrac | Lead fraction for ice-covered lakes | 0. | real |
+| lbcheat_svs2 | (SVS2) Lower boundary conditions for heat equation in SVS2<br>- 'TPERM'   :  prescribed temperature at bottom of the soil column<br>- '0FLUX'   :  assumes heat flux at the bottom of the soil column is negligible | 'TPERM' | character(len=5) |
 | leadfrac | Minimum fraction of leads in sea ice.&nbsp; Multiply ice fraction by (1.-leadfrac) | 0.03 | real |
+| lforlit | (SVS2) activate forest litter in SVS2 if .true. | .false. | logical |
 | limsnodp | Limit snow depth to 10 cm for calculation of heat conductivity of snow<br>over sea-ice and glacier if .true. | .false. | logical |
+| lmacropores_svs | (SVS1) If .true., macropores are activated and enhance infiltration in a frozen soil | .false. | logical |
+| lmodwsat_ice_svs1 |  | .false. | logical |
+| lphase_change_eff_svs1 | (SVS1) If .true., we use an efficiency factor phase change (chi) in the soil freezing scheme | .true. | logical |
+| lsfclayer_crocus_svs2 | (SVS2) If .true., SVS2 uses the aerodynamic resistance from sfc_layer | .false. | logical |
+| lsnow_interception_svs2 | (SVS2) If .true., SVS2 simulates interception of snow by canopy, sublimation and inloading of intercepted snow | .false. | logical |
+| lsnowaging_var | (SVS2) Activate spatially variable snow aging coefficient in Crocus snow albedo parameterization | .false. | logical |
+| lsnowdrift_sublim | (SVS2) Activate mass loss due to blowing snow sublimation in ES and Crocus (default TRUE in SVS2) | .true. | logical |
 | lsoil_freezing_svs1 | If .true., SVS1 simulates soil freezing and thawing and its impact on hydrology | .false. | logical |
-| lwater_ponding_svs1 | If .true., SVS1 simulates water ponding at the surface | .false. | logical |
+| lunique_profile_svs2 | (SVS2) If .true., SVS2 uses only a unique column for the soil | .true. | logical |
+| lwater_ponding_svs | If .true., SVS1 or SVS2 simulates water ponding at the surface | .false. | logical |
+| mp_alpha | mp_alpha parameter in the macropore activation option (based on a sensitivity analysis) | 0.55 | real |
+| nsl | (SVS2) Number of snow layers in multi-layer snowpack scheme:<br>In Crocus it refers to the maximal number of snow layers | 12 | integer |
 | owflux | (coupling) fluxes over ocean are taken from ocean model if .true. | .false. | logical |
+| read_blak_cslm | (CSLM) read-in light extinction coef. for CSLM  if .true. | .false. | logical |
 | read_emis | read-in land surface emissivity if .true. | .false. | logical |
+| read_hveglpol | (SVS2) read-in height of polar low vegetation for SVS2 if .true. | .false. | logical |
+| read_oc | (SVS2) read-in organic content for SVS2 if .true. | .false. | logical |
 | read_z0vh | read-in high vegetation roughness for SVS if .true. | .false. | logical |
 | salty_qsat | Takes into account effect of ocean salinity on saturation specific<br>humidity at ocean surface (boundary condition for LH flux calculation) | .false. | logical |
 | schmlake | Lake surface processes<br>- 'NIL' :<br>- 'FLAKE' :<br>- 'CSLM' : | 'NIL' | character(len=16) |
 | schmriver | River surface processes<br>- 'NIL' : | 'NIL' | character(len=16) |
-| schmsol | Land surface processes<br>- 'NIL ' : No Land surface processes<br>- 'ISBA' : Interaction Soil Biosphere Atmosphere (ISBA) land sfc scheme<br>- 'SVS ' : Soil, Vegetation, and Snow (SVS) (Multibudget) land sfc scheme | 'ISBA' | character(len=16) |
+| schmsol | Land surface processes<br>- 'NIL ' : No Land surface processes<br>- 'ISBA' : Interaction Soil Biosphere Atmosphere (ISBA) land sfc scheme<br>- 'SVS ' : Soil, Vegetation, and Snow (SVS) (Multibudget) land sfc scheme<br>- 'SVS2' : Advanced version of the SVS land sfc scheme | 'ISBA' | character(len=16) |
 | schmurb | Urban surface processes<br>- 'NIL' : No Urban surface processes<br>- 'TEB' : Town Energy Balance (TEB) urban scheme | 'NIL' | character(len=16) |
+| sfc_poids | Surface weights / Poids; LEGACY as of sps_6.3.0. | 'LEGACY' | character(len=6) |
+| sl_afd | Coefficient for calculation of displacement height from roughness (recommended value=8) | -1. | real |
+| sl_diag_type | Type of diagnostic-level calculations to use<br>- 'FLUX      ' : Use turbulent surface fluxes to estimate diagnostic-level fields<br>- 'INTERP    ' : Use interpolation to estimate diagnostic-level fields | 'FLUX' | character(len=16) |
 | sl_func_stab | Class of stability functions (stable case) to use in the surface layer<br>- 'DELAGE97  ' : Use functions described by Delage (1997; BLM)<br>- 'BELJAARS91' : Use functions described by Beljaars and Holtslag (1991; JAM)<br>- 'LOCK07    ' : Use functions described by Lock (2007; Tech Report) employed at UKMO | 'DELAGE97' | character(len=16) |
 | sl_func_unstab | Class of stability functions (unstable case) to use in the surface layer<br>- 'DELAGE92' : Use functions described by Delage and Girard (1992; BLM)<br>- 'DYER74  ' : Use functions described by Dyer (1974; BLM) | 'DELAGE92' | character(len=16) |
 | sl_lmin_glacier | Minimum Obukhov length (L) for glaciers | -1. | real |
 | sl_lmin_seaice | Minimum Obukhov length (L) for sea ice | -1. | real |
 | sl_lmin_soil | Mimimum Obukhov length (L) for soil surfaces | -1. | real |
 | sl_lmin_town | Minimum Obukhov length (L) for town | -1. | real |
+| sl_lmin_type | Type of Lmin calculation to use<br>- 'SHEAR     ' : Impose a minimum lowest-level wind speed to guarantee L>L_min<br>- 'SFO       ' : Impose a minimum L_min directly in stability function calculations | 'SHEAR' | character(len=16) |
 | sl_lmin_water | Minimum Obukhov length (L) for water | -1. | real |
+| sl_re2 | Coefficient for scalar interpolation to the diagnostic level for Rib-based adjustment | -1. | real |
 | sl_rineutral | Define bulk Ri values for near-neutral regime in the surface layer | 0. | real |
+| sl_ximax | Set maximum scale height for surface layer stability functions | -1. | real |
 | sl_z0ref | Use a reference roughness for surface layer calculations | .false. | logical |
 | snoalb_anl | Use snow albedo "I6" directly if .true.;<br>Use snow age "XA" to calculate snow albedo if .false. | .true. | logical |
 | snow_emiss |  | -1. | real |
+| soil_cond |  | 'PL1998' | character(len=16) |
 | soil_ksat_ice |  | 'ZHANGGRAY97' | character(len=16) |
-| soiltext | Soil texture database/calculations for SVS land surface scheme<br>- 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)<br>- 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)<br>- 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC ? World Soil Information | 'GSDE' | character(len=16) |
+| soildbtm_svs1 | Option to set the depth of the lower boundrary condition below the soil column (module soil_freezing.F90) | 'DEEP' | character(len=16) |
+| soilgrndhf_svs1 | Option to compute HFLUX for bareground in the module soil_freezing.F90 (Use the soil thermal restiance (default) or the skin conductivity from Table 2.1 of the sup. mat. of Boussetta et al., 2021) | 'LAM_BOU2021' | character(len=16) |
+| soilsnowhf_svs1 | Option to compute the heat flux between the soil and the snowpack in the module soil_freezing.F90 | 'ST_D_DD' | character(len=16) |
+| soiltext | Soil texture database/calculations for SVS land surface scheme<br>- 'GSDE   '   : 8 layers of sand & clay info from Global Soil Dataset for ESMs (GSDE)<br>- 'SLC    '   : 5 layers of sand & clay info from Soil Landscape of Canada (SLC)<br>- 'SOILGRIDS' : 7 layers of sand & clay info from ISRIC World Soil Information<br>- 'SOILGRIDSV2' : 6 layers of sand, clay, bulk density, & oc info from ISRIC World Soil Information | 'GSDE' | character(len=16) |
+| svs2_crodebug | Logical - Activate Crocus debugging options  if .true. (see README_crodebug.md) | .false. | logical |
+| svs_aldat | Values (1:NCLASS) used for the lookup table ALDAT if svs_read_aldat=.T. | -999. | real |
+| svs_cg_depth | determine depth over which soil thermal inertia is computed [m]<br>when set to zero, only 1st layer is used (default option for backward compatibility)<br>default should eventually be changed to 0.12 based on the fact that cg = sqrt(tau*k/pi)<br>where k is the thermal diffusivity of the soil [m2/s] and tau = 86400 [s]<br>if no information is known about the soil, IEC 60853-2 recommends k=5·10-7 m2/s<br>hence svs_cg_depth = 0.12 m | 0. | real |
+| svs_cg_ice | specify which equation to use to take ice into account when computing the heat capacity of bare ground<br>- BELAIR2003: (default) Adjustment to heat capacity based on total water content (WD+WF)<br>- BOONE2000:  Adjustment to heat capacity that takes into account the reduced heat capacity of ice vs liquid water | 'BELAIR2003' | character(len=16) |
+| svs_d2dat | Values (1:NCLASS) used for the lookup table D2DAT if svs_read_d2dat=.T. | -999. | real |
+| svs_d50dat | Values (1:NCLASS) used for the lookup table D50DAT if svs_read_d50dat=.T. | -999. | real |
+| svs_d50veg15 | Values (1:13) used for the lookup table D50VEG15 if svs_read_d50veg15=.T. | -999. | real |
+| svs_d50veg16 | Values (1:13) used for the lookup table D50VEG16 if svs_read_d50veg16=.T. | -999. | real |
+| svs_d95dat | Values (1:NCLASS) used for the lookup table D95DAT if svs_read_d95dat=.T. | -999. | real |
+| svs_d95veg15 | Values (1:13) used for the lookup table D95VEG15 if svs_read_d95veg15=.T. | -999. | real |
+| svs_d95veg16 | Values (1:13) used for the lookup table D95VEG16 if svs_read_d95veg16=.T. | -999. | real |
 | svs_dynamic_z0h | use dynamic calculation of z0h for bare ground + vegetation  for SVS if .true. | .false. | logical |
-| svs_gexp | Exponent in function defining vegetation stress when estimating transpiration<br>Transpiration decreases more slowly with soil moisture when svs_gexp is high<br>it does not start decreasing until about soil moisture is half way between wilting<br>point and field capacity when svs_gexp=10.<br>A positive value is expected, but a negative value is used by default to keep this option<br>inactive if a value is not provided.<br>Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value<br>of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when<br>the CTEM parameterization is used.<br>This behaviour is preserved if the value of the key is less or equal to zero for<br>backward compatibility purposes.<br>Since this is a bugfix, eventually the default value of the key should be changed<br>to a positive value. | -1. | real |
-| svs_hrsurf_sltext | use hrsurf based on soil texture for SVS if .true. | .false. | logical |
-| svs_local_z0m | use local momentum (no snow) roughness for SVS if .true. | .false. | logical |
+| svs_etr_avg_beta | Option to use average normalized water content rather than average stress to compute transpiration | .false. | logical |
+| svs_etr_fcd_dyn | Proportion of static vs dynamic root distribution as a function of soil moisture<br>Number betweeen 0 and 1 that reflects the confidence that we have in the prescribed root density profile<br>0 = static root distribution given by lookup tables, 1 = fully dynamic root distribution depending on soil moisture | 0. | real |
+| svs_etr_max_roots_ignored | Maximum fraction of wilted roots that can be ignored when computing average stress of vegetation | 0.0 | real |
+| svs_gexpveg | Exponent in function defining vegetation stress when estimating transpiration<br>Transpiration decreases more slowly with soil moisture when svs_gexp is high<br>it does not start decreasing until about soil moisture is half way between wilting<br>point and field capacity when svs_gexp=10.<br>Prior to introducing this key, a value of two was used in phtsyn_svs.F90 but a value<br>of one was assumed in vegi_svs.F90, leading to an inconsistency in the code when<br>the CTEM parameterization is used.<br>This behaviour is preserved if svs_read_gexpveg = .false. for<br>backward compatibility purposes.<br>Since this is a bugfix, eventually the default value of the key should be changed<br>to a positive value.<br>Values (26) used for the lookup table D95VEG16 if svs_read_gexpveg=.T. | -999. | real |
+| svs_hrsurf_method | Specify which method is used to compute hrsurf<br>- ALPHA_JN90    : (default) "alpha" method proposed by Jacquemin and Noilhan (1990), BLM<br>- BETA_ECMWF12  : resistance method of Albergel et al. (2012) modified by Fortin et al. (2026)<br>in order to behave like a "beta" method in dry conditions | 'ALPHA_JN90' | character(len=16) |
+| svs_hrsurf_power | Specify the exponent applied to the ratio WD/WFC when computing Beta (only used by BETA_ECMWF12 method)<br>With default value of 1, BETA_ECMWF12 method becomes equivalent to resistance method of Albergel et al. (2012) | 1. | real |
+| svs_hrsurf_rs | Specify the typical soil resistance for hrsurf computation (only used by BETA_ECMWF12 method) [s/m]<br>Default value of 50 s/m proposed by Albergel et al. (2012) | 50. | real |
+| svs_hydro_nummethod |  | 'RK4_IC4' | character(len=16) |
+| svs_lai11 | Values (1:13) used for the lookup table LAI11 if svs_read_lai11=.T. | -999. | real |
+| svs_lai14 | Values (1:13) used for the lookup table LAI14 if svs_read_lai14=.T. | -999. | real |
+| svs_lai15 | Values (1:13) used for the lookup table LAI15 if svs_read_lai15=.T. | -999. | real |
+| svs_lai16 | Values (1:13) used for the lookup table LAI16 if svs_read_lai16=.T. | -999. | real |
+| svs_lai17 | Values (1:13) used for the lookup table LAI17 if svs_read_lai17=.T. | -999. | real |
+| svs_local_z0m | Use local momentum (no snow) roughness for SVS if .true. | .false. | logical |
+| svs_read_aldat | Option to change the lookup table ALDAT in inicover_svs.F90 | .false. | logical |
+| svs_read_d2dat | Option to change the lookup table D2DAT in inicover_svs.F90 | .false. | logical |
+| svs_read_d50dat | Option to change the lookup table D50DAT in inicover_svs.F90 | .false. | logical |
+| svs_read_d50veg15 | Option to read a lookup table of monthly values for D50 for class 15 | .false. | logical |
+| svs_read_d50veg16 | Option to read a lookup table of monthly values for D50 for class 16 | .false. | logical |
+| svs_read_d95dat | Option to change the lookup table D95DAT in inicover_svs.F90 | .false. | logical |
+| svs_read_d95veg15 | Option to read a lookup table of monthly values for D95 for class 15 | .false. | logical |
+| svs_read_d95veg16 | Option to read a lookup table of monthly values for D95 for class 16 | .false. | logical |
+| svs_read_gexpveg | Option to read a lookup table of monthly values for D50 for class 16 | .false. | logical |
+| svs_read_lai11 | Option to read a lookup table of monthly values for LAI for class 11 | .false. | logical |
+| svs_read_lai14 | Option to read a lookup table of monthly values for LAI for class 14 | .false. | logical |
+| svs_read_lai15 | Option to read a lookup table of monthly values for LAI for class 15 | .false. | logical |
+| svs_read_lai16 | Option to read a lookup table of monthly values for LAI for class 16 | .false. | logical |
+| svs_read_lai17 | Option to read a lookup table of monthly values for LAI for class 16 | .false. | logical |
+| svs_read_vegcrops | Option to change the lookup table VEGCROPS in inicover_svs.F90 | .false. | logical |
+| svs_read_vegdat | Option to change the lookup table VEGDAT in inicover_svs.F90 | .false. | logical |
+| svs_read_vegdat14 | Option to read a lookup table of monthly values for VEGDAT for class 14 | .false. | logical |
+| svs_read_vegdat16 | Option to read a lookup table of monthly values for VEGDAT for class 16 | .false. | logical |
+| svs_read_vegdat17 | Option to read a lookup table of monthly values for VEGDAT for class 17 | .false. | logical |
+| svs_read_vf2ctemdat | Option to change the lookup table VF2CTEMDAT in phtsyn_svs.F90 | .false. | logical |
+| svs_read_z0mdat | Option to change the lookuptable Z0MDAT in inicover_svs.F90 | .false. | logical |
 | svs_snow_rain |  | 'BELAIR03' | character(len=16) |
+| svs_snowalb | Computation of snow albedo in SVS1<br>- 'NIL'   : Legacy approach implemented in SVS (Leonardini et al., 2021)<br>- 'CLASS' : Method from the land surface scheme CLASS | 'NIL' | character(len=16) |
+| svs_snowfrac_ground | Computation of snow cover fraction over ground in SVS1<br>- 'NIL'   : Legacy approach implemented in SVS (Belair et al. 003)<br>- 'LA23' : Adjusted method from Lalande et al. (2023) accoungint for hysterisis of snow cover fraction and subgrid topo<br>- 'AR25' : Method from Abolafia-Rosenzweig et al. (2025) applied to resolution of 2.5 km | 'NIL' | character(len=16) |
+| svs_soiltext2prop | specify functions to use to compute wsat, wfc and wwilt<br>SURFEX: equations used in SURFEX v8.1, obtained from Giordani (1993) and Noilhan & Lacarrère (1995)<br>USDA2006: equations proposed by USDA, see Saxton and Rawls (2006) | 'SURFEXV8' | character(len=16) |
+| svs_tdrains_plough | Option to activate the effect of ploughing and Tile Drains in SVS | .false. | logical |
 | svs_urban_params | New urban surface parameters within SVS only (not used in TEB) | .false. | logical |
-| tdiaglim | Limit temperature inversions to 8K/40m in surface layer if .true. | .false. | logical |
+| svs_vegcrops | Values (1:13) used for the lookup table VEGCROPS if svs_read_vegcrops=.T. | -999. | real |
+| svs_vegdat | Values (1:NCLASS) used for the lookup table VEGDAT if svs_read_vegdat=.T. | -999. | real |
+| svs_vegdat14 | Values (1:13) used for the lookup table VEGDAT(13) if svs_read_vegdat13=.T. | -999. | real |
+| svs_vegdat16 | Values (1:13) used for the lookup table VEGDAT(16) if svs_read_vegdat16=.T. | -999. | real |
+| svs_vegdat17 | Values (1:13) used for the lookup table VEGDAT(17) if svs_read_vegdat17=.T. | -999. | real |
+| svs_vf2ctemdat | Values (1:NCLASS) used for the lookup table VF2CTEMDAT if svs_read_vf2ctemdat=.T. | -999 | integer |
+| svs_z0mdat | Values (1:NCLASS) used for the lookup table Z0MDAT if svs_read_z0mdat=.T. | -999. | real |
+| tdiaglim | Limit temperature inversions to dlrate in surface layer if .true. | .false. | logical |
+| tdlrate | Set tdiaglim lapse rate (K/m) in surface layer if .true. | 0.2 | real |
+| teb_hydro | (TEB) Options for parameters governing the hydrology evolution on roofs nd roads<br>- 'MA00'   :  Default Masson 2000<br>- 'CUSTOM'   :    opt for customization | 'MA00  ' | character(len=6) |
+| teb_hydropar | read the TEB hydro parameters (if schmsol=TEB and teb_hydro=custom) | -1.0 | real |
+| teb_snow | (TEB) Options for parameters governing the snow evolution on roofs nd roads<br>- 'MA00'   :  Default Masson 2000<br>- 'JA14'   :    opt Järvi et al 2014<br>- 'LE10'   :    opt Lemonsu et al 2010 | 'MA00  ' | character(len=6) |
+| teb_snroad |  |  |  |
+| teb_snroof |  | -1.0 | real |
 | urb_diagtemp | Adjust temperature diagnostic in TEB in the street  if .true. | .false. | logical |
 | urb_diagwind | Adjust wind diagnostic in TEB in the street  if .true. | .false. | logical |
 | use_eff_surf_tq |  | .false. | logical |
@@ -271,10 +426,14 @@
 | vf_type | VF definitions and mapping in SVS<br>- 'CLASSIC' : Same VF definitions as ISBA<br>- 'CCILCECO' : New VF definitions used in SVS only<br>with geo. fields generated using CCILC 2015 + Ecobiomes | 'CLASSIC' | character(len=16) |
 | water_emiss |  | -1. | real |
 | z0dir | Use directional roughness length if .true. | .false. | logical |
+| z0exp_la23 |  | 6. | real |
 | z0hcon | Constant value of thermal roughness length (m) applied over water within<br>latitudinal band defined by z0tlat | 4.0e-5 | real |
+| z0max_la23 |  | 0.02 | real |
 | z0min | Minimum value of momentum roughness length (m) | 1.5e-5 | real |
+| z0min_la23 | z0min_la23 is the minimal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.01 m<br>z0max_la23 is the maximal roughness parameter used in LA23 in presence of low vegetation of roughness (Z0VL) below 0.15 m<br>z0exp_la23 is the exponent used in the power law giving the roughness parameter as a function of Z0VL | 0.01 | real |
 | z0mtype | Momentum roughness length formulation over water<br>- 'CHARNOCK' : Standard Charnock clipped at high wind speed<br>- 'BELJAARS' : #TODO: define<br>- 'WRF1'     : ISFTCFLX=1 from WRF (Green and Zhang 2013)<br>- 'WRF2'     : ISFTCFLX=2 from WRF (Green and Zhang 2013) | 'CHARNOCK' | character(len=16) |
 | z0seaice | Roughness length for sea ice | 1.6e-4 | real |
+| z0snow_svs2 |  |  |  |
 | z0tevol | Thermal roughness length formulation over vegetation<br>- 'FIXED' : Uses z0h = z0m<br>- 'ZILI95': evolves with u* | 'FIXED' | character(len=16) |
 | z0tlat | Latitude (2 elements, in degrees) used to specify Z0T over water<br>- If :lat: <= Z0TLAT(1) constant Z0T.<br>- If :lat: >= Z0TLAT(2) Charnock's relation.<br>- In between, linear interpolation is used. | 0. | real |
 | z0ttype | Thermal roughness length formulation over water<br>- 'MOMENTUM' : Uses z0h = z0m (replaces key z0trdps300=.false.)<br>- 'DEACU12'  : #TODO: define  (replaces key z0trdps300=.true.)<br>- 'ECMWF'    : #TODO: define  (New formulation used by ECMWF)<br>- 'WRF1'     : ISFTCFLX=1 from WRF (Green and Zhang 2013)<br>- 'WRF2'     : ISFTCFLX=2 from WRF (Green and Zhang 2013) | 'MOMENTUM' | character(len=16) |

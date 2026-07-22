@@ -13,21 +13,28 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-      SUBROUTINE PHTSYN_SVS ( LAI_NCLASS, VEGFRAC, &
+module phtsyn_svs_mod
+  implicit none
+  public
+contains
+
+  SUBROUTINE PHTSYN_SVS ( LAI_NCLASS, VEGFRAC, &
                TCAN,  PRESSG,  RESAVG,  QA, QSWV1,  WD, &
-               FCD, COSZS, WFC, WWILT, MASKLAT, &
+               FCD, COSZS, WFC, WWILT, MASKLAT, BETA_WSOL, G_WSOL, GEXP, &
 !--------------------------INPUTS ABOVE AND OUTPUTS BELOW --------------
                FCANC, AILCG,  RC,CO2I1,  AVG_GWSOL, NCLASS, N)
 !
 !
         use svs_configs
-        use sfc_options, only: svs_gexp
+        use sfc_options, only: svs_read_gexpveg
+        use sfc_options, only: vf_type, svs_read_vf2ctemdat, svs_vf2ctemdat 
       implicit none
 !!!#include <arch_specific.hf>
 
       INTEGER N, NCLASS
       REAL LAI_NCLASS(N,NCLASS),VEGFRAC(N,NCLASS)
       REAL WD(N,NL_SVS),FCD(N,NL_SVS),WFC(N,NL_SVS), WWILT(N,NL_SVS)
+      REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS)
    
       INTEGER KK,ICC,IG, IC, L2MAX, NN, MASKLAT(N)
       PARAMETER (KK=12)  ! PRODUCT OF CLASS PFTs AND L2MAX (4 x 3 = 12)
@@ -41,8 +48,7 @@
       REAL FC_SUM(N), SIGMA(N),  TGAMMA(N), KC(N), KO(N), IPAR(N), GB(N)
       REAL RH(N), VPD(N), O2_CONC(N), CO2A(N), USEBB(ICC)
 !
-      REAL BETA_WSOL(N,NL_SVS), G_WSOL(N,NL_SVS)
-      REAL AVG_GWSOL(N), VMAXC(N,ICC) 
+      REAL AVG_GWSOL(N), VMAXC(N,ICC)
       REAL VMUNS1(N,ICC), VMUNS2(N,ICC), VMUNS3(N,ICC), VMUNS(N,ICC), VM(N,ICC)
       REAL CO2I(N,ICC), PREV_CO2I(N,ICC), FPAR(N,ICC), JC(N,ICC),  JC1(N,ICC)
       REAL JC2(N,ICC), JC3(N,ICC), JE(N,ICC), JE1(N,ICC), JE2(N,ICC), JS(N,ICC)
@@ -50,7 +56,7 @@
       REAL VPD_TERM(N,ICC), CO2LS(N,ICC), GC(N,ICC)
 !!!!!!----------------------------------------------------------------------
 
-      INTEGER NOL2PFTS(IC)
+      INTEGER NOL2PFTS(IC), VF2CTEMDAT(NCLASS)
       INTEGER I, J, ICOUNT, K1, K2, M, REQITER, K
       INTEGER PS_COUP, IT_COUNT
 !
@@ -71,8 +77,7 @@
       REAL INICO2I(KK), ALPHA(KK), RMLCOEFF(KK), BB(KK), MM(KK)
       REAL CO2CC, DELTA_CO2, N_EFFECT
       INTEGER ISC4(KK)
-
-      REAL GEXP
+      REAL GEXP(N)
 !
 !Author
 !          S. Zhang (March 2013)
@@ -150,7 +155,10 @@
 !
 !                           the geophysical fields determined from
 !                           vegetation are done so using the following
-!                           classification:
+!                           original default classification. 
+!                           This current association is now determined in 
+!                           VF2CTEMDAT look-up table for the VF classes 
+!                           of vegetation not splitted across various CTEM.
 !
 !    SVS_PFTs     Vegetation type                        CTEM_PFTs
 !     =====       ===============
@@ -169,8 +177,8 @@
 !       13        short grass and forbs                   8    C3
 !       14        long grass                              9    C4
 !       15        crops                                   6    C3
-!       16        rice                                    6    C3
-!       17        sugar                                   7    C4
+!       16        crops east                              6    C3
+!       17        grassland east                          8    C3
 !       18        maize                                   7    C4
 !       19        cotton                                  6    C3
 !       20        irrigated crops                         6    C3
@@ -181,6 +189,39 @@
 !       25        mixed wood forests                      2    C3
 !       26        mixed shrubs                            2    C3
 !
+!
+!-----------------------------------------------------------------
+!    Association between VF types and CTEM PFT types
+!      -1 is used for non vegetation VF classes
+!      -2 is used for VF classes dispached in several CTEM PFT
+!
+     if (vf_type .eq. 'CCILC_WE') then
+!        VF to CTEM PFT mapping if vf_type = CCILC_WE:
+!        - VF(13) becomes North American grassland west (8 C3),
+!        - VF(15) becomes North American crops west (6 C3),
+!        - VF(16) becomes North American crops east (6 C3), and 
+!        - VF(17) becomes North American grassland east (8 C3).
+!        This have being tweaked to work with geophy file produced
+!        using CCILC_WE and tested just for North America (HRDPS)
+!
+         VF2CTEMDAT = (/ & 
+                     -1, -1, -1,  1,  3, & 
+                      2,  4,  3,  5,  5, & 
+                      4,  5,  8,  8,  6, &
+                      6,  8,  7,  6,  6, &
+                     -2,  6,  6, -1, -2, & 
+                     -2    /)
+     else
+         VF2CTEMDAT = (/ & 
+                     -1, -1, -1,  1,  3, & 
+                      2,  4,  3,  5,  5, & 
+                      4,  5,  8,  8,  6, &
+                      6,  7,  7,  6,  6, &
+                     -2,  6,  6, -1, -2, & 
+                     -2    /)
+     end if
+     
+     if (svs_read_vf2ctemdat) VF2CTEMDAT = svs_vf2ctemdat
 !
 !!!! NOL2PFTS (4)
      DATA  NOL2PFTS/2, 3, 2, 2/
@@ -222,9 +263,9 @@
 !     LEAF SCATERRING COEFFICIENTS, VALUES OF 0.15 & 0.17 ARE USED
 !     FOR C3 AND C4 PLANTS, RESPECTIVELY
       DATA  OMEGA/0.15, 0.15, 0.00,   &
-                  0.15, 0.15, 0.15,   &
-                  0.15, 0.17, 0.00,   &
-                  0.15, 0.17, 0.00/
+                      0.15, 0.15, 0.15,   &
+                      0.15, 0.17, 0.00,   &
+                      0.15, 0.17, 0.00/
 !                  
 !     PARAMETER M USED IN BWB PHOTOSYNTHESIS-STOMATAL CONDUCTANCE
 !     COUPLING. 
@@ -378,18 +419,16 @@
       RC_VEG         = 5000.0
       USEBB          = 0.0
       !SM_FUNC        = 0.0   
+      FCANC          = 0.0
+      AILCG          = 0.0
 
-!     EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
+!     'GEXP': EXPONENT FOR SOIL MOISTURE STRESS. FOR GEXP EQUAL TO 1, PHOTOSYNTHESIS
 !     DECREASES LINEARLY WITH SOIL MOISTURE, AND OF COURSE NON-LINEARLY
 !     FOR VALUES HIGHER THAN 1. WHEN GEXP IS ABOUT 10, PHOTOSYNTHESIS DOES
 !     NOT START DECREASING UNTIL ABOUT SOIL MOISTURE IS HALF WAY BETWEEN
 !     WILTING POINT AND FIELD CAPACITY.
-      if ( svs_gexp .GT. 0. ) then
-         GEXP = svs_gexp
-      else
-         ! Default value used for backward compatibility
-         GEXP = 2.
-      end if   
+!     Default value is set to 2 in inicover_svs used for backward compatibility
+
 !
 !     GENERATE THE KK_TO_ICC INDEX FOR CORRESPONDENCE BETWEEN 9 PFTs AND THE
 !     12 VALUES IN THE PARAMETER VECTORS
@@ -445,99 +484,55 @@
          ! 26 split between class 4 broadleaf (80%) and needleleaf evergreen (20%) below 50 lat
          ! 26 split between needleleaf evergreen (50%) grass (20%) broadleaf cold (30%)
 
-         FCANC(I,1) =                 VEGFRAC(I, 4) + &
+!        AGGREGATE THE VARIOUS VF USING VF2CTEMDAT
+         DO M = 1, ICC
+            ! loop on veg/natural soil classes that have vegetation and can be remapped
+            ! hence, we exclude classes 1, 2, 3, 21, 24, 25, 26
+            DO J = 4, 23                        
+               IF ((VF2CTEMDAT(J) .eq. M) .and. (J .ne. 21)) THEN
+                  FCANC(I,M) = FCANC(I,M) +    VEGFRAC(I,J)
+                  AILCG(I,M) = AILCG(I,M) + LAI_NCLASS(I,J)
+               END IF
+            END DO
+         END DO
+
+!        PROCESS THE VF CLASSES WHICH ARE SPLITTED ACROSS CTEM PFT CLASSES
+         FCANC(I,1) =                   FCANC(I, 1) + &
                                 0.2 * VEGFRAC(I,21) + &
                                 0.4 * VEGFRAC(I,25) + &
              REAL(MASKLAT(I)) * 0.2 * VEGFRAC(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.5 * VEGFRAC(I,26) 
 
-         FCANC(I,2) =                 VEGFRAC(I, 6)
-        
-
-         FCANC(I,3) =                 VEGFRAC(I, 5) + &
-                                      VEGFRAC(I, 8)
-
-
-         FCANC(I,4) =                 VEGFRAC(I, 7) + &
-                                      VEGFRAC(I,11) + &
+         FCANC(I,4) =                   FCANC(I, 4) + &
                                 0.2 * VEGFRAC(I,21) + &
                                 0.6 * VEGFRAC(I,25) + &
              REAL(MASKLAT(I)) * 0.8 * VEGFRAC(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.3 * VEGFRAC(I,26) 
 
-
-         FCANC(I,5) =                 VEGFRAC(I, 9) + &
-                                      VEGFRAC(I,10) + &
-                                      VEGFRAC(I,12)
-
-
-         FCANC(I,6) =                 VEGFRAC(I,15) + &
-                                      VEGFRAC(I,16) + &
-                                      VEGFRAC(I,19) + &
-                                      VEGFRAC(I,20) + &
-                                      VEGFRAC(I,22) + &
-                                      VEGFRAC(I,23)
-
-         FCANC(I,7) =                 VEGFRAC(I,17) + &
-                                      VEGFRAC(I,18)
-
-         FCANC(I,8) =                 VEGFRAC(I,13) + &
-                                      VEGFRAC(I,14) + &
+         FCANC(I,8) =                    FCANC(I,8) + &
                                 0.6 * VEGFRAC(I,21) + &
-        REAL( 1 - MASKLAT(I)) * 0.2 * VEGFRAC(I,26) 
-
-         FCANC(I,9) = 0.0
-
+        REAL( 1 - MASKLAT(I)) * 0.2 * VEGFRAC(I,26)                                       
+        
 !    FOR LAI, LAI_NCLASS has already seen vegfrac...
 ! NEED TO DIVIDE BY VEGETATION FRACTION
 
-
-
-         AILCG(I,1) =                 LAI_NCLASS(I, 4) + &
+         AILCG(I,1) =                       AILCG(I,1) + &
                                 0.2 * LAI_NCLASS(I,21) + &
                                 0.4 * LAI_NCLASS(I,25) + &
              REAL(MASKLAT(I)) * 0.2 * LAI_NCLASS(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.5 * LAI_NCLASS(I,26) 
 
-         AILCG(I,2) =                 LAI_NCLASS(I, 6)
-        
-
-         AILCG(I,3) =                 LAI_NCLASS(I, 5) + &
-                                      LAI_NCLASS(I, 8)
-
-
-         AILCG(I,4) =                 LAI_NCLASS(I, 7) + &
-                                      LAI_NCLASS(I,11) + &
+         AILCG(I,4) =                       AILCG(I,4) + &
                                 0.2 * LAI_NCLASS(I,21) + &
                                 0.6 * LAI_NCLASS(I,25) + &
              REAL(MASKLAT(I)) * 0.8 * LAI_NCLASS(I,26) + &
         REAL( 1 - MASKLAT(I)) * 0.3 * LAI_NCLASS(I,26) 
 
-
-         AILCG(I,5) =                 LAI_NCLASS(I, 9) + &
-                                      LAI_NCLASS(I,10) + &
-                                      LAI_NCLASS(I,12)
-
-
-         AILCG(I,6) =                 LAI_NCLASS(I,15) + &
-                                      LAI_NCLASS(I,16) + &
-                                      LAI_NCLASS(I,19) + &
-                                      LAI_NCLASS(I,20) + &
-                                      LAI_NCLASS(I,22) + &
-                                      LAI_NCLASS(I,23)
-
-         AILCG(I,7) =                 LAI_NCLASS(I,17) + &
-                                      LAI_NCLASS(I,18)
-
-         AILCG(I,8) =                 LAI_NCLASS(I,13) + &
-                                      LAI_NCLASS(I,14) + &
+         AILCG(I,8) =                       AILCG(I,8) + &
                                 0.6 * LAI_NCLASS(I,21) + &
         REAL( 1 - MASKLAT(I)) * 0.2 * LAI_NCLASS(I,26) 
-
-         AILCG(I,9) = 0.0
-
-
-         DO M=1,9
+! 
+         DO M=1,ICC
 
             if (FCANC(i,m).gt.0) then
                !print * , 'for i=',i,'m=',m
@@ -708,27 +703,29 @@
 !     IN ORIGINAL CODE, ONE ROOT PROFILE FOR EACH PFT CLASS. HERE ALL CLASSES SHARE THE SAME
 !     ROOT PROFILE
 
-      DO I=1,N
+      ! For backward compatibility - computation of BETA_WSOL, G_WSOL and AVG_GWSOL
+      ! is now done in vegi_svs. This code should eventually be removed.
 
+      if (.not. (svs_read_gexpveg .or. vf_type .eq. 'CCILC_WE')) then
+      DO I=1,N
          DO K=1,NL_SVS
-            ! beta between 0. an 1.  , 
-            BETA_WSOL(I,K) =  min( max( wd(i,k) - wwilt(i,k) , 0.0) / (wfc(i,k) - wwilt(i,k)) , 1.0)
-            ! soil moisture stress term per layer
-            G_WSOL(i,k) = 1.0 - ( 1.0 - BETA_WSOL(I,K) ) ** GEXP
+            BETA_WSOL(I,K) =  max( (wd(i,k) - wwilt(i,k)) / (wfc(i,k) - wwilt(i,k)), 0.)
+            ! soil moisture stress term per layer, with beta bounded between 0 and 1
+            G_WSOL(i,k) = 1.0 - ( 1.0 - min( BETA_WSOL(I,K), 1.0) ) ** GEXP(I)
          ENDDO
          ! average soil moisture term ... weighted by root fractions 
          ! Total roots = 1.0 if vegetation present ... set the term=0.0 if no vegetation
          if (FCD(I,NL_SVS).gt.0.999) then
-             avg_gwsol(i) = g_wsol(i,1) * fcd(i,1)
+               avg_gwsol(i) = g_wsol(i,1) * fcd(i,1)
              do k=2,NL_SVS
-                avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd(i,k) - fcd(i,k-1) ) 
+                  avg_gwsol(i) = avg_gwsol(i)  + g_wsol(i,k) * ( fcd(i,k) - fcd(i,k-1) )
              enddo
          else
             ! no vegetation
             avg_gwsol(i) = 0.0
-         endif
-         
+         endif         
       ENDDO
+      endif
 
 
 
@@ -1061,3 +1058,4 @@
 
       RETURN
     END SUBROUTINE PHTSYN_SVS
+  end module phtsyn_svs_mod

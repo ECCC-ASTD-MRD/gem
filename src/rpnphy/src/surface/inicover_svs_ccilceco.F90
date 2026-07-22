@@ -27,6 +27,11 @@ subroutine inicover_svs_ccilceco(pvars, kount, ni)
    use sfc_options
    use sfcbus_mod
    use phymem, only: phyvar
+   use aggcovernat_mod, only: aggcovernat
+   use aggveghigh_mod, only: aggveghigh
+   use aggveglow_mod, only: aggveglow
+   use interpveg_mod, only: interpveg
+   use veglowhigh_ccilceco_mod, only: veglowhigh_ccilceco
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -307,9 +312,9 @@ subroutine inicover_svs_ccilceco(pvars, kount, ni)
 
    !********************************************************************
    integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200 !#TODO: use value from my_jdate_mod
-   real, external :: interpveg
 
    integer :: i,k
+   integer(INT64) :: delti64
    real :: julien, juliens
 
    real, dimension(nclass) :: laidatdn, laidatds, logz0mloc
@@ -345,7 +350,8 @@ subroutine inicover_svs_ccilceco(pvars, kount, ni)
 
       
      ! Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(delt) + MU_JDATE_HALFDAY))
+      delti64 = int(delt)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
 
       do i=1,nclass
          ! initialize arrays that differ for N and S hemispheres
@@ -661,7 +667,7 @@ subroutine inicover_svs_ccilceco(pvars, kount, ni)
 !
       call veglowhigh_ccilceco(PTR1D(vegf), PTR1D(vegf_evol), PTR1D(vegl), &
            PTR1D(vegh), PTR1D(deciduous), PTR1D(evergreen), PTR1D(impervu), &
-           ni, nclass )
+           PTR1D(agrifrac), ni, nclass )
 
 !      call veglowhigh(PTR1D(vegf), vegdatdn , vegdatds, bogus1, &
 !           bogus2, PTR1D(deciduous), PTR1D(evergreen), PTR1D(impervu), &

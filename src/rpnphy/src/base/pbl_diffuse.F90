@@ -1,4 +1,5 @@
 module pbl_diffuse
+  use difuvd12_mod, only: difuvd1, difuvd2
   implicit none
   private
 
@@ -64,7 +65,7 @@ contains
     real, parameter :: WEIGHT_BM=0.5
     integer, parameter :: FLUX_INTTYPE=INT_TYPE_LINEAR
 
-    integer j, k, typet, typem
+    integer i, j, k, typet, typem
     real rsg, rgam
     logical :: compute_tend
 #include "phymkptr.hf"
@@ -82,16 +83,16 @@ contains
     real, pointer, dimension(:), contiguous   :: ps
     real, pointer, dimension(:), contiguous   :: zalfat, zalfat0, zalfaq, &
          zalfaq0, zbm, zbm0, zfdsi, zfdss, zfq, zmg, ztsrad, &
-         zustress, zvstress, zue, zh
-    real, pointer, dimension(:), contiguous :: zflw, zfsh
+         zustress, zvstress, zue, zh, zdxdy, zsigs
+    real, pointer, dimension(:), contiguous :: zflw, zfsh, zfca
     real, pointer, dimension(:,:), contiguous :: tu, tv, tw, tt, tq, tl, uu, vv, w, &
          t, q, sg, zsigw, zsigt, zsigm, tm, &
          sigef, sigex, conserv_t,conserv_q,tconserv_t,tconserv_q, zgztherm, &
-         zpblsigs,zpblq1, zqcplus, tqc
+         zsigmas,zpblq1, zqcplus, tqc
     real, pointer, dimension(:,:), contiguous :: zgq, zgql, zgte, zkm, zkt, zqtbl, ztve, &
          zwtng, zwqng, zuwng, zvwng, zfbl, zfblgauss, zfblnonloc, zfnn, &
          zzd, zzn, zfc, zfv, zc1pbl, zturbqf, zturbtf, zturbuf, zturbvf, &
-         zturbuvf, zmrk2, zsige
+         zturbuvf, zmrk2, zsige, zlscorer2
     real, pointer, dimension(:,:,:), contiguous :: zvcoef
     !---------------------------------------------------------------------
 
@@ -121,13 +122,16 @@ contains
     MKPTR1D(zbm, bm, pvars)
 
     MKPTR1D(zbm0, bm0, pvars)
+    MKPTR1D(zdxdy, dxdy, pvars)
     MKPTR1D(zfdsi, fdsi, pvars)
     MKPTR1D(zfdss, fdss, pvars)
     MKPTR1D(zflw, flw, pvars)
     MKPTR1D(zfq, fq, pvars)
     MKPTR1D(zfsh, fsh, pvars)
+    MKPTR1D(zfca, fca, pvars)
     MKPTR1D(zh, h, pvars)
     MKPTR1D(zmg, mg, pvars)
+    MKPTR1D(zsigs, sigs, pvars)
     MKPTR1D(ztsrad, tsrad, pvars)
     MKPTR1D(zue, ue, pvars)
     MKPTR1D(zustress, ustress, pvars)
@@ -140,7 +144,7 @@ contains
 
     MKPTR2DN(zfc, fc, ni, nagrege, pvars)
     MKPTR2DN(zfv, fv, ni, nagrege, pvars)
-    MKPTR2DN(zmrk2, mrk2, ni, ens_nc2d, pvars)
+    MKPTR2D(zmrk2, mrk2, pvars)
 
     MKPTR2D(zturbqf, turbqf, pvars)
     MKPTR2D(zturbtf, turbtf, pvars)
@@ -187,7 +191,8 @@ contains
 
     MKPTR2Dm1(tw, wdifv, pvars)
     MKPTR2Dm1(tl, qcdifv, pvars)
-    MKPTR2Dm1(zpblsigs, pblsigs, pvars)
+    MKPTR2Dm1(zlscorer2, lscorer2, pvars)
+    MKPTR2Dm1(zsigmas, sigmas, pvars)
     MKPTR2Dm1(zpblq1, pblq1, pvars)
 
     MKPTR3D(zvcoef, vcoef, pvars)
@@ -237,7 +242,7 @@ contains
           gam0(j,k) = rsg*zsige(j,k)/ztve(j,k)
           kmsg(j,k) = zkm(j,k)*gam0(j,k)**2
           ktsg(j,k) = zkt(j,k)*gam0(j,k)**2
-          NONLOCAL: if (pbl_nonloc == 'LOCK06') then
+          NONLOCAL: if (pbl_nonloc /= 'NIL') then
              ! Normalize the non-gradient flux terms (added to implicit solver)
              wthl_ng(j,k) = zwtng(j,k)*gam0(j,k)
              wqw_ng(j,k)  = zwqng(j,k)*gam0(j,k)
@@ -280,6 +285,7 @@ contains
        sfc_density(j) = -aq(j) * ps(j)/GRAV
     end do
     if (pbl_cmu_timeavg .and. kount > 0) then
+       !#TODO: check - Looks like zbm0 was never init in the code (only =0 at bus init)...
        bmsg(:) = fm_mult(:) * ((zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM) )*aq(:))
        zbm0(:) = zbm(:)*WEIGHT_BM + zbm0(:)*(1.-WEIGHT_BM)
     endif
@@ -295,7 +301,7 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for u-component wind
-    if (any([(any((/'TFUU', 'TFUV'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
+    if (ISREQSTEPL((/'TFUU', 'TFUV'/))) then
        call atmflux4(zturbuf, tu, zsigm, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -310,13 +316,14 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for v-component wind
-    if (any([(any((/'TFVV', 'TFUV'/) == phyoutlist_S(j)), j=1,nphyoutlist)])) then
+    if (ISREQSTEPL((/'TFVV', 'TFUV'/))) then
        call atmflux4(zturbvf, tv, zsigm, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
 
     ! Diagnose total turbulent momentum flux
-    zturbuvf(:,:) = sqrt(zturbuf(:,:)**2+zturbvf(:,:)**2)
+    if (ISREQSTEP('TFUV')) &
+         zturbuvf(:,:) = sqrt(zturbuf(:,:)**2+zturbvf(:,:)**2)
 
     ! ** Vertical Motion Diffusion **
 
@@ -357,7 +364,7 @@ contains
     endif
 
     ! Diagnose atmospheric fluxes for moisture
-    if (any(phyoutlist_S == 'TFHU')) then
+    if (ISREQSTEP('TFHU')) then
        call atmflux4(zturbqf, tconserv_q, zsigt, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
@@ -398,7 +405,8 @@ contains
     if (fluvert == 'MOISTKE') then
        call baktotq(tt,tq,tl,thl,qw,tthl,tqw,qclocal,sg,zsigw, &
             ps,zgztherm,tm,ficelocal,ztve,zh,zfc_ag,zqtbl,zfnn,zfbl,zfblgauss, &
-            zfblnonloc,zc1pbl,zzn,zzd,zmg,zmrk2,zvcoef,zpblsigs,zpblq1,tau,ni,nkm1)
+            zfblnonloc,zc1pbl,zzn,zzd,zmg,zmrk2,zvcoef,zsigmas,zpblq1,zdxdy, &
+            zsigs,zlscorer2,tau,ni,nkm1)
     endif
 
     ! Compute tendency for condensate diffusion
@@ -412,21 +420,21 @@ contains
        tqc = 0.
     endif
 
+   ! Diagnose (implicit) surface fluxes based on updated state but excluding diss heating
+    call sfcflux(zustress, zvstress, zfq, zue, zfsh, zfca, zflw, &
+         uu, vv, t, q, tu, tv, tt, tq, zsigt,bmsg, btsg, zalfaq, zalfat,&
+         sfc_density, ps, tau, ni, nkm1)
+    if (phy_error_L) return
+
     ! Dissipative heating
     call dissheat(dket, uu, vv, tu, tv, kmsg, zsigm, zsigt, zvcoef, tau, ni, nkm1)
     tt(:,1:nkm1) = tt(:,1:nkm1) - (1./CPD) * dket(:,1:nkm1)
 
     ! Diagnose atmospheric fluxes for temperature
-    if (any(phyoutlist_S == 'TFTT')) then
+    if (ISREQSTEP('TFTT')) then
        call atmflux4(zturbtf, tt, zsigt, ps, ni, nkm1, F_type=FLUX_INTTYPE)
        if (phy_error_L) return
     endif
-
-    ! Diagnose (implicit) surface fluxes based on updated state
-    call sfcflux(zustress, zvstress, zfq, zue, zfsh, zflw, &
-         uu, vv, t, q, tu, tv, tt, tq, bmsg, btsg, zalfaq, &
-         sfc_density, ps, tau, ni, nkm1)
-    if (phy_error_L) return
 
     ! Time series diagnostics
     call series_xst(tu, 'tu', trnch)
@@ -458,6 +466,7 @@ contains
   subroutine DIFUVDFj(TU, U, KU, GU, JNG, R, ALFA, BETA, S, SK, &
        TAU, itype, F, NU, NR, N, NK)
     use, intrinsic :: iso_fortran_env, only: REAL64
+    use phy_status, only: physeterror
     implicit none
 !!!#include <arch_specific.hf>
 
@@ -525,7 +534,6 @@ contains
     real(KIND=8), dimension(N,NK) :: RHD,RHMD,RHPD
     logical :: SFCFLUX
     character(len=16) :: msg_S
-    external DIFUVD1, DIFUVD2
 
     st(i)=s(i,1)-0.5*(s(i,2)-s(i,1))
     sb(i)=1.

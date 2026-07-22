@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phy_input
    use, intrinsic :: iso_fortran_env, only: INT64, REAL64
@@ -42,6 +27,8 @@ module phy_input
    use physimple_transforms, only: physimple_transforms3d
    use phy_status, only: PHY_NONE, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_l
    use phyfillbus, only: phyfillbus1
+   use intozon_mod, only: intozon2
+   use mod_handle_error, only: collect_error
 
    use rmn_gmm
 
@@ -122,7 +109,7 @@ contains
       istat = fstopc('MSGLVL','WARNIN',RMN_OPT_SET)
 
       !# Retrieve input from the model dynamics into the dynamics bus
-      istat = phyfillbus1(F_step)
+      istat = phyfillbus1(F_step, delt)
       if (.not.RMN_IS_OK(istat)) then
          call msg(MSG_ERROR, '(phy_input) problem filling buses')
          return
@@ -523,15 +510,23 @@ contains
       if (rfld_S /= '') then
          nullify(pw_rfld, pw_rfldls, phy_rfld, phy_rfldls)
          istat = gmm_get(rfld_S, pw_rfld)
+         if (.not.RMN_IS_OK(istat) .or. .not.associated(pw_rfld)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLD: '//rfld_S)
          istat = gmm_get(PHY_RFLD_S, phy_rfld)
+         if (.not.RMN_IS_OK(istat) .or. .not.associated(phy_rfld)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLD: '//PHY_RFLD_S)
          if (associated(phy_rfld) .and. associated(pw_rfld)) then
             phy_rfld(:,:) = pw_rfld(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+!!$         else
+!!$            return
          endif
          if (rfldls_S /= '') then
             istat = gmm_get(rfldls_S, pw_rfldls)
+            if (.not.RMN_IS_OK(istat) .or. .not.associated(pw_rfldls)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLS: '//rfldls_S)
             istat = gmm_get(PHY_RFLD_LS_S, phy_rfldls)
+            if (.not.RMN_IS_OK(istat) .or. .not.associated(phy_rfldls)) call msg_toall(MSG_WARNING, '(phy_input) Cannot GMM get Sfc RFLS: '//PHY_RFLD_LS_S)
             if (associated(phy_rfldls) .and. associated(pw_rfldls)) then
                phy_rfldls(:,:) = pw_rfldls(phy_lcl_i0:phy_lcl_in,phy_lcl_j0:phy_lcl_jn)
+!!$         else
+!!$            return
             endif
          endif
       endif

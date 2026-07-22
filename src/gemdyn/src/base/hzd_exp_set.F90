@@ -23,6 +23,7 @@
       use cstv
       use lun
       use ver
+      use ptopo
       implicit none
 #include <arch_specific.hf>
 
@@ -31,11 +32,46 @@
 !
       if (Lun_out > 0) write(Lun_out,1002)
 
+      hzd_hyb_top = hzd_hyb_lev(1)
+      hzd_hyb_bot = hzd_hyb_lev(2)
+
+      ! Constant z diffusion
+         if ( Hzd_pwr_z < 0) Hzd_pwr_z = 2
+         if ( Hzd_pwr_theta_z < 0) Hzd_pwr_theta_z = Hzd_pwr_z 
+      ! Hybrid diffusion
+      if (hzd_hyb_bot >0) then
+         if ( Hzd_pwr_z < 0) Hzd_pwr_z = 2
+         if ( Hzd_pwr_theta_z < 0) Hzd_pwr_theta_z = Hzd_pwr_z 
+
+         if ( Hzd_pwr < 0) Hzd_pwr = Hzd_pwr_z
+         if ( Hzd_pwr_theta < 0) Hzd_pwr_theta =  Hzd_pwr_theta_z
+
+         if ( Hzd_lnr_theta < 0.) Hzd_lnr_theta = Hzd_lnr_theta_z
+         if ( Hzd_lnr < 0.) Hzd_lnr = Hzd_lnr_z
+      endif
+ 
+     ! if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
+
+         if((Hzd_lnr_z > 0.).and.(Hzd_lnr_theta_z > 0.))then
+
+            if(hzd_hyb_bot >0)then
+               if (Lun_out > 0) then
+                  write(Lun_out,1005) Hzd_lnr_z,Hzd_lnr_theta_z
+               end if
+            else
+               if (Lun_out > 0) then
+                  write(Lun_out,1006) Hzd_lnr_z,Hzd_lnr_theta_z
+               end if
+            end if
+      end if
+
       Hzd_lnr = min(max(0.,Hzd_lnr),0.9999999)
+      Hzd_lnr_z = min(max(0.,Hzd_lnr_z),0.9999999)
       Hzd_pwr = Hzd_pwr / 2
       Hzd_pwr = min(max(2,Hzd_pwr*2),8)
 
       Hzd_lnr_theta= min(max(0.,Hzd_lnr_theta),0.9999999)
+      Hzd_lnr_theta_z= min(max(0.,Hzd_lnr_theta_z),0.9999999)
       Hzd_pwr_theta= Hzd_pwr_theta / 2
       Hzd_pwr_theta= min(max(2,Hzd_pwr_theta*2),8)
 
@@ -47,14 +83,15 @@
 
       if ((Hzd_lnr <= 0.).and.(Hzd_lnr_theta <= 0.)  &
                          .and.(Hzd_lnr_tr <= 0.)) then
-         if((Hzd_smago_param <= 0.).and.(Hzd_smago_lnr(2) == 0.)) then
+         if((Hzd_smago_param <= 0.).and.(Hzd_smago_lnr(2) == 0.) &
+                         .and.(Hzd_lnr_z <= 0).and.(Hzd_lnr_theta_z <= 0)) then
             if (Lun_out > 0) write(Lun_out,1003)
-         else
+         elseif((Hzd_smago_param > 0.).and.(Hzd_smago_lnr(2) > 0.)) then
             if (Lun_out > 0) then
                write(Lun_out,1004) Hzd_smago_param,100*Hzd_smago_lnr(2)
             end if
-         end if
-      end if
+         endif
+      endif
 
       call hzd_exp_geom ()
 
@@ -65,6 +102,10 @@
  1003 format(/,'NO HORIZONTAL DIFFUSION REQUESTED',/,33('='))
  1004 format(/,'  HORIZONTAL DIFFUSION A LA SMAGORINSKY',/,2x,37('=')// &
               ,'  PARAMETER =',f5.2,'  BACKGROUND =',f4.1,' %/TIMESTEP')
+ 1005 format(/,'  HORIZONTAL HYBRID  DIFFUSION ',/,2x,37('=')// &
+              ,'  HZD_LNR_Z =',f5.2,'  HZD_LNR_THETA_Z =',f5.2)
+ 1006 format(/,'  HORIZONTAL DIFFUSION ALONG CONSTANT Z',/,2x,37('=')// &
+             ,'  HZD_LNR_Z =',f5.2,'  HZD_LNR_THETA_Z =',f4.1)
 !
 !     ---------------------------------------------------------------
 !

@@ -29,7 +29,7 @@
       integer si,sj,loindx,hiindx,loindy,hiindy
       integer len,l_id,l_if,l_jd,l_jf
       common /gatherit/ len,l_id,l_if,l_jd,l_jf
-      real buf ((lmaxx-lminx+1)*(lmaxy-lminy+1)*(l_nk+1))
+      real buf ((lmaxx-lminx+1)*(lmaxy-lminy+1)*(lmaxk-lmink+1))
       data tag /210/
 !
 !----------------------------------------------------------------------

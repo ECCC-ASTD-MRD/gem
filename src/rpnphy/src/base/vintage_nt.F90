@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 module vintage_nt
    implicit none
    private
@@ -23,13 +8,14 @@ contains
    !/@*
    subroutine vintage_nt1(  &
         tm, ps, sigma, zlwc,  &
-        cloud, znt,    &
+        cloudin, znt,    &
         trnch, ni, nk, nkm1)
       use, intrinsic :: iso_fortran_env, only: INT64
       use debug_mod, only: init2nan
       use tdpack_const, only: GRAV, TCDK, RGASD
       use phy_options
       use series_mod, only: series_xst
+      use liqwc_mod, only: liqwc
       implicit none
 
       !@Object  Calculate 2d variable  cloud cover NT - reproduce old newrad style effective cloud cover
@@ -51,7 +37,7 @@ contains
 
       integer, intent(in) :: trnch, ni, nk, nkm1
       real, intent(in) :: tm(ni,nk), ps(ni), sigma(ni,nk), zlwc(ni,nkm1)
-      real, intent(inout) :: cloud(ni,nkm1)
+      real, intent(in) :: cloudin(ni,nkm1)
       real, intent(inout) :: znt(ni)
       !*@/
 !!!#include <arch_specific.hf>
@@ -59,7 +45,7 @@ contains
 
       include "phyinput.inc"
 
-      real, dimension(ni,nkm1) :: lwcth, vliqwcin
+      real, dimension(ni,nkm1) :: lwcth, vliqwcin, cloud
       real, dimension(ni,nk) :: liqwpin(ni,nk), icewpin(ni,nk)
       real, dimension(ni,nk) :: liqwcin(ni,nk), icewcin(ni,nk)
 
@@ -84,6 +70,7 @@ contains
       hascond_L = (stcond /= 'NIL')
 
       icewcin = 0.0
+      cloud=cloudin
 
       ! bug below: should be dp(i,nkm1) = 1. - 0.5*(sigma(i,nkm1) + sigma(i,nkm1-1))
       do i = 1,ni

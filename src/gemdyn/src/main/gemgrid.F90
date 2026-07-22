@@ -35,15 +35,16 @@
 #include <rmnlib_basics.hf>
       integer, external :: gemdm_config, domain_decomp
       character(len=120) :: ofile,ofileU,ofileV,ofileR,etk,etk_ext
+      character(len=256) :: component_S
       character(len=2024) :: fn
       logical :: radians
-      integer :: unf,err
-
+      integer :: unf,unf1,unf2,unf3,unf4,unf5,unf6,err,npack
       type(fst_file)   :: file
       type(fst_record) :: rec
       logical          :: success
  
       logical, parameter :: gauss_L = .false.
+      integer :: colors(3), COMMs(3), wnum, wme, cnum, cme, un_out
       integer :: i,j,i0,j0,ip1,ip2
       integer :: Grd_ip1,Grd_ip2,Grd_ip3,ni,nj, in,jn
       real, dimension(:), allocatable, target :: xposu, yposv, xpos,ypos
@@ -53,14 +54,11 @@
 !
 !----------------------------------------------------------------------
 !
-      call init_component()
-
       etk = 'PARPOS'
       fn  = trim(Path_input_S)//'/model_settings.nml'
       Step_dt = 1.
       radians = .false.
       
-      rec%etiket=etk_ext
       rec%dateo=0
       rec%deet=0
       rec%npas=0
@@ -159,6 +157,8 @@
       else
          etk_ext=trim(etk)
       endif
+
+      rec%etiket=trim(etk_ext)
 
       rec%nomvar='>>'
       rec%typvar='X'
@@ -296,7 +296,7 @@
       
       err = domain_decomp (1, 1, .false.)
       call set_gmm ()
-      call nest_set_mem ()
+      call nest_set_mem (G_nk)
 
       if (.not. file%open(trim(ofile)//'_core','RND+R/W')) then
           print *,'problem opening', trim(ofile//'_core')
@@ -323,7 +323,7 @@
       rec%ip1=ip1
       rec%ip2=ip2
       rec%ip3=Grd_ip3
-      rec%ni=G_ni
+      rec%ni=ni
       rec%nj=1
       rec%ig1=Hgc_ig1ro
       rec%ig2=Hgc_ig2ro
@@ -334,7 +334,7 @@
 
       rec%nomvar='^^'
       rec%ni=1
-      rec%nj=G_nj
+      rec%nj=nj
       rec%data=c_loc(ypos)
       success = file%write(rec,rewrite=FST_SKIP)
 
@@ -418,7 +418,6 @@
       deallocate (x_8, y_8, xpos, ypos)
       deallocate (xposU, yposV )
 
-      call rpn_comm_FINALIZE(err)
 !
 !-------------------------------------------------------------------
 !

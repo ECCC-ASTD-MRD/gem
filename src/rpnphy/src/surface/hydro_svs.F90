@@ -13,53 +13,64 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
+module hydro_svs_mod
+  implicit none
+  public
+contains
+
 SUBROUTINE HYDRO_SVS ( DT, &
      EG, ER, ETR, RR, RSNOW, RSNOWV, &
-     IMPERVU, VEGL, VEGH, PSN, PSNVH, ACROOT, WRMAX, &
-     WSAT, KSAT, PSISAT, BCOEF, FBCOF, WFCINT, GRKEF, &
-     SNM, SVM, WR, WRT, WD, WDT, WF, WFT, &
-     KSATC,MAXPND, KHC, PSI, GRKSAT, WFCDP, &
-     F, LATFLW, RUNOFF, WATPND,  N)
+     IMPERVU, VEGL, VEGH, PSN, PSNVH, ACROOT, WRMAX,    &
+     WSAT, KSAT, KSATNAT, PSISAT, BCOEF, FBCOF, WFCINT, &
+     GRKEF, SNM, SVM, WR, WRT, WD, WDT, WF, WFT,        &
+     KSATC, KSATNATC, MAXPND, KHC, PSI, GRKSAT, WFCDP,  &
+     F, LATFLW, RUNOFF, WATPND, GRKSAT_MOD_A, AGFRAC,   &
+     WUNFRZ, FRZDEPTH, FRZTHICK, THWDEPTH, N)
   !
   use sfc_options
   use svs_configs
+  use soil_ksatc_mod, only: soil_ksatc
+  use soil_frzdepth_svs_mod, only: soil_frzdepth_svs
+  use watdrn_svs_mod, only: watdrn_svs
+  use soil_fluxes_mod, only: soil_fluxes
+  
   implicit none
 !!!#include <arch_specific.hf>
 
   !     
   INTEGER N,K 
-  ! CONSTANTS for horizontal decay of GRKSAT
-  ! 
-  REAL, PARAMETER :: GRKSAT_C1=10.0
-  REAL, PARAMETER :: GRKSAT_C2=5.0
-
-
+    
   REAL DT, W
 
   INTEGER WAT_REDIS ! Option for the redistribution of water in case of over-saturation after the soil_fluxes solver
   !    0: Default param:
   !    1: New param:  - in case of vertical redistribution, liquid water that flows to the next layer is limited by 
   !                       the effective porosity. Any water in excess is added to the lateral flow
-  !                   - harmonic mean of the hydraulic conductivity  
+  !                   - harmonic mean of the hydraulic conductivity
 
   ! input
   real, dimension(n)        :: eg, er, etr, rr, impervu
   real, dimension(n)        :: psn, psnvh, vegh, vegl
-  real, dimension(n,nl_svs) :: bcoef, fbcof, acroot, ksat
-  real, dimension(n,nl_svs) :: psisat, wfcint, wsat
+  real, dimension(n,nl_svs) :: bcoef, fbcof, acroot, ksat, ksatnat
+  real, dimension(n,nl_svs) :: psisat, wfcint, wsat, wunfrz
   real, dimension(n)        :: grkef, rsnow, rsnowv, wrmax, snm, svm 
+  real, dimension(n)        :: grksat_mod_a
+  real, dimension(n)        :: agfrac
+
   ! prognostic vars (I/0)
   real, dimension(n)        :: wr, wrt
   real, dimension(n,nl_svs) :: wd , wdt, wf, wft
   ! output
-  real, dimension(n,nl_svs) :: grksat, ksatc
+  real, dimension(n,nl_svs) :: grksat, ksatc, ksatnatc, ksatc_rk2, ksatc_rk3
   real, dimension(n,nl_svs-1):: khc, psi
   real, dimension(n)        :: wfcdp
   real, dimension(n,nl_svs+1):: f
   real, dimension(n,nl_svs) :: latflw
   real, dimension(n)        :: runoff
   real, dimension(n)        :: watpnd, maxpnd
+  real, dimension(n)        :: frzdepth, frzthick, thwdepth
 
+  
   !
   !Author
   !          N.Alavi, S.Zhang, E. Gaborit, V. Fortin, S. Belair, V. Vionnet et al.  (June 2015) 
@@ -95,6 +106,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   ! VEGH           fraction of HIGH vegetation [0-1]
   ! PSN            fraction of bare ground or low veg. covered by snow [0-1]
   ! PSNVH          fraction of HIGH vegetation covered by snow [0-1]
+  ! AGFRAC         fraction of land surface that is covered with agricultural areas (class 15 of vegf variable)
   !
   !          --- Vegetation characteristics ---
   !
@@ -108,7 +120,9 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !          --- Soil characteristics ---
   !
   ! WSAT  (NL_SVS) volumetric water content at soil saturation per layer [m3/m3]
+  ! WUNFRZ(NL_SVS) unfrozen residual water content [m3/m3]
   ! KSAT  (NL_SVS) vertical hydraulic conductivity at saturation per layer [m/s]
+  ! KSATNAT (NL_SVS) vertical hydraulic conductivity at saturation per layer [m/s], before modification for effect of ploughing
   ! PSISAT(NL_SVS) value of soil water suction at air-entry (near saturation) per layer [m]
   ! BCOEF (NL_SVS) slope of the retention curve per layer
   ! FBCOF (NL_SVS) parameter derived from BCOEF per layer to determine field capacity (Soulis et al. 2011)
@@ -119,6 +133,9 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !
   ! SNM           snow water equivalent (SWE) for bare ground and low veg snow [kg/m2]
   ! SVM           snow water equivalent (SWE) for snow under high veg [kg/m2]
+  !
+  !          --- SVS multiplying coefficient for agricultural areas 
+  ! GRKSAT_MOD_A   5th soil layer horizontal hydraulic conductivity multiplier[-]
   !
   !          - INPUT/OUTPUT  -
   !
@@ -137,6 +154,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !          ---  Diagnostic Soil Parameters (used only for testing SVS) ---
   !
   ! KSATC (NL_SVS) KSAT adjusted for presence of ice (per layer) [m/s]
+  ! KSATNATC (NL_SVS) KSATNAT adjusted for presence of ice (per layer) [m/s]
   ! KHC (NL_SVS-1) soil hydraulic conductivity at soil boundaries (of layer) [m/s]
   ! PSI (NL_SVS-1) soil water potential at the soil boundaries (of layer) [m]
   ! GRKSAT(NL_SVS) horizontal hydraulic conductivity at saturation (per layer) [m/s]
@@ -147,6 +165,11 @@ SUBROUTINE HYDRO_SVS ( DT, &
   ! F(NL_SVS+1)    water flux between soil layers and through bottom (in meters, converted to mm at the end ) [kg/m2/dt]
   ! LATFLW(NL_SVS) lateral flow (interflow) (in meters in calculation, converted to mm at the end) per layer [kg/m2/dt]
   ! RUNOFF         surface runoff [kg/m2/dt]
+  !
+  !          ---  frozen ground variables ---
+  ! FRZDEPTH       depth of frozen ground [m]
+  ! FRZTHICK       thickness of frozen ground [m]
+  ! THWDEPTH       depth of thawed ground [m]
   !
   !          -  DIMENSIONS  -
   !
@@ -163,14 +186,15 @@ SUBROUTINE HYDRO_SVS ( DT, &
   real, dimension(n)          :: asat1, basflw, satsfc, subflw , pg
 
   real, dimension(n)          :: wrt_vl,wrt_vh,rveg_vl,rveg_vh
-  real                        :: wat_down
+  real                        :: wat_down, wmp, ksatmp, satsfc_th
 
   real, dimension(n)          :: pond_ret ! Amount of surface runoff retained in the pond
   
   ! For the Runge-Kutta method
-  real, dimension(n,nl_svs)   :: wd_rk, dwd_rk1, dwd_rk2, dwd_rk3, dwd_rk4
+  real, dimension(n,nl_svs)   :: wd_rk1, wd_rk2, wd_rk3, wd_rk4, dwd_rk1, dwd_rk2, dwd_rk3, dwd_rk4
   real, dimension(n,nl_svs)   :: over_rk1, over_rk2, over_rk3, over_rk4
   real, dimension(n,nl_svs+1) :: f_rk
+
 
   !***********************************************************************
   !
@@ -196,6 +220,16 @@ SUBROUTINE HYDRO_SVS ( DT, &
   ELSE
        WAT_REDIS = 0
   ENDIF
+
+  !Fraction of  satsfc used for calculating runoff
+  !    if macropores are activated: the satsfc_th is set to 0 (satsfc is not used to generate surface runoff)
+  !    if macropores are not activated : satsfc_th is set to 1 (satsfc is used as default to generate runoff)
+  IF(LMACROPORES_SVS) THEN
+       SATSFC_TH = 0
+  ELSE
+       SATSFC_TH = 1
+  ENDIF
+  
   !
   !-------------------------------------
   !   1.        EVOLUTION OF THE EQUVALENT WATER CONTENT Wr
@@ -337,9 +371,14 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !Adjust ksat and wsat for presence of ice
   CALL SOIL_KSATC(WD, WF, WSAT, KSAT, KSATC, N, NL_SVS)
 
+  IF (svs_tdrains_plough) then
+    !Adjust ksatnat for presence of ice
+    CALL SOIL_KSATC(WD, WF, WSAT, KSATNAT, KSATNATC, N, NL_SVS)
+  ENDIF
+
   DO I=1,N
      DO K=1,NL_SVS
-        !Vectorize layer thicknesses over space for watdrn module
+        !Vectorize layer thicknesses over space for watdrn_svs module
         DELZVEC(I,K)=DELZ(K)
 
         !Adjust wsat for presence of ice
@@ -352,7 +391,27 @@ SUBROUTINE HYDRO_SVS ( DT, &
         ASATFC(I,K) = WFCINT(I,K)/ WSAT(I,K)
 
         ! Horizontal soil hydraulic conductivity decays with depth
-        GRKSAT (I,K) = GRKSAT_C1 * EXP( GRKSAT_C2 *(DL_SVS(NL_SVS)-DL_SVS(K))/DL_SVS(NL_SVS))*KSATC(I,K)
+
+        IF (svs_tdrains_plough) then
+          ! compute GRKSAT based on KSATNATC (not impacted by the effect of ploughing on KSAT/KSATC).
+          GRKSAT (I,K) = GRKSAT_C1 * EXP( GRKSAT_C2 *(DL_SVS(NL_SVS)-DL_SVS(K))/DL_SVS(NL_SVS))*KSATNATC(I,K)
+          ! Modify GRKSAT with multiplying coeff. to account for Tile Drains 
+          ! GRKSAT_MOD_A multiplying coeff. only valid in agric. areas so weigthed average is computed
+          IF (K.EQ.ktdrains) THEN
+            GRKSAT (I,K) = GRKSAT (I,K) * ( 1.0 - agfrac(I) + GRKSAT_MOD_A(I) * agfrac(I) )
+          ENDIF
+        ELSE ! "svs_tdrains_plough" not activated - default formulation
+          GRKSAT (I,K) = GRKSAT_C1 * EXP( GRKSAT_C2 *(DL_SVS(NL_SVS)-DL_SVS(K))/DL_SVS(NL_SVS))*KSATC(I,K)
+        ENDIF
+        
+	!Macropore threshold water content and hydraulic conductivity
+        IF (lmacropores_svs) THEN
+            WMP = WSATC(I,K)*mp_alpha                   
+            IF (WD(I,K) >= WMP) THEN
+        		KSATC(I,K) = KSAT(I,K)		
+            ENDIF
+        ENDIF
+
         GRKEFL (I,K) = GRKEF(I)*GRKSAT(I,K)
      END DO
   END DO
@@ -362,15 +421,15 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !Call watdrain to calculate runoff
 
 
-  CALL WATDRN(DELZVEC(:,1),BCOEF(:,1),WSATC(:,1),GRKSAT(:,1),GRKEFL(:,1),ASATFC(:,1),ASAT0(:,1),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
+  CALL WATDRN_SVS(DELZVEC(:,1),BCOEF(:,1),WSATC(:,1),GRKSAT(:,1),GRKEFL(:,1),ASATFC(:,1),ASAT0(:,1),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
 
 
   DO I=1,N
-     !use ksat to calculate runoff (mm/s)
-     RUNOFF(I) = MAX( (SATSFC(I)*PG(I)+(1-SATSFC(I))*MAX(PG(I)-KSATC(I,1)*1000.,0.0)) , 0.0 )             
+     !If SATSFC (computed from watdrn_svs) exceeds a thrshold then, use this theshold to compute runoff from saturation
+     RUNOFF(I) = MAX( (MIN(SATSFC_TH,SATSFC(I))*PG(I)+(1- MIN(SATSFC_TH,SATSFC(I)))*MAX(PG(I)-KSATC(I,1)*1000.,0.0)) , 0.0 )
 
 ! EG_code related to ponding of water
-     IF (lwater_ponding_svs1) THEN
+     IF (lwater_ponding_svs) THEN
         pond_ret(I) = min( RUNOFF(I)*DT , (maxpnd(I)-watpnd(I))*1000.0 )
         RUNOFF(I) = RUNOFF(I) - pond_ret(I)/DT
      ELSE
@@ -383,7 +442,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
      PG(I) = PG(I) - RUNOFF(I) - ( (1. - IMPERVU(I)) * pond_ret(I)/DT )           ! (mm/s)
      RUNOFF(I) = RUNOFF(I)*DT
 
-     IF (lwater_ponding_svs1) THEN
+     IF (lwater_ponding_svs) THEN
         ! update amount of ponding water
         watpnd(I) = watpnd(I) + (1. - IMPERVU(I) ) * pond_ret(I) / 1000.0
 
@@ -404,7 +463,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
 
   !Call WATDRAIN to calculate baseflow
 
-  CALL WATDRN(DELZVEC(:,NL_SVS),BCOEF(:,NL_SVS),WSATC(:,NL_SVS),KSATC(:,NL_SVS), &
+  CALL WATDRN_SVS(DELZVEC(:,NL_SVS),BCOEF(:,NL_SVS),WSATC(:,NL_SVS),KSATC(:,NL_SVS), &
        GRKEFL(:,NL_SVS),ASATFC(:,NL_SVS),ASAT0(:,NL_SVS),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
 
   DO I=1,N
@@ -439,10 +498,10 @@ SUBROUTINE HYDRO_SVS ( DT, &
   !Compute water fluxes between soil layers, find K AND PSI at the boundaries     
   ! do it for all layers except NL_SVS (water flux is computed above from watdrain).       
 
-  IF (hydro_svs_method.EQ.0) THEN
+  IF (svs_hydro_nummethod.EQ.'EULER') THEN
      ! First-order forward method       
      CALL SOIL_FLUXES( DT, &
-          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, &
+          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, WD, &
           F, WDT, DWD_RK1, OVER_RK1, KHC, PSI, N)
      DO I=1,N
         DO K=1,NL_SVS
@@ -450,32 +509,86 @@ SUBROUTINE HYDRO_SVS ( DT, &
         END DO
      END DO
 
-  ELSE !hydro_svs_method=1
-     ! Runge-Kutta 4th order method
+  ELSE IF (svs_hydro_nummethod.EQ.'RK4_IC4') THEN 
+     ! Runge-Kutta 4th order method (incorrect implementation, but operational in NSRPS IC4)
+     ! *This option should be removed once IC5 innovations are implemented*
      ! see for example http://lpsa.swarthmore.edu/NumInt/NumIntFourth.html
      ! Divide the source/sink terms by half to estimate WD at midpoint
      DO I=1,N
         DO K=1,NL_SVS+1
-
            F_RK(I,K) = F(I,K)/2.
         END DO
      END DO
      ! k1=f(y*(t0),t0)
      CALL SOIL_FLUXES( DT/2., &
-          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, &
-          F_RK, WD_RK, DWD_RK1, OVER_RK1, KHC, PSI, N)      
+          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, WD, &
+          F_RK, WD_RK1, DWD_RK1, OVER_RK1, KHC, PSI, N)      
      ! k2=(f(y*(t0)+k1*h/2,t0+h/2)
      CALL SOIL_FLUXES( DT/2., &
-          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK, &
-          F_RK, WD_RK, DWD_RK2, OVER_RK2, KHC, PSI, N)
+          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK1, WD_RK1, &
+          F_RK, WD_RK2, DWD_RK2, OVER_RK2, KHC, PSI, N)
+     ! k3=f(y*(t0)+k2*h/2,t0+h/2)
+     ! This call is incorrect: 6th parameter should be WD, not WD_RK2
+     ! (water content at start of time step) in order to compute
+     ! WD_RK3 as WD+DWD_RK3
+     CALL SOIL_FLUXES( DT, &
+          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK2, WD_RK2, &
+          F, WD_RK3, DWD_RK3, OVER_RK3, KHC, PSI, N)
+     ! k4=f(y*(t0)+k3*h,t0+h)
+     ! This call is incorrect: 6th parameter should be WD, not WD_RK3
+     ! (water content at start of time step) in order to compute
+     ! WD_RK4 as WD+DWD_RK4
+     CALL SOIL_FLUXES( DT, &
+          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK3, WD_RK3, &
+          F, WD_RK4, DWD_RK4, OVER_RK4, KHC, PSI, N)
+     ! y*(t0+h)=y*(t0)+(k1*h/6+k2*h/3+k3*h/3+k4*h/6)
+     ! careful: DWD_RK1 and DWD_RK2 were calculated with a timestep h=DT/2
+     ! whereas DWD_RK3 and DWD_RK4 was calculated with h=DT
+     ! so k1*h/6=1/3*DWD_RK1, k2*h/3=2/3*DWD_RK2, k3*h/3=1/3*DWD_RK3 and k4*h/6=1/6*DWD_RK4
+     DO I=1,N
+        DO K=1,NL_SVS
+           WDT(I,K)=WD(I,K)+( &
+                DWD_RK1(I,K)/3.+ &
+                DWD_RK2(I,K)*2./3.+ &
+                DWD_RK3(I,K)/3.+ &
+                DWD_RK4(I,K)/6.)
+           WDT(I,K)=WDT(I,K)-( &
+                OVER_RK1(I,K)/3.+ &
+                OVER_RK2(I,K)*2./3.+ &
+                OVER_RK3(I,K)/3.+ &
+                OVER_RK4(I,K)/6.)
+        END DO
+     END DO
+
+  ELSE IF (svs_hydro_nummethod.EQ.'RK4') THEN 
+     ! Runge-Kutta 4th order method (improved implementation as part of IC5)
+     ! see for example http://lpsa.swarthmore.edu/NumInt/NumIntFourth.html
+     ! Divide the source/sink terms by half to estimate WD at midpoint
+     DO I=1,N
+        DO K=1,NL_SVS+1
+           F_RK(I,K) = F(I,K)/2.
+        END DO
+     END DO
+     ! k1=f(y*(t0),t0)
+     CALL SOIL_FLUXES( DT/2., &
+          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, WD, &
+          F_RK, WD_RK1, DWD_RK1, OVER_RK1, KHC, PSI, N)      
+     ! k2=(f(y*(t0)+k1*h/2,t0+h/2)
+     CALL SOIL_FLUXES( DT/2., &
+          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD, WD_RK1, &
+          F_RK, WD_RK2, DWD_RK2, OVER_RK2, KHC, PSI, N)
+     ! Recompute KSATC at t0+h/2
+     CALL SOIL_KSATC(WD_RK2, WF, WSAT, KSAT, KSATC_RK2, N, NL_SVS)
      ! k3=f(y*(t0)+k2*h/2,t0+h/2)
      CALL SOIL_FLUXES( DT, &
-          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK, &
-          F, WD_RK, DWD_RK3, OVER_RK3, KHC, PSI, N)
+          WSATC, KSATC_RK2, PSISAT, BCOEF, ETR_GRID, WD, WD_RK2, &
+          F, WD_RK3, DWD_RK3, OVER_RK3, KHC, PSI, N)
+     ! Recompute KSATC at t0+h
+     CALL SOIL_KSATC(WD_RK3, WF, WSAT, KSAT, KSATC_RK3, N, NL_SVS)   
      ! k4=f(y*(t0)+k3*h,t0+h)
      CALL SOIL_FLUXES( DT, &
-          WSATC, KSATC, PSISAT, BCOEF, ETR_GRID, WD_RK, &
-          F, WD_RK, DWD_RK4, OVER_RK4, KHC, PSI, N)
+          WSATC, KSATC_RK3, PSISAT, BCOEF, ETR_GRID, WD, WD_RK3, &
+          F, WD_RK4, DWD_RK4, OVER_RK4, KHC, PSI, N)
      ! y*(t0+h)=y*(t0)+(k1*h/6+k2*h/3+k3*h/3+k4*h/6)
      ! careful: DWD_RK1 and DWD_RK2 were calculated with a timestep h=DT/2
      ! whereas DWD_RK3 and DWD_RK4 was calculated with h=DT
@@ -529,9 +642,19 @@ SUBROUTINE HYDRO_SVS ( DT, &
                  W = KSATMEAN(I,K)/(KSATMEAN(I,K)+GRKEFL(I,K)*DELZ(K))
 
                  ! Downward liquid water flux is limited to avoid the saturation of the layer below  
-                 IF(K.NE.NL_SVS) THEN   
-                    WAT_DOWN = MIN(W*(WDT(I,K)-WSATC(I,K))*DELZ(K),  &
-                         MAX(0.,(WSATC(I,K+1)-WDT(I,K+1))*DELZ(K+1)) )
+                 IF(K.NE.NL_SVS) THEN
+                    IF (lmacropores_svs) THEN 
+                        WMP = WSATC(I,K+1)*mp_alpha
+                        IF (WDT(I,K+1) >= WMP) THEN
+                            WAT_DOWN = W*(WDT(I,K)-WSATC(I,K))*DELZ(K)
+                        ELSE
+                            WAT_DOWN = MIN(W*(WDT(I,K)-WSATC(I,K))*DELZ(K),  &
+                                 MAX(0.,(WSATC(I,K+1)-WDT(I,K+1))*DELZ(K+1)) )
+                        ENDIF
+                    ELSE
+                        WAT_DOWN = MIN(W*(WDT(I,K)-WSATC(I,K))*DELZ(K),  &
+                             MAX(0.,(WSATC(I,K+1)-WDT(I,K+1))*DELZ(K+1)) )
+                    ENDIF        
                  ELSE
                     WAT_DOWN = W*(WDT(I,K)-WSATC(I,K))*DELZ(K)
                  ENDIF
@@ -581,7 +704,7 @@ SUBROUTINE HYDRO_SVS ( DT, &
 
   DO K=1,NL_SVS   
 
-     CALL WATDRN(DELZVEC(:,K),BCOEF(:,K),WSATC(:,K),GRKSAT(:,K),GRKEFL(:,K), &
+     CALL WATDRN_SVS(DELZVEC(:,K),BCOEF(:,K),WSATC(:,K),GRKSAT(:,K),GRKEFL(:,K), &
           ASATFC(:,K),ASAT0(:,K),ASAT1,SUBFLW,BASFLW,SATSFC,N,1,N,DT)
 
      DO I=1,N
@@ -628,6 +751,13 @@ SUBROUTINE HYDRO_SVS ( DT, &
      !
 
   END DO
+
+  !---------------------------------------------------
+  !          9.   Calculate the depth of frozen ground (FRZD), the frozen thickness (FRZT) and the thawing depth (THWD)   
+  !               -----------------------------------------------------------------------------------------------------
+  !
+  CALL SOIL_FRZDEPTH_SVS(WFT, WUNFRZ, WSAT, DL_SVS, DELZ, FRZDEPTH, FRZTHICK, THWDEPTH, N, NL_SVS)
+
   !--------------------------------------------------------
   !--------------------------------------------------
   ! CALCULATE DIAGNOSTICS, CONVERT UNITS, AND ACCUMULATORS 
@@ -648,3 +778,4 @@ SUBROUTINE HYDRO_SVS ( DT, &
 
   RETURN
 END SUBROUTINE HYDRO_SVS
+end module hydro_svs_mod

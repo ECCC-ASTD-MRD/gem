@@ -20,6 +20,9 @@ module ctrl
 
    logical Ctrl_testcases_L, Ctrl_testcases_adv_L             , &
            Ctrl_canonical_dcmip_L, Ctrl_canonical_williamson_L, &
-           Ctrl_phyms_L, Ctrl_theoc_L
+           Ctrl_theoc_L
+   logical :: Ctrl_phyms_L = .false.
+   logical :: Ctrl_iau_L   = .false.
+   logical :: Ctrl_spn_L   = .false.
 
 end module ctrl

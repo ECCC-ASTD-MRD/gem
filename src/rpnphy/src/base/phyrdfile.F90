@@ -1,17 +1,3 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
-! GEM - Library of kernel routines for the GEM numerical atmospheric model
-! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
-!                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
-! under the terms of the GNU Lesser General Public License as published by
-! the Free Software Foundation, version 2.1 of the License. This library is
-! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-! You should have received a copy of the GNU Lesser General Public License
-! along with this library; if not, write to the Free Software Foundation, Inc.,
-! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
 
 !**s/r phyrdfile -- Reading file F_fichier_S for the physics package with callback
 !                   routine F_read_cb
@@ -30,7 +16,8 @@ contains
       use rmn_fst24
       use rd_ozone, only: rd_ozone1
       use rd_radtab, only: rd_radtab1
-      implicit none
+      use mod_handle_error, only: handle_error1
+     implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.inc>
 !
@@ -79,7 +66,7 @@ contains
 
       endif
 
-      call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
+      call handle_error1(status,'itf_phy_rdfile','itf_phy_rdfile')
 
       status = 0
       if (F_myproc.eq.0) then 
@@ -105,7 +92,7 @@ contains
          success = file%close()
       endif
 
-9977  call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
+9977  call handle_error1(status,'itf_phy_rdfile','itf_phy_rdfile')
       call RPN_COMM_bcast (dim,max_ndim,"MPI_INTEGER",0,"grid",ierr)
       if (F_myproc.gt.0) then
          allocate (rbuf(dim(2)))
@@ -121,7 +108,7 @@ contains
       endif
       deallocate (rbuf) 
 
- 9988 call handle_error(status,'itf_phy_rdfile','itf_phy_rdfile')
+ 9988 call handle_error1(status,'itf_phy_rdfile','itf_phy_rdfile')
 
       inbr = fstopc ('MSGLVL','WARNIN',RMN_OPT_SET)
 

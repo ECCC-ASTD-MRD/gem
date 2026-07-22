@@ -1,3 +1,9 @@
+module sucst_mod
+   implicit none
+   public
+
+contains
+
 SUBROUTINE SUCST(KULOUT,KDAT,KSSS,KPRINTLEV)
 
 !**** *SUCST * - Routine to initialize the constants of the model.
@@ -288,6 +294,7 @@ ENDIF
 RETURN
 END SUBROUTINE SUCST
 
+end module sucst_mod
 
 
 

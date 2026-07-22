@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module prep_cw
    use debug_mod, only: init2nan
@@ -20,6 +5,8 @@ module prep_cw
    use phybusidx
    use phymem, only: phyvar
    use pbl_utils, only: ficemxp
+   use phy_status, only: physeterror
+   use timing_omp
    implicit none
    private
    public :: prep_cw3
@@ -88,8 +75,9 @@ contains
       real :: cfblxp(ni,nk)
       real, target :: zero(ni,nk)
       real, pointer, dimension(:,:), contiguous :: zfbl, zfdc, zfsc, zftot, zfxp, zlwc, &
-           zqcplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
+           zqcplus, zqiplus, zqnplus, zqldi, zqlsc, zqlmi, zqsmi, zfmc, &
            zqsdi, zqssc, zqtbl
+      real :: switch
       !----------------------------------------------------------------
       MKPTR2D(zfbl, fbl, pvars)
       MKPTR2D(zfdc, fdc, pvars)
@@ -99,6 +87,8 @@ contains
       MKPTR2D(zfxp, fxp, pvars)
       MKPTR2D(zlwc, lwc, pvars)
       MKPTR2D(zqcplus, qcplus, pvars)
+      MKPTR2D(zqiplus, qiplus, pvars)
+      MKPTR2D(zqnplus, qnplus, pvars)
       MKPTR2D(zqldi, qldi, pvars)
       MKPTR2D(zqlmi, qlmi, pvars)
       MKPTR2D(zqlsc, qlsc, pvars)
@@ -131,22 +121,34 @@ contains
       ! ------------------------------------------
       ! Cloud water
       ! ------------------------------------------
+      
+      if (stcond == 'NIL') cfblxp = 0.
 
-      if (stcond /= 'NIL') then
-
+      if (stcond == 'THOMPSON') then
+         if(trim(thompson_cldfrac) == 'liq_ice_snow')then
+            switch=1.
+         else if(trim(thompson_cldfrac) == 'liq_ice')then
+            switch=0.
+         else
+            call physeterror('prep_cw_noMP','Wrong choice for THOMPSON_cldfrac')
+            return
+         endif
+         do k=1,nk
+            do i=1,ni
+               zlwc(i,k) = zqcplus(i,k) + zqiplus(i,k) + switch*zqnplus(i,k)
+               cfblxp (i,k) = zfxp(i,k)
+            enddo
+         enddo
+      else if (stcond /= 'NIL') then
          ! qcplus may contain total water content from consun and detrained explicit clouds from kfc/bech
          ! if (stcond = 'MP') qcplus is liquid clouds from expicit scheme + detrained explicit liquid clouds from kfc/bech
-
          do k=1,nk
             do i=1,ni
                zlwc(i,k) = zqcplus(i,k)
                cfblxp (i,k) = zfxp(i,k)
             enddo
          enddo
-      else
-         cfblxp = 0.
       endif
-
       
       ! Recette 1 - La traditionnelle
       ! the cloud water from MoisTKE has

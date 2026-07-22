@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module kfrpn
    implicit none
@@ -33,7 +18,7 @@ contains
        wumaxout, rliqout, riceout, &
        rliq_int, rice_int, &
        rnflx, snoflx, &
-       kount, xlat, mg, mlac, wstar, tstar, tke, kt, &
+       kount, xlat, mg, mlac, wstar, tstar, tke, kt, sigs, &
        coadvu, coadvv, coage, cowlcl, cozlcl, mrk2, critmask, delt)
     use, intrinsic :: iso_fortran_env, only: INT64
     use tdpack_const, only: CHLF, CPD, GRAV, PI, RGASD, TRPL
@@ -41,10 +26,18 @@ contains
     use phy_options, only: dyninread_list_S, cmt_comp_diag, etrmin2
     use debug_mod, only: init2nan
     use tpdd, only: tpdd1
+    use condload_mod, only: condload_safe
+    use tpmix_mod, only: tpmix
+    use envirtht_mod, only: envirtht
+    use prof5_mod, only: prof5
+    use dtfrznew_mod, only: dtfrznew2
+    use azcmtcomp_mod, only: azcmtcomp
     use ens_perturb, only: ens_spp_get
+    use phy_status, only: physeterror
     implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
 
     integer, intent(in) :: ix, kx
     real, intent(inout) :: flagconv(ix) ,kkfc(ix)
@@ -63,8 +56,8 @@ contains
     real, intent(out)   :: rnflx(ix,kx), snoflx(ix,kx)
     integer, intent(in) ::  kount
     real, intent(in) :: xlat(ix), mg(ix), mlac(ix), wstar(ix), tstar(ix)
-    real, intent(in) :: tke(ix,kx), kt(ix,kx)
-    real, intent(inout) :: coadvu(ix), coadvv(ix), coage(ix), cowlcl(ix), cozlcl(ix)
+    real, intent(in) :: tke(ix,kx), kt(ix,kx), sigs(ix)
+    real, pointer, dimension(:) :: coadvu, coadvv, coage, cowlcl, cozlcl
     real, pointer :: mrk2(:,:)
     real, intent(in) :: critmask, delt
 
@@ -179,6 +172,7 @@ contains
     ! XLAT     latitude(radians)
     ! MG       land-sea mask
     ! MLAC     fraction of lakes (mask)
+    ! SIGS     subgrid-scale orographic standard deviation (m)
 
     !          - Output -
     ! ZCRR     convective rainfall rate
@@ -350,11 +344,6 @@ contains
          kt0,  wklcl0, idudt1, idvdt1, idudt2, idvdt2, idudt3, idvdt3
     character(len=64), dimension(ix) :: deeptrig
 
-    external tpmix
-    external condload_safe
-    external envirtht
-    external prof5
-
     ! Basic parameters
     include "phyinput.inc"
 
@@ -472,6 +461,12 @@ contains
        endwhere
     endif
 
+    ! Adjust trigger over rough terrain :
+    ! ===================================================
+    do i=1,ix
+       wklcla(i) = wklcla(i) - kfctrigsgo * sigs(i)**kfctrigsgop
+    enddo
+    
     ! ===================================================
 
     if (KFCTRIGA.gt.0.0) then
@@ -498,8 +493,7 @@ contains
     ! Relax advected trigger velocity towards local value
     if (associated(wklclp) .and. kfctrigtau > 0.) then
        if (kount == 0) then
-          if (.not.(any(dyninread_list_s == 'wklcl') .or. &
-               any(phyinread_list_s(1:phyinread_n) == 'tr/wklcl:p'))) then
+          if (.not.(ISDYNIN('wklcl') .or. ISPHYIN('tr/wklcl:p'))) then
              do k=1,kx
                 wklclp(:,k) = wklcla(:)
              enddo
@@ -739,8 +733,10 @@ contains
           ZTOPOUT(I)  = 0.
           WUMAXOUT(I) = 0.
           WKLCLOUT(I) = 0.
-          COADVU(I)   = 0.
-          COADVV(I)   = 0.
+          if (deep_cloudobj) then
+             COADVU(I)   = 0.
+             COADVV(I)   = 0.
+          endif
 
        else if (FLAGCONV(I).gt.0) then
           ACTIV(I) = .true.
@@ -786,7 +782,9 @@ contains
 
           PMID = 0.5 * ( 1000.*PSB(I) + 100.E2 )
           if (PP0(I,K).ge.PMID) L5 = K
+          !#TODO: L5 may be uninit
           if (PP0(I,K).ge.P300) LLFC = K
+          !#TODO: LLFC may be uninit
           if (TT0(I,K).gt.TRPL) ML=K
        enddo
 
@@ -964,7 +962,9 @@ contains
        ! Calculate the tendencies
 
        if (TLCLG(I)+DTLCL.gt.TENV) goto 45                                            !Initiation of new cloud
-       if (deep_cloudobj .and. cowlcl(i) > WU_MIN) goto 45  !Pre-existing cloud triggering
+       if (deep_cloudobj) then
+          if (cowlcl(i) > WU_MIN) goto 45  !Pre-existing cloud triggering
+       endif
 
 
        !  Parcel not buoyant.
@@ -1330,6 +1330,7 @@ contains
           if(NK1.eq.KLCL)THTMIN=THTES(NK1)
           THTMIN=AMIN1(THTES(NK1),THTMIN)
           if(THTMIN.eq.THTES(NK1))KMIN=NK1
+          !#TODO: KMIN may be uninit
 
 
 
@@ -1809,6 +1810,7 @@ contains
           THTA0(NK)=TT0(I,NK)*EXN(NK)
 
           if(PP0(I,NK).gt.P165)LVF=NK
+          !#TODO: LVF may be uninit
           !  PPTMLT=PPTMLT+PPTICE(NK)
 
           QTDT(NK) = QDT(NK)+RLIQ(NK)+RICE(NK) !updraft total water
@@ -3270,18 +3272,21 @@ contains
              intv = intv + vg(k)*dpp(i,k)
              intdp = intdp + dpp(i,k)
           enddo
-          coadvu(i) = intu / intdp
-          coadvv(i) = intv / intdp
+          
+          if (deep_cloudobj) then
+             coadvu(i) = intu / intdp
+             coadvv(i) = intv / intdp
 
-          ! Update cloud object properties
-          wlcl0 = wlcl*exp(coage(i)/deep_codecay)
-          coage(i) = coage(i) + delt
-          if (deep_codecay > 0.) then
-             cowlcl(i) = wlcl0*exp(-coage(i)/deep_codecay)
-          else
-             cowlcl(i) = 0.
+             ! Update cloud object properties
+             wlcl0 = wlcl*exp(coage(i)/deep_codecay)
+             coage(i) = coage(i) + delt
+             if (deep_codecay > 0.) then
+                cowlcl(i) = wlcl0*exp(-coage(i)/deep_codecay)
+             else
+                cowlcl(i) = 0.
+             endif
+             cozlcl(i) = zlcl
           endif
-          cozlcl(i) = zlcl
 
        endif CO_SETUP
 
@@ -3291,7 +3296,7 @@ contains
 325    continue
 
        ! Reset cloud object properties if the column is no longer active
-       if (.not.ACTIV(I)) then
+       if (deep_cloudobj .and. .not.ACTIV(I)) then
           coage(i) = 0.
           cowlcl(i) = 0.
           cozlcl(i) = 0.

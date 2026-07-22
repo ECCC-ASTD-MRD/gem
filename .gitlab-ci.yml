@@ -10,26 +10,15 @@ stages:
   - build
 
 before_script:
+  - source ~/ci-admin/env/init.sh
   - export CLICOLOR_FORCE=1
 
-# U2 GNU 9.3.0 with oneAPI
-build_gnu-9.3.0:
-  stage: build
-  script:
-    - set +e
-    - . ~/ci-env/latest/profile.sh
-    - . ./.eccc_setup_gnu
-    - . ./.initial_setup
-    - make cmake
-    - make -j `nproc`
-
-# U2 Intel 2022
+# U3 Intel 2025
 build_intel:
   stage: build
   when: always
   script:
     - set +e
-    - . ~/ci-env/latest/profile.sh
     - . ./.eccc_setup_intel
     - . ./.initial_setup
     - make cmake

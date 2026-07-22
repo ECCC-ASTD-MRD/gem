@@ -34,6 +34,8 @@ module outp
 !                    | the Grid set to use for Outp_var(*,j)           |
 ! Outp_step          | Outp_step(j) contains the index that indicates  |
 !                    | the Step set to use for Outp_var(*,j)           |
+! Outp_usrdir        | Outp_usrdir(j) contains the index that indicates|
+!                    | the Userdir set to use for Outp_var(*,j)        |
 ! Outp_numstep       | Outp_numstep(j) contains the number of steps    |
 !                    | elapsed since the last avg/acc for Outp_var(*,j)|
 ! Outp_avg_L         | Outp_avg_L(j)    contains TRUE or FALSE         |
@@ -57,10 +59,9 @@ module outp
    real    Outp_filtcoef(MAXELEM,MAXSET)
    real    Outp_convmult(MAXELEM,MAXSET)
    real    Outp_convadd (MAXELEM,MAXSET)
-   integer, dimension(MAXSET), target :: Outp_lev,Outp_grid,Outp_step
+   integer, dimension(MAXSET), target :: Outp_lev,Outp_grid,Outp_step,Outp_usrdir
    integer Outp_var_max(MAXSET)
    integer Outp_sets, Outp_multxmosaic
    real, dimension(:,:  ), pointer :: udiag,vdiag,tdiag,qdiag
    real, dimension(:,:,:), allocatable :: diag_dgf
-      
 end module outp

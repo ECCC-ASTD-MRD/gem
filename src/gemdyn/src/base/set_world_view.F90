@@ -30,8 +30,12 @@
       use spn_options
       use step_options
       use sol_options
+      use svri_mod
+      use ens_options
       use theo_options
       use copy_and_open
+      use IOserver
+      use svro_mod
 
       use geomh
       use inp_mod
@@ -56,7 +60,7 @@
 
       character(len=50) :: LADATE
       integer :: istat,options,wload,hzd,monot,massc,unf
-      integer :: f1,f2,f3,f4
+      integer :: f1,f2,f3,f4, INs_indx,OUTs_indx,nz
       integer, dimension(20) :: err
       real :: vmin,vmax
       character(len=12) :: intp_S
@@ -65,44 +69,51 @@
 !
       err(:) = 0
 
+      Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
       if (Grd_yinyang_L) then
-         Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'&
-                                      //trim(Grd_yinyang_S)
          err(2) = wb_put( 'model/Hgrid/yysubgrid',Grd_yinyang_S,&
                           WB_REWRITE_NONE+WB_IS_LOCAL )
-      else
-         Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
       end if
       Path_phy_S=trim(Path_input_S)//'/'
+
+      INs_server_L= SVR_enable ('IN-server', INs_indx)
+      if (INs_server_L) then
+         Iau_indyn_L= .true.
+         Spn_indyn_L= .true.
+      endif
+      OUTs_server_L= SVR_enable ('OUT-server', OUTs_indx)
 
 !     Read namelists from file Path_nml_S
 
       call cp_n_open (unf,RPN_COMM_comm ('GRID'),trim( Path_nml_S ))
       if (unf > 0) then
          if (Lun_out >= 0) write (Lun_out, 6000) trim( Path_nml_S )
-         err( 3) = theocases_nml   (unf)
-         err( 4) = HORgrid_nml     (unf)
-         err( 5) = VERgrid_nml     (unf)
-         err( 6) = step_nml        (unf)
-         err( 7) = dynKernel_nml   (unf)
-         err( 8) = gem_nml         (unf)
-         err( 9) = init_nml        (unf)
-         err(10) = inp_nml         (unf)
-         err(11) = lam_nml         (unf)
-         err(12) = out_nml         (unf)
-         err(13) = spn_nml         (unf)
-         err(14) = dyn_fisl_nml (unf)
-         err(15) = adz_nml      (unf)
-         err(16) = hvdif_nml    (unf)
+         err( 3) = theocases_nml  (unf)
+         err( 4) = HORgrid_nml    (unf)
+         err( 5) = VERgrid_nml    (unf)
+         err( 6) = step_nml       (unf)
+         err( 7) = dynKernel_nml  (unf)
+         err( 8) = gem_nml        (unf)
+         err( 9) = init_nml       (unf)
+         err(10) = inp_nml        (unf)
+         err(11) = lam_nml        (unf)
+         err(12) = out_nml        (unf)
+         err(13) = spn_nml        (unf)
+         err(14) = dyn_fisl_nml   (unf)
+         err(15) = adz_nml        (unf)
+         err(16) = hvdif_nml      (unf)
          err(17) = sol_nml        (unf)
+         err(18) = ens_nml        (unf)
          istat= fclos(unf)
       else
          if (Lun_out >= 0) write (Lun_out, 6001) trim( Path_nml_S )
          err(1)= -1
       end if
 
+      call gemtime ( Lun_out, 'set_world_view: namelists check', .false. )
       call gem_error ( minval(err(:)),'set_world_view',&
                        'Error reading nml or with wb_put' )
+      call gemtime ( Lun_out, 'set_world_view: namelists check ...DONE', .false. )
 
 ! Read physics namelist
 
@@ -186,21 +197,48 @@
 
 ! Establish a grid id for RPN_COMM package and obtain Out3_iome,Inp_iome
 
-      if ( (Out3_npex > 0) .and. (Out3_npey > 0) ) Out3_npes= Out3_npex*Out3_npey
-      Out3_npes= max(1,min(Out3_npes,min(Ptopo_npex,Ptopo_npey)**2))
-      Inp_npes = max(1,min(Inp_npes ,min(Ptopo_npex,Ptopo_npey)**2))
-
       err= 0
-      if (lun_out > 0) write (lun_out,1002) 'Output',Out3_npes
-      err(1)= set_io_pes (Out3_comm_id,Out3_comm_setno,Out3_iome,&
-                          Out3_comm_io,Out3_iobcast,Out3_npes)
+      if ( OUTs_server_L ) then
+         Out3_npex= -1
+         Out3_npey= -1
+         Out3_npes= -1
+      else
+         if ( (Out3_npex > 0) .and. (Out3_npey > 0) ) then
+            Out3_npex= max(1,min(Out3_npex,Ptopo_npex))
+            Out3_npey= max(1,min(Out3_npey,Ptopo_npey))
+            out_stk_size= max(20,Out3_npex * Out3_npey * 2)
+            call block_collect_set ( Out3_npex, Out3_npey, out_stk_size )
+            Out3_iome= -1
+            if (Bloc_me == 0) then
+               Out3_iome= 0
+               nz= (out_stk_size / Bloc_nblocs) + 1
+               allocate (List_nk(nz),Glb_fld(G_ni*G_nj*nz))
+               allocate (Reduc_fld(G_ni*G_nj*2))
+            endif
+            Out3_ezcoll_L= .false.
+         else
+            Out3_npes= max(1,min(Out3_npes,min(Ptopo_npex,Ptopo_npey)**2))
+            if (lun_out > 0) write (lun_out,1002) 'Output',Out3_npes
+            err(1)= set_io_pes (Out3_comm_id,Out3_comm_setno,Out3_iome,&
+                                Out3_comm_io,Out3_iobcast,Out3_npes)
+            out_stk_size= max(20,Out3_npes * 2)
+            if (Out3_iome >= 0) then
+               nz= (out_stk_size + Out3_npes -1) / Out3_npes
+               allocate (List_nk(nz),Glb_fld(G_ni*G_nj*nz))
+               allocate (Reduc_fld(G_ni*G_nj*2))
+            else
+               allocate (List_nk(1),Glb_fld(1))
+           endif
+           Out3_ezcoll_L= .true.
+         endif
+      endif
+
+      Inp_npes = max(1,min(Inp_npes ,min(Ptopo_npex,Ptopo_npey)**2))
       if (lun_out > 0) write (lun_out,1002) 'Input',Inp_npes
       err(2)= set_io_pes (Inp_comm_id ,Inp_comm_setno ,Inp_iome ,&
                           Inp_comm_io ,Inp_iobcast ,Inp_npes )
       call gem_error ( min(err(1),err(2)),'set_world_view', &
                        'IO pes config is invalid' )
-      Out3_ezcoll_L= .true.
-      out_stk_size= Out3_npes*2
 
       istat = tracers_attributes( 'DEFAULT,'//trim(Tr3d_default_s), &
                                   wload, hzd, monot, massc, vmin, vmax, intp_S )

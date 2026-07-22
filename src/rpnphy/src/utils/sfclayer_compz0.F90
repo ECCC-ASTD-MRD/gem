@@ -1,28 +1,14 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------
 
 
 module sfclayer_compz0
    use clib_itf_mod, only: clib_toupper
+   use tdpack_const, only: GRAV, KARMAN
    implicit none
    private
 
 #include <rmnlib_basics.hf>
 
-   public :: compz0_set  !#, compz0
+   public :: compz0_set, compz0, compz0_s, compz0_a
 
    integer, parameter, public :: Z0SCFTYPE_MINVAL = 1
    integer, parameter, public :: Z0SCFTYPE_SEAICE = 1
@@ -43,10 +29,10 @@ module sfclayer_compz0
    real, public :: z0tlat(2) = 0.
    real, public :: z0hcon = 4.0e-5
 
-!!$   interface compz0
-!!$      module procedure compz0_s
-!!$      module procedure compz0_a
-!!$   end interface compz0
+   interface compz0
+      module procedure compz0_s
+      module procedure compz0_a
+   end interface compz0
    
 contains
 
@@ -82,51 +68,34 @@ contains
       return   
    end function compz0_set
 
-!!$   subroutine compz0_s(optz0, z0, z0loc, z0t, fm, va, fcor)
-!!$      use tdpack_const, only: GRAV, KARMAN
-!!$      implicit none
-!!$      integer, intent(in) :: optz0
-!!$      real, intent(in) :: z0loc, fm, va, fcor
-!!$      real, intent(inout) :: z0
-!!$      real, intent(inout) :: z0t !# Actually only out, but sometime not computed, hence inout
-!!$
-!!$      real, dimension(1) :: lz0loc, lfm, lva, lfcor, lz0, lz0t
-!!$
-!!$
-!!$      if (optz0 < Z0SCFTYPE_MINVAL .or. optz0 > Z0SCFTYPE_MAXVAL) return
-!!$      
-!!$      lz0loc = z0loc
-!!$      lfm = fm
-!!$      lva = va
-!!$      lfcor = fcor
-!!$      lz0 = z0
-!!$      lz0t = z0t
-!!$      call compz0_a(optz0, lz0, lz0loc, lz0t, lfm, lva, lfcor, 1)
-!!$      z0 = lz0(1)
-!!$      z0t = lz0t(1)
-!!$      
-!!$      return
-!!$   end subroutine compz0_s
-!!$
-!!$   subroutine compz0_a(optz0, z0, z0loc, z0t, fm, va, fcor, n)
-!!$      use tdpack_const, only: GRAV, KARMAN
-!!$      implicit none
-!!$      integer, intent(in) :: n, optz0
-!!$      real, intent(in) :: z0loc(n), fm(n), va(n), fcor(n)
-!!$      real, intent(inout) :: z0(n)
-!!$      real, intent(inout) :: z0t(n) !# Actually only out, but sometime not computed, hence inout
-!!$
-!!$      call compz0...(optz0, z0, z0loc, z0t, fm, va, fcor, n)
-!!$      
-!!$      return
-!!$   end subroutine compz0_a
    
-end module sfclayer_compz0
+   subroutine compz0_s(optz0, z0, z0loc, z0t, fm, va, fcor)
+      implicit none
+      integer, intent(in) :: optz0
+      real, intent(in) :: z0loc, fm, va, fcor
+      real, intent(inout) :: z0
+      real, intent(inout) :: z0t !# Actually only out, but sometime not computed, hence inout
+
+      real, dimension(1) :: lz0loc, lfm, lva, lfcor, lz0, lz0t
 
 
+      if (optz0 < Z0SCFTYPE_MINVAL .or. optz0 > Z0SCFTYPE_MAXVAL) return
+      
+      lz0loc = z0loc
+      lfm = fm
+      lva = va
+      lfcor = fcor
+      lz0 = z0
+      lz0t = z0t
+      call compz0_a(optz0, lz0, lz0loc, lz0t, lfm, lva, lfcor, 1)
+      z0 = lz0(1)
+      z0t = lz0t(1)
+      
+      return
+   end subroutine compz0_s
+
+   
    subroutine compz0_a(optz0, z0, z0loc, z0t, fm, va, fcor, n)
-      use tdpack_const, only: GRAV, KARMAN
-      use sfclayer_compz0
       implicit none
 !!!#include <arch_specific.hf>
       integer, intent(in) :: n, optz0
@@ -297,3 +266,6 @@ end module sfclayer_compz0
 
       return
    end subroutine compz0_a
+
+   
+end module sfclayer_compz0

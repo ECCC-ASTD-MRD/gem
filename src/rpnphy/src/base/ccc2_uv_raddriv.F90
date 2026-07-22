@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN ------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------
 
 module ccc2_uv_raddriv
    private
@@ -21,12 +6,12 @@ module ccc2_uv_raddriv
 contains
    
 subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
-     fslo, fsamoon, ps, shtj, sig, &
+     ps, shtj, sig, &
      tt, o3, o3top, &
      qq, co2, ch4, &
      o2, rmu, r0r, salb, taucs, &
      omcs, gcs, &
-     cldfrac, tauae, exta, exoma, exomga, &
+     cldfrac, strfr, tauae, exta, exoma, exomga, &
      fa, mrk2, &
      ni, lay, lev)
    use tdpack_const
@@ -34,6 +19,12 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    use ens_perturb, only: ens_nc2d
    use ccc2_preintp_m, only: ccc2_preintp
    use ccc2_gasopts, only: ccc2_gasopts5
+   use ccc2_raylev_mod, only: ccc2_raylev2
+   use ccc2_stranup_mod, only: ccc2_stranup3
+   use ccc2_strandn_mod, only: ccc2_strandn3
+   use ccc2_sattenu_mod, only: ccc2_sattenu4
+   use ccc_swtran_mod, only: ccc_swtran
+   use ccc_cldifm_mod, only: ccc_cldifm1
    implicit none
 !!!#include <arch_specific.hf>
 #include "nbsnbl.cdk"
@@ -48,7 +39,8 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
         co2(ni,lay),ch4(ni,lay), o2(ni,lay)
 
    real taucs(ni,lay,nbs), omcs(ni,lay,nbs), gcs(ni,lay,nbs), &
-        cldfrac(ni,lay), fslo(ni), fsamoon(ni)
+        cldfrac(ni,lay)
+   real, pointer, dimension(:,:) :: strfr
 
    real, dimension(ni, ens_nc2d) :: mrk2
 
@@ -70,7 +62,7 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    !
    !@Object
    !        Main subroutine that executes ccc radiative transfer
-   !        for infrared and solar radiation
+   !        Light version of ccc2_raddriv: only calculations in SW band 1 are needed (no minor intervals)
    !
    !@Arguments
    !              - Output -
@@ -99,8 +91,6 @@ subroutine ccc2_uv_raddriv1(fatb, fadb, fafb, fctb, fcdb, fcfb, &
    ! exomga       exoma times asymmetry factor for solar
    ! fa           square of asymmetry factor for solar
    ! absa         absorption coefficient for longwave
-   ! fslo         solar incoming flux at infrared range (0-2500cm-1)
-   ! fsamoon      the energy absorbed between toa and model top level
    ! lcsw         logical key to control call to sw radiative transfer
    ! lclw         logical key to control call to lw radiative transfer
    ! mrk2         Markov chains for stochastic parameter perturbations
@@ -293,8 +283,6 @@ include "nocld.cdk"
    !----------------------------------------------------------------------
 
    do i = 1, ni
-      fsamoon(i)              =  0.0
-      fslo(i)                 =  11.9096 * rmu(i) * fracs
       !       shtj(i,lev) = 1. ci-dessous
       pfull(i,lev)            =  0.01 * ps(i) * shtj(i,lev)
       mtop(i)                 =  0
@@ -366,7 +354,7 @@ include "nocld.cdk"
 
    call ccc_cldifm1 (cldm, tauomgc, anu, a1, ncd, &
         ncu, inptg, nct, ncum, ncdm, &
-        cldfrac, pfull, mrk2, lev1, cut, maxc, &
+        cldfrac, strfr, pfull, mrk2, lev1, cut, maxc, &
         1, ni, ni, lay, lev)
 
 

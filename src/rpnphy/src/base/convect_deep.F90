@@ -1,18 +1,8 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+module convect_deep_mod
+   implicit none
+   public
 
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
+contains
 
 subroutine CONVECT_DEEP2(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA,          &
      & PDTCONV, KICE, ODOWN,                          &
@@ -26,7 +16,6 @@ subroutine CONVECT_DEEP2(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA,          &
      & OUVCONV, PUTEN, PVTEN,                         &
      & OCH1CONV, KCH1, PCH1, PCH1TEN,                 &
      & PUDR, PDDR, PKKFC, XLAT, MG, MLAC              ) ! for ERA40
-
    !!**** Monitor routine to compute all convective tendencies by calls
    !!     of several subroutines.
    !
@@ -117,6 +106,15 @@ subroutine CONVECT_DEEP2(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA,          &
    use YOE_CONVPAREXT
    use YOE_CONVPAR
    use cnv_options, deep_name=>deep
+   use phy_status, only: physeterror
+   use convect_updraft_mod, only: convect_updraft
+   use convect_tstep_pref_mod, only: convect_tstep_pref
+   use convect_precip_adjust_mod, only: convect_precip_adjust
+   use convect_trigger_funct_mod, only: convect_trigger_funct3
+   use convect_closure_mod, only: convect_closure2
+   use convect_uv_transport_deep_mod, only: convect_uv_transport_deep1
+   use convect_chem_transport_mod, only: convect_chem_transport1
+   use convect_downdraft_mod, only: convect_downdraft2
 
    implicit none
 !!!#include <arch_specific.hf>
@@ -1403,3 +1401,5 @@ subroutine CONVECT_DEEP2(KLON, KLEV, KIDIA, KFDIA, KBDIA, KTDIA,          &
 
 
 end subroutine CONVECT_DEEP2
+
+end module convect_deep_mod

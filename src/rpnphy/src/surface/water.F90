@@ -15,12 +15,19 @@
 !-------------------------------------- LICENCE END ---------------------------
 
 !/@*
+module water_mod
+  implicit none
+  public
+contains
+
 subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
      n, m, nk)
    use tdpack
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
+   use phy_status, only: physeterror
+   use fillagg_mod, only: fillagg
 
 #ifdef HAVE_NEMO
    use cpl_itf     , only: cpl_update
@@ -112,8 +119,8 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    real, dimension(n) :: this_inc,prev_inc,denom
    real, dimension(n) :: my_ta,my_qa
    real, dimension(n) :: zu10,zusr          ! wind at 10m and sensor level
-   real, dimension(n) :: zref_sw_surf, zemit_lw_surf, zzenith
-   real, dimension(n) :: zusurfzt, zvsurfzt, zqd
+   real, dimension(n) :: zref_sw_surf, zemit_lw_surf
+   real, dimension(n) :: zusurfzt, zvsurfzt
 
    integer I
    real qsat_o_salty, delh, delq, zw, z1, z2, re
@@ -320,16 +327,6 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
       zvdiag = zvdiag * vmod0 / vmod
    endif
       
-   ! Fill surface type-specific diagnostic values
-   zqdiagtyp = zqdiag
-   ztdiagtyp = ztdiag
-   zudiagtyp = zudiag
-   zvdiagtyp = zvdiag
-   zqdiagtypv = zqdiag
-   ztdiagtypv = ztdiag
-   zudiagtypv = zudiag
-   zvdiagtypv = zvdiag
-
    ! Also compute the air density at a chosen height (for now, the chosen height is
    ! at the screen level, i.e. at zt = 1.5m)
 
@@ -381,77 +378,86 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    end do
 
 #ifdef HAVE_NEMO
-   ! Update with fluxes and diagnostic variables from ocean model
-   cplupd=.false.
-   call cpl_update (vmod(1:n), 'UVO', lcl_indx, n, u=UU, v=VV, cplu=cplupd)
-   if (cplupd) then
-      call cpl_update (FC_WAT(1:n), 'SHO' , lcl_indx, n)
-      call cpl_update (FV_WAT(1:n), 'LHO' , lcl_indx, n)
-      call cpl_update (ZUDIAG(1:n), 'ZUO' , lcl_indx, n)
-      call cpl_update (ZVDIAG(1:n), 'ZVO' , lcl_indx, n)
-      call cpl_update (ZTDIAG(1:n), 'ZTO' , lcl_indx, n)
-      call cpl_update (ZQDIAG(1:n), 'ZQO' , lcl_indx, n)
-      call cpl_update (ZTSURF(1:n),   'TMW' , lcl_indx, n)
-      call cpl_update (ZTSRAD(1:n),   'T4O' , lcl_indx, n)
-      call cpl_update (QS(1:n),       'QSO' , lcl_indx, n)
-      call cpl_update (ILMO_WAT(1:n), 'ILO' , lcl_indx, n)
-      call cpl_update (Z0M   (1:n),   'ZMO' , lcl_indx, n)
-      call cpl_update (Z0H   (1:n),   'ZHO' , lcl_indx, n)
-      
-      ! Derives other variables from cpl_update output
-      ! assuming FC_WAT and FV_WAT were computed with
-      ! RHOA at the same level
-      if (zt_rho == zt) then
-         my_ta(1:n)=ztdiag(1:n)
-         my_qa(1:n)=zqdiag(1:n)
-      else
-         call physeterror('water', 'attempt to use an inconsistent density level')
-         return
-      endif
-      do I=1,N
-         RHOA(I) = PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
-         ZALFAT(I)= FC_WAT(I)/(-CPD *RHOA(I))
-         ZALFAQ(I)= FV_WAT(I)/(-CHLC*RHOA(I))
-         ZFTEMP(I) = -ZALFAT(I)
-         ZFVAP(I)  = -ZALFAQ(I)
-         SST(I)    = ZTSURF(I)
-         if (IMPFLX) then
-            ! CTU consistent with ocean model fluxes (as possible)
-            ! Uncertainties in CTU from interpolation/agregation
-            ! will be compensated by ZALFAT and ZALFAQ
-            delh=SST(I)-TH(I) ; delq=QS(I)-HU(I)
-            CTU(I) = 0.5*( -ZALFAT(I)/sign(max(abs(delh),delh_tresh),delh) &
-                 -ZALFAQ(I)/sign(max(abs(delq),delh_tresh),delq) )
-            CTU(I) = max(0.,CTU(I)) ! CTU<0 should never occur except under vicinity
-            ! of null fluxes agregation/interpolation anyway
-            ! e.g. sign(ZALFAT) /= sign(delh) or sign(ZALFAQ) /= sign(delq)
-            ! ZALFAT and ZALFAQ consistent with FC_WAT and FV_WAT
-            ZALFAT(I) = ZALFAT(I) - CTU(I)*TH(I)
-            ZALFAQ(I) = ZALFAQ(I) - CTU(I)*HU(I)
+   if (cplocn) then
+      ! Update with fluxes and diagnostic variables from ocean model
+      cplupd=.false.
+      call cpl_update (vmod(1:n), 'UVO', lcl_indx, n, u=UU, v=VV, cplu=cplupd)
+      if (cplupd) then
+         call cpl_update (FC_WAT(1:n), 'SHO' , lcl_indx, n)
+         call cpl_update (FV_WAT(1:n), 'LHO' , lcl_indx, n)
+         call cpl_update (ZUDIAG(1:n), 'ZUO' , lcl_indx, n)
+         call cpl_update (ZVDIAG(1:n), 'ZVO' , lcl_indx, n)
+         call cpl_update (ZTDIAG(1:n), 'ZTO' , lcl_indx, n)
+         call cpl_update (ZQDIAG(1:n), 'ZQO' , lcl_indx, n)
+         call cpl_update (ZTSURF(1:n),   'TMW' , lcl_indx, n)
+         call cpl_update (ZTSRAD(1:n),   'T4O' , lcl_indx, n)
+         call cpl_update (QS(1:n),       'QSO' , lcl_indx, n)
+         call cpl_update (ILMO_WAT(1:n), 'ILO' , lcl_indx, n)
+         call cpl_update (Z0M   (1:n),   'ZMO' , lcl_indx, n)
+         call cpl_update (Z0H   (1:n),   'ZHO' , lcl_indx, n)
+         
+         ! Derives other variables from cpl_update output
+         ! assuming FC_WAT and FV_WAT were computed with
+         ! RHOA at the same level
+         if (zt_rho == zt) then
+            my_ta(1:n)=ztdiag(1:n)
+            my_qa(1:n)=zqdiag(1:n)
          else
-            CTU(I) = 0. !Redundant but less dangerous
+            call physeterror('water', 'attempt to use an inconsistent density level')
+            return
          endif
-      end do
-      ! Diagnostic ustar based on ocean model stress (tau=rho*ustar**2)
-      call cpl_update (ZFRV  (1:n), 'FRO' , lcl_indx, n, rho=RHOA, vmod=VMOD, cmu=CMU)
-      ! Updated consistent CMU needed by implicit scheme using the following relation
-      ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
+         do I=1,N
+            RHOA(I) = PS(I)/(RGASD * my_ta(I)*(1.+DELTA*my_qa(I)))
+            ZALFAT(I)= FC_WAT(I)/(-CPD *RHOA(I))
+            ZALFAQ(I)= FV_WAT(I)/(-CHLC*RHOA(I))
+            ZFTEMP(I) = -ZALFAT(I)
+            ZFVAP(I)  = -ZALFAQ(I)
+            SST(I)    = ZTSURF(I)
+            if (IMPFLX) then
+               ! CTU consistent with ocean model fluxes (as possible)
+               ! Uncertainties in CTU from interpolation/agregation
+               ! will be compensated by ZALFAT and ZALFAQ
+               delh=SST(I)-TH(I) ; delq=QS(I)-HU(I)
+               CTU(I) = 0.5*( -ZALFAT(I)/sign(max(abs(delh),delh_tresh),delh) &
+                    -ZALFAQ(I)/sign(max(abs(delq),delh_tresh),delq) )
+               CTU(I) = max(0.,CTU(I)) ! CTU<0 should never occur except under vicinity
+               ! of null fluxes agregation/interpolation anyway
+               ! e.g. sign(ZALFAT) /= sign(delh) or sign(ZALFAQ) /= sign(delq)
+               ! ZALFAT and ZALFAQ consistent with FC_WAT and FV_WAT
+               ZALFAT(I) = ZALFAT(I) - CTU(I)*TH(I)
+               ZALFAQ(I) = ZALFAQ(I) - CTU(I)*HU(I)
+            else
+               CTU(I) = 0. !Redundant but less dangerous
+            endif
+         end do
+         ! Diagnostic ustar based on ocean model stress (tau=rho*ustar**2)
+         call cpl_update (ZFRV  (1:n), 'FRO' , lcl_indx, n, rho=RHOA, vmod=VMOD, cmu=CMU)
+         ! Updated consistent CMU needed by implicit scheme using the following relation
+         ! ==> CM=ustar/vmod (ustar**2=tau/rho=CM*CM*vmod**2)
+      endif
    endif
-!endif for NEMO (cplocn)
 #endif
 
+
+   ! Fill surface type-specific diagnostic values
+   zqdiagtyp = zqdiag
+   ztdiagtyp = ztdiag
+   zudiagtyp = zudiag
+   zvdiagtyp = zvdiag
+   zqdiagtypv = zqdiag
+   ztdiagtypv = ztdiag
+   zudiagtypv = zudiag
+   zvdiagtypv = zvdiag
 
    ! 5.     Prognostic evolution of SST (based on Zeng and Beljaars; GRL 2005)
    ! -------------------------------------------------------------------------
 
    DIURNAL_SST: if ( diusst == 'FAIRALL' ) then
 
-#ifdef HAVE_NEMO
-      if (diusst_ocean) then
+      if (cplocn .and. diusst_ocean) then
          call physeterror('water', 'cplocn=true, diusst NOT taken care of yet')
          return
       endif
-#endif
 
       ! Preliminary calculations
       i = sl_prelim(tt,hu,uu,vv,ps,zzusl,rho_air=rho_a,spd_air=vmod0,dir_air=vdir,min_wind_speed=VAMIN)
@@ -536,7 +542,7 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
    !#TODO: at least 4 times identical code in surface... separeted s/r to call
    IF_THERMAL_STRESS: if (thermal_stress) then
 
-   ! Compute wind at z=zt
+   ! Compute wind at z=zt for wbgt
    i = sl_sfclayer(th,hu,vmod0,vdir,zzusl,zztsl,sst,qs,z0m,z0h,zdlat,zfcor, &
         hghtm_diag=zt,hghtt_diag=zt,u_diag=zusurfzt,v_diag=zvsurfzt, &
         tdiaglim=WATER_TDIAGLIM,L_min=sl_Lmin_water,spdlim=vmod)
@@ -565,24 +571,22 @@ subroutine water2(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, kount, &
          else
          zusr(i) = zu10(i)
          endif
-
-            zqd(i) =max( ZQDIAG(i) , 1.e-6)  
+         
+      if (atm_external) then
+      !# if direct/diffuse solar radiation not in forcing used default partitionning
+         zfsd(i) = 0.85*zflusolis(i)
+         zfsf(i) = 0.15*zflusolis(i)
+      endif
 
          zref_sw_surf(i) = alvis_wat(i) * zflusolis(i)
          zemit_lw_surf(i)  = (1. - zemisr(i)) * zfdsi(i) + zemisr(i)*STEFAN   &
               *ztsurf(i)**4
-         zzenith(i) = acos(zcoszeni(i))      
-         if (zflusolis(i) > 0.0) then
-            zzenith(i) = min(zzenith(i), pi/2.)
-         else
-            zzenith(i) = max(zzenith(i), pi/2.)
-         endif
 
       end do
 
-      call SURF_THERMAL_STRESS(ZTDIAG, zqd,            &
+      call SURF_THERMAL_STRESS(ZTDIAG, zqdiag,         &
            ZU10,ZUSR,  ps,                             &
-           ZFSD, ZFSF, ZFDSI, ZZENITH,                 &
+           ZFSD, ZFSF, ZFDSI, acos(zcoszeni),          &
            ZREF_SW_SURF,ZEMIT_LW_SURF,                 &
            Zutcisun ,Zutcishade,                       &
            zwbgtsun, zwbgtshade,                       &
@@ -627,4 +631,5 @@ contains
            (nu+1)*karman*frv_w/(base_depth*stab_func) * inc) - zdsst
    end function warm_func
 
-end subroutine water2
+ end subroutine water2
+end module water_mod

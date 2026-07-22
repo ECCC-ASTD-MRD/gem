@@ -28,6 +28,8 @@
       use adz_mem
       use inp_mod
       use numa
+      use svri_mod
+      use svro_mod
       use ptopo
       use omp_timing
       use omp_timing
@@ -35,7 +37,8 @@
 
       character(len=256) :: postjob_S
       logical continue_L
-      integer i,err
+      integer i,err,send(5),tag,ireq
+      integer :: status(mpi_status_size,Ptopo_numproc)
 !
 !-------------------------------------------------------------------
 !
@@ -55,21 +58,43 @@
          call close_status_file3 ()
       end if
 
-      if (Lun_out > 0) call out_stat2 ()
+      if (Lun_out > 0) call out_stat ()
 
       if (.not. continue_L) then
          err = clib_remove('gem_restart')
          err = clib_remove('gmm_restart')
       end if
 
-      call gemtime ( Lun_out, 'END OF RUN', .true. )
-      call memusage ( Lun_out )
-
       call gtmg_stop ( 1 )
-      call gtmg_terminate( Ptopo_myproc, 'GEMDM' )
-
+      call gtmg_terminate3 ( Ptopo_myproc, COMM_grid, 'GEMDM' )
 !     Free all one-sided MPI windows
+      call MPI_Win_fence(0, Inp_window, err)
       call MPI_Win_free  (Inp_window,err)
+      
+      call gemtime ( Lun_out, 'ENDING', .false. )
+      if (OUTs_server_L) then
+         call gemtime ( Lun_out, 'ENDING ServerO', .false. )
+         ireq= 3
+         call MPI_waitall (ireq,OUTs_request,status,err)
+         if (OUTs_comm_L) then
+            send= -1 ; tag= 601
+            call MPI_send ( send,size(send),MPI_INTEGER,&
+                            OUTs_1on1,tag,OUTs_COMM,err )
+         endif
+         call MPI_barrier (COMM_multigrid,err)
+         call gemtime ( Lun_out, 'ENDING ServerO DONE', .false. )
+      endif
+
+      if (INs_server_L) then
+         call gemtime ( Lun_out, 'ENDING ServerI', .false. )
+         if (INs_comm_L) then
+            tag= 801
+            ireq= -1
+            call MPI_send (ireq,1,MPI_INTEGER,&
+                    INs_1on1,tag,INs_COMM,err )
+         endif
+      endif
+
       if (ADZ_OD_L) then
           call MPI_Win_free  (Adz_Win_list,err)
           call MPI_Win_free  (Adz_Win_pos,err)
@@ -96,7 +121,7 @@
          endif
       end if
 
-      call rpn_comm_FINALIZE(err)
+      call gemtime ( Lun_out, 'ENDING MY GEMDM DOMAIN', .false. )
 
  34   format (i10.10)
 !

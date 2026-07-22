@@ -1,18 +1,3 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module phy_init_mod
    use iso_c_binding
@@ -24,14 +9,20 @@ module phy_init_mod
    use timestr_mod, only: timestr2step, timestr2sec
 
    use cnv_options
+   use itf_cpl_init_mod, only: itf_cpl_init
    use phybudget, only: pb_init
-   use phy_status, only: PHY_OK, PHY_ERROR, PHY_NONE, PHY_CTRL_NML_OK, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_L
+   use phy_status, only: PHY_OK, PHY_ERROR, PHY_NONE, PHY_CTRL_NML_OK, PHY_CTRL_INI_OK, phy_init_ctrl, phy_error_L, physeterror
    use phy_options
    use phygridmap
    use series_mod, only: series_init
    use sfcexch_options, only: sfcexch_options3
+   use sfc_debu_mod, only: sfc_init1
    use ens_perturb, only: ptp_L, ptp_nc, spp_L, spp_nc, ptpenvu, ptpenvb, ptpcape, ptpcritw, &
         ptpfacreduc, ens_nc2d, ens_spp_init, ENS_OK
+   use check_options, only: check_options2
+   use printbus, only: printbus1
+   use phydebu_mod, only: phydebu2
+   use mod_handle_error, only: collect_error
    private
    public :: phy_init
 
@@ -149,10 +140,10 @@ contains
       integer :: F_istat !Return status
       !@authors Desgagne, Chamberland, McTaggart-Cowan, Spacek -- Spring 2014
       !*@/
-      integer, external :: msg_getUnit, phydebu2, sfc_init1, itf_cpl_init
+      integer, external :: msg_getUnit
 
       logical :: print_L
-      integer :: unout, options, itype, isizeof, ntr, nsurf
+      integer :: unout, options, itype, isizeof, ntr, nsurf, nextra
       integer :: ier, p_ni, p_nj, master_pe, n
       integer :: type1, sizeof1, options1
       integer :: mini, maxi, lni, lnimax, li0
@@ -198,17 +189,37 @@ contains
       if (deep_timerefresh_sec > 0.) ier = timestr2sec(deep_timerefresh_sec,deep_timerefresh,dble(F_dt))
       if (shal_timeconv_sec > 0.) ier = timestr2sec(shal_timeconv_sec,shal_timeconv,dble(F_dt))
 
-      nphyoutlist = 0
+      nphyoutlist = -1
       ier = wb_get_meta('itf_phy/PHYOUT', type1, sizeof1, nphyoutlist, options1)
-      if (.not.WB_IS_OK(ier)) nphyoutlist = 0
-      allocate(phyoutlist_S(max(1,nphyoutlist)))
+      if (.not.WB_IS_OK(ier)) nphyoutlist = -1
+      nextra = 0
+      if (ptp_L) nextra = 3
+      allocate(phyoutlist_S(max(1,nphyoutlist+nextra)))
       phyoutlist_S(:) = ' '
       if (nphyoutlist > 0) then
          ier = wb_get('itf_phy/PHYOUT', phyoutlist_S, nphyoutlist)
-         if (.not.WB_IS_OK(ier)) nphyoutlist = 0
-         do n=1,nphyoutlist
-            ier = clib_toupper(phyoutlist_S(n))
-         enddo
+         if (.not.WB_IS_OK(ier)) then
+            call msg(MSG_WARNING,'(phy_init) Problem getting itf_phy/PHYOUT, reverting to allocate and compute all diags')
+            nphyoutlist = -1
+         else
+            if (all(phyoutlist_S(1:nphyoutlist) == ' ')) nphyoutlist = 0
+            do n=1,nphyoutlist
+               ier = clib_toupper(phyoutlist_S(n))
+            enddo
+         endif
+      endif
+      if (nphyoutlist == 0) then
+         call msg(MSG_WARNING, 'No Phy output resquested')
+      elseif (nphyoutlist < 0) then
+         call msg(MSG_WARNING, 'Unknown phy output resquests, allocating and computing all diagnostics')
+      endif
+      if (nphyoutlist >= 0) then
+         if (ptp_L) then
+            phyoutlist_S(nphyoutlist+1) = 'UP00'
+            phyoutlist_S(nphyoutlist+2) = 'VP00'
+            phyoutlist_S(nphyoutlist+3) = 'TP00'
+         endif
+         nphyoutlist = nphyoutlist + nextra
       endif
 
       ier = wb_get('itf_phy/DYNOUT', dynout)
@@ -245,8 +256,13 @@ contains
       phy_lcl_jn = phy_lcl_j0 + phy_lcl_nj - 1
 
       if (F_drv_glb_S /= 'NULL') then
+         ! Getting back l_i0, l_j0 in drv_glb_i0, drv_glb_j0 from the gemdyn
+         ! somewhat abusing the local grid as explained in the comments above
+         ! the corresponding hgrid_wb_put call.
          ier = hgrid_wb_get(F_drv_glb_S, drv_glb_gid, &
-              F_lni=drv_glb_ni, F_lnj=drv_glb_nj)
+              F_i0=drv_glb_i0, F_j0=drv_glb_j0, &
+              F_lni=drv_glb_ni, F_lnj=drv_glb_nj, &
+              F_hx=drv_glb_hx, F_hy=drv_glb_hy)
          if (.not.RMN_IS_OK(ier)) then
             call msg_toall(MSG_ERROR, '(phy_init) Unable to retrieve grid info for '&
                  //trim(F_drv_glb_S))
@@ -386,7 +402,8 @@ contains
          return
       endif
 #endif
-      
+
+      sl_Lmin_type = -1.
       ier = WB_OK
       ier = min(wb_get('sfc/beta'        ,beta        ),ier)
       ier = min(wb_get('sfc/bh91_a'      ,bh91_a      ),ier)
@@ -420,6 +437,11 @@ contains
       ier = min(wb_get('sfc/z0dir'       ,z0dir       ),ier)
       ier = min(wb_get('sfc/zt'          ,zt          ),ier)
       ier = min(wb_get('sfc/zu'          ,zu          ),ier)
+      ier = min(wb_get('sfc/sl_Lmin_soil',    sl_Lmin_type(indx_soil)),    ier)
+      ier = min(wb_get('sfc/sl_Lmin_glacier', sl_Lmin_type(indx_glacier)), ier)
+      ier = min(wb_get('sfc/sl_Lmin_water',   sl_Lmin_type(indx_water)),   ier)
+      ier = min(wb_get('sfc/sl_Lmin_seaice',  sl_Lmin_type(indx_ice)),  ier)
+      ier = min(wb_get('sfc/sl_Lmin_town',    sl_Lmin_type(indx_urb)),     ier)
       if (.not.WB_IS_OK(ier)) then
          call msg_toall(MSG_ERROR,'(phy_init) Problem with WB_get #2')
          ier = RMN_ERR
@@ -439,12 +461,18 @@ contains
          return
       endif
 
+      ier = check_options2()
+      if (.not.RMN_IS_OK(ier)) then
+         call msg(MSG_ERROR, '(phy_init) invalid options values in check_options')
+         return
+      endif
+           
       !# Print list of physics var
       if (print_L) then
-         call printbus('E')
-         call printbus('D')
-         call printbus('P')
-         call printbus('V')
+         call printbus1('E')
+         call printbus1('D')
+         call printbus1('P')
+         call printbus1('V')
       endif
 
       !# Init other components
@@ -499,11 +527,15 @@ contains
       endif IF_INPUTIO
       call collect_error(F_istat)
 
+#ifdef HAVE_NEMO
+      ier = wb_get('model/Hgrid/is_yinyang',phy_yinyang_L)
+      if (phy_yinyang_L) then
+        ier = wb_get('model/Hgrid/yysubgrid',phy_yinyang_S)
+      endif
+#endif
+
       if (RMN_IS_OK(F_istat)) &
            F_istat = itf_cpl_init(F_path_S, print_L, unout, F_dateo, F_dt)
-
-!!$      print *,'(phy_init) printbus' ; call flush(6)
-!!$      call printbus('P')
 
       phy_init_ctrl = PHY_CTRL_INI_OK
       ! --------------------------------------------------------------------

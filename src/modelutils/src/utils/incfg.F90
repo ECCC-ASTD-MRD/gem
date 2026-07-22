@@ -20,6 +20,7 @@ module incfg_mod
    use, intrinsic :: iso_fortran_env, only: INT64
    use clib_itf_mod, only: clib_tolower, clib_isfile, clib_isreadok
    use str_mod, only: str_tab2space, str_toreal
+   use str_split_mod
    use mu_jdate_mod
    implicit none
    private
@@ -296,7 +297,6 @@ contains
       integer :: F_istat
       !@author Stephane Chamberland, 2011-07
       !*@/
-      integer,external :: str_split2keyval
       integer,parameter :: NMAX = 32
       integer :: nkeys
       character(len=1024) :: string_S,kv_S(2,NMAX)

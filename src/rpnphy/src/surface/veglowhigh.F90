@@ -13,10 +13,14 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-
+module veglowhigh_mod
+  implicit none
+  public
+contains
 subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
-     lat, ni, nclass)
+     lat, agfrac, ni, nclass)
   use svs_configs, only : ntypel, vl_type, ntypeh, vh_type, furb_vl, imp_urb, epsilon_svs
+  use sfc_options, only : vf_type
    implicit none
 !!!#include <arch_specific.hf>
 
@@ -31,6 +35,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
    !            - Output -
    ! LOW        Fraction of (soil) grid covered by low vegetation classes 
    ! HIGH       Fraction of (soil) grid covered by high vegetation classes
+   ! AGFRAC     Fraction of (soil) grid covered by aggricultural areas
    ! DECI       Fraction of HIGH vegetation that is deciduous
    ! EVER       Fraction of HIGH vegetation that is evergreen 
    ! IMPERVU    Fraction of LAND SURFACE that is IMPERVIOUS 
@@ -38,7 +43,7 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
 
    integer ni, nclass
    real deci(ni), ever(ni), fcover(ni,nclass), impervu(ni)
-   real high(ni), low(ni), tablen(nclass)
+   real high(ni), low(ni), tablen(nclass), agfrac(ni)
    real tables(nclass), lat(ni)
 !
 !Author
@@ -62,6 +67,20 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
         ever(i)= 0.0
       END DO
 !
+      ! compute sum of agricultural areas for the optional representation of tile drains and ploughing 
+      IF (VF_TYPE.eq.'CCILC_WE') THEN
+        ! with the option CCILC_WE, class 13 (short grass and forbs) is transferred into class 17 in eastern NA 
+        ! and should not be taken into account when computing the agricultural fraction 'agfrac'       
+        DO i=1,ni
+          agfrac(i) = fcover(i,15) + fcover(i,16) + fcover(i,18) + fcover(i,19) + fcover(i,20)
+        END DO
+      ELSE
+        ! by default, based on official fcover definitions (see inside inicover_svs), classes 15 to 20 included 
+        ! consist of agricultural areas
+        DO i=1,ni
+          agfrac(i) = fcover(i,15) + fcover(i,16) + fcover(i,17) + fcover(i,18) + fcover(i,19) + fcover(i,20)
+        END DO
+      ENDIF
 !
 !
       DO i=1,ni
@@ -121,6 +140,8 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
           ! TAKE TO BE FRACTION OF URBAN CLASS (vf=21) TIMES A CONSTANT...
           impervu(i) =  imp_urb * fcover(i,21) / totfract
 !
+          ! FRACTION OF LAND SURFACE COVERED WITH AGRICULTURAL AREAS
+          agfrac(i) = agfrac(i) / totfract
 
        ELSE
           low(i)     = 0.0
@@ -174,3 +195,4 @@ subroutine veglowhigh(fcover, tablen, tables, low, high, deci, ever, impervu, &
 !
    return
  end subroutine veglowhigh
+end module veglowhigh_mod

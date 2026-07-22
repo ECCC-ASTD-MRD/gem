@@ -20,6 +20,7 @@ module timestr_mod
    use, intrinsic :: iso_fortran_env, only: REAL64, INT64
    use clib_itf_mod, only: clib_toupper
    use str_mod, only: str_toreal,str_normalize
+   use str_split_mod
    use mu_jdate_mod, only: jdate_from_cmc, jdate_year, jdate_month
    implicit none
    private

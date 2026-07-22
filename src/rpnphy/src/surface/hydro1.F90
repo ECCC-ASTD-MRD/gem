@@ -13,7 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
-
+module hydro_mod
+  implicit none
+  public
+contains
 subroutine hydro3(DT, T, TS, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
      RAINRATE, SNOWRATE, T2M, U10M, V10M, &
      LEV, LETR, LEG, LES, ZC1, ZC2, C3,  WGEQ, CT, LAI, VEG, D2, &
@@ -581,3 +584,4 @@ subroutine hydro3(DT, T, TS, WG, W2, WF, WL, WR, WS, ALPHAS, RHOS, SNODP, &
 
    return
 end subroutine hydro3
+end module hydro_mod

@@ -6,17 +6,18 @@ module pbl_mtke
 
 contains
 
-  subroutine moistke(en,enold,zn,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
-       fngauss,fnnonloc,gama,gamaq,gamal,hpbl,lh,hpar, &
+  subroutine moistke(en,enold,zn,znt,zd,rif,rig,buoy,shr2,pri,qc,c1,fnn, &
+       fngauss,fnnonloc,gama,gamaq,gamal,wcascd,hpbl,lh,hpar, &
        wthl_ng,wqw_ng,uw_ng,vw_ng, &
        u,v,t,tve,q,qe,ps,st,s,se, &
        z,z0,gzmom,frv,wstar,fbsurf,turbreg, &
-       mrk2,vcoef,dxdy,tau,kount,trnch,n,nk)
+       mrk2,vcoef,dxdy,lscorer2,tau,kount,trnch,n,nk)
     use, intrinsic :: iso_fortran_env, only: INT64
+    use neark, only: neark_dp => neark_dp_orig
     use tdpack, only: CAPPA, DELTA, GRAV, KARMAN, RGASD
     use series_mod, only: series_xst
     use phy_options
-    use phy_status, only: phy_error_L, PHY_OK
+    use phy_status, only: phy_error_L, PHY_OK, physeterror
     use mixing_length, only: ml_compute,ML_LMDA
     use ens_perturb, only: ens_spp_get, ens_nc2d
     use pbl_utils, only: TURBULENT, LAMINAR
@@ -26,6 +27,7 @@ contains
     implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
+#include "phymkptr.hf"
     !Arguments
     integer, intent(in) :: n                          !horizontal dimension
     integer, intent(in) :: nk                         !vertical dimension
@@ -51,12 +53,14 @@ contains
     real, dimension(n,nk), intent(in) :: s            !sigma for momentum levels
     real, dimension(n,nk), intent(in) :: se           !sigma for energy levels
     real, dimension(n,ens_nc2d), intent(in) :: mrk2   !Markov chains for stochastic parameters
-    real, dimension(*), intent(in) :: vcoef           !coefficients for vertical interpolation
+    real, pointer, dimension(:,:,:), contiguous :: vcoef !coefficients for vertical interpolation
     real, dimension(n,nk), intent(in) :: z            !height of e-levs (m)
     real, dimension(n,nk), intent(in) :: gzmom        !height of momentum levels (m)
+    real, pointer, dimension(:,:), contiguous   :: wcascd !TKE source term for dry thermals (m2/s3)
     real, dimension(n), intent(inout) :: hpar         !height of parcel ascent (m)
     real, dimension(n,nk), intent(inout) :: en        !TKE (m2/s2)
-    real, dimension(n,nk), intent(inout) :: zn        !mixing length (m)
+    real, dimension(n,nk), intent(inout) :: zn        !momentum mixing length (m)
+    real, dimension(n,nk), intent(inout) :: znt       !thermal mixing length (m)
     real, dimension(n,nk), intent(inout) :: zd        !dissipation length (m)
     real, dimension(n,nk), intent(inout) :: qc        !PBL cloud water content
     real, dimension(n,nk), intent(inout) :: fngauss   !Gaussian (local) cloud fraction
@@ -76,7 +80,8 @@ contains
     real, dimension(n,nk), intent(out) :: wqw_ng      !nonlocal flux for q
     real, dimension(n,nk), intent(out) :: uw_ng       !nonlocal flux for u-wind
     real, dimension(n,nk), intent(out) :: vw_ng       !nonlocal flux for v-wind
-
+    real, dimension(n,nk), intent(out) :: lscorer2    !Scorer parameter (m^-2)
+    
     !@Author J. Mailhot (Nov 2000)
 
     !@Revision
@@ -134,20 +139,18 @@ contains
          shr_term,shr_ng,zero,buoy_term,frac
     real, dimension(n,nk,3) :: w_cld
 
-    ! External symbols
-    integer, external :: neark
-
     ! Initialization
     if(kount.eq.0) then
-       if (.not.any('zn' == phyinread_list_s(1:phyinread_n))) then
+       if (.not.ISPHYIN('zn')) then
           do k=1,nk
              zn(:,k)=min(KARMAN*(z(:,k)+z0(:)),ML_LMDA)
           enddo
        endif
-       if (.not.any('qtbl' == phyinread_list_s(1:phyinread_n))) qc = 0.
-       if (.not.any('fnn' == phyinread_list_s(1:phyinread_n))) fnn = 0.
-       if (.not.any('fblgauss' == phyinread_list_s(1:phyinread_n))) fngauss = 0.
-       if (.not.any('hpar' == phyinread_list_s(1:phyinread_n))) hpar = hpbl
+       if (.not.ISPHYIN('znt')) znt = zn
+       if (.not.ISPHYIN('qtbl')) qc = 0.
+       if (.not.ISPHYIN('fnn')) fnn = 0.
+       if (.not.ISPHYIN('fblgauss')) fngauss = 0.
+       if (.not.ISPHYIN('hpar')) hpar = hpbl
     endif
     zero = 0.
     ricmax = pbl_ricrit(2)
@@ -160,7 +163,7 @@ contains
     call blcloud(u,v,t,tve,q,qc,fnn,frac,fngauss,fnnonloc,w_cld, &
          wb_ng,wthl_ng,wqw_ng,uw_ng,vw_ng,f_cs,dudz,dvdz, &
          hpar,frv,z0,fbsurf,gzmom,z,s,st,ps,shr2,rig, &
-         buoy,tau,vcoef,n,nk,size(w_cld,dim=3))
+         buoy,lscorer2,tau,vcoef,n,nk,size(w_cld,dim=3))
 
     ! Output Richardson number time series
     call series_xst(rig, 'RI', trnch)
@@ -178,9 +181,9 @@ contains
     ! Determine turbulence regime
     slk(:) = nk
     if (pbl_turbsl_depth > 0.) &
-         stat = neark(se,ps,pbl_turbsl_depth,n,nk,slk) !determine "surface layer" vertical index
+         slk = neark_dp(se,ps,pbl_turbsl_depth,n,nk) !determine "surface layer" vertical index
     if (kount == 0) then
-       INIT_TURB: if (.not.any('turbreg'==phyinread_list_s(1:phyinread_n))) then
+       INIT_TURB: if (.not.ISPHYIN('turbreg')) then
           do k=1,nk
              do j=1,n
                 if (k <= slk(j)) then
@@ -199,9 +202,9 @@ contains
 
     ! Compute mixing and dissipation length scales
     mlen(:) = ens_spp_get('longmel', mrk2, default=ilongmel)
-    stat = ml_compute(zn, zd, pri, mlen, t, qe, qc, zero, fnn, z, gzmom, z, &
+    stat = ml_compute(zn, znt, zd, pri, mlen, t, qe, qc, zero, fnn, z, gzmom, z, &
          st, s, se, ps, enold, buoy, rig, w_cld, f_cs, turbreg, z0, &
-         hpbl, lh, hpar, vcoef, mrk2, dxdy, tau, kount)
+         hpbl, lh, hpar, std_p_prof, vcoef, mrk2, dxdy, tau, kount)
     if (stat /= PHY_OK) then
        call physeterror('moistke', 'error returned by mixing length calculation')
        return
@@ -271,6 +274,15 @@ contains
           e_star = e_star + tau*(wb_ng + shr_ng) !update of e* for nonlocal
           shr_term = shr_term + shr_ng !non-gradient for shear production term
           buoy_term = buoy_term + wb_ng !non-gradient buoyancy (thermal production) term
+       endif
+
+       ! Add nonlocal energy cascade term
+       if (pbl_nonloc == 'DEROOY22' .and. associated(wcascd)) then
+          do k=1,nk
+             do j=1,n
+                e_star(j,k) = e_star(j,k) + tau * wcascd(j,k)
+             enddo
+          enddo
        endif
 
        ! Output TKE equation terms for time series

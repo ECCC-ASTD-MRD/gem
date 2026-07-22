@@ -86,8 +86,8 @@
       logical month_flag, day_flag, hour_flag, step_flag, found_L
       real frarg, month, day, hour, rstep
       integer transtep, transtep2, stepset, argc_out
-      transtep(frarg) = nint(3600.0 * frarg / Cstv_dt_8)
-      transtep2(frarg) = nint(86400.0 * frarg / Cstv_dt_8)
+      transtep(frarg) = nint(3600.d0 * frarg / Cstv_dt_8)
+      transtep2(frarg) = nint(86400.d0 * frarg / Cstv_dt_8)
 !
       integer,external :: month_since_start
       integer,external :: dcmip_div_X

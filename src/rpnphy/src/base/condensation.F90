@@ -1,18 +1,3 @@
-!#-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ----------------------------
 
 module condensation
    implicit none
@@ -28,15 +13,17 @@ contains
       use tdpack_const, only: GRAV, DELTA, RGASD, CAPPA
       use phybudget, only: pb_compute, pb_conserve, pb_residual
       use microphy_utils, only: mp_lwc, mp_iwc
-      use microphy_p3,  only: mp_p3_wrapper_gem, P3_OK=>STATUS_OK
+      use microphy_p3,    only: mp_p3x_wrapper_gem  => mp_p3_wrapper_gem
+      use microphy_p3v5,  only: mp_p3v5_wrapper_gem => mp_p3_wrapper_gem, P3_OK=>STATUS_OK
       use microphy_p3v3,  only: mp_p3v3_wrapper_gem => mp_p3_wrapper_gem
       use microphy_kessler, only: kessler
       use microphy_consun, only: consun
       use microphy_s2, only: s2
       use microphy_my2, only: mp_my2_main
-      use microphy_statcond, only: sc_adjust 
+      use microphy_statcond, only: sc_adjust
+      use microphy_thompson, only: thompson_wrapper_gem, THOMPSON_OK
       use phy_options
-      use phy_status, only: phy_error_L, PHY_OK
+      use phy_status, only: phy_error_L, PHY_OK, physeterror
       use phybusidx
       use phymem, only: phyvar
       use tendency, only: apply_tendencies
@@ -93,7 +80,7 @@ contains
 
       ! Startup operations
       if (kount == 0) then
-         if (.not.any(phyinread_list_s(1:phyinread_n) == 'rhc')) zrhc(:,:) = -1.
+         if (.not.ISPHYIN('rhc')) zrhc(:,:) = -1.
       endif
       
       ! Local initializations
@@ -123,7 +110,7 @@ contains
               ttp, ttm, qqp, qqm, qcp, qcm, &
               psp, psm, sigma, dt, &
               zrnflx, zsnoflx, zf12, zfevp, zfice, &
-              zpblsigs, zmrk2, ni, nkm1)
+              zsigmas, zmrk2, ni, nkm1)
 
          ! Adjust tendencies to impose conservation
          if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
@@ -144,8 +131,6 @@ contains
               psp, psm, sigma, dt, &
               zrnflx, zsnoflx, zf12, zfevp, zfice, &
               zmrk2, ni, nkm1)
-
-         ! Post-microphysics condensation adjustment
 
       case('MP_MY2')
          
@@ -177,64 +162,117 @@ contains
             call physeterror('condensation', 'Error returned by P3v3 gem wrapper')
             return
          endif
-
-         ! Adjust tendencies to impose conservation
-         if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
-              F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
-            call physeterror('condensation', &
-                 'Cannot correct conservation for '//trim(stcond))
-            return
-         endif
          
       case('MP_P3')
          
          ! Predicted Particle Properties (P3) microphysics
-         istat1 = mp_p3_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend,                                                          &
-              qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,zgzmom,sigma,                                                    &
-              kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,                                                     &
-              a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_tss_ws,                                                  &
-              a_zet,a_zec,a_effradc,qcm,qcp,ncp,qrm,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,                           &
-              p3_depfact,p3_subfact,p3_debug,a_h_cb,a_h_sn,a_vis,a_vis1,                                                   &
-              a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,a_diag_dhmax,                                         &
-              a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6,                                                                   &
-              qti1m,qti1p,qmi1p,nti1p,bmi1p,a_effradi1,zitot_1=zti1p,qiliq_1=qli1p,                                        &
+         istat1 = mp_p3v5_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend,                                                                       &
+              qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,zgzmom,sigma,                                                                   &
+              kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,                                                                    &
+              a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_tss_ws,                                                                 &
+              a_zet,a_zec,a_effradc,qcm,qcp,ncp,qrm,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,                                          &
+              p3_depfact,p3_subfact,p3_debug,p3_supid,a_h_cb,a_h_sn,a_vis,a_vis1,                                                         &
+              a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,a_diag_dhmax,                                                        &
+              a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6,                                                                                  &
+              qti1m,qti1p,qmi1p,nti1p,bmi1p,a_effradi1,zitot_1=zti1p,qiliq_1=qli1p,                                                       &
               qitot_2m=qti2m,qitot_2=qti2p,qirim_2=qmi2p,nitot_2=nti2p,birim_2=bmi2p,diag_effi_2=a_effradi2,zitot_2=zti2p,qiliq_2=qli2p,  &
               qitot_3m=qti3m,qitot_3=qti3p,qirim_3=qmi3p,nitot_3=nti3p,birim_3=bmi3p,diag_effi_3=a_effradi3,zitot_3=zti3p,qiliq_3=qli3p,  &
               qitot_4m=qti4m,qitot_4=qti4p,qirim_4=qmi4p,nitot_4=nti4p,birim_4=bmi4p,diag_effi_4=a_effradi4,zitot_4=zti4p,qiliq_4=qli4p)
          if (istat1 /= P3_OK) then
             call physeterror('condensation', 'Error returned by P3 gem wrapper')
-            return
+           return
          endif
 
-         ! Adjust tendencies to impose conservation
+      case('MP_P3X')
+         
+         ! Predicted Particle Properties (P3) microphysics
+         istat1 = mp_p3x_wrapper_gem(zste,zsqe,zsqce,zsqre,qitend,                                                                        &
+              qqm,qqp,ttm,ttp,dt,p3_dtmax,ww,psp,zgztherm,zgzmom,sigma,                                                                   &
+              kount,ni,nkm1,a_tls,a_tss,a_tls_rn1,a_tls_rn2,a_tss_sn1,                                                                    &
+              a_tss_sn2,a_tss_sn3,a_tss_pe1,a_tss_pe2,a_tss_snd,a_tss_ws,                                                                 &
+              a_zet,a_zec,a_effradc,qcm,qcp,ncp,qrm,qrp,nrp,N_DIAG_2D,diag_2d,N_DIAG_3D,diag_3d,                                          &
+              p3_depfact,p3_subfact,p3_debug,p3_supid,a_h_cb,a_h_sn,a_vis,a_vis1,                                                         &
+              a_vis2,a_vis3,slw,p3_scpf_on,p3_pfrac,p3_resfact,a_fxp,p3_freq3Ddiag,a_diag_dhmax,                                          &
+              a_qi_1,a_qi_2,a_qi_3,a_qi_4,a_qi_5,a_qi_6,                                                                                  &
+              qti1m,qti1p,qmi1p,nti1p,bmi1p,a_effradi1,zitot_1=zti1p,qiliq_1=qli1p,                                                       &
+              qitot_2m=qti2m,qitot_2=qti2p,qirim_2=qmi2p,nitot_2=nti2p,birim_2=bmi2p,diag_effi_2=a_effradi2,zitot_2=zti2p,qiliq_2=qli2p,  &
+              qitot_3m=qti3m,qitot_3=qti3p,qirim_3=qmi3p,nitot_3=nti3p,birim_3=bmi3p,diag_effi_3=a_effradi3,zitot_3=zti3p,qiliq_3=qli3p,  &
+              qitot_4m=qti4m,qitot_4=qti4p,qirim_4=qmi4p,nitot_4=nti4p,birim_4=bmi4p,diag_effi_4=a_effradi4,zitot_4=zti4p,qiliq_4=qli4p)
+         if (istat1 /= P3_OK) then
+            call physeterror('condensation', 'Error returned by P3 gem wrapper')
+           return
+         endif
+
+      case('THOMPSON')
+         
+         istat1 = thompson_wrapper_gem(pvars,&
+              thompson_dt_inner,thompson_sedi_semilag_L,thompson_decfl,&
+              thompson_cldfrac,ni,nkm1,qqp,qcp,qrp,qip,qnp,qgp,nip,nrp,&
+              ttp,sigma,psp,zgzmom,ww,dt,kount,&
+              a_tls,a_tss,zste,zsqe,zsqce,zsqre,qitend,a_fxp)
+
+         if (istat1 /= THOMPSON_OK) then
+            call physeterror('condensation', 'Error returned by thompson_wrapper_gem') 
+           return
+        endif
+        
+      CASE DEFAULT
+           call physeterror('condensation','Error stcond='//stcond//' not valid')
+           return
+           
+      end select GRIDSCALE_SCHEME
+
+      ! Adjust tendencies to impose conservation
+      if (stcond(1:5) == 'MP_P3' .or. stcond == 'THOMPSON') then
          if (pb_conserve(cond_conserve, zste, zsqe, pvars, &
               F_dqc=zsqce+zsqre, F_dqi=qitend, F_rain=a_tls, F_snow=a_tss) /= PHY_OK) then
             call physeterror('condensation', &
                  'Cannot correct conservation for '//trim(stcond))
             return
          endif
-
-      end select GRIDSCALE_SCHEME
-
+      endif
+      
       ! Split diagnostic tables into the bus
-      if (associated(a_d2d01)) then
-         a_d2d01 = diag_2d(:,1);    a_d2d08 = diag_2d(:, 8);    a_d2d15 = diag_2d(:,15)
-         a_d2d02 = diag_2d(:,2);    a_d2d09 = diag_2d(:, 9);    a_d2d16 = diag_2d(:,16)
-         a_d2d03 = diag_2d(:,3);    a_d2d10 = diag_2d(:,10);    a_d2d17 = diag_2d(:,17)
-         a_d2d04 = diag_2d(:,4);    a_d2d11 = diag_2d(:,11);    a_d2d18 = diag_2d(:,18)
-         a_d2d05 = diag_2d(:,5);    a_d2d12 = diag_2d(:,12);    a_d2d19 = diag_2d(:,19)
-         a_d2d06 = diag_2d(:,6);    a_d2d13 = diag_2d(:,13);    a_d2d20 = diag_2d(:,20)
-         a_d2d07 = diag_2d(:,7);    a_d2d14 = diag_2d(:,14)
-      endif
-      if (associated(a_ss01)) then
-         a_ss01 = diag_3d(:,:,1);   a_ss08 = diag_3d(:,:, 8);   a_ss15 = diag_3d(:,:,15)
-         a_ss02 = diag_3d(:,:,2);   a_ss09 = diag_3d(:,:, 9);   a_ss16 = diag_3d(:,:,16)
-         a_ss03 = diag_3d(:,:,3);   a_ss10 = diag_3d(:,:,10);   a_ss17 = diag_3d(:,:,17)
-         a_ss04 = diag_3d(:,:,4);   a_ss11 = diag_3d(:,:,11);   a_ss18 = diag_3d(:,:,18)
-         a_ss05 = diag_3d(:,:,5);   a_ss12 = diag_3d(:,:,12);   a_ss19 = diag_3d(:,:,19)
-         a_ss06 = diag_3d(:,:,6);   a_ss13 = diag_3d(:,:,13);   a_ss20 = diag_3d(:,:,20)
-         a_ss07 = diag_3d(:,:,7);   a_ss14 = diag_3d(:,:,14)
-      endif
+      if (associated(a_d2d01)) a_d2d01 = diag_2d(:,1)
+      if (associated(a_d2d02)) a_d2d02 = diag_2d(:,2)
+      if (associated(a_d2d03)) a_d2d03 = diag_2d(:,3)
+      if (associated(a_d2d04)) a_d2d04 = diag_2d(:,4)
+      if (associated(a_d2d05)) a_d2d05 = diag_2d(:,5)
+      if (associated(a_d2d06)) a_d2d06 = diag_2d(:,6)
+      if (associated(a_d2d07)) a_d2d07 = diag_2d(:,7)
+      if (associated(a_d2d08)) a_d2d08 = diag_2d(:,8)
+      if (associated(a_d2d09)) a_d2d09 = diag_2d(:,9)
+      if (associated(a_d2d10)) a_d2d10 = diag_2d(:,10)
+      if (associated(a_d2d11)) a_d2d11 = diag_2d(:,11)
+      if (associated(a_d2d12)) a_d2d12 = diag_2d(:,12)
+      if (associated(a_d2d13)) a_d2d13 = diag_2d(:,13)
+      if (associated(a_d2d14)) a_d2d14 = diag_2d(:,14)
+      if (associated(a_d2d15)) a_d2d15 = diag_2d(:,15)
+      if (associated(a_d2d16)) a_d2d16 = diag_2d(:,16)
+      if (associated(a_d2d17)) a_d2d17 = diag_2d(:,17)
+      if (associated(a_d2d18)) a_d2d18 = diag_2d(:,18)
+      if (associated(a_d2d19)) a_d2d19 = diag_2d(:,19)
+      if (associated(a_d2d20)) a_d2d20 = diag_2d(:,20)
+      if (associated(a_ss01)) a_ss01 = diag_3d(:,:, 1)
+      if (associated(a_ss02)) a_ss02 = diag_3d(:,:, 2)
+      if (associated(a_ss03)) a_ss03 = diag_3d(:,:, 3)
+      if (associated(a_ss04)) a_ss04 = diag_3d(:,:, 4)
+      if (associated(a_ss05)) a_ss05 = diag_3d(:,:, 5)
+      if (associated(a_ss06)) a_ss06 = diag_3d(:,:, 6)
+      if (associated(a_ss07)) a_ss07 = diag_3d(:,:, 7)
+      if (associated(a_ss08)) a_ss08 = diag_3d(:,:, 8)
+      if (associated(a_ss09)) a_ss09 = diag_3d(:,:, 9)
+      if (associated(a_ss10)) a_ss10 = diag_3d(:,:, 10)
+      if (associated(a_ss11)) a_ss11 = diag_3d(:,:, 11)
+      if (associated(a_ss12)) a_ss12 = diag_3d(:,:, 12)
+      if (associated(a_ss13)) a_ss13 = diag_3d(:,:, 13)
+      if (associated(a_ss14)) a_ss14 = diag_3d(:,:, 14)
+      if (associated(a_ss15)) a_ss15 = diag_3d(:,:, 15)
+      if (associated(a_ss16)) a_ss16 = diag_3d(:,:, 16)
+      if (associated(a_ss17)) a_ss17 = diag_3d(:,:, 17)
+      if (associated(a_ss18)) a_ss18 = diag_3d(:,:, 18)
+      if (associated(a_ss19)) a_ss19 = diag_3d(:,:, 19)
+      if (associated(a_ss20)) a_ss20 = diag_3d(:,:, 20)
 
       !Application of standard microphysical tendencies
       call apply_tendencies(ttp,  qqp, &
@@ -262,10 +300,6 @@ contains
          call physeterror('condensation', 'Problem computing final budget')
          return
       endif
-
-      ! Post-scheme condensation adjustment
-      if (stcond == 'S2') &
-           call sc_adjust(ztcondc1, zqcondc1, zqccondc1, pvars, delt, ni, nkm1)
       
       ! Compute profile diagnostics <<< should be done outside the model >>>
       istat1 = mp_lwc(qtl, pvars)
@@ -282,8 +316,7 @@ contains
       !----------------------------------------------------------------
       return
    end subroutine condensation4
-
-   
+    
 !!$   subroutine priv_check_negative(F_fld, F_minval, F_name)
 !!$      implicit none
 !!$      real, pointer, contiguous :: F_fld(:,:)

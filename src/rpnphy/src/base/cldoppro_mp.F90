@@ -1,18 +1,3 @@
-!------------------------------------a LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
 
 module cldoppro_MP
    implicit none
@@ -26,30 +11,35 @@ contains
        taucs, omcs, gcs, taucl, omcl, gcl, &
        liqwcin, icewcin, &
        liqwpin, icewpin, cldfrac, &
-       tt, sig, ps, ni, nkm1, nk, kount)
+       tt, sig, ps, dontneedall, ni, nkm1, nk, kount)
     use, intrinsic :: iso_fortran_env, only: INT64
     use debug_mod, only: init2nan
     use tdpack_const, only: GRAV, RGASD, TCDK
     use phy_options
+    use phy_status, only: physeterror
     use phybusidx
     use phymem, only: phyvar
+    use cldwin_mod, only: cldwin1
     use ens_perturb, only: ens_nc2d, ens_spp_get
+    use cldop_utils, only: cldop_rei, cldop_rew, cldop_proplw, cldop_propli, &
+           cldop_propsw, cldop_propsi
     implicit none
 
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-    include "nbsnbl.cdk"
+#include "nbsnbl.cdk"
 
     !@Arguments
     integer, intent(in) :: ni, nkm1, nk, kount
 
     type(phyvar), pointer, contiguous :: pvars(:)
-    real, intent(out), dimension(ni,nkm1,nbs) :: taucs, omcs, gcs
-    real, intent(out), dimension(ni,nkm1,nbl) :: taucl, omcl, gcl
+    real, intent(out), dimension(ni,nkm1,NBS) :: taucs, omcs, gcs
+    real, intent(out), dimension(ni,nkm1,NBL) :: taucl, omcl, gcl
     real, intent(inout), dimension(ni,nkm1) :: liqwcin, icewcin
     real, intent(inout), dimension(ni,nkm1) :: liqwpin, icewpin
     real, intent(inout) :: cldfrac(ni,nkm1)
     real, intent(in)    :: tt(ni,nkm1), sig(ni,nkm1), ps(ni)
+    logical, intent(in) :: dontneedall                   ! .true. = need only band1 in SW and band6 in LW
 
     !          - input/output -
     ! pvars    list of all phy vars (meta + slab data)
@@ -94,34 +84,26 @@ contains
 #include <rmn/msg.h>
 #include "phymkptr.hf"
 
-    include "cldop.cdk"
     include "phyinput.inc"
     include "surface.cdk"
     include "nocld.cdk"
 
-    external :: cldoppro_data
-
-    real, parameter :: THIRD = 1./3.
-
     logical, dimension(ni,nkm1) :: nocloud
-
 
     real, dimension(:), allocatable :: tausimp, omsimp, gsimp, taulimp, omlimp, glimp
 
-    real, dimension(ni,nkm1) :: aird, rew, rei, rec_cdd, vs1, dp
+    real, dimension(ni,nkm1) :: rew, rei, rewxp, reixp, vs1, dp
     real, dimension(ni,nkm1) :: lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps
     real, dimension(ni,nkm1) :: wexp,wimp
-    real, dimension(ni,nkm1) :: zrieff
     real, dimension(ni) :: reifac
     real, dimension(ni) :: rewfac
-
 
     real, dimension(:,:,:), allocatable :: iwcinmp, iwpinmp, effradi
 
     logical :: nostrlwc, readfield_L
-    integer :: i, j, k, l, mpcat, istat1, istat2
+    integer :: i, j, k, l, mpcat, istat1, istat2, swi,swf,lwi,lwf
     real :: rec_grav,  press
-    real :: rew1, rew2, rew3, dg, dg2, dg3, tausw, omsw, gsw, tausi, omsi, gsi, y1, y2, y3
+    real :: rew1, dg, tausw, omsw, gsw, tausi, omsi, gsi, y1, y2, y3
     real :: taulw, omlw, glw, tauli, omli, gli
     real :: tauswmp, omswmp, gswmp
     real :: taulwmp, omlwmp, glwmp
@@ -132,9 +114,11 @@ contains
     real, pointer, dimension(:,:), contiguous :: zqti1m, zqti2m, zqti3m, zqti4m
     real, pointer, dimension(:,:), contiguous :: zeffradc, zeffradi1 , zeffradi2 , zeffradi3 , zeffradi4
     real, pointer, dimension(:), contiguous :: ztopthw,ztopthi
+    real, pointer, dimension(:,:), contiguous :: ztose,ztosi,ztole,ztoli
     real, pointer, dimension(:), contiguous :: zmg,zml,zdlat
-    real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp
+    real, pointer, dimension(:,:), contiguous :: ziwcimp,zlwcimp,zhumoins,ztmoins,zpmoins,zsigw,zfxp,zfmp,zstrfr
     real, pointer, dimension(:), contiguous   :: ztlwp, ztiwp,ztlwpin,ztiwpin
+    real, pointer, dimension(:,:), contiguous   :: zrewx, zreix, zrewi, zreii
     real, pointer, dimension(:,:), contiguous :: zlwcrad, ziwcrad, zcldrad, zqcplus, zgraupel, &
          zqiplus, zsnow, zqi_cat1, zqi_cat2, zqi_cat3, zqi_cat4,zmrk2
     !----------------------------------------------------------------
@@ -149,6 +133,14 @@ contains
     MKPTR1D(ztlwpin, tlwpin, pvars)
     MKPTR1D(ztopthi, topthi, pvars)
     MKPTR1D(ztopthw, topthw, pvars)
+    MKPTR2Dm1(zrewx, rewx, pvars)
+    MKPTR2Dm1(zreix, reix, pvars)
+    MKPTR2Dm1(zrewi, rewi, pvars)
+    MKPTR2Dm1(zreii, reii, pvars)
+    MKPTR2Dm1(ztose, tose, pvars)
+    MKPTR2Dm1(ztosi, tosi, pvars)
+    MKPTR2Dm1(ztole, tole, pvars)
+    MKPTR2Dm1(ztoli, toli, pvars)
     MKPTR2Dm1(zcldrad, cldrad, pvars)
     MKPTR2Dm1(zeffradc, effradc, pvars)
     MKPTR2Dm1(zeffradi1, effradi1, pvars)
@@ -157,6 +149,7 @@ contains
     MKPTR2Dm1(zeffradi4, effradi4, pvars)
     MKPTR2Dm1(zfmp, fmp, pvars)
     MKPTR2Dm1(zfxp, fxp, pvars)
+    MKPTR2Dm1(zstrfr, strfr, pvars)
     MKPTR2Dm1(zgraupel, qgplus, pvars)
     MKPTR2Dm1(zhumoins, humoins, pvars)
     MKPTR2Dm1(zqti1m, qti1moins, pvars)
@@ -183,7 +176,7 @@ contains
     MKPTR2Dm1(ztmoins, tmoins, pvars)
     MKPTR2D(zmrk2, mrk2, pvars)
 
-    call init2nan(zrieff,aird, rew, rei, rec_cdd, vs1, dp)
+    call init2nan(rew, rei, rewxp, reixp, vs1, dp)
     call init2nan(lwpinmp, cldfmp, cldfxp, lwcinmp, iwpinmps, iwcinmps)
     call init2nan(reifac, rewfac)
 
@@ -205,6 +198,10 @@ contains
 
     rec_grav = 1./GRAV
     nostrlwc = (climat.or.stratos)
+    zrewx    = 0.0
+    zreix    = 0.0
+    zrewi    = 0.0
+    zreii    = 0.0
     ztlwp    = 0.0
     ztiwp    = 0.0
     ztlwpin  = 0.0
@@ -216,13 +213,14 @@ contains
     iwcinmp  = 0.0
     lwcinmp  = 0.0
 
-    if (rad_mpagg_l) then ! if relative weighting is used, also use standard cldfth
-      mpcldth  = cldfth
+    ! Set cloud detection threshold
+    if (rad_mpagg == 'BINARY') then
+       mpcldth = 0.01 
     else
-      mpcldth  = 0.01
+       mpcldth = cldfth ! use standard parameter
     endif
 
-    ! assume implicit sources have been agregated into zlwc and ziwc in subroutine prep_cw_MP
+    ! Assume implicit sources have been agregated into zlwc and ziwc in subroutine prep_cw_MP
     do k=1,nkm1
        do i=1,ni
           liqwcin(i,k) = max(zlwcimp(i,k), 0.)
@@ -283,8 +281,7 @@ contains
     endif
 
     readfield_L = .false.
-    if (any(dyninread_list_s == 'qc') .or. &
-         any(phyinread_list_s(1:phyinread_n) == 'tr/mpqc:p')) then
+    if (ISDYNIN('qc') .or. ISPHYIN('tr/mpqc:p')) then
        readfield_L = .true.
        do k=1,nkm1
           do i=1,ni
@@ -294,9 +291,9 @@ contains
     endif
 
     IF_MY2: if (stcond(1:6) == 'MP_MY2' .and. &
-         (any(dyninread_list_s == 'mpqi') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqi:p')) .and. &
-         (any(dyninread_list_s == 'mpqs') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqs:p')) .and. &
-         (any(dyninread_list_s == 'mpqg') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/mpqg:p'))) then
+         (ISDYNIN('mpqi') .or. ISPHYIN('tr/mpqi:p')) .and. &
+         (ISDYNIN('mpqs') .or. ISPHYIN('tr/mpqs:p')) .and. &
+         (ISDYNIN('mpqg') .or. ISPHYIN('tr/mpqg:p'))) then
 
        readfield_L = .true.
        !ziwc = zqiplus + zsnow
@@ -309,7 +306,7 @@ contains
        enddo
 
     elseif (stcond(1:5) == 'MP_P3' .and. &
-         (any(dyninread_list_s == 'qti1') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti1:p'))) then
+         (ISDYNIN('qti1') .or. ISPHYIN('tr/qti1:p'))) then
 
        readfield_L = .true.
        !ziwc = zqi_cat1
@@ -320,7 +317,7 @@ contains
        enddo
 
        IF_NCAT2: if (p3_ncat >= 2 .and. &
-            (any(dyninread_list_s == 'qti2') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti2:p'))) then
+            (ISDYNIN('qti2') .or. ISPHYIN('tr/qti2:p'))) then
 
           !ziwc = ziwc + zqi_cat2
           do k=1,nkm1
@@ -330,7 +327,7 @@ contains
           enddo
 
           IF_NCAT3: if (p3_ncat >= 3 .and. &
-               (any(dyninread_list_s == 'qti3') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti3:p')) ) then
+               (ISDYNIN('qti3') .or. ISPHYIN('tr/qti3:p'))) then
 
              !ziwc = ziwc + zqi_cat3
              do k=1,nkm1
@@ -340,7 +337,7 @@ contains
              enddo
 
              IF_NCAT4: if (p3_ncat >= 4 .and. &
-                  (any(dyninread_list_s == 'qti4') .or. any(phyinread_list_s(1:phyinread_n) == 'tr/qti4:p'))) then
+                  (ISDYNIN('qti4') .or. ISPHYIN('tr/qti4:p'))) then
 
                 !ziwc = ziwc + zqi_cat4
                 do k=1,nkm1
@@ -368,8 +365,6 @@ contains
           enddo
        enddo
     endif
-
-
 
     !..."no stratospheric lwc" mode when CLIMAT or STRATOS = true
     !...no clouds above TOPC (see nocld.cdk)
@@ -446,9 +441,9 @@ contains
 
     do k=1,nkm1
        do i=1,ni
-          icewpin(i,k)  = icewcin(i,k)*dp(i,k)
-          liqwpin(i,k)  = liqwcin(i,k)*dp(i,k)
-          lwpinmp(i,k)  = lwcinmp(i,k)*dp(i,k)
+          icewpin(i,k)  = icewcin(i,k)*dp(i,k) !imp
+          liqwpin(i,k)  = liqwcin(i,k)*dp(i,k) !imp
+          lwpinmp(i,k)  = lwcinmp(i,k)*dp(i,k) !exp
           iwpinmps(i,k) = 0.
           iwcinmps(i,k) = 0.
        enddo
@@ -458,8 +453,8 @@ contains
        do i=1,ni
           do l=1,mpcat
              iwpinmp(i,k,l) = iwcinmp(i,k,l)*dp(i,k)
-             iwpinmps(i,k) = iwpinmps(i,k) + iwpinmp(i,k,l)
-             iwcinmps(i,k) = iwcinmps(i,k) + iwcinmp(i,k,l)
+             iwpinmps(i,k) = iwpinmps(i,k) + iwpinmp(i,k,l) !exp
+             iwcinmps(i,k) = iwcinmps(i,k) + iwcinmp(i,k,l) !exp
           enddo
        end do
     end do
@@ -492,27 +487,37 @@ contains
              cldfrac(i,k) = 0.0
              zlwcrad(i,k) = 0.0
              ziwcrad(i,k) = 0.0
+             if (associated(zstrfr)) zstrfr(i, k) = 0.0
+          else             
+             if (associated(zstrfr)) zstrfr(i, k) = cldfxp(i,k)/(cldfxp(i,k)+cldfmp(i,k))
           endif
           zcldrad(i,k) = cldfrac(i,k)
        end do
     end do
 
-    do k=1,nkm1
-      do i=1,ni
-          wexp(i,k) = 1.
-          wimp(i,k) = 1.
-      end do
-    end do
-    if (rad_mpagg_l) then ! use relative weighting to combine optical thicknesses of imp and exp clouds
-     do k=1,nkm1
-       do i=1,ni
-           if((cldfmp(i,k)+cldfxp(i,k)) >= mpcldth) then
-             wexp(i,k) = cldfxp(i,k)/(cldfmp(i,k)+cldfxp(i,k))
-             wimp(i,k) = cldfmp(i,k)/(cldfmp(i,k)+cldfxp(i,k))
-           endif
+    ! Set weights for aggregation of clouds from different sources
+    wexp(:,:) = 1.
+    wimp(:,:) = 1.
+    select case (rad_mpagg)
+    case ('RELATIVE') ! use relative weighting to combine optical thicknesses of imp and exp clouds
+       do k=1,nkm1
+          do i=1,ni
+             if((cldfmp(i,k)+cldfxp(i,k)) >= mpcldth) then
+                wexp(i,k) = cldfxp(i,k)/(cldfmp(i,k)+cldfxp(i,k))
+                wimp(i,k) = cldfmp(i,k)/(cldfmp(i,k)+cldfxp(i,k))
+             endif
+          end do
        end do
-     end do
-    endif
+    case ('MERGED') ! use scheme-generated cloud fractions
+       do k=1,nkm1
+          do i=1,ni
+             if((cldfmp(i,k)+cldfxp(i,k)) >= mpcldth) then
+                wexp(i,k) = cldfxp(i,k)/min(cldfmp(i,k)+cldfxp(i,k), 1.)
+                wimp(i,k) = cldfmp(i,k)/min(cldfmp(i,k)+cldfxp(i,k), 1.)
+             endif
+          end do
+       end do
+    end select
 
     !     conversion d'unites : tlwp et tiwp en kg/m2
     do i=1,ni
@@ -520,98 +525,50 @@ contains
        ztiwp(i) = ztiwp(i) * 0.001
     enddo
 
-    !     initialize output fields
-    !
+    ! Initialize output fields
     do i = 1, ni
        ztopthw(i) = 0.0
        ztopthi(i) = 0.0
     end do
 
-! choice of effective radius for implicit water clouds
+    ! Effective radius for IMPLICIT WATER clouds
+    rew(:,:) = cldop_rew(tt, liqwcin, sig, ps, zmg, zml, rew_const, rad_cond_rew, ni, nkm1)
+    zrewi(:,:) = rew(:,:) * 1e-6
 
-    do k = 1, nkm1
-       do i = 1, ni
-    !     for BARKER case, set cloud droplet concentration per cm^3 to 100 over oceans and 500 over land
-          if (zmg(i) <= 0.5 .and. zml(i) <= 0.5) then
-             rec_cdd(i,k) = 0.01
-          else
-             rec_cdd(i,k) = 0.002
-          endif
-          aird(i,k) = sig(i,k) * ps(i) / ( tt(i,k) * RGASD )  !aird is air density in kg/m3
-       end do
-    end do
+    ! Adjust the effective radius using stochastic perturbations
+    rewfac(:) = ens_spp_get('rew_mult', zmrk2, default=1.)
+    do k=1, nkm1
+       rew(:,k) = rewfac(:) * rew(:,k)
+    enddo
 
-    select case (rad_cond_rew)
-      case ('BARKER')
-         ! Radius as in newrad: from H. Barker based on aircraft data (range 4-17um from Slingo)
-         rew(:,:) = min(max(4., 754.6 * (liqwcin*aird*rec_cdd)**THIRD), 17.0)
-      case ('NEWRAD')
-         ! Radius as in newrad: corresponds to so called new optical properties
-         vs1(:,:) = (1.0 + liqwcin(:,:) * 1.e4) &
-              * liqwcin(:,:) * aird(:,:) * rec_cdd(:,:)
-         rew(:,:) =  min(max(2.5, 3000. * vs1**THIRD), 50.0)
-      case ('ROTSTAYN03')
-         ! Radius according to Rotstayn and Liu (2003)
-         do k = 1, nkm1
-            do i = 1, ni
-               epsilon =  1.0 - 0.7 * exp(- 0.001 / rec_cdd(i,k))
-               epsilon2 =  epsilon * epsilon
-               betad =  1.0 + epsilon2
-               betan =  betad + epsilon2
-               rew(i,k) = 620.3504944*((betan*betan*liqwcin(i,k)*aird(i,k)) &
-                    / (betad / rec_cdd(i,k)) )**third
-               rew(i,k) =  min (max (2.5, rew(i,k)), 17.0)
-            end do
-         end do
-      case DEFAULT
-         ! Radius is a user-specified constant (in microns)
-         rew = rew_const
-    end select
+    ! Effective radius for EXPLICIT WATER clouds
+    rewxp(:,:) = cldop_rew(tt, lwcinmp, sig, ps, zmg, zml, rewx_const, rad_exp_rew, ni, nkm1, remp=zeffradc)
+    zrewx(:,:) = rewxp(:,:) * 1e-6
 
-      ! Adjust the effective radius using stochastic perturbations
-      rewfac(:) = ens_spp_get('rew_mult', zmrk2, default=1.)
-      do k=1, nkm1
-         rew(:,k) = rewfac(:) * rew(:,k)
-      enddo
-
-!...   choice of effective radius for implicit ice clouds
-
-     ! Effective radius of crystals in ice clouds
-      select case (rad_cond_rei)
-      case ('CCCMA')
-         ! Units of icewcin must be in g/m3 for this parameterization of rei (in microns)
-         zrieff(:,:) = (1000. * icewcin * aird)**0.216
-         where (icewcin(:,:) >= 1.e-9)
-            zrieff(:,:) = 83.8 * zrieff(:,:)
-         elsewhere
-            zrieff(:,:) = 20.
-         endwhere
-         rei(:,:) =  max(min(zrieff(:,:), 50.0), 20.0)
-      case ('SIGMA')
-         ! Radius varies from 60um (near-surface) to 15um (upper-troposphere)
-         rei(:,:) = max(sig(:,:)-0.25, 0.0)*60. + 15.
-      case ('ECMWF')
-         ! see IFS documentation for Cy47R3 -eqns 2.74 and 2.75 - beware of parenthesis error for first term
-         do k = 1, nkm1
-            do i = 1, ni
-               zrieff(i,k) = 1000. * icewcin(i,k) * aird(i,k) ! convert to gm-3
-               zrieff(i,k) = (1.2351 + 0.0105*(tt(i,k) - TCDK)) * (45.8966*zrieff(i,k)**0.2214 + 0.7957*zrieff(i,k)**0.2535*(tt(i,k) - 83.15))
-               zrieff(i,k) =  max(min(zrieff(i,k), 155.0), (20.+40.*abs(zdlat(i)))) ! impose a lat dependent min
-               rei(i,k) = 0.64952*zrieff(i,k)
-               rei(i,k) =  min(rei(i,k), 70.0) ! necessary to avoid crashes
-            enddo
-         enddo
-      case DEFAULT
-         ! Radius is a user-specified constant (in microns)
-         rei(:,:) = rei_const
-      end select
-
-      ! Adjust the effective radius using stochastic perturbations
-      reifac(:) = ens_spp_get('rei_mult', zmrk2, default=1.)
-      do k=1, nkm1
-         rei(:,k) = reifac(:) * rei(:,k)
-      enddo
-
+    ! Effective radius for IMPLICIT ICE clouds
+    rei(:,:) = cldop_rei(tt, icewcin, sig, ps, zdlat, rei_const, rad_cond_rei, ni, nkm1)
+    zreii(:,:) = rei(:,:) * 1e-6
+    
+    ! Adjust the effective radius using stochastic perturbations
+    reifac(:) = ens_spp_get('rei_mult', zmrk2, default=1.)
+    do k=1, nkm1
+       rei(:,k) = reifac(:) * rei(:,k)
+    enddo
+    
+    ! Effective radius for EXPLICIT ICE clouds
+    reixp(:,:) = cldop_rei(tt, iwcinmp, sig, ps, zdlat, reix_const, rad_exp_rei, ni, nkm1, remp=effradi(:,:,1))
+    zreix(:,:) = reixp(:,:) * 1e-6
+   
+    ! mask output effective radii where there is no cloud
+    where (cldfxp(:,:) < mpcldth)
+       zreix(:,:)= 0.0
+       zrewx(:,:)= 0.0
+    endwhere
+    where (cldfmp(:,:) < mpcldth)
+       zreii(:,:)= 0.0
+       zrewi(:,:)= 0.0
+    endwhere
+    
     ! end-code : FOR EFFECTIVE RADII OF IMPLICIT CLOUDS (NON-mp SOURCES)
     !
     !----------------------------------------------------------------------
@@ -634,8 +591,14 @@ contains
     !            but in practice, rei must be below 70microns or the model crashes
     !----------------------------------------------------------------------
 
+    if(dontneedall) then
+     swi=1;swf=1;lwi=6;lwf=6
+    else
+     swi=1;swf=nbs;lwi=1;lwf=nbl
+    endif
 
-    DO_NBS: do j = 1, nbs
+    ! Shortwave cloud radiative properties
+    DO_NBS: do j = swi, swf
        do k = 1, nkm1
           do i = 1, ni
              IF_NOCLOUD: if (nocloud(i,k)) then
@@ -643,73 +606,23 @@ contains
                 omcs(i,k,j)  = 0.
                 gcs(i,k,j)   = 0.
              else
-                if (liqwpin(i,k) > wpth) then  !implicit
-                   rew2 = rew(i,k) * rew(i,k)
-                   rew3 = rew2 * rew(i,k)
-                   tausw = liqwpin(i,k) * &
-                        (aws(1,j) + aws(2,j) / rew(i,k) + &
-                        aws(3,j) / rew2 + aws(4,j) / rew3)
-                   omsw  = 1.0 - (bws(1,j) + bws(2,j) * rew(i,k) + &
-                        bws(3,j) * rew2 + bws(4,j) * rew3)
-                   gsw   = cws(1,j) + cws(2,j) * rew(i,k) + &
-                        cws(3,j) * rew2 + cws(4,j) * rew3
-                else
-                   tausw = 0.
-                   omsw  = 0.
-                   gsw   = 0.
-                endif
 
-                if (icewpin(i,k) > wpth) then  !implicit
-                   dg   = 1.5396 * rei(i,k)
-                   dg2  = dg  * dg
-                   dg3  = dg2 * dg
-                   tausi = icewpin(i,k) * ( ais(1,j) + ais(2,j) / dg )
-                   omsi  = 1.0 - (bis(1,j) + bis(2,j) * dg + &
-                        bis(3,j) * dg2 + bis(4,j) * dg3)
-                   gsi   = cis(1,j) + cis(2,j) * dg + cis(3,j) * dg2 + &
-                        cis(4,j) * dg3
-                else
-                   tausi = 0.
-                   omsi  = 0.
-                   gsi   = 0.
-                endif
+                ! Shortwave properties of implicit liquid water clouds
+                call cldop_propsw(tausw, omsw, gsw, liqwpin(i,k), rew(i,k), j, liqwpin(i,k) > wpth)
 
-                if (lwpinmp(i,k) > wpth) then  !explicit
-                   rew1 = zeffradc(i,k) * 1.e+6
-                   if (kount == 0) rew1 = 10.    ![microns] assign value at step zero (in case QC is non-zero at initial conditions)
-                   rew1 = min(max(4., rew1), 40.0) !where does this 40 come from?
-                   rew2 = rew1*rew1
-                   rew3 = rew1*rew1*rew1
-                   tauswmp = lwpinmp(i,k) * &
-                        (aws(1,j) + aws(2,j) / rew1 + &
-                        aws(3,j) / rew2 + aws(4,j) / rew3)
-                   omswmp  = 1.0 - (bws(1,j) + bws(2,j) * rew1 + &
-                        bws(3,j) * rew2 + bws(4,j) * rew3)
-                   gswmp   = cws(1,j) + cws(2,j) * rew1 + &
-                        cws(3,j) * rew2 + cws(4,j) * rew3
-                else
-                   tauswmp = 0.
-                   omswmp  = 0.
-                   gswmp   = 0.
-                endif
+                ! Shortwave properties of implicit ice clouds
+                call cldop_propsi(tausi, omsi, gsi, icewpin(i,k), rei(i,k), j, icewpin(i,k) > wpth)
 
-                do l=1,mpcat  !explicit
-                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then
-                      dg   = 1.5396 * effradi(i,k,l)*1.e6  ![microns]
-                      !if (kount == 0) dg = 1.5396*50.   ![microns] assign value at step zero (in case "QI" is non-zero at initial conditions)
-                      dg   = min(max(dg, 15.), 110.)  ! max value is lower otherwise, model is crashing
-                      dg2  = dg  * dg
-                      dg3  = dg * dg *dg
-                      tausimp(l) = iwpinmp(i,k,l) * ( ais(1,j) + ais(2,j) / dg )
-                      omsimp(l)  = 1.0 - (bis(1,j) + bis(2,j) * dg + &
-                           bis(3,j) * dg2 + bis(4,j) * dg3)
-                      gsimp(l)   = cis(1,j) + cis(2,j) * dg + cis(3,j) * dg2 + &
-                           cis(4,j) * dg3
-                   else
-                      tausimp(l) = 0.
-                      omsimp(l)  = 0.
-                      gsimp(l)   = 0.
-                   endif
+                ! Shortwave properties of explicit liquid water clouds
+                rew1 = rewxp(i,k)
+                if (kount == 0) rew1 = 10.    ![microns] assign value at step zero (in case QC is non-zero at initial conditions)
+                rew1 = min(max(4., rew1), 40.0) !where does this 40 come from?
+                call cldop_propsw(tauswmp, omswmp, gswmp, lwpinmp(i,k), rew1, j, lwpinmp(i,k) > wpth)
+
+                ! Shortwave properties of explicit ice clouds
+                do l=1,mpcat
+                   call cldop_propsi(tausimp(l), omsimp(l), gsimp(l), iwpinmp(i,k,l), reixp(i,k), j, &
+                        iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4, rlim=(/15.,110./))
                 enddo
 
                 !PV agregate SW optical properties for liq-imp + ice-imp + liq-exp + ice-exp
@@ -753,6 +666,10 @@ contains
                    do l=1,mpcat
                       ztopthi(i) = ztopthi(i) + tausimp(l)
                    enddo
+                   if (associated(ztole)) ztole(i,k) = tauswmp
+                   if (associated(ztose)) ztose(i,k) = tausimp(1)
+                   if (associated(ztoli)) ztoli(i,k) = tausw
+                   if (associated(ztosi)) ztosi(i,k) = tausi
                 endif
 
              endif IF_NOCLOUD
@@ -761,7 +678,8 @@ contains
        enddo
     enddo DO_NBS
 
-    DO_NBL: do j = 1, nbl
+    ! Longwave cloud radiative properties
+    DO_NBL: do j = lwi, lwf
        do k = 1, nkm1
           do i = 1, ni
              IF_NOCLOUD2: if (nocloud(i,k)) then
@@ -769,92 +687,28 @@ contains
                 omcl(i,k,j)  = 0.
                 gcl(i,k,j)   = 0.
              else
-                if (liqwpin(i,k) > wpth) then    !implicit
-                   rew2 = rew(i,k) * rew(i,k)
-                   rew3 = rew2 * rew(i,k)
-                   taulw = liqwpin(i,k) * (awl(1,j) + awl(2,j) * rew(i,k)+ &
-                        awl(3,j) / rew(i,k) + awl(4,j) / rew2 + &
-                        awl(5,j) / rew3)
-                   omlw  = 1.0 - (bwl(1,j) + bwl(2,j) / rew(i,k) + &
-                        bwl(3,j) * rew(i,k) + bwl(4,j) * rew2)
-                   glw   = cwl(1,j) + cwl(2,j) / rew(i,k) + &
-                        cwl(3,j) * rew(i,k) + cwl(4,j) * rew2
-                else
-                   taulw = 0.
-                   omlw  = 0.
-                   glw   = 0.
-                endif
 
-                !----------------------------------------------------------------------
-                !     since in fu etc. the param. is for absorptance, so need a factor
-                !     icewpin(i,k) / tauli for single scattering albedo
-                !----------------------------------------------------------------------
+                ! Longwave properties of implicit liquid water clouds
+                call cldop_proplw(taulw, omlw, glw, liqwpin(i,k), rew(i,k), j, liqwpin(i,k) > wpth)
 
-                if (icewpin(i,k) > wpth) then    !implicit
-                   dg    = 1.5396 * rei(i,k)
-                   dg2   = dg  * dg
-                   dg3   = dg2 * dg
-                   tauli = icewpin(i,k) * (ail(1,j) + ail(2,j) / dg + &
-                        ail(3,j) / dg2)
-                   omli  = 1.0 - (bil(1,j) / dg + bil(2,j) + &
-                        bil(3,j) * dg + bil(4,j) * dg2) * &
-                        icewpin(i,k) / tauli
-                   gli   = cil(1,j) + cil(2,j) * dg + cil(3,j) * dg2 + &
-                        cil(4,j) * dg3
-                else
-                   tauli = 0.
-                   omli  = 0.
-                   gli   = 0.
-                endif
+                ! Longwave properties of implicit ice clouds
+                call cldop_propli(tauli, omli, gli, icewpin(i,k), rei(i,k), j, icewpin(i,k) > wpth)
 
-                if (lwpinmp(i,k) > wpth) then    !explicit
-                   rew1 = zeffradc(i,k) * 1.e6
-                   rew1 = min(max(4., rew1), 40.0)  !TEST, JM
-                   if (kount == 0) rew1 = 10.    !assign value at step zero (in case QC is non-zero at initial conditions)
-                   rew2 = rew1*rew1
-                   rew3 = rew1*rew1*rew1
-                   taulwmp = lwpinmp(i,k) * (awl(1,j) + awl(2,j) * rew1+ &
-                        awl(3,j) / rew1 + awl(4,j) / rew2 + &
-                        awl(5,j) / rew3)
-                   if (taulwmp < 0.) then
-                      print *, '** calc, taulwp: ', taulwmp, rew1, zeffradc(i,k)  !#TODO: avoid printing in MPI/OMP regions, render the listing unusable
-                      call physeterror('cldoppro_MP', 'Found negative taulwp values.')
-                      return
-                   endif
+                ! Longwave properties of explicit liquid water clouds
+                rew1 = rewxp(i,k)
+                if (kount == 0) rew1 = 10.    ![microns] aslign value at step zero (in case QC is non-zero at initial conditions)
+                rew1 = min(max(4., rew1), 40.0) !where does this 40 come from?
+                call cldop_proplw(taulwmp, omlwmp, glwmp, lwpinmp(i,k), rew1, j, lwpinmp(i,k) > wpth)
 
-                   omlwmp  = 1.0 - (bwl(1,j) + bwl(2,j) / rew1 + &
-                        bwl(3,j) * rew1 + bwl(4,j) * rew2)
-                   glwmp   = cwl(1,j) + cwl(2,j) / rew1 + &
-                        cwl(3,j) * rew1 + cwl(4,j) * rew2
-                else
-                   taulwmp = 0.
-                   omlwmp  = 0.
-                   glwmp   = 0.
-                endif
-
+                ! Longwave properties of explicit ice clouds
+                dg = reixp(i,k)
+                if (kount == 0) dg = 50.
                 do l=1,mpcat
-                   if (iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4) then    !explicit
-                      dg = 1.5396 * effradi(i,k,l)*1.e6
-                      if (kount == 0) dg = 1.5396*50.     !assign value at step zero (in case "QI" is non-zero at initial conditions)
-                      dg  = min(max(dg, 15.), 110.)  ! max value is lower to avoid model crashing!
-                      dg2 = dg  * dg
-                      dg3 = dg2 * dg
-                      taulimp(l) = iwpinmp(i,k,l) * (ail(1,j) + ail(2,j) / dg + &
-                           ail(3,j) / dg2)
-                      omlimp(l) = 1.0 - (bil(1,j) / dg + bil(2,j) + &
-                           bil(3,j) * dg + bil(4,j) * dg2) * &
-                           iwpinmp(i,k,l) / taulimp(l)
-                      glimp(l)  = cil(1,j) + cil(2,j) * dg + cil(3,j) * dg2 + &
-                           cil(4,j) * dg3
-                   else
-                      taulimp(l) = 0.
-                      omlimp(l)  = 0.
-                      glimp(l)   = 0.
-                   endif
+                   call cldop_propli(taulimp(l), omlimp(l), glimp(l), iwpinmp(i,k,l), dg, j, &
+                        iwpinmp(i,k,l) > wpth .and. effradi(i,k,l) < 1.e-4, rlim=(/15.,110./))
                 enddo
 
-                !PV agregate LW optical properties for liq-imp + ice-imp + liq-exp + ice-exp
-
+                ! Agregate LW optical properties for liq-imp + ice-imp + liq-exp + ice-exp
                 taulw=taulw*wimp(i,k)
                 tauli=tauli*wimp(i,k)
                 taulwmp=taulwmp*wexp(i,k)

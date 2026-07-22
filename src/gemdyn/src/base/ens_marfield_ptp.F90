@@ -43,14 +43,6 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 #include <arch_specific.hf>
-
-
-!
-!author: Rabah Aider R.P.N.-A
-!
-!arguments     none
-!
-
 #include <rmnlib_basics.hf>
 !
        real,    external ::  gasdev
@@ -58,7 +50,7 @@
 
 !
 ! nlat, nlon                 dimension of the Gaussian grid
-! idum                       Semence du g?n?rateur de nombres al?atoires
+! idum                       Semence du generateur de nombres aleatoires
 !
       integer :: nlat, nlon, lmin, lmax, dlen
       integer :: l ,m, n, nc,np, i, j, indx, gmmstat, istat, gdyy
@@ -66,50 +58,95 @@
       real    :: xfi(l_ni),yfi(l_nj)
       real(kind=REAL64)  :: rad2deg_8,  deg2rad_8, pri_8
       logical, save :: init_done=.false.
+      logical, save :: wrt_done=.false.
 !
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
 !
-! dt   Pas de temps du mod?le (secondes)
-! tau  Temps de d?corr?lation du champ al?atoire f(i,j) (secondes)
+! dt   Pas de temps du modele (secondes)
+! tau  Temps de decorrelation du champ aleatoire f(i,j) (secondes)
 ! eps  EXP(-dt/tau/2.146)
       logical :: write_markov_l
+      logical :: do_mc=.true.
       real(kind=REAL64)   :: dt, eps, fmax, fmin , fmean
       real(kind=REAL64),  dimension(:), allocatable :: pspectrum , fact1, fact1n, wrk1
       real(kind=REAL64),  dimension(:,:,:), allocatable :: cc
       real, dimension(2) :: spp_range
+      real(kind=REAL64) :: dt_ref, mod, ndt, tm, tmplus, rt
+      real(kind=REAL64), parameter:: two=2.d0, ohalf=1.50d0, onehour=3600.0d0
       real, dimension(Ens_ptp_ncha+spp_ncha) :: vfmin, vfmax, vfstd, vfstr, vtau, veps
       real,    dimension(:,:),allocatable :: f, f_str
       real,    dimension(:,:), pointer, save :: tropwt=>null()
       real,    dimension(:,:,:),pointer   ::  ptr3d, fgem_str
       integer, dimension(2) :: spp_trn
+      integer, save :: stepref
       integer, dimension(Ens_ptp_ncha+spp_ncha) :: vlmin, vlmax, vnlon, vnlat
-      integer :: itstep_s, iperiod_iau, err, ier ,unf0, nch2d, spp_indx, stat
+      integer :: km, itstep_s, iperiod_iau, iaustep
+      integer :: err, ier ,unf0, nch2d, spp_indx, stat
       integer :: lmx,mmx,mch2d
       character(len=WB_MAXNAMELENGTH) :: prefix, key, spp_type
       character(len=WB_MAXNAMELENGTH), dimension(Ens_ptp_ncha+spp_ncha) :: vname
       character(len=1024) :: fn
+
+      integer minx,maxx,miny,maxy 
+      integer imin,jmin,kmin,imax,jmax,kmax
+      real(kind=REAL64) sum,sumd2
 !
 !-------------------------------------------------------------------
 !
       nch2d = Ens_ptp_ncha + spp_ncha
       if (nch2d == 0) return
       dt=real(Cstv_dt_8)
+      dt_ref=real(Ens_cstv_dt_ref)
+      ndt=dt_ref/dt
+      tm=step_kount*dt
+      tmplus=(step_kount+1)*dt
+      rt=tm/dt_ref
+      km=nint(rt)
       rad2deg_8=180.0d0/pi_8
       deg2rad_8=1d0/rad2deg_8
       itstep_s=step_dt*step_kount
       iperiod_iau = iau_period
+      iaustep=iau_period/dt_ref
       write_markov_l=(itstep_s==iperiod_iau)
+
+      if(step_kount==1 .or. dt==dt_ref) then
+        do_mc=.true.
+        stepref=1
+      elseif(ndt==two) then
+         do_mc=.false.
+         mod=modulo(step_kount,2)
+         write_markov_l=.false.
+         if( mod==0 .and. step_kount >3) do_mc=.true.
+         if((do_mc) .and. km==iaustep)  write_markov_l=.true.
+      else
+         do_mc=.false.
+         mod=modulo(tmplus,onehour)
+         if(tm <= dt_ref) then
+            do_mc =.false.
+         else
+            if(km > stepref) then
+               if(mod==0 .and. ndt >=ohalf) then
+                  do_mc =.false. 
+               else
+                  do_mc =.true. 
+                  stepref= stepref+1
+               endif
+            endif
+         endif
+      endif
 !
 !     Look for the spectral coefficients
 !
       gmmstat = gmm_get(gmmk_ar_p,ar_p,meta3d_ar_p)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'ar_p'
+
       gmmstat = gmm_get(gmmk_ai_p,ai_p,meta3d_ai_p)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'ai_p'
 
       gmmstat = gmm_get(gmmk_br_p,br_p,meta3d_br_p)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'br_p'
+
       gmmstat = gmm_get(gmmk_bi_p,bi_p,meta3d_bi_p)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'bi_p'
 
@@ -192,7 +229,7 @@
             endif
          endif
          vtau(nc) = vtau(nc) / 2.146
-         veps(nc) = exp(-dt/vtau(nc))
+         veps(nc) = exp(-dt_ref/vtau(nc))
       enddo
 
       lmx = max(Ens_ptp_lmax, spp_lmax)
@@ -348,6 +385,7 @@
          fact2 =(1.-eps*eps)/SQRT(1.+eps*eps)
 
 ! Save random numbers and coefficient ar,ai,br,bi
+           
          if (write_markov_l) then
             err = 0
             if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
@@ -377,20 +415,22 @@
             call gem_error(err,'Ens_marfield_ptp','Error in writing Markov Chains files')
          endif
 
-         do l=lmin,lmax
-            fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1))*pspectrum(l))*SQRT((1.-eps*eps))
-            br_p(lmax-l+1,1,nc) = eps*br_p(lmax-l+1,1,nc)  &
-                                + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)
-            ar_p(lmax-l+1,1,nc) = eps*ar_p(lmax-l+1,1,nc)  + br_p(lmax-l+1,1,nc)*fact2
-            do m=2,l+1
-               br_p(lmax-l+1,m,nc) = eps*br_p(lmax-l+1,m,nc) &
-                                   + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
-               ar_p(lmax-l+1,m,nc) = eps*ar_p(lmax-l+1,m,nc)+br_p(lmax-l+1,m,nc)*fact2
-               bi_p(lmax-l+1,m,nc) = eps*bi_p(lmax-l+1,m,nc) &
-                                   + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
-               ai_p(lmax-l+1,m,nc) = eps*ai_p(lmax-l+1,m,nc)+bi_p(lmax-l+1,m,nc)*fact2
+         if(do_mc) then  
+            do l=lmin,lmax
+               fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1))*pspectrum(l))*SQRT((1.-eps*eps))
+               br_p(lmax-l+1,1,nc) = eps*br_p(lmax-l+1,1,nc)  &
+                                   + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)
+               ar_p(lmax-l+1,1,nc) = eps*ar_p(lmax-l+1,1,nc)  + br_p(lmax-l+1,1,nc)*fact2
+               do m=2,l+1
+                  br_p(lmax-l+1,m,nc) = eps*br_p(lmax-l+1,m,nc) &
+                                      + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
+                  ar_p(lmax-l+1,m,nc) = eps*ar_p(lmax-l+1,m,nc)+br_p(lmax-l+1,m,nc)*fact2
+                  bi_p(lmax-l+1,m,nc) = eps*bi_p(lmax-l+1,m,nc) &
+                                      + gasdev(paiv,paiy,paiset,pagset,paidum)*fact1n(l)/SQRT(2.)
+                  ai_p(lmax-l+1,m,nc) = eps*ai_p(lmax-l+1,m,nc)+bi_p(lmax-l+1,m,nc)*fact2
+               end do
             end do
-         end do
+         endif
 
          deallocate (pspectrum, fact1, fact1n)
 
@@ -434,6 +474,7 @@
          end do
 
          deallocate(cc,wrk1)
+
 
 !  Interpolation to the processors grids and fill in perbus
 
@@ -486,6 +527,11 @@
       istat = phy_put(ptr3d,'mrk2',F_npath='V',F_bpath='P')
 
       deallocate(fgem_str)
+
+ 99   format (i4,a4,' Mean:',1pe22.12,' Std:',1pe22.12,/ &
+              ' Min:[(',i5,',',i5,',',i4,')', &
+              1pe22.12,']',' Max:[(',i5,',',i5,',',i4,')', &
+              1pe22.12,']',a6)
 
 1000 format( &
            /,'INITIALIZE SCHEMES CONTROL PARAMETERS (S/R ENS_MARFIELD_PTP_SPP)', &

@@ -1,23 +1,15 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
-! GEM - Library of kernel routines for the GEM numerical atmospheric model
-! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
-!                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
-! under the terms of the GNU Lesser General Public License as published by
-! the Free Software Foundation, version 2.1 of the License. This library is
-! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-! You should have received a copy of the GNU Lesser General Public License
-! along with this library; if not, write to the Free Software Foundation, Inc.,
-! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
 
+module phystats
+   implicit none
+   public
+   
+contains
+   
 !/@*
-subroutine phystats(F_stepcount, F_delt)
+subroutine phystats1(F_stepcount, F_delt)
    use timestr_mod, only: timestr2step
    use statfld_dm_mod, only: statfld_dm, STATFLD_NCACHE, STATFLD_CACHE_DEFAULT
-   use phy_itf, only: phy_get
+   use phy_get_mod, only: phy_get
    use phy_options, only: phystat_freq_S, phystat_dble_l, phystat_2d_l, phystat_list_s, debug_mem_L
    use phy_typedef
    use phy_getmeta_mod, only: phy_getmeta
@@ -141,4 +133,6 @@ subroutine phystats(F_stepcount, F_delt)
    call msg(MSG_INFO, msg_S)
    !---------------------------------------------------------------
    return
-end subroutine phystats
+end subroutine phystats1
+
+end module phystats

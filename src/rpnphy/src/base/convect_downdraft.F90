@@ -1,3 +1,9 @@
+module convect_downdraft_mod
+   implicit none
+   public
+
+contains
+
 !#######################################################################
  SUBROUTINE CONVECT_DOWNDRAFT2( KLON, KLEV,                             &
                           & KICE, PPRES, PDPRES, PZ, PTH, PTHES,       &
@@ -76,6 +82,7 @@
 USE YOMCST
 USE YOE_CONVPAR
 USE YOE_CONVPAREXT
+use convect_satmixratio_mod, only: convect_satmixratio
 
 IMPLICIT NONE
 !!!#include <arch_specific.hf>
@@ -447,3 +454,4 @@ ENDDO
 
 END SUBROUTINE CONVECT_DOWNDRAFT2
 
+end module convect_downdraft_mod

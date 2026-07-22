@@ -1,4 +1,9 @@
-      SUBROUTINE TSOLVL(TLAK,T0,LKICEH,KLAK,GLAK,Q0SAT,            &
+module tsolvl_mod
+  implicit none
+  public
+contains
+  
+  SUBROUTINE TSOLVL(TLAK,T0,LKICEH,KLAK,GLAK,Q0SAT,            &
                         KSTAR,LSTAR,QSENS,QEVAP,EVAP,ALVS,ALIR,    &
                         QSWIN,QLWIN,CSZ,TA,QA,VA,PRES,RHOAIR,CDH,  &
                         GZEROL,QTRANSL,HTCL,FLS,FICE,ALBW,ALBI,    &
@@ -238,4 +243,5 @@
 100     CONTINUE
 
       RETURN
-      END
+    END SUBROUTINE TSOLVL
+  end module tsolvl_mod

@@ -13,6 +13,10 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END ---------------------------
+module ebudget_svs_mod
+  implicit none
+  public
+contains
 
       SUBROUTINE EBUDGET_SVS(TSA, WD1, WF , &
                    TGRS,TGRD,TVGS,TVGD, & 
@@ -21,7 +25,7 @@
                    ALGR,EMGR, & 
                    RAT, THETAA, FCOR, ZUSL, ZTSL, HU, PS, &  
                    RHOA, WTA, Z0, Z0LOC, Z0H, & 
-                   HRSURF, HV, DEL, RS, & 
+                   HRSURF, DHUSURF_DQSAT, HV, DEL, RS, &
                    CG,CVP, EMVG, PSNG, &  
                    RESAGR, RESAVG, RESASA, RESASV, &
                    RNETSN, HFLUXSN, LESNOFRAC, ESNOFRAC, & 
@@ -36,13 +40,14 @@
                    RNET, HFLUX, LE, LEG, LEV, LES,LESV, & 
                    LER, LETR, EG, ER, ETR, GFLUX, EFLUX, & 
                    BM, FQ, BT, RESAEF, & 
-                   LEFF, DWATERDT, & 
+                   LEFF, DWATERDT_SURF,DWATERDT_DEEP, & 
                    FTEMP, FVAP, ZQS, FRV, & 
                    ALFAT, ALFAQ, ILMO, HST, TRAD, N)
       use tdpack
       use sfclayer, only: sl_sfclayer,SL_OK
       use sfc_options
       use svs_configs
+      use phy_status, only: physeterror
       implicit none
 !!!#include <arch_specific.hf>
 
@@ -65,7 +70,7 @@
       REAL LEG(N), LEV(N), LER(N), LETR(N), GFLUX(N)
       REAL EFLUX(N), BM(N), FQ(N), BT(N), LES(N)
       REAL FTEMP(N), FVAP(N), ER(N), ETR(N)
-      REAL LEFF(N), DWATERDT(N), ZQS(N), FRV(N)
+      REAL LEFF(N), DWATERDT_SURF(N),DWATERDT_DEEP(N), ZQS(N), FRV(N)
       REAL EG(N), HRSURF(N)
       REAL RESAGR(N), RESAVG(N), RESASA(N), RESASV(N), RESAEF(N)
       REAL RNETSN(N), HFLUXSN(N), LESNOFRAC(N), ESNOFRAC(N)
@@ -133,6 +138,7 @@
 ! Z0        momentum roughness length (no snow)
 ! Z0LOC     local land momentum roughness length (no orography) 
 ! HRSURF    relative humidity of the bare ground surface (1st soil layer)
+! DHUSURF_DQSAT derivative of HUSURF = HRSURF*QSATGR wrt QSATGR
 ! HV        Halstead coefficient (relative humidity of veg. canopy)
 ! DEL       portion of the leaves covered by water
 ! RS        stomatal resistance
@@ -167,6 +173,11 @@
 ! WR       Water retained by vegetation
 ! SVM      snow water equivalent (SWE) for snow under high veg [kg/m2]
 !
+! DWATERDT_SURF  net tendency of melting-freezing of soil water for the
+!                surface layer (from the soil freezing scheme) [kg/m2/s]
+! DWATERDT_DEEP  net tendency of melting-freezing of soil water for the
+!                deep layer of the FR scheme (from the soil freezing scheme) [kg/m2/s]
+!
 !           - Output -
 ! ALBT      total surface albedo (snow + vegetation + bare ground)
 ! EMIT      total surface emissivity (snow + vegetation + bare ground)
@@ -185,7 +196,6 @@
 !
 ! GFLUX     ground flux
 ! EFLUX     water vapor flux
-! DWATERDT  net tendency of melting-freezing of soil water
 ! TS        surface  temperature (new) as seen from ground
 ! TD        mean soil temperature
 ! TSA       surface  temperature (new) as seen from space
@@ -211,9 +221,6 @@
       INTEGER I,zopt
 !
 !
-      REAL EMISSN, EMSOIL, KCOEF, RHOW
-      REAL BFREEZ, RAIN1, RAIN2
-      REAL ABARK
 !
 !     MULTIBUDGET VARIABLES 
 !     GR:ground, SN:snow, VG:vegetation, AG: aggregated 
@@ -222,27 +229,9 @@
             rnetgr, rnetvg, hfluxgr, hfluxvg, roragr, roravg,  &
             zqsatsno, tgrst, tgrdt, tvgst, tvgdt, esf, esvf, evf, &
             egf, ev, zqsatsnv, levnofrac, legnofrac, frach,  &
-            cmu, cm, ctu, vmod_lmin
+            cmu, cm, ctu, vmod_lmin, dhusurf_dqsat
 
 !************************************************************************
-!
-!
-!
-!                                THE FOLLOWING SHOULD BE PUT IN 
-!                                A COMMON COMDECK
-!
-      EMISSN = 0.97
-      EMSOIL = 0.94
-      RHOW   = 1000.  
-      KCOEF  = 1.E-6
-      BFREEZ = 4.
-!                                Albedo of Bark (S. Wang, Ecological Modelling, 2005)
-      ABARK  = 0.15
-!
-!
-      RAIN1  = 2.8e-8
-      RAIN2  = 2.8e-7
-! 
 !
 !!       1.     GRID-AVERAGED ALBEDO, EMISSIVITY, AND ROUGHNESS LENGTH
 !       ------------------------------------------------------
@@ -326,13 +315,15 @@
 
           A2(I) = 1. / DT + CG(I) * & 
                  (4. * EMGR(I) * STEFAN * (TGRS(I)**3) &   
-                 +  RORAGR(I) * ZDQSATGR(I) * LEFF(I)* HRSURF(I) &  
+                 +  RORAGR(I) * ZDQSATGR(I) * LEFF(I) &
+                    * DHUSURF_DQSAT(I) &
                  +  RORAGR(I) * CPD) &  
                  + 2. * PI / 86400.
 
           B2(I) = 1. / DT + CG(I) *  &  
                  (3. * EMGR(I) * STEFAN * (TGRS(I)**3) &   
-                 + RORAGR(I) * ZDQSATGR(I) * LEFF(I) * HRSURF(I) )
+                 + RORAGR(I) * ZDQSATGR(I) * LEFF(I) &
+                   * DHUSURF_DQSAT(I) )
 
 
           C2(I) = 2. * PI * TGRD(I) / 86400. &   
@@ -416,8 +407,11 @@
 
 
 !     SET DWATERDT to zero, just to initialize array
-      DWATERDT=0.0
-
+!      DWATERDT=0.0
+      DO I=1,N
+          TGRST(I) = TGRST(I) + DT*CG(I)*CHLF*DWATERDT_SURF(I)
+      END DO
+!
 !
 !
 !!       5.A     TGRD AT TIME 'T+DT'
@@ -434,6 +428,7 @@
 !chekc if this is ok
 ! ** DO NOT INCLUDE THE EFFECT OF DWATERDT BECAUSE SET TO ZERO ABOVE !
 !
+        TGRDT(I) =  TGRDT(I) + DT*CG(I)*CHLF*DWATERDT_DEEP(I)*DT/86400. 
 
         TGRDT(I) = TGRDT(I) 
 
@@ -855,4 +850,5 @@
 !
 !
       RETURN
-      END
+    END SUBROUTINE EBUDGET_SVS
+  end module ebudget_svs_mod

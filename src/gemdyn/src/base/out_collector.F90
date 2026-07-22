@@ -15,44 +15,40 @@
 module out_collector
 
   use iso_c_binding
+  use glb_ld
+  use ptopo
   implicit none
-#include <arch_specific.hf>
-
 
       integer Bloc_npx   , Bloc_npy  , &
               Bloc_nblocs, Bloc_npes , &
               Bloc_mybloc, Bloc_me   , &
-              Bloc_maxdim
+              Bloc_maxni , Bloc_maxnj, Bloc_maxdim
 
       integer, dimension(:  ), pointer :: Bloc_peid, Bloc_pe0id
       integer, dimension(:,:), pointer :: Bloc_glbij
-
+      real, dimension(:    ), allocatable :: recv_buf, send_buf
+      real, dimension(:,:  ), allocatable :: dist_plane
+      real, dimension(:,:,:), allocatable :: collector
+      include 'mpif.h'
   private
-  public :: block_collect_set, block_collect_fullp, Bloc_me
+  public :: block_collect_set, block_collect_fullp, Bloc_me, Bloc_nblocs
 
 contains
 
-      subroutine block_collect_set (F_npex, F_npey)
-      use ptopo
+      subroutine block_collect_set (F_npex, F_npey, F_stk_size)
       implicit none
 
-      integer F_npex, F_npey
-
-      include "rpn_comm.inc"
+      integer F_npex, F_npey, F_stk_size
 
       integer, dimension(:,:) , allocatable :: block
-      integer i,j,err,cnt,n1
+      integer i,j,err,cnt,n1,nkk
       integer my_row, my_col, this_block
       integer mpx,irest,l_npex,i0,in,l_npey,j0,jn
       integer block_info(0:Ptopo_numproc-1,2),info(0:Ptopo_numproc-1,2)
 !
 !----------------------------------------------------------------------
 !
-      call gem_error (-1, 'block_collect_set', 'Code is incomplete -- ABORTING')
-
-      my_row= Ptopo_myproc         / Ptopo_npex
-      my_col= Ptopo_myproc - my_row* Ptopo_npex
-
+      my_row= Ptopo_myrow ; my_col= Ptopo_mycol
       Bloc_npx= F_npex ; Bloc_npy= F_npey
       Bloc_nblocs= Bloc_npx*Bloc_npy
       allocate (block(0:Bloc_nblocs-1,5))
@@ -84,7 +80,7 @@ contains
             end if
             j0= j0 - 1 ; jn= j0 + l_npey - 1
 
-            this_block= j*Bloc_npx+i
+            this_block= i*Bloc_npy+j
             block(this_block,1) = l_npex*l_npey
             block(this_block,2) = Ptopo_gindx_alongX(1,i0+1)
             block(this_block,3) = Ptopo_gindx_alongX(2,in+1)
@@ -93,7 +89,7 @@ contains
             if ((my_col>=i0).and.(my_col<=(i0+l_npex-1)) .and. &
                 (my_row>=j0).and.(my_row<=(j0+l_npey-1))) then
                 Bloc_mybloc= this_block
-                Bloc_me    = (my_row-j0)*l_npex + my_col - i0
+                Bloc_me    = (my_col-i0)*l_npey + my_row - j0
             end if
 
          end do
@@ -102,9 +98,8 @@ contains
       info=0
       info(Ptopo_myproc,1) = Bloc_mybloc
       info(Ptopo_myproc,2) = Bloc_me
-      call rpn_comm_ALLREDUCE ( info, block_info, Ptopo_numproc*2, &
-                                "MPI_INTEGER","MPI_SUM",'GRID',err )
-
+      call MPI_ALLREDUCE ( info, block_info, Ptopo_numproc*2, &
+                           MPI_INTEGER,MPI_SUM,COMM_grid,err )
       Bloc_npes= block(Bloc_mybloc,1)
       allocate (Bloc_peid(   0:Bloc_npes  -1), &
                 Bloc_pe0id(  0:Bloc_nblocs-1), &
@@ -124,15 +119,25 @@ contains
             Bloc_glbij(4,block_info(i,1)) = block(block_info(i,1),5)
          end if
       end do
-
-      Bloc_maxdim= 0
+      Bloc_maxni= 0 ; Bloc_maxnj= 0 ; Bloc_maxdim= 0
       do i= 0, Bloc_nblocs-1
+         n1= Bloc_glbij(2,i)-Bloc_glbij(1,i)+1
+         Bloc_maxni= max(Bloc_maxni,n1)
+         n1= Bloc_glbij(4,i)-Bloc_glbij(3,i)+1
+         Bloc_maxnj= max(Bloc_maxnj,n1)
          n1= (Bloc_glbij(2,i)-Bloc_glbij(1,i)+1) * &
              (Bloc_glbij(4,i)-Bloc_glbij(3,i)+1)
          Bloc_maxdim= max(Bloc_maxdim,n1)
       end do
       deallocate (block)
-!
+      allocate (recv_buf(Bloc_maxni*Bloc_maxnj*F_stk_size), &
+                send_buf(l_ni*l_nj*F_stk_size))
+      allocate (collector(Bloc_glbij(1,Bloc_mybloc):Bloc_glbij(2,Bloc_mybloc),&
+                          Bloc_glbij(3,Bloc_mybloc):Bloc_glbij(4,Bloc_mybloc),F_stk_size))
+      collector= 0.
+      nkk= (F_stk_size / Bloc_nblocs) + 1
+      allocate (dist_plane(Bloc_maxdim*nkk,0:Bloc_nblocs-1))             
+!     
 !----------------------------------------------------------------------
 !
       return
@@ -143,18 +148,14 @@ contains
       implicit none
 
       integer lminx,lmaxx,lminy,lmaxy,Nk,nz
-      integer, dimension(:), pointer :: zlist
+      integer, dimension(*) :: zlist
       real src(lminx:lmaxx,lminy:lmaxy,Nk)
-      real, dimension(:,:,:), pointer :: dst
-
-      real, dimension(:,:,:), pointer :: f2rc
+      real, dimension(*) :: dst
 !
 !----------------------------------------------------------------------
 !
-      nullify(f2rc)
-      call block_collect ( f2rc, src, lminx,lmaxx,lminy,lmaxy,Nk )
-      call block_fplanes ( dst, zlist, nz, f2rc, Nk)
-      if (associated(f2rc)) deallocate (f2rc)
+      call block_collect ( collector, src, lminx,lmaxx,lminy,lmaxy,Nk )
+      call block_fplanes ( dst, zlist, nz, collector, Nk)
 !
 !----------------------------------------------------------------------
 !
@@ -162,17 +163,16 @@ contains
       end subroutine block_collect_fullp
 
       subroutine block_collect (f2rc,f2cc,lminx,lmaxx,lminy,lmaxy,Nk)
-      use glb_ld
-      use ptopo
       implicit none
 
       integer lminx,lmaxx,lminy,lmaxy,Nk
-      real, dimension(:,:,:), pointer :: f2rc
-      real f2cc(lminx:lmaxx,lminy:lmaxy,Nk)
+      real, dimension(Bloc_glbij(1,Bloc_mybloc):Bloc_glbij(2,Bloc_mybloc),&
+                      Bloc_glbij(3,Bloc_mybloc):Bloc_glbij(4,Bloc_mybloc),*),&
+                      intent(OUT) :: f2rc
+      real, intent(IN) :: f2cc(lminx:lmaxx,lminy:lmaxy,Nk)
 
-      integer i, j, k, iproc, tag, err, status, ni, nj
+      integer i, j, k, iproc, tag, err, ni, nj, cnt
       integer l_id, l_jd, len, tag_comm
-      real, dimension(:,:,:), allocatable :: buf
 !
 !----------------------------------------------------------------------
 !
@@ -181,13 +181,10 @@ contains
       if (Bloc_me == 0) then
 
 ! Copy local data (LD) segment
-         allocate (&
-            f2rc(Bloc_glbij(1,Bloc_mybloc):Bloc_glbij(2,Bloc_mybloc),&
-                 Bloc_glbij(3,Bloc_mybloc):Bloc_glbij(4,Bloc_mybloc),Nk))
+
          l_id= Ptopo_gindx(1,Bloc_peid(0)+1)
          l_jd= Ptopo_gindx(3,Bloc_peid(0)+1)
 
-         f2rc = 0.
          do k = 1, Nk
             do j = 1, l_nj
                do i = 1, l_ni
@@ -203,33 +200,39 @@ contains
                 Ptopo_gindx(1,Bloc_peid(iproc)+1) + 1
             nj= Ptopo_gindx(4,Bloc_peid(iproc)+1) - &
                 Ptopo_gindx(3,Bloc_peid(iproc)+1) + 1
-            allocate (buf(ni,nj,Nk))
             len= ni*nj*Nk
-            tag_comm= tag+iproc+Bloc_mybloc
-            call RPN_COMM_recv ( buf, len, 'MPI_REAL', Bloc_peid(iproc),&
-                                       tag_comm, 'GRID', status, err )
+            tag_comm= tag+Bloc_peid(iproc)
+            call MPI_recv ( recv_buf, len, MPI_REAL, Bloc_peid(iproc),&
+                   tag_comm, COMM_grid, MPI_STATUSES_IGNORE, err )
             l_id= Ptopo_gindx(1,Bloc_peid(iproc)+1)
             l_jd= Ptopo_gindx(3,Bloc_peid(iproc)+1)
+            cnt=0
             do k = 1, Nk
                do j = 1, nj
                   do i = 1, ni
-                     f2rc(i+l_id-1,j+l_jd-1,k) = buf(i,j,k)
+                     cnt=cnt+1
+                     f2rc(i+l_id-1,j+l_jd-1,k) = recv_buf(cnt)
                   end do
                end do
             end do
-            deallocate (buf)
          end do
 
       else
 
 ! Send local data (LD) segment to processor 0 of mybloc
-         allocate (buf(l_ni,l_nj,Nk))
-         buf(1:l_ni,1:l_nj,:) = f2cc(1:l_ni,1:l_nj,:)
+         cnt=0
+         do k = 1, Nk
+            do j = 1, l_nj
+               do i = 1, l_ni
+                  cnt=cnt+1
+                  send_buf(cnt)= f2cc(i,j,k)
+               end do
+            end do
+         end do
          len= l_ni*l_nj*Nk
-         tag_comm= tag+Bloc_me+Bloc_mybloc
-         call RPN_COMM_send ( buf, len, 'MPI_REAL', &
-             Bloc_pe0id(Bloc_mybloc), tag_comm, 'GRID',err )
-         deallocate (buf)
+         tag_comm= tag+Ptopo_myproc
+         call MPI_send ( send_buf, len, MPI_REAL, Bloc_pe0id(Bloc_mybloc),&
+                         tag_comm, COMM_grid,err )
 
       end if
 !
@@ -239,16 +242,18 @@ contains
       end subroutine block_collect
 
       subroutine block_fplanes ( glb, zlist, nz, f2rc, Nk)
-      use glb_ld
-      use ptopo
       implicit none
 
-      integer nz,Nk
-      integer, dimension(:    ), pointer :: zlist
-      real   , dimension(:,:,:), pointer :: glb, f2rc
+      integer, intent(IN ) :: Nk
+      integer, intent(OUT) :: nz
+      integer, dimension(*), intent(OUT) :: zlist
+      real   , dimension(G_ni,G_nj,*), intent(OUT) :: glb
+      
+      real   , dimension(Bloc_glbij(1,Bloc_mybloc):Bloc_glbij(2,Bloc_mybloc),&
+                         Bloc_glbij(3,Bloc_mybloc):Bloc_glbij(4,Bloc_mybloc),*),&
+                         intent (IN) :: f2rc
 
       integer mpx,kstart,local_nk,irest,len
-      real, dimension(:,:), allocatable :: buf
 
       integer i,j,k,b,ni,nj,nkk,err
       integer ireq, tag, tag_comm, request(Bloc_nblocs*2)
@@ -256,8 +261,9 @@ contains
 !
 !----------------------------------------------------------------------
 !
-      nz= 0 ; ireq= 0 ; tag= 23
+      request= MPI_REQUEST_NULL
 
+      nz= 0 ; ireq= 0 ; tag= 23
       if (Bloc_me == 0) then
 
 ! Distributing the work: Nk onto Bloc_nblocs
@@ -275,7 +281,6 @@ contains
             blk_dist(1,i) = kstart
             blk_dist(2,i) = kstart+local_nk-1
          end do
-
          ni= Bloc_glbij(2,Bloc_mybloc) - Bloc_glbij(1,Bloc_mybloc) + 1
          nj= Bloc_glbij(4,Bloc_mybloc) - Bloc_glbij(3,Bloc_mybloc) + 1
 ! Sending
@@ -285,11 +290,11 @@ contains
                nkk=(blk_dist(2,i)-blk_dist(1,i)+1)
                len= ni*nj*nkk
                ireq = ireq+1 ; tag_comm = tag+Ptopo_myproc
-               call RPN_COMM_isend ( &
+               call MPI_isend ( &
                        f2rc(Bloc_glbij(1,Bloc_mybloc)               ,&
                             Bloc_glbij(3,Bloc_mybloc),blk_dist(1,i)),&
-                            len, 'MPI_REAL', Bloc_pe0id(i), tag_comm,&
-                                          'GRID', request(ireq), err )
+                            len, MPI_REAL, Bloc_pe0id(i), tag_comm  ,&
+                                       COMM_grid, request(ireq), err )
             end if
             end if
          end do
@@ -298,12 +303,10 @@ contains
          if (blk_dist(1,Bloc_mybloc) <= Nk) then
             nkk= (blk_dist(2,Bloc_mybloc)-blk_dist(1,Bloc_mybloc)+1)
             nz = nkk
-            allocate (zlist(nz), buf(Bloc_maxdim*nkk,0:Bloc_nblocs-1))
-            buf = 0.
             do i=1,nz
                zlist(i) = blk_dist(1,Bloc_mybloc) + i - 1
             end do
-            allocate (glb(G_ni,G_nj,nz))
+            glb(:,:,1:nz)= 0.
 
             do k=blk_dist(1,Bloc_mybloc),blk_dist(2,Bloc_mybloc)
                do j=Bloc_glbij(3,Bloc_mybloc),Bloc_glbij(4,Bloc_mybloc)
@@ -319,16 +322,16 @@ contains
                   nj= Bloc_glbij(4,i) - Bloc_glbij(3,i) + 1
                   len= ni*nj*nkk
                   ireq = ireq+1 ; tag_comm = tag + Bloc_pe0id(i)
-                  call RPN_COMM_irecv ( &
-                               buf(1,i), len, 'MPI_REAL', Bloc_pe0id(i),&
-                               tag_comm, 'GRID', request(ireq), err )
+                  call MPI_irecv ( &
+                               dist_plane(1,i), len, MPI_REAL, Bloc_pe0id(i),&
+                               tag_comm, COMM_grid, request(ireq), err)
                end if
             end do
          end if
 
       end if
 
-      call RPN_COMM_waitall_nostat (ireq, request, err)
+      if (ireq>0) call MPI_waitall (ireq,request,MPI_STATUSES_IGNORE,err)
 
 ! Filling
       if ((Bloc_me == 0) .and. (blk_dist(1,Bloc_mybloc) <= Nk)) then
@@ -339,13 +342,12 @@ contains
                   do j=Bloc_glbij(3,b),Bloc_glbij(4,b)
                      do i=Bloc_glbij(1,b),Bloc_glbij(2,b)
                         len= len+1
-                        glb(i,j,k) = buf(len,b)
+                        glb(i,j,k) = dist_plane(len,b)
                      end do
                   end do
                end do
             end if
          end do
-         deallocate (buf)
       end if
 !
 !----------------------------------------------------------------------

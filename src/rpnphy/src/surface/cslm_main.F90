@@ -15,12 +15,39 @@
 !-------------------------------------- LICENCE END --------------------------------------
 
 !/@*
+module cslm_main_mod
+   implicit none
+   public
+contains 
+
+
 subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, m, nk )
    !use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
    use sfclayer, only: sl_prelim,sl_sfclayer,SL_OK
    use sfc_options
    use sfcbus_mod
    use mu_jdate_mod, only: jdate_day_of_year, mu_js2ymdhms
+   use phy_status, only: physeterror
+   use suncos, only: suncos2
+   use fillagg_mod, only: fillagg
+   use eqnst_mod, only: eqnst
+   use classi_mod, only: classi
+   use snoalba_mod, only: snoalba
+   use tlsprep_mod, only: tlsprep
+   use tsolve_mod, only: tsolve
+   use tlspost_mod, only: tlspost
+   use snovap_mod, only: snovap
+   use tmelt_mod, only: tmelt
+   use sninfl_mod, only: sninfl
+   use snoalbw_mod, only: snoalbw
+   use ndrcoefl_mod, only: ndrcoefl
+   use freeconv_mod, only: freeconv
+   use lktrans_mod, only: lktrans
+   use tsolvl_mod, only: tsolvl
+   use mixlyr_mod, only: mixlyr
+   use xit_mod, only: xit
+   use snoadd_mod, only: snoadd
+   
    implicit none
 #include <arch_specific.hf>
    !@Object    CANADIAN SMALL LAKE MODEL
@@ -151,6 +178,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! ----* Solar Rad variables for COS(ZenithAngle) *----------------------------------------------
 !
       integer(INT64), parameter :: MU_JDATE_HALFDAY = 43200
+      integer(INT64) :: delti64
       integer yy, mo, dd, hh, mn, sec
       REAL HZ, HZ0, JULIEN
 
@@ -164,7 +192,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
                           CSZ, DEGLAT, DEGLON, ZDIAGM, ZDIAGH,           &
                           SUNOTHER1, SUNOTHER2, SUNOTHER3, SUNOTHER4
       REAL,DIMENSION(N) :: ASVDAT, ASIDAT                 ! assigned snow albedos - not used
-      REAL,DIMENSION(NLAKMAX) :: TLAK0
+      REAL,DIMENSION(CSLM_NLAKMAX) :: TLAK0
       REAL   FLS   (N),  HCPSNO(N),  ZSNOW (N), ALBW  (N),  ALBI  (N)
       REAL   ALVSSN(N),  ALIRSN(N),  ALVSSC(N), ALIRSC(N),               &
              ALVSG (N),  ALIRG (N),  TRSNOWC(N),ALVSL (N),  ALIRL (N)
@@ -214,15 +242,15 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! ----* LAKE MODEL VARIABLES *----------------------------------------
 !
       INTEGER,DIMENSION(N) :: NLAK
-      REAL,DIMENSION(N) :: HLAK, LLAK, BLAK, RC1, RC2, RUNFRAC
+      REAL,DIMENSION(N) :: HLAK, LLAK, RC1, RC2, RUNFRAC
       REAL,DIMENSION(N) :: VPD, TADP, PADRY, RHOAIR, RHOSNI, R,TR,S,TS,    &
                            RRATE, SRATE, PCPIN
-      REAL,DIMENSION(N,NLAKMAX) :: QFLX, FFLX
+      REAL,DIMENSION(N,CSLM_NLAKMAX) :: QFLX, FFLX
  
-      real,pointer,dimension(:) ::  T0, TKE, HDPTH,LKICEH,SNICEH,        &
+      real,pointer,dimension(:) ::  T0, BLAK, TKE, HDPTH,LKICEH,SNICEH,        &
            EXPW,DTEMP,DELU,GRED,RHOMIX,TSED,ROFICEH, SNO, RHOSNO, TSNOW, ALBSNO, WSNOW, &
-           QSENS, QEVAP, ALVS, QSURF, HLAKSIL, ZGRIDAREA, ZROFINLAK, ZLAKEFR, ZLAKD, FICE, &
-           ZLAKEAREA
+           QSENS, QEVAP, ALVS, QSURF, HLAKSIL, ZROFINLAK, ZLAKEFR, ZLAKD, FICE, &
+           ZLAKEAREA, ZDXDY
       real,pointer,dimension(:,:) ::  TLAK
       REAL,POINTER,DIMENSION(:) :: LSTD, LSTF, LFXI, LFXO, zevlak
 
@@ -234,7 +262,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       real,pointer,dimension(:) ::  zalfaq, zalfat, zftemp, zfvap, zrunofftot
       real,pointer,dimension(:) ::  zqdiag, ztdiag, ztsurf, ztsrad, zudiag, zvdiag
       real,pointer,dimension(:) ::  zqdiagtyp, ztdiagtyp, zudiagtyp, zvdiagtyp
-      real,pointer,dimension(:) ::  zsnodp
+      real,pointer,dimension(:) ::  zsnodp, zsnowe
       real,pointer,dimension(:) ::  zemisr
 
 ! ----* DIAGNOSTIC OUTPUT FIELDS *-------------------------------------
@@ -248,8 +276,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !----------------------------------------------------------------------------------------
 ! MODULES
 !----------------------------------------------------------------------------------------
-      EXTERNAL CLASSI, XIT, EQNST, NDRCOEFL, FREECONV, TSOLVL, LKTRANS, MIXLYR
-      EXTERNAL SNOALBA, TLSPREP, TSOLVE, TLSPOST, SNOVAP, TMELT, SNINFL, SNOALBW, SNOADD, DRCOEF, FLXSURFZ
+      !EXTERNAL CLASSI, XIT, EQNST, NDRCOEFL, FREECONV, TSOLVL, LKTRANS, MIXLYR
+      !EXTERNAL SNOALBA, TLSPREP, TSOLVE, TLSPOST, SNOVAP, TMELT, SNINFL, SNOALBW, SNOADD, DRCOEF, FLXSURFZ
 
 !----------------------------------------------------------------------------------------
 ! CLASS common block variables whose values are taken from thermoconsts.inc or set elsewhere
@@ -293,7 +321,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    RHOMIX   (1:n) => bus( x(rhomix,1,1)       : )  !mean density of mixed layer (kg/m3)
    TSED     (1:n) => bus( x(tsed,1,1)         : )  !temp of sediment layer (K)
    ROFICEH  (1:n) => bus( x(roficeh,1,1)      : )  !lake ice thickness from snowmelt runoff (m) TURNED OFF FOR NOW
-   TLAK     (1:n,1:NLAKMAX) => bus( x(tlak,1,1) : )!lake temp profile
+   TLAK     (1:n,1:CSLM_NLAKMAX) => bus( x(tlak,1,1) : )!lake temp profile
    ZROFINLAK (1:n) => bus( x(rofinlak,1,1)      : ) !runoff input to lake water balance based on lake fraction (mm or kg/m2)
    FICE     (1:n) => bus( x(ficl,1,1)          : ) !fractional lake ice cover
    LSTD     (1:n) => bus( x(lstd,1,1)          : ) !lake initial water storage (kg/m2)
@@ -331,10 +359,11 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    ZDLON    (1:n) => bus( x(dlon,1,1)         : )  !Longitude
    ZREFM    (1:n) => bus( x(zusl,1,1)         : )
    ZREFH    (1:n) => bus( x(ztsl,1,1)         : )
-   ZGRIDAREA(1:n) => bus( x(gridarea,1,1)     : )         !Grid cell surface area (m2)
+   ZDXDY(1:n)     => bus( x(dxdy,1,1)     : )         !Grid cell surface area (m2) : read directly from physics
    ZLAKEAREA(1:n) => bus( x(lakearea,1,1)     : )         !Lake surface area (km2)
    ZLAKD(1:n)     => bus( x(lakd,1,1)         : )         !Lake depth (average in grid cell) (m)
    ZLAKEFR  (1:n) => bus( x(lakefr,1,1)     : )           !Fraction of grid cell covered by lakes
+   BLAK (1:n) => bus( x(blak,1,1)     : )           ! Light extinction coeff.
 ! Output variables
    QSENS    (1:n) => bus( x(fc,1,indx_sfc)    : )  !Lake average sensible heat flux (inc. ice,snow)
    QEVAP    (1:n) => bus( x(fv,1,indx_sfc)    : )  !Lake average latent heat flux (inc. ice,snow)
@@ -365,7 +394,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    ztdiagtyp(1:n) => bus( x(tdiagtyp,1,indx_sfc) : )
    zqdiagtyp(1:n) => bus( x(qdiagtyp,1,indx_sfc) : )
    zfrv     (1:n) => bus( x(frv,1,indx_sfc)   : )
-   zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )  !Lake snow depth (cm)
+   zsnodp   (1:n) => bus( x(snodp,1,indx_sfc) : )  !Lake snow depth (m)
+   zsnowe   (1:n) => bus( x(snowe,1,indx_sfc) : )  !Lake snow water equivalent (kg/m2)
 
 !========================================================================================
 ! PHYSICAL LAKE PROPERTIES FIXED FOR NOW.  (based on small boreal lake L239 at ELA)
@@ -376,14 +406,14 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
         IF (HLAK(I).LE.0.0) THEN ! Replace zero values with constant value for points where
           HLAK(I)=HLAKCON        ! VF3 is greater than zero but there is no data on depth (i.e. openstreet map data)
         ENDIF
-!        LLAK(I)=SQRT(ZLAKEFR(I)*ZGRIDAREA(I)) ! Lake fetch length scale (square-root of lake surface area)
+!        LLAK(I)=SQRT(ZLAKEFR(I)*ZDXDY(I)) ! Lake fetch length scale (square-root of lake surface area)
         IF (ZLAKEAREA(I).LT.0.01) THEN
-          LLAK(I)=SQRT(ZLAKEFR(I)*ZGRIDAREA(I)) ! Lake fetch length scale (square-root of lake fraction * grid area)
+          LLAK(I)=SQRT(ZLAKEFR(I)*ZDXDY(I)) ! Lake fetch length scale (square-root of lake fraction * grid area)
         ELSE
           LLAK(I)=SQRT(ZLAKEAREA(I)*1000000.0) ! Lake fetch length scale (square-root of lake surface area in m2)
         ENDIF
-        BLAK(I)=BLAKCON
-        NLAK(I)=MIN(NLAKMAX, NINT(HLAK(I)/DELZLK))
+        !BLAK(I)=BLAKCON   
+        NLAK(I)=MIN(CSLM_NLAKMAX, NINT(HLAK(I)/DELZLK))
         NLAK(I)=MAX(NLAKMIN,NLAK(I))
         RC1 (I)=RC1CON
         RC2 (I)=RC2CON
@@ -478,7 +508,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       hz = amod(hz0+ (kount*DELT)/3600., 24.)
       
       !Determine the current julian day
-      julien = real(jdate_day_of_year(jdateo + kount*int(DELT) + MU_JDATE_HALFDAY))
+      delti64 = int(delt)
+      julien = real(jdate_day_of_year(jdateo + kount*delti64 + MU_JDATE_HALFDAY))
       !Get local solar angle
       call suncos2(CSZ,sunother1,sunother2,sunother3,sunother4,n, &
                    bus(x(dlat,1,1)),bus(x(dlon,1,1)),hz,julien,.false.)
@@ -512,9 +543,9 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
           IF(SNO(I).GT.0.0)    THEN
               ZSNOW(I)=SNO(I)/RHOSNO(I)
               IF(ZSNOW(I).GE.(SNOLIM-0.00001)) THEN
-                  FLS(I)=1.0
+                  FLS(I)=MIN(FICE(I),1.0)
               ELSE
-                  FLS(I)=ZSNOW(I)/SNOLIM
+                  FLS(I)=MIN(FICE(I),1.0)*ZSNOW(I)/SNOLIM  
                   ZSNOW(I)=SNOLIM
                   WSNOW(I)=WSNOW(I)/FLS(I)
               ENDIF
@@ -605,7 +636,8 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !     * STARTING "GROUND ALBEDOS" FOR ROUTINE SNOALBA.
 !
       DO 145 I=1,N
-        ALBW(I)=0.045/MAX(CSZ(I),0.1)          !std value for water
+!        ALBW(I)=0.045/MAX(CSZ(I),0.1)          !std value for water
+        ALBW(I)=0.09/MAX(CSZ(I),0.1)          !std value for water - from Ouranos'
 !
         ALBI(I)=0.08+0.44*(LKICEH(I))**0.28    !thin ice albedo (Vavrus et al 1996)
         ALBI(I)=MIN(ALBI(I),0.44)
@@ -874,7 +906,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !     * COMPUTE WATER EXTINCTION COEFFICIENTS
 !----------------------------------------------------------------------------------------
 !  - include skin layer if no ice is present       (Sept 2, 2011 M MacKay)
-      CALL FREECONV(LKICEH,T0,TLAK,RHOIW,NLAK,NLAKMAX,ILG,IL1,IL2)
+      CALL FREECONV(LKICEH,T0,TLAK,RHOIW,NLAK,CSLM_NLAKMAX,ILG,IL1,IL2)
 !
       CALL LKTRANS (CQ1A,CQ1B,CQ2A,CQ2B,CQ3A,CQ3B,BLAK,IL1,IL2,ILG,   &
                     CQ1BI,CQ2BI,CQ3BI)
@@ -889,7 +921,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
                   GZEROSL,QTRANSL,HTCL,FLS,FICE,ALBW,ALBI,       &
                   CQ1A,CQ1B,CQ2A,CQ2B,CQ3A,CQ3B,                 &
                   CQ1BI,CQ2BI,CQ3BI,G0,                          &
-                  NLAKMAX,ILG,IL1,IL2   )
+                  CSLM_NLAKMAX,ILG,IL1,IL2   )
  
 !----------------------------------------------------------------------------------------
 ! 8.  * COMPUTE SOLAR FLUX (QFLX) FOR CURRENT TIMESTEP
@@ -1131,13 +1163,15 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 525       CONTINUE
 !
 !--- MIXING UNDER ICE
-        ELSE IF ((JMIX .GE. 2) .AND. ((ZMIX-ICEBOT).GE.DELZLK) ) THEN
-          DO 530, J=1,JMIX
-            ZTOP=DELSKIN + (J-1)*DELZLK
-            IF (ICEBOT .LE. ZTOP) THEN
-             TLAK(I,J)=TMIX
-            ENDIF
-530       CONTINUE
+! 20260320: M. Mackay: Forced convective mixing under ice tends to stall ice growth near layer boundaries. 
+!           Free convection is still allowed but we should turn off the forced convection.  
+        !ELSE IF ((JMIX .GE. 2) .AND. ((ZMIX-ICEBOT).GE.DELZLK) ) THEN
+        !  DO 530, J=1,JMIX
+        !    ZTOP=DELSKIN + (J-1)*DELZLK
+        !    IF (ICEBOT .LE. ZTOP) THEN
+        !     TLAK(I,J)=TMIX
+        !    ENDIF
+!530       CONTINUE
         ENDIF
 !-----------------------------------------------------------------------
 ! ---* COMPUTE TEMPERATURE, DENSITY, EXPANSIVITY OF MIXED LAYER WATER
@@ -1306,19 +1340,19 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !           ZRUNOFFTOT(I) = DELT*RC1(I)*(HLAKSIL(I))**RC2(I)  !Rating curve for lake outflow (kg/m2/dt)
 
 ! EG_MOD 
-!           ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZGRIDAREA(I)))* &
+!           ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZDXDY(I)))* &
 !                 0.001*LLAK(I)*RC1(I)*(HLAKSIL(I)**RC2(I))
 
 ! check if the grid-cell belongs to a big lake by comparing the area of the grid cell
 ! to the actual full area of the lake.
-	    IF ( (ZLAKEAREA(I)*1000000.0) .GT. ZGRIDAREA(I) ) THEN
+	    IF ( (ZLAKEAREA(I)*1000000.0) .GT. ZDXDY(I) ) THEN
 	       ! Grid-cell belongs to a large lake spanning over multiple grid cells;
 	       ! don't slowdown lake outflow, let the routing scheme handle this.
                 ZRUNOFFTOT(I) = HLAKSIL(I) * RHOW
             ELSE
 	       ! Rating curve for rectangular weir (CMS) converted to kg/m^2
-                ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZGRIDAREA(I)))* &
-                 0.001*SQRT(ZLAKEFR(I)*ZGRIDAREA(I))*RC1(I)*(HLAKSIL(I)**RC2(I))
+                ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZDXDY(I)))* &
+                 0.001*SQRT(ZLAKEFR(I)*ZDXDY(I))*RC1(I)*(HLAKSIL(I)**RC2(I))
             ENDIF
 
 ! END_EG_MOD
@@ -1360,8 +1394,15 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !            print *, "STOR FIN =", LSTF(I)
 !          ENDIF
 
-!         Include CSLM simulated snow depth in snodpl(indx_lake)
-          ZSNODP(I)  = ZSNOW(I)
+!         Include CSLM simulated snow depth and swe in snodpl(indx_lake)
+          IF(SNO(I) >0.) THEN
+             ZSNODP(I)  = SNO(I) / RHOSNO(I)  ! Snow depth in m (is converted later in cm for the output file)
+             ZSNOWE(I)  = SNO(I)   + WSNOW(I)
+           ELSE
+             ZSNODP(I)  = 0.
+             ZSNOWE(I)  = 0.
+           ENDIF
+
 
 ! EG_MOD4: 
 ! Remove liquid water evap. from CSLM output runoff in order
@@ -1378,3 +1419,4 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
    return
 
  end subroutine cslm_main
+end module  cslm_main_mod

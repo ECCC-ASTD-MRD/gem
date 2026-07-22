@@ -37,13 +37,16 @@ subroutine iau_apply (F_kount)
    use inp_options
    use gmm_vt1
    use gmm_pw
+   use gmm_iau
    use glb_ld
    use glb_pil
    use HORgrid_options, only: Grd_global_gid, &
         Grd_glbcore_gid, Grd_yinyang_L
    use inp_mod, only: Inp_comm_id
+   use ver 
    use metric
    use path
+   use lun
    use step_options
    use var_gmm
    use VERgrid_options, only: VGRID_M_S, VGRID_T_S
@@ -64,6 +67,7 @@ subroutine iau_apply (F_kount)
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <rmn/msg.h>
+   include 'mpif.h'
    include "rpn_comm.inc"
 
    integer, parameter :: STATS_PRECISION = 8
@@ -103,16 +107,20 @@ subroutine iau_apply (F_kount)
    integer, pointer :: ip1list_m(:), ip1list_t(:), ip1listref(:)
 
    real, dimension(l_minx:l_maxx,l_miny:l_maxy) :: delq
+   real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: vtm
+
    
    !--------------------------------------------------------------------------
 !!$   write(msg_S,'(l,i4,a,i7,a,i7)') (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.),F_kount,'; t=',nint(Cstv_dt_8*F_kount),'; p=',nint(Iau_period)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
-
+   if (Iau_indyn_L) return
    if (Iau_period<=0. .or. Iau_interval<=0.) return
 
    call gtmg_start(50, 'IAU', 1)
 
    ptopo_iotype = PTOPO_IODIST
+
+   call tt2virt(vtm, DO_TT2VT, l_minx, l_maxx, l_miny, l_maxy, G_nk) 
 
    call datp2f(dateo,Step_runstrt_S)
    iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval &
@@ -461,28 +469,27 @@ subroutine iau_apply (F_kount)
                ! Adjusting the surface value of qt1
                myptr0(1:l_ni,1:l_nj,l_nk+1) = &
                        myptr0(1:l_ni,1:l_nj,l_nk+1) + rgasd_8*Cstv_Tstr_8* &
-                       log(1.d0 + weight(F_kount)*data0(1:l_ni,1:l_nj,1) / &
+                       log(1.0d0 + weight(F_kount)*data0(1:l_ni,1:l_nj,1) / &
                            exp(GVM%lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)+myptr0(1:l_ni,1:l_nj,l_nk+1)/ &
                            (rgasd_8*Cstv_Tstr_8) ) )
                
                ! Initializing delq with the surface value         
                delq(1:l_ni,1:l_nj)= rgasd_8*Cstv_Tstr_8* &
-                       log(1.d0 + data0(1:l_ni,1:l_nj,1) / &
+                       log(1.0d0 + data0(1:l_ni,1:l_nj,1) / &
                            exp(GVM%lg_pstar_8(1:l_ni,1:l_nj,l_nk+1)+myptr0(1:l_ni,1:l_nj,l_nk+1)/ &
                            (rgasd_8*Cstv_Tstr_8) ) )
 
                ! Integrating the hydrostatic relation with delq at the surface as boundary condition
                do k = l_nk, 1, -1
-                  ! Computing delq at level k from k+1 for IAU increments
-                  delq(1:l_ni,1:l_nj)=delq(1:l_ni,1:l_nj)+ grav_8*Cstv_Tstr_8* &
-                           (1.d0/vt(1:l_ni,1:l_nj,k) - 1.d0/tt1(1:l_ni,1:l_nj,k))/ & 
-                           GVM%mc_iJz_8(1:l_ni,1:l_nj,k)
                   
                   ! Updating qt1 at level k with the IAU increments
                   myptr0(1:l_ni,1:l_nj,k) = &
                             myptr0(1:l_ni,1:l_nj,k) + rgasd_8*Cstv_Tstr_8* &
-                            log(1.d0 + weight(F_kount)*(exp(delq(1:l_ni,1:l_nj)/ &
-                            (rgasd_8*Cstv_Tstr_8)) - 1.d0) )                 
+                            log(1.0d0 + weight(F_kount)*(exp(delq(1:l_ni,1:l_nj)/ &
+                            (rgasd_8*Cstv_Tstr_8)) - 1.0d0) )                 
+
+                  iau_tv_tend(1:l_ni,1:l_nj,k)=(vt(1:l_ni,1:l_nj,k)-vtm(1:l_ni,1:l_nj,k))/&
+                         Cstv_dt_8
                end do
             else
                myptr0(1:ni1,1:l_nj,:) = &
@@ -512,6 +519,8 @@ subroutine iau_apply (F_kount)
            trim(datev_S))
    end if
    call gtmg_stop(50)
+   call gemtime ( Lun_out, 'iau_apply', .false. )
+
    !--------------------------------------------------------------------------
    return
 end subroutine iau_apply

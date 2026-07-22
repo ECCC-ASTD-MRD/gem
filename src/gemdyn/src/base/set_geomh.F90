@@ -34,7 +34,7 @@
       integer, external :: ezgdef_fmem,gdll
       integer offi,offj,indx,err,dgid,hgc_array(4), nicore, njcore
       integer gphy_i0, gphy_in, gphy_j0, gphy_jn, gphy_ni, gphy_nj, gphy_nicore, gphy_njcore
-      integer i,j,istat,ni,nj,offset, glbphy_gid, glbphycore_gid
+      integer i,j,istat,ni,nj,offset, glbphy_gid, glbphycore_gid, dimx,dimy
       real xfi(0:l_ni+1),yfi(0:l_nj+1)
       real gxfi(G_ni),gyfi(G_nj)
       real(kind=REAL64) posx_8(1-G_halox:G_ni+G_halox+1), posy_8(1-G_haloy:G_nj+G_haloy+1)
@@ -53,16 +53,30 @@
       geomh_miny= south
       geomh_maxx= l_ni + 1 - east
       geomh_maxy= l_nj + 1 - north
-
+      
       allocate (G_xg_8(1-G_halox:G_ni+G_halox+1) , G_yg_8(1-G_haloy:G_nj+G_haloy+1) )
       allocate (geomh_latrx(l_ni,l_nj), geomh_lonrx(l_ni,l_nj))
       allocate (geomh_lonQ(1-G_halox:G_ni+G_halox), geomh_latQ(1-G_haloy:G_nj+G_haloy),&
                 geomh_lonF(1-G_halox:G_ni+G_halox), geomh_latF(1-G_haloy:G_nj+G_haloy) )
-      allocate (geomh_latgs(1-G_haloy:G_nj+G_haloy),geomh_longs(1-G_halox:G_ni+G_halox),&
-                geomh_latgv(1-G_haloy:G_nj+G_haloy),geomh_longu(1-G_halox:G_ni+G_halox),&
-                geomh_latij(geomh_minx:geomh_maxx,geomh_miny:geomh_maxy), &
+      allocate (geomh_latij(geomh_minx:geomh_maxx,geomh_miny:geomh_maxy), &
                 geomh_lonij(geomh_minx:geomh_maxx,geomh_miny:geomh_maxy))
 
+      dimx= G_ni+2*G_halox ; dimy= G_nj+2*G_haloy
+      allocate (geomh_4output(8+2*dimx+2*dimy))
+      geomh_4output(1) = Grd_rot_xg(1,1)
+      geomh_4output(2) = Grd_rot_xg(2,1)
+      geomh_4output(3) = Grd_rot_xg(3,1)
+      geomh_4output(4) = Grd_rot_xg(4,1)
+      geomh_4output(5) = Grd_rot_xg(1,2)
+      geomh_4output(6) = Grd_rot_xg(2,2)
+      geomh_4output(7) = Grd_rot_xg(3,2)
+      geomh_4output(8) = Grd_rot_xg(4,2)
+
+      geomh_latgs(1-G_haloy:G_nj+G_haloy) => geomh_4output(            9:)
+      geomh_longs(1-G_halox:G_ni+G_halox) => geomh_4output(dimy       +9:)
+      geomh_latgv(1-G_haloy:G_nj+G_haloy) => geomh_4output(dimx+  dimy+9:)
+      geomh_longu(1-G_halox:G_ni+G_halox) => geomh_4output(dimx+2*dimy+9:)
+      
       ni= Grd_ni + 2*G_halox + 1
       nj= Grd_nj + 2*G_haloy + 1
       x0= Grd_x0_8 - dble(G_halox)  *dble(Grd_dx)
@@ -239,8 +253,13 @@
       end if
 
 
+      ! We are abusing the global grid to pass l_i0, l_j0 to rpnphy
+      ! it would have been better to put them in 'model/Hgrid/local'
+      ! but the F_i0, F_j0 parameters of this object are already used
+      ! indirectly because of something having to do with DIEZE grids.
       istat= hgrid_wb_put ('model/Hgrid/global', Grd_global_gid  , &
-                            F_lni=G_ni, F_lnj=G_nj, F_rewrite_L=.true.)
+                            F_i0=l_i0, F_j0=l_j0, F_lni=G_ni, F_lnj=G_nj, &
+                            F_hx=G_halox, F_hy=G_haloy, F_rewrite_L=.true.)
       istat= hgrid_wb_put ('model/Hgrid/local', Grd_local_gid   , &
                             F_lni=l_ni, F_lnj=l_nj, F_rewrite_L=.true.)
       istat= hgrid_wb_put ('model/Hgrid/lclcore', Grd_lclcore_gid , &

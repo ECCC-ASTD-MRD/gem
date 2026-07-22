@@ -1,18 +1,14 @@
-!-------------------------------------- LICENCE BEGIN -------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer,
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer
-!version 3 or (at your option) any later version that should be found at:
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html
+module convect_shallow_mod
+   use convect_updraft_shal_mod, only: convect_updraft_shal3
+   use convect_trigger_shal_mod, only: convect_trigger_shal4
+   use convect_uv_transport_shal_mod, only: convect_uv_transport_shal1
+   use convect_closure_shal_mod, only: convect_closure_shal5
+   use convect_chem_transport_mod, only: convect_chem_transport1
+   implicit none
+   private
+   public :: convect_shallow6
 
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software;
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec),
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END ---------------------------
+contains
 
 subroutine convect_shallow6(KLON, KLEV, ITEST, PDTCONV, &
      &                      PPABST, PZZ, &
@@ -1021,3 +1017,5 @@ subroutine convect_shallow_c(KLON, KLEV, ITEST, ICONV, PDTCONV, &
  
    return
 end subroutine convect_shallow_c
+
+end module convect_shallow_mod

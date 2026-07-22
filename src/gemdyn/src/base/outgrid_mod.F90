@@ -14,6 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module outgrid
+
+   use out_mod
+
    implicit none
    public
    save
@@ -40,13 +43,13 @@ module outgrid
 ! OutGrid_stride     | every ith point to be outputted                 |
 !----------------------------------------------------------------------
 !
-
-   integer, parameter :: OutGrid_MAXGRID1 = 4
-
+   integer, parameter :: OutGrid_MAXGRID1 = 10
+   
    logical :: OutGrid_reduc(OutGrid_MAXGRID1)
    integer :: OutGrid_x0 (OutGrid_MAXGRID1), OutGrid_x1    (OutGrid_MAXGRID1)
    integer :: OutGrid_y0 (OutGrid_MAXGRID1), OutGrid_y1    (OutGrid_MAXGRID1)
    integer :: OutGrid_id (OutGrid_MAXGRID1), OutGrid_stride(OutGrid_MAXGRID1)
    integer :: OutGrid_sets
+   type(horizontal_z_grid), target :: OutGrid_hgrid_usr(OutGrid_MAXGRID1)
 
 end module outgrid

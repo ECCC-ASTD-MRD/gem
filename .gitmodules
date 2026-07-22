@@ -13,7 +13,7 @@
 [submodule "src/rpn-si/rmn"]
 	path = src/rpn-si/rmn
 	url = ../librmn.git
-	branch = master
+	branch = alpha
 [submodule "src/rpn-si/tdpack"]
 	path = src/rpn-si/tdpack
 	url = ../tdpack.git
@@ -21,4 +21,4 @@
 [submodule "src/rpn-si/fst-tools"]
 	path = src/rpn-si/fst-tools
 	url = ../fst-tools.git
-	branch = master
+	branch = alpha
