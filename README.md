@@ -111,7 +111,7 @@ runmod.sh -dircfg configurations/GEM_cfgs_GY_4km -ptopo 61x20x8
 
 ```bash
 cd ..
-gem_sverif.sh -p $GEM_WORK -f dp2020022915-000-000_006
+gem_sverif.sh -p $GEM_WORK -f dp2020022915
 ```
 
 * Expected output
@@ -127,7 +127,7 @@ PASS T1  (sverif_eval) TT [ 850mb;    6h; CI=0.01]
 PASS NT1 (sverif_eval) TT [ 850mb;    6h; CI=0.01]
 PASS NT5 (sverif_eval) TT [ 850mb;    6h; CI=0.01]
 PASS R   (sverif_eval) TT [ 850mb;    6h; CI=0.01]
-(INFO) Passed (passed 8/8)
+(INFO) Passed (passed 12/12)
 ```
 
 # Detailed information on Packages

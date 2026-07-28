@@ -70,7 +70,7 @@ fi
 
 # Get forecast hour information
 prog=$(find ${statpath}/ -name 'sverif*.dat' | head -n 1 | sed 's/h.dat//' | tail -c 4)
-file=$(find ${RUNPATH}/RUNMOD/output -name ${FILE})
+file=$(find ${RUNPATH}/RUNMOD/output -name ${FILE}*)
 
 if [[ ! -d ${statpath} ]]; then 
     echo "(ERROR) Invalid statistics path (${statpath})"
