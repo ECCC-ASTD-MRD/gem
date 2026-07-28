@@ -72,7 +72,7 @@
                     1000.,  900.,  800.,  700.,  600.,  500.,  400.,  300.,  200.,  100.,
   Out3_nbitg      = 12         , Out3_cliph_L     = .true.    ,
   Out3_postproc_fact= 1       , 
-  Out3_close_interval_S= 6h
+  Out3_close_interval_S= '6h'
   Out3_linbot     =  3
 /
 
@@ -142,7 +142,7 @@
   rad_esfc        = .true.     ,
   rad_atmpath = 'LI06',
   advectke=.true. 
-  RAD_COND_REI    = 30.
+  RAD_COND_REI    = '30.',
   RAD_EXP_REI     = 'cccma'           ,
   rad_mpagg       = 'binary'          ,
 
