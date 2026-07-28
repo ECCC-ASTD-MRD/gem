@@ -3,8 +3,7 @@
 # For internal use at ECCC
 
 # Source this file to:
-# - Load profile and code-tools for nvhpc, depending on compiler version
-# - Load RPN-SI libraries and utilities, and RPNPY
+# - Load profile and code-tools for llvm
 # - Load a script for common setup to all compilers
 
 unset SSMUSE_LD_PREPEND
@@ -13,22 +12,17 @@ unset SSMUSE_LD_PREPEND
 SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 case ${SETUP_SCRIPT_NAME} in
-    .eccc_setup_nvhpc)
-        export COMPILER_VERSION=25.9.0
+    .eccc_setup_llvm)
+        export COMPILER_VERSION=22.1.3
         ;;
-    .eccc_setup_nvhpc_25.9.0)
-        export COMPILER_VERSION=25.9.0
-        ;;
-    .eccc_setup_nvhpc_25.7.0)
-        export COMPILER_VERSION=25.7.0
+    .eccc_setup_llvm_22.1.3)
+        export COMPILER_VERSION=22.1.3
         ;;
 esac
-# Load code-tools 
-. r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@nvhpc-${COMPILER_VERSION}
 
-# Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20260512-beta
-. r.load.dot rpn/utils/20260512-beta
+# Load code-tools 
+. r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@llvm-${COMPILER_VERSION}
+
 # Load latest version of RPNPY
 . r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
 
@@ -41,9 +35,10 @@ else
 fi
 
 # Call common setup file
-export COMPILER_SUITE=nvhpc
+export COMPILER_SUITE=llvm
+export GOAS_SCRIPT_MODE=TRUE
 . ./.common_setup ${COMPILER_SUITE}
 
 # Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
-export WITH_SYSTEM_RPN=TRUE
+export WITH_SYSTEM_RPN=FALSE
 export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}

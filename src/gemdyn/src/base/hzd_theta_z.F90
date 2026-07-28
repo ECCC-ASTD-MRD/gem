@@ -32,27 +32,16 @@
 
       integer i,j,k,ik,dim,dim1
       real, parameter :: p_naught=100000.
-      real, dimension(:,:,:), pointer :: pres_t, th, th0, tmp, tmp1, tmp2, wk
 !
 !-------------------------------------------------------------------
 !
-      dim1=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(max(hzd_hyb_bot,hzd_hyb_top))
-      dim= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
-      pres_t (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(      1:)
-      th     (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(  dim+1:)
-      th0    (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(2*dim+1:)
-      wk     (l_minx:l_maxx,l_miny:l_maxy,1:l_nk) => WS1(3*dim+1:)
-      tmp    (l_minx:l_maxx,l_miny:l_maxy,1:max(hzd_hyb_bot,hzd_hyb_top)) => WS1(4*dim+1:)
-      tmp1   (l_minx:l_maxx,l_miny:l_maxy,1:max(hzd_hyb_bot,hzd_hyb_top)) => WS1(4*dim+dim1+1:)
-      tmp2   (l_minx:l_maxx,l_miny:l_maxy,1:max(hzd_hyb_bot,hzd_hyb_top)) => WS1(4*dim+2*dim1+1:)
-
 !$omp do collapse(2)
       do k=1,G_nk
          do j=1-G_haloy, l_nj+G_haloy
             do i=1-G_halox, l_ni+G_halox
-               pres_t(i,j,k) = (p_naught/pw_pt_plus(i,j,k))**cappa_8
-               th    (i,j,k) = tt1(i,j,k) * pres_t(i,j,k)
-               th0   (i,j,k) = th(i,j,k)
+               pres_pt(i,j,k) = (p_naught/pw_pt_plus(i,j,k))**cappa_8
+               theta    (i,j,k) = tt1(i,j,k) * pres_pt(i,j,k)
+               theta0   (i,j,k) = theta(i,j,k)
             end do
          end do
       end do
@@ -61,93 +50,78 @@
       !Hybrid diffusion if hzd_hyb_bot >0
       ! Diffusion on constant z for levels hzd_hyb_bot->hzd_hyb_top
       if(hzd_hyb_bot > 0) then 
-!$omp do 
-         do ik=1,max(hzd_hyb_bot,hzd_hyb_top )
-            do j=1-G_haloy,l_nj+G_haloy
-               do i=1-G_halox,l_ni+G_halox
-                  tmp (i,j,ik) = th(i,j,l_nk+1-ik) 
-                  tmp1(i,j,ik) = air_dens(i,j,l_nk+1-ik)
-                  tmp2(i,j,ik) = th(i,j,ik)
-               end do
+!$omp do collapse(2)
+      do ik=1,hzd_hyb_bot
+         do j=1-G_haloy,l_nj+G_haloy
+            do i=1-G_halox,l_ni+G_halox
+                  wrkt1 (i,j,ik) = theta   (i,j,l_nk+1-ik) 
+                  wrkd1 (i,j,ik) = air_dens(i,j,l_nk+1-ik)
             end do
          end do
+      end do
 !$omp end do
          if (hzd_conserv_th) then
-!$omp single
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z, &
+            call hzd_uvwzd_alh(theta,Hzd_lnR_theta_z,Hzd_pwr_theta_z, &
                               l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
-!$omp end single
-!$omp single
-            call hzd_expc_deln ( tmp ,tmp1, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
-                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_bot )
-!$omp end single
 
+            call hzd_expc_deln ( wrkt1 ,wrkd1, Hzd_pwr_theta, Hzd_lnR_theta,&
+                                l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_bot )
 !$omp do collapse(2)
          do ik=1,hzd_hyb_bot
             do j=1-G_haloy,l_nj+G_haloy
                do i=1-G_halox,l_ni+G_halox
-                  th(i,j,l_nk+1-ik) = tmp (i,j,ik)
+                  theta(i,j,l_nk+1-ik) = wrkt1 (i,j,ik)
                end do
             end do
          end do
 !$omp end do
 
-     if(hzd_hyb_top.ne.1 ) then
-         do ik=1,hzd_hyb_top
-            do j=1-G_haloy,l_nj+G_haloy
-               do i=1-G_halox,l_ni+G_halox
-                  tmp1(i,j,ik) = air_dens(i,j,ik)
+         if(hzd_hyb_top.ne.1 ) then
+!$omp do collapse(2)
+            do ik=1,hzd_hyb_top
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox
+                     wrkt2(i,j,ik) = theta   (i,j,ik)
+                     wrkd2(i,j,ik) = air_dens(i,j,ik)
+                  end do
                end do
             end do
-         end do
-!$omp single
-            call hzd_expc_deln ( tmp2,tmp1, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
+!$omp end do
+            call hzd_expc_deln ( wrkt2,wrkd2, Hzd_pwr_theta, Hzd_lnR_theta,&
                                 l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_top )
-!$omp end single
-
 !$omp do collapse(2)
-         do ik=1,hzd_hyb_top
-            do j=1-G_haloy,l_nj+G_haloy
-               do i=1-G_halox,l_ni+G_halox
-                  th(i,j,ik) = tmp2 (i,j,ik)
+            do ik=1,hzd_hyb_top
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox
+                     theta(i,j,ik) = wrkt2 (i,j,ik)
+                  end do
                end do
             end do
-         end do
 !$omp end do
-
-      endif
-
+            endif
          else
-!$omp single
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
+            call hzd_uvwzd_alh(theta,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
                                 l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
-
-!$omp end single
-            call hzd_exp_deln ( tmp, Hzd_pwr_theta, Hzd_lnR_theta, wk,&
+            call hzd_exp_deln ( wrkt1, Hzd_pwr_theta, Hzd_lnR_theta,&
                                 l_minx,l_maxx,l_miny,l_maxy, hzd_hyb_bot )
-!         endif
 !$omp do collapse(2)
-         do ik=1,hzd_hyb_bot
-            do j=1-G_haloy,l_nj+G_haloy
-               do i=1-G_halox,l_ni+G_halox
-                  th(i,j,l_nk+1-ik) = tmp (i,j,ik)
+            do ik=1,hzd_hyb_bot
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox
+                     theta(i,j,l_nk+1-ik) = wrkt1 (i,j,ik)
+                  end do
                end do
             end do
-         end do
 !$omp end do
-      endif
+         endif
       else
       ! Diffusion on constant z 
          if (hzd_conserv_th) then
-!$omp single
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
+            call hzd_uvwzd_alh(theta,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
                                l_minx,l_maxx,l_miny,l_maxy,G_nk,4)
-!$omp end single
          else
-!$omp single
-            call hzd_uvwzd_alh(th,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
+            call hzd_uvwzd_alh(theta,Hzd_lnR_theta_z,Hzd_pwr_theta_z,&
                                 l_minx,l_maxx,l_miny,l_maxy,G_nk,3)
-!$omp end single
          endif
       endif
 
@@ -156,8 +130,8 @@
       	 do k=1,G_nk
             do j=1, l_nj
                do i=1, l_ni
-                  hzd_th_tend(i,j,k)= (th(i,j,k) - th0 (i,j,k))/Cstv_dt_8 
-                  hzd_th_tend(i,j,k)= hzd_th_tend(i,j,k) / th0(i,j,k) 
+                  hzd_th_tend(i,j,k)= (theta(i,j,k) - theta0 (i,j,k))/Cstv_dt_8 
+                  hzd_th_tend(i,j,k)= hzd_th_tend(i,j,k) / theta0(i,j,k) 
                end do
             end do
          end do
@@ -167,7 +141,7 @@
          do k=1,G_nk
             do j=1, l_nj
                do i=1, l_ni
-                  tt1(i,j,k)= th(i,j,k) / pres_t(i,j,k)
+                  tt1(i,j,k)= theta(i,j,k) / pres_pt(i,j,k)
                end do
             end do
          end do

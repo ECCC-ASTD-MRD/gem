@@ -28,7 +28,7 @@
 #include <rmnlib_basics.hf>
       character(len=4) :: dumc4
       logical :: signal
-      integer :: i,j,k,tag,myhost,DISP_UNIT,ierr,ind,ind2
+      integer :: i,j,k,tag,myhost,DISP_UNIT,ierr,ind,ind2,nk,sortie_largest_list
       integer :: size_usr_grid_info,n_hgrid_usr,n_vgrid_usr,index,sizestr,sizei
       integer :: vgd_table_size(3), hgrid_param(9)
       integer(KIND=MPI_ADDRESS_KIND) :: WINSIZE
@@ -49,14 +49,17 @@
 
       disp_unit = 4
       dim = 0.
-      if (OUTs_hostmyproc == 0) dim = real(G_ni)*real(G_nj)*real(G_nk+1)*2.&
+      ! Use variable sortie_largest_list just to clirifie code
+      sortie_largest_list=F_grid_info(29)
+      nk=max((G_nk+1)*2,sortie_largest_list)
+      if (OUTs_hostmyproc == 0) dim = real(G_ni)*real(G_nj)*real(nk)&
                                      *real(IOS_ncolors)*real(disp_unit)
       WINSIZE = dim
       call MPI_Win_allocate_shared(WINSIZE, disp_unit, MPI_INFO_NULL,&
                                    myhost, basepntr, SHARED_WIN, ierr)
       call MPI_Win_shared_query(SHARED_WIN, MPI_PROC_NULL, WINSIZE  ,&
                                 disp_unit, basepntr,ierr)
-      call C_F_POINTER ( basepntr, IOs_glbdata, [G_ni,G_nj,(G_nk+1)*2,IOS_ncolors] )
+      call C_F_POINTER ( basepntr, IOs_glbdata, [G_ni,G_nj,nk,IOS_ncolors] )
       call MPI_barrier (MY_WORLD_COMM,ierr)
 
       Out_path_input_S= IOs_path_input_S

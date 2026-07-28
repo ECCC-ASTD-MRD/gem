@@ -844,3 +844,6 @@ rm:  surface_cfgs/lwfcliq_svs1
 #------
 fileVersion: 6.3.0-a23 > 6.3.0-b01
 #New:  surface_cfgs/lake_icefrac_legacy_l
+#------
+fileVersion: 6.3.0-b02 > 6.3.0-b02
+

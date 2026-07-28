@@ -45,7 +45,6 @@
       use wb_itf_mod
       use mem_iau
       use ptopo
-      use omp_lib
       use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -86,6 +85,13 @@
          call mu_set_leap_year (MU_JDATE_LEAP_IGNORED)
          if (Lun_out>0) write(Lun_out,6010)
       end if
+      if(.not.Grd_yinyang_L.and.Fcst_rstrt_S < Fcst_nesdt_S) then
+         if (Lun_out > 0) then
+            write(Lun_out,*) &
+            ' Fcst_rstrt_S < Fcst_nesdt_S is not allowed'
+         end if
+         return
+      endif
 
       dayfrac= Step_total * Step_dt / sec_in_day
       call incdatsd (Step_runend_S, Step_runstrt_S, dayfrac)
@@ -184,14 +190,6 @@
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S = dumc_S
-
-      if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
-
-      if(hzd_alh_L .and. OMP_get_max_threads() >1) then
-         if(lun_out>0) write (Lun_out, &
-         '(/"   ====> OpenMP is temporarily not allowed when hybrid or constant z diffusion is used")' )
-         return
-      endif
 
       if (Hzd_smago_lnr(1) > 0.) then
          if (Hzd_smago_lnr(2)<0.) Hzd_smago_lnr(2)=Hzd_smago_lnr(1)

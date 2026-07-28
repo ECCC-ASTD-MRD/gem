@@ -281,7 +281,7 @@ contains
     endif
 
     readfield_L = .false.
-    if (ISDYNIN('qc') .or. ISPHYIN('tr/mpqc:p')) then
+    if (ISDYNIN('mpqc') .or. ISPHYIN('tr/mpqc:p')) then
        readfield_L = .true.
        do k=1,nkm1
           do i=1,ni

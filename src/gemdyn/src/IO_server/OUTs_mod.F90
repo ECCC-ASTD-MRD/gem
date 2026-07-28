@@ -511,7 +511,6 @@ module OUTs
          F_gtyp='Z'
          F_ig1=hgd_usr(Out_hgd_usr_index)%ip1; F_ig2=hgd_usr(Out_hgd_usr_index)%ip2;&
               F_ig3=hgd_usr(Out_hgd_usr_index)%ip3; F_ig4=0
-         F_etiket_S='H_INT'
          status_L=.true.
        end function OUTs_hor_int
 
@@ -573,7 +572,6 @@ module OUTs
          F_gtyp='Z'
          F_ig1=hgd_usr(Out_hgd_usr_index)%ip1; F_ig2=hgd_usr(Out_hgd_usr_index)%ip2;&
               F_ig3=hgd_usr(Out_hgd_usr_index)%ip3; F_ig4=0
-         F_etiket_S='H_INT'
          status_L=.true.
        end function OUTs_hor_int_sfc
 

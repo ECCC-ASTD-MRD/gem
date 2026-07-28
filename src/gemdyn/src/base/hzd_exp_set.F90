@@ -36,8 +36,8 @@
       hzd_hyb_bot = hzd_hyb_lev(2)
 
       ! Constant z diffusion
-         if ( Hzd_pwr_z < 0) Hzd_pwr_z = 2
-         if ( Hzd_pwr_theta_z < 0) Hzd_pwr_theta_z = Hzd_pwr_z 
+      if ( Hzd_pwr_z < 0) Hzd_pwr_z = 2
+      if ( Hzd_pwr_theta_z < 0) Hzd_pwr_theta_z = Hzd_pwr_z 
       ! Hybrid diffusion
       if (hzd_hyb_bot >0) then
          if ( Hzd_pwr_z < 0) Hzd_pwr_z = 2
@@ -50,19 +50,19 @@
          if ( Hzd_lnr < 0.) Hzd_lnr = Hzd_lnr_z
       endif
  
-     ! if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
+      if(Hzd_lnr_theta_z >0. .OR. Hzd_lnr_z > 0.)  Hzd_alh_L=.true.
 
-         if((Hzd_lnr_z > 0.).and.(Hzd_lnr_theta_z > 0.))then
+      if((Hzd_lnr_z > 0.).and.(Hzd_lnr_theta_z > 0.))then
 
-            if(hzd_hyb_bot >0)then
-               if (Lun_out > 0) then
-                  write(Lun_out,1005) Hzd_lnr_z,Hzd_lnr_theta_z
-               end if
-            else
-               if (Lun_out > 0) then
-                  write(Lun_out,1006) Hzd_lnr_z,Hzd_lnr_theta_z
-               end if
-            end if
+        if(hzd_hyb_bot >0)then
+           if (Lun_out > 0) then
+              write(Lun_out,1005) Hzd_lnr_z,Hzd_lnr_theta_z
+           end if
+        else
+           if (Lun_out > 0) then
+              write(Lun_out,1006) Hzd_lnr_z,Hzd_lnr_theta_z
+           end if
+        end if
       end if
 
       Hzd_lnr = min(max(0.,Hzd_lnr),0.9999999)
@@ -93,6 +93,51 @@
          endif
       endif
 
+      allocate(pres_pt (l_minx:l_maxx,l_miny:l_maxy,1:l_nk), &
+               theta(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),    & 
+               theta0(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),   &
+               wk1(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),      &
+               wk2(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),  &
+               sfd(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),      &
+               sfd1(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),  &
+               wrkt1(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot) , &
+               wrkd1(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot), &
+               wrkt2(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_top), & 
+               wrkd2(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_top), & 
+               u_wrk(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot),   &
+               v_wrk(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot),   &
+               w_wrk(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot),   &
+               zdt_wrk(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_bot), &
+               u_wrk1(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_top),  &
+               v_wrk1(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_top),  &
+               w_wrk1(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_top),  &
+               zdt_wrk1(l_minx:l_maxx,l_miny:l_maxy,1:hzd_hyb_top) ,& 
+               fdg2_4(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               Afdg1(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               Bfdg1(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               Afdg2(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               Bfdg2(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               bdd_v8(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               add_v8(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               cdd_v8(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               cdd_v82(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               cdd_v81(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               cflux(l_minx:l_maxx, l_miny:l_maxy,l_nk+1),&
+               stencilV(l_minx:l_maxx, l_miny:l_maxy,3,l_nk),&
+       	       a_th(l_minx:l_maxx, l_miny:l_maxy,l_nk) ,&
+       	       b_th(l_minx:l_maxx, l_miny:l_maxy,l_nk) ,&
+       	       d_th(l_minx:l_maxx, l_miny:l_maxy,l_nk))
+
+      pres_pt=0. ; theta=0.; theta0=0. ; wk1=0. ; wk2=0. 
+      wrkt1=0. ; wrkd1=0. ; wrkt2=0.; wrkd2=0.
+      u_wrk=0.  ; v_wrk  =0. ; w_wrk  =0. ; zdt_wrk  =0.
+      u_wrk1=0. ; v_wrk1 =0. ; w_wrk1 =0. ; zdt_wrk1 =0.
+      sfd=0. ; sfd1=0.;fdg2_4=0.;
+      Afdg1=0.d0; Bfdg1=0.d0; Afdg2=0.d0; Bfdg2=0.d0
+      bdd_v8=0.d0; add_v8=0.d0; cdd_v8=0.d0; cdd_v82=0.d0; cdd_v81=0.d0
+      a_th=0.d0; b_th=0.d0; d_th=0.d0;
+      stencilV=0.d0; cflux=0.d0
+
       call hzd_exp_geom ()
 
       call hzd_exp5p_set ()
@@ -103,9 +148,9 @@
  1004 format(/,'  HORIZONTAL DIFFUSION A LA SMAGORINSKY',/,2x,37('=')// &
               ,'  PARAMETER =',f5.2,'  BACKGROUND =',f4.1,' %/TIMESTEP')
  1005 format(/,'  HORIZONTAL HYBRID  DIFFUSION ',/,2x,37('=')// &
-              ,'  HZD_LNR_Z =',f5.2,'  HZD_LNR_THETA_Z =',f5.2)
+              ,'  HZD_LNR_Z =',f6.3,'  HZD_LNR_THETA_Z =',f6.3)
  1006 format(/,'  HORIZONTAL DIFFUSION ALONG CONSTANT Z',/,2x,37('=')// &
-             ,'  HZD_LNR_Z =',f5.2,'  HZD_LNR_THETA_Z =',f4.1)
+             ,'  HZD_LNR_Z =',f5.2,'  HZD_LNR_THETA_Z =',f5.1)
 !
 !     ---------------------------------------------------------------
 !

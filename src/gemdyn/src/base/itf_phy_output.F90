@@ -176,7 +176,9 @@
                              F_npath='O',F_bpath='PVED', F_quiet=.true.)&
                              > 0 ) then
                FIELD_SHAPE: if (pmeta%nk == 1) then ! 2D field
-                  Out_stag_S= 'MS '//OutGrid_hgrid_usr(gridset)%usr_grid_index_S
+                  ! For surface fields, encode the ip1 style ('N' or 'O') in Out_stag_S(3:3)
+                  Out_stag_S= 'MSN'//OutGrid_hgrid_usr(gridset)%usr_grid_index_S
+                  if(Level_vgrid_usr(levset)%vcode .eq. 1002 )Out_stag_S(3:3)='O'
                   rff(1)= 0. ; irff(1)= 1 ; knd= 2
                   if ( pmeta%fmul > 1 ) then
                      do mult=1,pmeta%fmul
@@ -260,7 +262,7 @@
                           l_minx,l_maxx,l_miny,l_maxy, G_nk, &
                           Out_stag_S, Level_typ_S(levset), Outp_grid(kk)) &
                           == set_level_ERROR )then
-                        print*,'TODO out_uv handle error gracefully 1'
+                        print*,'TODO itf_phy_output handle error gracefully 1'
                         stop
                         return
                      end if

@@ -13,12 +13,12 @@ SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 # Load code-tools 
 case ${SETUP_SCRIPT_NAME} in
     .eccc_setup_gnu)
-        . r.load.dot rpn/code-tools/20260219/env/gnu
+        . r.load.dot rpn/code-tools/20260602/env/gnu
         ;;
     .eccc_setup_gnu_15.2.0)
         # to avoid linking with libgfortran.so in /lib64
         unset SSMUSE_LD_PREPEND
-        . r.load.dot rpn/code-tools/20260219/env/exp/rhel-9-amd64-64@gnu-15.2.0
+        . r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@gnu-15.2.0
         ;;
 esac
 

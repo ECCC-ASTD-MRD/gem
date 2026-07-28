@@ -20,10 +20,7 @@
       use adz_mem
       use adz_options
       use tr3d
-
       implicit none
-
-#include <arch_specific.hf>
 
       !arguments
       !---------
@@ -42,7 +39,7 @@
       integer :: n,k,nf,nptr_F,tr_num(F_nptr),&
                  ij,i,j,j1,j2,k1,k2,kk,ni,nj,nij,n1,n2,np,slice,i0,in,j0,jn
       real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,l_nk,F_nptr), target :: adv_o,adv_i
-      real, dimension(l_ni*l_nj*l_nk*F_nptr*2) :: wrkc
+      real, dimension(:), allocatable :: wrkc
       type(C_PTR),dimension(F_nptr*2) :: stkpntr
       logical :: Bermejo_Conde_L
 !
@@ -112,6 +109,7 @@
       n= nj
       slice = n*ni
 
+      allocate (wrkc(l_ni*l_nj*l_nk*nf*2))
       n1=1
       do while (n1 <= F_num_io)
          n2= min(n1+slice-1,F_num_io)
@@ -147,6 +145,7 @@
          end do
          n1=n2+1
       end do
+      deallocate (wrkc)
 
       !Do the appropriate ZEROING to FLUX_out/FLUX_in
       !----------------------------------------------

@@ -38,6 +38,7 @@ contains
       use tr3d
       use ver
       use vGrid_Descriptors
+      use svro_mod, only : OUTs_sortie_largest_list
       implicit none
 
       character(len=*), intent(IN) :: F_server_S
@@ -101,6 +102,7 @@ contains
          grid_info(26)= TRANSFER(Out_etik_S(1:4 ), i)
          grid_info(27)= TRANSFER(Out_etik_S(5:8 ), i)
          grid_info(28)= TRANSFER(Out_etik_S(9:12), i)
+         grid_info(29)= OUTs_sortie_largest_list
 
          if (F_comm_L) then
             call MPI_COMM_rank (F_COMM,me_1on1,err)

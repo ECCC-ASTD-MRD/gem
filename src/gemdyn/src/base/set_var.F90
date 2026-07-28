@@ -393,6 +393,7 @@
              if (Lun_out > 0) write(Lun_out,1400)
          end if
       end if
+      if(OUTs_server_L)OUTs_sortie_largest_list=max(OUTs_sortie_largest_list,varmax)
 !
 !----------------------------------------------------------------
 !

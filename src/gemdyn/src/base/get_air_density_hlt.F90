@@ -73,6 +73,7 @@
       call sumhydro_hlt (sumq_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,Tr3d_ntr,&
                          tr, Schm_dry_mixing_ratio_L.and.Schm_wload_L)
       if (Schm_dry_mixing_ratio_L) then
+!$omp do collapse(2)
          do k=k0,l_nk
            do j=1,l_nj
              do i=1,l_ni
@@ -80,6 +81,7 @@
              enddo
            enddo
          enddo
+!$omp end do
       end if
 
       !Evaluate Air Mass
@@ -87,6 +89,7 @@
       inv_grav= 1.d0 / grav_8
       air_dens(:,:,1:k0-1)= 0.
       air_dens_m(:,:,1:k0-1)= 0.
+!$omp do
       do k=k0,l_nk
          air_dens(:,l_miny:0     ,k)= 0.
          air_dens_m(:,l_miny:0     ,k)= 0.
@@ -104,7 +107,9 @@
          end do
          end do
       end do
+!$omp end do
 
+!$omp do
       do k=1,l_nk
          km=max(k-1,1)
          do j=1,l_nj
@@ -114,11 +119,14 @@
             end do
          end do
       end do
+!$omp end do
 
+!$omp single
          call rpn_comm_xch_halo (air_dens,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call rpn_comm_xch_halo (air_dens_m,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!$omp end single
 !---------------------------------------------------------------------
 !
       return

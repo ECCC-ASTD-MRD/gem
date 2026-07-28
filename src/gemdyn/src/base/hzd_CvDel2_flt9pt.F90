@@ -15,20 +15,20 @@
 !**s/r hzd_flt9pt  - 9 points explicit horizontal conservatif diffusion
 !                                     Del2 operator
 
-      subroutine hzd_CvDel2_flt9pt (rfd,sfd,rho,Minx,Maxx,Miny,Maxy,nk, &
-                                    nu,m,n)
-      use HORgrid_options
-      use glb_ld
+      subroutine hzd_CvDel2_flt9pt (rfd,F_sfd,rho,Minx,Maxx,Miny,Maxy,nk, &
+                                    nu,m,n,i0,in,j0,jn)
       use hzd_mod
 !
       use ptopo
       use, intrinsic :: iso_fortran_env
       implicit none
+#include <arch_specific.hf>
 
-      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,nk,m,n
+      integer, intent(IN) :: Minx,Maxx,Miny,Maxy,nk,m,n,i0,j0,in,jn 
       real, intent(INOUT) :: rfd (Minx:Maxx,Miny:Maxy,nk), rho(Minx:Maxx,Miny:Maxy,nk), &
-                             sfd (Minx:Maxx,Miny:Maxy,nk)
-!-----------------------------------------------------------------------
+                             F_sfd (Minx:Maxx,Miny:Maxy,nk)
+
+      integer i,j,k
       real wk(Minx:Maxx,Miny:Maxy)!l_minx:l_maxx,l_miny:l_maxy)
       real(kind=REAL64) :: c1,c2,c3
       real(kind=REAL64), parameter :: one=1.d0, two=2.d0, four=4.d0
@@ -36,26 +36,15 @@
       real(kind=REAL64), parameter :: epsilon = 1.0d-12,zero=0.d0
 
       real(kind=REAL64) :: a,b,c,d,e,f,g,h,nu
-      integer i,j,k,i0,j0,in,jn
 !----------------------------------------------------------------------
-      wk=zero
-     if (Grd_yinyang_L) then
-         i0 = 1    + 2*west
-         j0 = 1    + 2*south
-         in = l_ni - 2*east
-         jn = l_nj - 2*north
-      else
-         i0 = 1    + pil_w
-         j0 = 1    + pil_s
-         in = l_ni - pil_e
-         jn = l_nj - pil_n
-      end if
-
+     ! wk=zero
       c1 = nu*(one-two*nu)
       c2 = nu**2
       c3 = nu*four*(nu-one)
 
       if(m==n) then
+              
+!$omp do collapse(2)
          do k=1,nk
             do j=j0,jn
                do i=i0,in
@@ -71,16 +60,17 @@
 
                   rfd(i,j,k)=  rfd(i,j,k) + &
                      c1/rho(i,j,k)*(&
-                  a*(sfd(i+1,j,k)-sfd(i,j,k))-b*(sfd(i,j,k)-sfd(i-1,j,k))+&
-                  c*(sfd(i,j+1,k)-sfd(i,j,k))-d*(sfd(i,j,k)-sfd(i,j-1,k)) ) +&
+                  a*(F_sfd(i+1,j,k)-F_sfd(i,j,k))-b*(F_sfd(i,j,k)-F_sfd(i-1,j,k))+&
+                  c*(F_sfd(i,j+1,k)-F_sfd(i,j,k))-d*(F_sfd(i,j,k)-F_sfd(i,j-1,k)) ) +&
                   c2/rho(i,j,k)*( &
-                  e*(sfd(i+1,j+1,k)-sfd(i,j,k))-h*(sfd(i,j,k)-sfd(i-1,j-1,k))+&
-                  g*(sfd(i-1,j+1,k)-sfd(i,j,k))-f*(sfd(i,j,k)-sfd(i+1,j-1,k)) )
+                  e*(F_sfd(i+1,j+1,k)-F_sfd(i,j,k))-h*(F_sfd(i,j,k)-F_sfd(i-1,j-1,k))+&
+                  g*(F_sfd(i-1,j+1,k)-F_sfd(i,j,k))-f*(F_sfd(i,j,k)-F_sfd(i+1,j-1,k)) )
                end do
             end do
          end do
-!
+!$omp end do
       else
+!$omp do 
          do k=1,nk
             do j=j0,jn
                do i=i0,in
@@ -96,19 +86,20 @@
 
                   wk(i,j)=   &
                          c1/rho(i,j,k)*(&
-                  a*(sfd(i+1,j,k)-sfd(i,j,k))-b*(sfd(i,j,k)-sfd(i-1,j,k))+&
-                  c*(sfd(i,j+1,k)-sfd(i,j,k))-d*(sfd(i,j,k)-sfd(i,j-1,k)) ) +&
+                  a*(F_sfd(i+1,j,k)-F_sfd(i,j,k))-b*(F_sfd(i,j,k)-F_sfd(i-1,j,k))+&
+                  c*(F_sfd(i,j+1,k)-F_sfd(i,j,k))-d*(F_sfd(i,j,k)-F_sfd(i,j-1,k)) ) +&
                   c2/rho(i,j,k)*( &
-                  e*(sfd(i+1,j+1,k)-sfd(i,j,k))-h*(sfd(i,j,k)-sfd(i-1,j-1,k))+&
-                  g*(sfd(i-1,j+1,k)-sfd(i,j,k))-f*(sfd(i,j,k)-sfd(i+1,j-1,k)) )
+                  e*(F_sfd(i+1,j+1,k)-F_sfd(i,j,k))-h*(F_sfd(i,j,k)-F_sfd(i-1,j-1,k))+&
+                  g*(F_sfd(i-1,j+1,k)-F_sfd(i,j,k))-f*(F_sfd(i,j,k)-F_sfd(i+1,j-1,k)) )
                end do
             end do
             do j=j0,jn
                do i=i0,in
-                  sfd(i,j,k)= rfd(i,j,k) + wk(i,j)
+                  F_sfd(i,j,k)= rfd(i,j,k) + wk(i,j)
                enddo
             enddo  
          end do
+!$omp end do
       endif
 !
 !----------------------------------------------------------------------

@@ -38,7 +38,7 @@
       integer :: n,k,nf,nptr_F,tr_num(F_nptr),&
                  i,j,j1,j2,k1,k2,kk,ni,nj,nij,n1,n2,np,slice,i0,in,j0,jn
       logical :: Bermejo_Conde_L
-      real, dimension(l_ni*l_nj*l_nk*F_nptr*2) :: wrkc
+      real, dimension(:), allocatable :: wrkc
       type(C_PTR),dimension(F_nptr*2) :: stkpntr
       integer :: ij,slc
 
@@ -117,6 +117,7 @@
       n= nj
       slice = n*ni
 
+      allocate (wrkc(l_ni*l_nj*l_nk*nf*2))
 !$omp do
       do slc= 1, F_num_io/slice + min(1,mod(F_num_io,slice))
          n1 = (slc-1)*slice + 1
@@ -153,6 +154,7 @@
          end do
       end do
 !$omp enddo 
+      deallocate (wrkc)
 
       !Do the appropriate ZEROING to FLUX_out/FLUX_in
       !----------------------------------------------

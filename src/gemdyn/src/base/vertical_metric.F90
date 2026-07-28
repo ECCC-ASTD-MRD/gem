@@ -71,7 +71,7 @@
          end do
       end do
 
-      if (Lun_debug_L) then
+      if (Lctl_debug_L) then
          call glbstat ( dgzm,'DGZM',"metric",l_minx,l_maxx,l_miny,l_maxy,1,l_nk,&
                         1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,1,l_nk )
          call glbstat ( dgzt,'DGZT',"metric",l_minx,l_maxx,l_miny,l_maxy,1,l_nk,&

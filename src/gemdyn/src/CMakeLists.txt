@@ -28,6 +28,8 @@ target_link_libraries(gemdyn PUBLIC
   rpncomm::rpncomm
   modelutils
   ${phy_LIBRARIES}
+  ${FFTW}
+  ${FFTW_DOUBLE_LIB}
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
   MPI::MPI_Fortran
