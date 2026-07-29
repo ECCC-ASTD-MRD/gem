@@ -68,11 +68,10 @@ make work
 cd ../$GEM_WORK
 ```
 
-* This will give you the possible CPU decomposition for the GEM_cfgs_GY_4km
-model configuration:
-
+* The script findtopo will give you the possible CPU decomposition for the GEM_cfgs_GY_4km
+model configuration (fintopo -h for parameter definitions), ie:
 ```
-findtopo -npex_low 20 -npex_high 250 -npey_low 20 -npey_high 200 -corespernode 80 -nml $GEM_WORK/configurations/GEM_cfgs_GY_4km/cfg_0000/gem_settings.nml > topo.txt
+findtopo -npex_low 20 -npex_high 250 -npey_low 20 -npey_high 200 -corespernode 256 -omp 8 -nml $GEM_WORK/configurations/GEM_cfgs_GY_4km/cfg_0000/gem_settings.nml > topo.txt
 ```
 
 ## Run preparation script
@@ -111,7 +110,7 @@ runmod.sh -dircfg configurations/GEM_cfgs_GY_4km -ptopo 61x20x8
 
 ```bash
 cd ..
-gem_sverif.sh -p $GEM_WORK -f dp2020022915
+gem_sverif.sh -p $GEM_WORK -f dp2022040500
 ```
 
 * Expected output
