@@ -77,6 +77,11 @@ if [[ ! -d ${statpath} ]]; then
     exit 1
 fi
 
+if [[ ! -r ${file} ]]; then 
+    echo "(ERROR) Unable to find result file (${file})"
+    exit 1
+fi
+
 # Run verification
 tmpfile=/tmp/sverif$$
 lev=500
