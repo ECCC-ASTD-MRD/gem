@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
-#CONFIG=GEM_cfgs_GY_4km
-MD5=85941a37c3fdfb6846c9f97d72222a06
-URL=http://collaboration.cmc.ec.gc.ca/science/outgoing/sverif
+CONFIG=GEM_cfgs_GY_4km-5.3.0-b01
+MD5=e0ea8952cfbcd954ed5c73b3fd80d654
+URL=https://hpfx.collab.science.gc.ca/~sixf000/GEM/sverif
 
 script=$(basename "${BASH_SOURCE[0]}")
-short="t:p:h:f:"
-long="type:,runpath:,file:,help"
+short="c:p:f:h:"
+long="config:,runpath:,file:,help"
 opts=$(getopt -o $short --long $long --name "$script" -- "$@")
 usage="\nValidate GEM benchmark run\n
-Usage : ${script} [-c model run configuration] [-p input model run path]\n
-   -c : configuration
-   -p : model run input path\n
-   example : ${script} -c \"GEM_cfgs_GY_4km\" -p ../RUNMOD\n"
+Usage : ${script} [-c model run configuration] [-p input model run path] [-f output data file]\n
+   -c : configuration (default is ${CONFIG})
+   -p : work directory path
+   -f : output data file\n
+   example : ${script} -p \$GEM_WORK -f dp2022040500\n"
 
 eval set -- "${opts}"
 
