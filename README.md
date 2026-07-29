@@ -115,16 +115,22 @@ gem_sverif.sh -p $GEM_WORK -f dp2022040500
 * Expected output
 
 ```bash
-(INFO) Run configuration found (GEM_cfgs_GY_4km-5.3.0-a11)
-sverif_eval.Abs GZ 500 006 GEM/work-rhel-8-icelake-64-intel-2021.5.0//RUNMOD/output/cfg_0000/laststep_0000000180/000-000/dp2020022915-000-000_006 GEM/work-rhel-8-icelake-64-intel-2021.5.0/sverif/GEM_cfgs_GY_4km-5.3.0-a11
+sverif_eval.Abs GZ 500 006 work-rhel-9-graniterapids-64-intel-2025.1.0/RUNMOD/output/cfg_0000/laststep_0000000/000-000/dp2022040500 work-rhel-9-graniterapids-64-intel-2025.1.0/sverif/GEM_cfgs_GY_4km-5.3.0-b01
 PASS T1  (sverif_eval) GZ [ 500mb;    6h; CI=0.01]
 PASS NT1 (sverif_eval) GZ [ 500mb;    6h; CI=0.01]
 PASS NT5 (sverif_eval) GZ [ 500mb;    6h; CI=0.01]
 PASS R   (sverif_eval) GZ [ 500mb;    6h; CI=0.01]
+PASS overall  (sverif_eval) GZ [ 500mb;    6h; CI=0.01]
+PASS T1  (sverif_eval) UU [ 250mb;    6h; CI=0.01]
+PASS NT1 (sverif_eval) UU [ 250mb;    6h; CI=0.01]
+PASS NT5 (sverif_eval) UU [ 250mb;    6h; CI=0.01]
+PASS R   (sverif_eval) UU [ 250mb;    6h; CI=0.01]
+PASS overall  (sverif_eval) UU [ 250mb;    6h; CI=0.01]
 PASS T1  (sverif_eval) TT [ 850mb;    6h; CI=0.01]
 PASS NT1 (sverif_eval) TT [ 850mb;    6h; CI=0.01]
 PASS NT5 (sverif_eval) TT [ 850mb;    6h; CI=0.01]
 PASS R   (sverif_eval) TT [ 850mb;    6h; CI=0.01]
+PASS overall  (sverif_eval) TT [ 850mb;    6h; CI=0.01]
 (INFO) Passed (passed 12/12)
 ```
 
