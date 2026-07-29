@@ -52,7 +52,6 @@ git clone git@github.com:ECCC-ASTD-MRD/gem.git
 cd gem
 git checkout benchmark-5.3
 git submodule update --init --recursive
-./download-dbase.sh .
 ./download-dbase-benchmarks.sh .
 . ./.common_setup [intel|gnu|nvhpc]
 mkdir build
