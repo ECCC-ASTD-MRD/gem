@@ -35,9 +35,8 @@
   Schm_itcn       = 2
   Schm_itnlh      = 2
   Schm_hzdadw_L     = .true.
-  Schm_wload_L    = .true.  
-/
   Schm_wload_L    = .true.    , Schm_psadj        = 1
+/
 
  &hvdif
   Hzd_pwr         = 2          , Hzd_lnr       = 0.2
@@ -142,7 +141,7 @@
   rad_esfc        = .true.     ,
   rad_atmpath = 'LI06',
   advectke=.true. 
-  RAD_COND_REI    = '30.',
+  RAD_COND_REI    = '30.'
   RAD_EXP_REI     = 'cccma'           ,
   rad_mpagg       = 'binary'          ,
 
