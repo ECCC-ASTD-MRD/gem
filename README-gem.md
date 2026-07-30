@@ -1,34 +1,5 @@
 # Instructions in a nutshell
 
-**The 5.3 branch is a development version.**
-
-# At CMC only (internal users)
-
-```
-Clone gem repository
-cd gem
-git checkout 5.3-branch
-
-./scripts/link-dbase.sh
-. ./.eccc_setup_intel
-# or, if you want to compile with GNU compiler suite:
-. ./.eccc_setup_gnu
-Before the first build:
-. ./.initial_setup
-
-# building and installing GEM
-# please see other options with cado -h or by using tab completion
-cado cmake
-cado -j work
-
-# running GEM: example
-cd $GEM_WORK
-runprep.sh -dircfg configurations/GEM_cfgs_LU_FISL_H
-runmod.sh -dircfg configurations/GEM_cfgs_LU_FISL_H
-```
-
-# Outside CMC (external users)
-
 **See below for extended instructions.**
 
 ## Requirements
@@ -43,14 +14,14 @@ To compile and run GEM, you will need:
 
 ```
 # clone everything, including libraries and tools included as git submodules
-git clone --branch 5.3-branch --recursive https://github.com/ECCC-ASTD-MRD/gem.git
+git clone --branch benchmark-5.3 --recursive https://github.com/ECCC-ASTD-MRD/gem.git
 cd gem
 
 # If you cloned without the --recursive option above, update submodules:
 git submodule update --init --recursive
 
 # Download the data files required to run GEM
-./download-dbase.sh .
+./download-dbase-benchmarks.sh .
 
 # Important: in order to set environment variables needed to run GEM, use the
 # following setup file, after setting up your compiler environment:
@@ -119,9 +90,9 @@ To compile and run GEM, you will need:
 
 After having cloned or downloaded the git tar file of GEM from
 [github.com](https://github.com/ECCC-ASTD-MRD/gem), execute the script named
-**download-dbase.sh** or download and untar the data archive with the following
+**./download-dbase-benchmarks.sh** or download and untar the data archive with the following
 link:
-[http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz](http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/gem_dbase.tar.gz)
+[https://hpfx.collab.science.gc.ca/~sixf000/GEM/gem_dbase_benchmarks_5.3.tar.gz](https://hpfx.collab.science.gc.ca/~sixf000/GEM/gem_dbase_benchmarks_5.3.tar.gz)
 
 ## Compiler specifics
 
