@@ -23,7 +23,7 @@ you can add or modify the rules into `[git source path]/cmake_rpn/modules/ec_com
 ## Build base library (librmn)
 
 ```bash
-git clone git@github.com:ECCC-ASTD-MRD/librmn.git
+git clone https://github.com/ECCC-ASTD-MRD/librmn.git
 cd librmn
 git checkout alpha
 git submodule update --init --recursive
@@ -36,8 +36,9 @@ make install
 ## Build verification tool (sverif)
 
 ```bash
-git clone git@github.com:ECCC-ASTD-MRD/sverif.git
+git clone https://github.com/ECCC-ASTD-MRD/sverif.git
 cd sverif
+git submodule update --init --recursive
 mkdir build
 cd build
 cmake -Drmn_ROOT=[rmn install directory] -DCMAKE_INSTALL_PREFIX=[sverif install directory] ..
@@ -48,7 +49,7 @@ export PATH=[sverif install directory]/bin:$PATH
 ## Build model (GEM)
 
 ```bash
-git clone git@github.com:ECCC-ASTD-MRD/gem.git
+git clone https://github.com/ECCC-ASTD-MRD/gem.git
 cd gem
 git checkout benchmark-5.3
 git submodule update --init --recursive
