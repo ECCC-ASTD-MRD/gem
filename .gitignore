@@ -5,7 +5,7 @@
 *.pyc
 __pycache__
 gem_dbase
-gem_dbase.tar.gz
+gem_dbase_benchmarks_5.3.tar.gz
 /build*
 /work*
 src/gemdyn/src/main/main*.F90
