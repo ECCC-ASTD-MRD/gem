@@ -25,7 +25,7 @@ you can add or modify the rules into `[git source path]/cmake_rpn/modules/ec_com
 ```bash
 git clone https://github.com/ECCC-ASTD-MRD/librmn.git
 cd librmn
-git checkout alpha
+git checkout 20.1.0-b8
 git submodule update --init --recursive
 mkdir build
 cd build
@@ -38,6 +38,7 @@ make install
 ```bash
 git clone https://github.com/ECCC-ASTD-MRD/sverif.git
 cd sverif
+git checkout benchmark-20260803
 git submodule update --init --recursive
 mkdir build
 cd build
@@ -51,7 +52,7 @@ export PATH=[sverif install directory]/bin:$PATH
 ```bash
 git clone https://github.com/ECCC-ASTD-MRD/gem.git
 cd gem
-git checkout benchmark-5.3
+git checkout benchmark-20260803
 git submodule update --init --recursive
 ./download-dbase-benchmarks.sh .
 . ./.common_setup [intel|gnu|nvhpc]

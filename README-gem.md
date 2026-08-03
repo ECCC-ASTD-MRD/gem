@@ -13,14 +13,12 @@ To compile and run GEM, you will need:
 - basic Unix utilities such as cmake (version 3.20 minimum), bash, sed, etc.
 
 ```
-# clone everything, including libraries and tools included as git submodules
-git clone --branch benchmark-5.3 --recursive https://github.com/ECCC-ASTD-MRD/gem.git
+git clone https://github.com/ECCC-ASTD-MRD/gem.git
 cd gem
-
-# If you cloned without the --recursive option above, update submodules:
+git checkout benchmark-20260803
 git submodule update --init --recursive
 
-# Download the data files required to run GEM
+# Download the data files required to run GEM benchmark
 ./download-dbase-benchmarks.sh .
 
 # Important: in order to set environment variables needed to run GEM, use the
