@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 CONFIG=GEM_cfgs_GY_4km-5.3.0-b01
-MD5=e0ea8952cfbcd954ed5c73b3fd80d654
+MD5=522308b16fc13ed74fedf8a40c10afc3
 URL=https://hpfx.collab.science.gc.ca/~sixf000/GEM/sverif
 
 script=$(basename "${BASH_SOURCE[0]}")
