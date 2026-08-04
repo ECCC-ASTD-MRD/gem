@@ -163,8 +163,7 @@
  sl_Lmin_seaice = 10.
  z0seaice  = 5.4e-4
  sl_Lmin_water = 10.
- z0seaice  = 5.4e-4
- kntveg_S       = 1d
+ kntveg_S    = '1d'
  leadfrac    = 0.0
 /
 
@@ -172,7 +171,7 @@
  &physics_cfgs
  RADIA            = 'cccmarad2' , KNTRAD_S = '1h'
  radghg_L         = .true.      ,
- rad_cond_rei     = 20.         ,
+ rad_cond_rei     = '20.'       ,
  rad_esfc         = .true.      ,
  STRATOS          = .true.      ,
  INTOZOT          = .true.      ,

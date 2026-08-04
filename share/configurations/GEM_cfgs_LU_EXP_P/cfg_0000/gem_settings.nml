@@ -215,7 +215,7 @@
   rad_esfc        = .true.     ,
   rad_atmpath = 'LI06',
   advectke=.true. 
-  RAD_COND_REI    = 30.
+  RAD_COND_REI    = '30.',
   
   PBL_RICRIT  	  =  0.15, 2.
 
