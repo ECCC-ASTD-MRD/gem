@@ -10,18 +10,24 @@ if [[ $# -eq 0 ]] ; then
     echo "Example: . ./.common_setup gnu"
     echo "Example: . ./.common_setup intel"
 else
-    export gemmod=${PWD}/share/gem-maestro/gem_module
     unset GEM_ARCH GEM_WORK GEM_STORAGE_DIR gem_DIR
-    export OMP_STACKSIZE=4G
-
-    export COMPILER_SUITE=${1}
     platform=$(utils/os.sh)
+    # ECCC: COMPILER_VERSION should be have been set in the setup file
     if [ -z "${EC_ARCH}" ]; then
-        COMPILER_VERSION=$(utils/compiler.sh ${COMPILER_SUITE})
-        export COMPILER_VERSION
+        COMPILER_VERSION=$(utils/compiler.sh ${1})
     fi
 
-    if [ -n "${platform}" -a "${COMPILER_VERSION}" != "Unknown_Compiler" ]; then
+    if [  "${COMPILER_VERSION}" == "Unknown_Compiler" ]; then
+        printf "Error: the compiler you use is unknown: please check utils/compiler.sh for details\n"
+        return
+    else
+        if [ "${platform}" == "Unknown-OS" ]; then
+           printf "Warning: the platform you use couldn't be determined: carrying on with \"Unknown-OS\"\n"
+        fi
+        export OMP_STACKSIZE=4G
+        export COMPILER_SUITE=${1}
+        export gemmod=${PWD}/share/gem-maestro/gem_module
+        export COMPILER_VERSION
         export GEM_ARCH=${platform}-${COMPILER_SUITE}-${COMPILER_VERSION}
         export GEM_WORK=work-${GEM_ARCH}
         
@@ -48,11 +54,11 @@ else
             # Check whether GOAS_SCRIPT_MODE variable exists
             if [ -z "${GOAS_SCRIPT_MODE}" ]; then 
                 export PATH=${PWD}/scripts:${PWD}/src/rpnphy/bin:${PWD}/src/modelutils/bin:${PWD}/src/gemdyn/bin:${PWD}/${GEM_WORK}/bin:${PATH}
-                echo "RPN-SI and rpnpy scripts loaded from SSM domains will be used"
+                printf "RPN-SI and rpnpy scripts loaded from SSM domains will be used\n"
             else
                 export PATH=${PWD}/scripts:${PWD}/scripts/support:${PWD}/scripts/rpy:${PWD}/src/rpnphy/bin:${PWD}/src/modelutils/bin:${PWD}/src/gemdyn/bin:${PWD}/${GEM_WORK}/bin:${PATH}
                 export PYTHONPATH=${PWD}/scripts/rpy:${PYTHONPATH}
-                echo "GOAS_SCRIPT_MODE set: GEM scripts in scripts/support and scripts/rpy will be used instead of SSM domains scripts"
+                printf "GOAS_SCRIPT_MODE set: GEM scripts in scripts/support and scripts/rpy will be used instead of SSM domains scripts\n"
             fi
         # for external use, always add all scripts to PATH, without message
         else
