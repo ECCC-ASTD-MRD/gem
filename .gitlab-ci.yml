@@ -205,7 +205,7 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-24.04
    stage: build
    tags:
-     - concurrent
+     - ppp7-concurrent
    only:
      - /^dev_5\.[0-9]$/
      - tags
@@ -232,7 +232,7 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
       APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-24.04
    stage: package
    tags:
-      - concurrent
+      - ppp7-concurrent
    only:
       - /^dev_5\.[0-9]$/
       - tags
@@ -254,7 +254,7 @@ build:ubuntu-22.04-amd64-intel-2025.1.0:
       APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-22.04
    stage: build
    tags:
-     - concurrent
+     - ppp7-concurrent
    only:
      - /^dev_5\.[0-9]$/
      - tags
@@ -281,7 +281,7 @@ package:ubuntu-22.04-amd64-intel-2025.1.0:
       APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-22.04
    stage: package
    tags:
-      - concurrent
+      - ppp7-concurrent
    only:
       - /^dev_5\.[0-9]$/
       - tags
