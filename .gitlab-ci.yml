@@ -218,7 +218,7 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-64-intel-2025.1.0
       - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-64-intel-2025.1.0
-      - cmake --fresh -DSTRICT=TRUE -DTARGET_PROC=x86-64-v3 ${SRC_DIR}
+      - cmake --fresh -DSTRICT=TRUE -DTARGET_PROC=x86-64-v3 ${SRC_DIR} -DCPACK_CMAKE_GENERATOR=Ninja
       - time make -j $NCPUS
       - time make work
    allow_failure: true
@@ -244,7 +244,7 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
       - . ./.eccc_setup_intel_2025.1.0_ubuntu-24
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-64-intel-2025.1.0
-      - make package
+      - cpack
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
    allow_failure: true
 
@@ -267,7 +267,7 @@ build:ubuntu-22.04-amd64-intel-2025.1.0:
       - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-22.04-amd64-64-intel-2025.1.0 .
       - SRC_DIR=$(pwd)
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2025.1.0
-      - cmake --fresh -DSTRICT=TRUE -DTARGET_PROC=x86-64-v3 ${SRC_DIR}
+      - cmake --fresh -DSTRICT=TRUE -DTARGET_PROC=x86-64-v3 ${SRC_DIR} -DCPACK_CMAKE_GENERATOR=Ninja
       - time make -j $NCPUS
       - time make work
    artifacts:
@@ -293,7 +293,7 @@ package:ubuntu-22.04-amd64-intel-2025.1.0:
       - . ./.eccc_setup_intel_2025.1.0_ubuntu-22
       - set -e
       - cd ${PIPELINE_SUBDIR}/build-ubuntu-22.04-amd64-64-intel-2025.1.0
-      - make package
+      - cpack
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
    allow_failure: true
 
