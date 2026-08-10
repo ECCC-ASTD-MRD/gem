@@ -202,7 +202,7 @@ build:rhel-9-amd64_gnu-15.2.0:
 #----- ubuntu-24.04-amd64_intel-2025.1.0
 build:ubuntu-24.04-amd64-intel-2025.1.0:
    variables:
-      APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-24.04
+      APPTAINER_IMAGE: ci_images/ubuntu-24.04
    stage: build
    tags:
      - ppp7-concurrent
@@ -213,11 +213,11 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
       - set +e
       - . ./.eccc_setup_intel_2025.1.0_ubuntu-24
       - set -e
-      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
-      - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-intel-2025.1.0
-      - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-intel-2025.1.0
+      - mkdir -pv ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-64-intel-2025.1.0
+      - mkdir -pv ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-64-intel-2025.1.0
+      - ln -sf ${PIPELINE_SUBDIR}/work-ubuntu-24.04-amd64-64-intel-2025.1.0
       - SRC_DIR=$(pwd)
-      - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-64-intel-2025.1.0
       - cmake --fresh -DSTRICT=TRUE -DTARGET_PROC=x86-64-v3 ${SRC_DIR}
       - time make -j $NCPUS
       - time make work
@@ -225,11 +225,11 @@ build:ubuntu-24.04-amd64-intel-2025.1.0:
    artifacts:
       expire_in: 4 hrs
       paths:
-      - work-ubuntu-24.04-amd64-intel-2025.1.0
+      - work-ubuntu-24.04-amd64-64-intel-2025.1.0
 
 package:ubuntu-24.04-amd64-intel-2025.1.0:
    variables:
-      APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-24.04
+      APPTAINER_IMAGE: ci_images/ubuntu-24.04
    stage: package
    tags:
       - ppp7-concurrent
@@ -243,7 +243,7 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
       - set +e
       - . ./.eccc_setup_intel_2025.1.0_ubuntu-24
       - set -e
-      - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-intel-2025.1.0
+      - cd ${PIPELINE_SUBDIR}/build-ubuntu-24.04-amd64-64-intel-2025.1.0
       - make package
       - ~/ci-admin/bin/ci-package-ssm.sh package ${ECCI_PROCESS}
    allow_failure: true
@@ -251,7 +251,7 @@ package:ubuntu-24.04-amd64-intel-2025.1.0:
 #----- ubuntu-22.04-amd64_intel-2025.1.0
 build:ubuntu-22.04-amd64-intel-2025.1.0:
    variables:
-      APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-22.04
+      APPTAINER_IMAGE: ci_images/ubuntu-22.04
    stage: build
    tags:
      - ppp7-concurrent
@@ -278,7 +278,7 @@ build:ubuntu-22.04-amd64-intel-2025.1.0:
 
 package:ubuntu-22.04-amd64-intel-2025.1.0:
    variables:
-      APPTAINER_IMAGE: /home/sici000/ci_images/ubuntu-22.04
+      APPTAINER_IMAGE: ci_images/ubuntu-22.04
    stage: package
    tags:
       - ppp7-concurrent
