@@ -17,6 +17,7 @@
       implicit none
 
 #include <rmnlib_basics.hf>
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       external dummy_checkdm

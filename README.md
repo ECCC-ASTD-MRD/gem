@@ -1,7 +1,5 @@
 # Instructions in a nutshell
 
-**The 5.2 branch is a development version.**
-
 # At CMC only (internal users)
 
 ```

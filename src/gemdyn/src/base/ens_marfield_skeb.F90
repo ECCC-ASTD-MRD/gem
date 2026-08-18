@@ -134,11 +134,11 @@
          !Initialise spectral coeffs and stochastic params
          if(Ens_recycle_mc) then
             !Read saved stochastic numbers and spectral coeffs ar,br.ai,bi
+            err=0
             if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
                   unf0=0
                   fn= trim(Path_input_S)//'/MODEL_INPUT'//'/MRKV_SKEB.bin'
                   ier=fnom(unf0,fn,'SEQ+UNF+OLD',0) 
-
                   if (ier == 0) then
                      write(output_unit,2000) 'READING', trim(fn)
                      do i=1,36
@@ -154,10 +154,11 @@
                      end do
                      ier = fclos(unf0)
                   else
+                     err=-1
                      write (output_unit, 3000) trim(fn)
                   endif
             endif
-                  call gem_error ( ier,'read_markov_skeb', 'problem reading file' )
+                  call gem_error ( err,'read_markov_skeb', 'problem reading file ' )
 
             dim=ens_skeb_l*ens_skeb_m
             call RPN_COMM_bcast (dumdum,36,"MPI_INTEGER",0,"MULTIGRID", err)
@@ -239,6 +240,7 @@
 
 ! Save random numbers and coefficient ar,ai,br,bi
       if (write_markov_l) then
+         ier=0
          if (ptopo_couleur == 0  .and. ptopo_myproc == 0) then
             unf0=0
             fn=trim(Out_dirname_S)//'/'// 'MRKV_SKEB.bin'

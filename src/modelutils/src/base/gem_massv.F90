@@ -1,5 +1,5 @@
 
-#ifndef __INTEL_COMPILER
+#if !defined(__INTEL_COMPILER) && !defined(__INTEL_LLVM_COMPILER)
 #ifdef USE_GEM_MKLMASSV
 #undef USE_GEM_MKLMASSV
 #endif
