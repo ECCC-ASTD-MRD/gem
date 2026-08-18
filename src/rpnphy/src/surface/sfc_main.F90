@@ -28,7 +28,9 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    use sfc_options
    use sfcbus_mod
    use sfclayer, only: sl_adjust,SL_OK
+#ifdef HAVE_CPL
    use cpl_itf, only: cpl_update
+#endif
    implicit none
 !!!#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -221,11 +223,13 @@ function sfc_main2(trnch, kount, dt, ni, nk) result(F_istat)
    ! Update coupling fields GL, TM, SD and I8
 
    if (cplocn) then
+#ifdef HAVE_CPL
       call cpl_update (zglsea (1:ni), 'GLI' , ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
       call cpl_update (ztwater(1:ni), 'TMO' , ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
       call cpl_update (zicedp (1:ni), 'I8I' , ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
       call cpl_update (zsnodp(1:ni,indx_ice:indx_ice), 'SDI', &
            ijdrv_phy(1:2,1:ni,trnch:trnch), ni)
+#endif
    endif
 
    ! mg, glsea, glacier, urban, lakefr, et riverfr doivent etre bornes entre 0 et 1

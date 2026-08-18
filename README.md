@@ -14,7 +14,7 @@ the proper branch and its corresponding README file, according to your needs:
 [README-install.md](https://github.com/ECCC-ASTD-MRD/gem/blob/master/README-install.md)
 - [5.1
 branch](https://github.com/ECCC-ASTD-MRD/gem/tree/5.1-branch):
-stable version, used in production at the Canadian Meteorological Centre,
+previous stable version,
 [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.1-branch/README.md)
 - [5.2 branch](https://github.com/ECCC-ASTD-MRD/gem/tree/5.2-branch):
   stable version, [README.md](https://github.com/ECCC-ASTD-MRD/gem/blob/5.2-branch/README.md)

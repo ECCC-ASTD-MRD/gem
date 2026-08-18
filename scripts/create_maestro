@@ -129,7 +129,7 @@ fi
 nodesetres -n /gem/Runmod -v wallclock=${t} cpu_multiplier=${cpu_mult} \
                              cpu=${ptopo} soumet_args="-waste 100"
 
-cat ${CONFIG}/configexp.cfg | sed '/GEM_version=/d' | sed '/GEM_ovbin=/d' | sed '/GEM_settings=/d' | sed '/GEM_outcfg=/d' | sed '/GEM_xfer=/d' | sed '/GEM_headscript_E=/d' | sed '/GEM_phy_intable=/d' | sed '/GEM_check_settings=/d' > ${suite_name}/experiment.cfg
+cat ${CONFIG}/configexp.cfg | sed '/GEM_version=/d' | sed '/GEM_ovbin=/d' | sed '/GEM_bin=/d' | sed '/GEM_settings=/d' | sed '/GEM_outcfg=/d' | sed '/GEM_xfer=/d' | sed '/GEM_headscript_E=/d' | sed '/GEM_phy_intable=/d' | sed '/GEM_check_settings=/d' > ${suite_name}/experiment.cfg
 
 #echo "ATM_MODEL_DFILES_DEFAULT=${ATM_MODEL_DFILES}" > ${CONFIG}/configexp.cfg
 cat >> ${suite_name}/experiment.cfg <<EOF

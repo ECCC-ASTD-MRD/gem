@@ -27,7 +27,9 @@ contains
     use phy_options, only: delt, sgo_tdfilter, lhn_filter, sfcflx_filter_order, debug_initonly_L
     use phygridmap, only: phydim_ni, phydim_nj, phydim_nk
     use physlb, only: physlb1
+#ifdef HAVE_CPL
     use cpl_itf   , only: cpl_step
+#endif
     use phymem, only: pbuslist, PHY_DBUSIDX, PHY_PBUSIDX, PHY_VBUSIDX
     use ens_perturb, only: ens_spp_stepinit, ENS_OK
     implicit none
@@ -102,7 +104,9 @@ contains
     istat = min(sfc_get_input_param(),istat)
     if (istat /= WB_OK) call msg(MSG_ERROR,'(phy_step)')
 
+#ifdef HAVE_CPL
     call cpl_step(F_stepcount, F_stepdriver)
+#endif
 
 !$omp parallel
     call physlb1(pbuslist(PHY_DBUSIDX)%bptr, pbuslist(PHY_PBUSIDX)%bptr, pbuslist(PHY_VBUSIDX)%bptr, &

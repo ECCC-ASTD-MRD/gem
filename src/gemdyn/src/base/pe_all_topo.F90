@@ -29,6 +29,7 @@
       use, intrinsic :: iso_fortran_env
       implicit none
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       integer, external :: fnom, wkoffit!, get_file_unit

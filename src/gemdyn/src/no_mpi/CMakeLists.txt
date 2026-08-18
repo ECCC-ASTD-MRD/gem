@@ -32,4 +32,6 @@ add_custom_command(
 add_executable(gem_monitor_output maingem_monitor_output.c)
 add_executable(gem_monitor_end maingem_monitor_end.c)
 
-install(TARGETS toc2nml gem_monitor_output gem_monitor_end RUNTIME DESTINATION bin)
+if (NOT (WITH_MACH OR WITH_CPL))
+   install(TARGETS toc2nml gem_monitor_output gem_monitor_end RUNTIME DESTINATION bin)
+endif()

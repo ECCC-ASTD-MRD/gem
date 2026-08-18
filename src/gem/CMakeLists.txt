@@ -1,10 +1,5 @@
 message(STATUS "(EC) Generating maingem* Makefile")
 
-if ((WITH_MACH) OR (CACHE WITH_MACH) OR (ENV{WITH_MACH}))
-  message(STATUS "(EC) chm_LIBRARIES= ${chm_LIBRARIES}")
-  message(STATUS "(EC) List of GEMMOD object files: ${GEMMOD_OBJ_FILES}")
-endif()
-
 find_package(MPI)
 if (MPI_FOUND)
    set(CMAKE_Fortran_COMPILER ${MPI_Fortran_COMPILER})
@@ -13,22 +8,34 @@ if (MPI_FOUND)
    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MPI_COMPILER_FLAGS}")
 endif()
 
-add_executable(maingemdm maingemdm.F90)
+add_executable(${gem_exe} maingemdm.F90)
 
-# Debug: generate linker map file
-target_link_options(maingemdm PRIVATE "-Wl,-Map=maingemdm.map")
+if(WITH_MACH)
+  message(STATUS "(EC) chm_LIBRARIES= ${chm_LIBRARIES}")
+  message(STATUS "(EC) List of GEMMOD object files: ${GEMMOD_OBJ_FILES}")
+  # Debug: generate linker map file
+  target_link_options(maingemdm PRIVATE "-Wl,-Map=${gem_exe}.map")
+  target_compile_definitions(${gem_exe} PUBLIC
+    mach_VERSION="${mach_VERSION}"
+    HAVE_MACH)
+endif()
 
-target_compile_definitions(maingemdm PUBLIC
+target_compile_definitions(${gem_exe} PUBLIC
   dyn_VERSION="${dyn_VERSION}"
   modelutils_VERSION="${modelutils_VERSION}"
   phy_VERSION="${phy_VERSION}"
 )
 
-target_link_libraries(maingemdm
+if (("${CMAKE_Fortran_COMPILER_ID}" STREQUAL "IntelLLVM") AND (CMAKE_Fortran_COMPILER_VERSION VERSION_GREATER 2025))
+  # link with libgcc_s to get a traceback
+  set(GCC_S gcc_s)
+endif()
+
+target_link_libraries(${gem_exe}
    ${GEMMOD_OBJ_FILES}
    gemdyn
+   ${GCC_S}
    ${phy_LIBRARIES}
-   ${cpl_LIBRARIES}
    ${chm_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
@@ -45,4 +52,4 @@ target_link_libraries(maingemdm
    ${BLAS_LIBRARIES}
 )
 
-install(TARGETS maingemdm RUNTIME DESTINATION bin)
+install(TARGETS ${gem_exe} RUNTIME DESTINATION bin)

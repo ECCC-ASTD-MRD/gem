@@ -34,6 +34,7 @@
 
       integer, intent(in) :: F_finalstep
 
+      include 'mpif.h'
       include "rpn_comm.inc"
 
       character(len=2048) :: filen, filen_link, append

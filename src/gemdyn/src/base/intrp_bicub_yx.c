@@ -672,7 +672,7 @@ void intrp_bicub_yx_uv(float *u, float *v, float *ru, float *rv, int ni, int nin
 void intrp_bicub_yx_s_mono(float *f, float *r, int ni, int ninj, int nk, double xx, double yy){
 #if defined(__AVX__) && defined(__x86_64__) && !defined(NO_SIMD)
   __m256d fd0, fd1, fd2, fd3, fwx, fwy0, fwy1, fwy2, fwy3, fdt, fmi, fma ;
-  __m128  fr0, fr1, fr2, fr3, frt ; ;       // frt is used as a scalar, fr0->fr3 are 128 bit aliases for fd0->fd3
+  __m128  fr0, fr1, fr2, fr3, frt = _mm_setzero_ps();  // frt is used as a scalar, fr0->fr3 are 128 bit aliases for fd0->fd3
   __m128d ft0, ft1, rmi, rma ;
   double dd0[4], dd1[4], dd2[4], dd3[4] ;
 #else
