@@ -48,7 +48,7 @@ if (WITH_CPL)
   if (EXISTS ${CMAKE_SOURCE_DIR}/src/cplocn/)
     set(CPLOCN_GLOB ${CMAKE_SOURCE_DIR}/src/cplocn/*.F90)
   else()
-    message(ERROR " -- (EC) You set WITH_CPL=TRUE, but no cplocn directory was found!")
+    message(ERROR "(EC) You set WITH_CPL=TRUE, but no cplocn directory was found!")
   endif()
   # set executable name
   set(gem_nemo_exe ${gem_exe}-cpl)
