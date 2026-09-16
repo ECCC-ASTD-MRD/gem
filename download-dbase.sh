@@ -3,7 +3,7 @@
 set -e
 
 GEM_DBASE="gem_dbase.tar.gz"
-GEM_DBASE_URL="http://collaboration.cmc.ec.gc.ca/science/outgoing/goas/${GEM_DBASE}"
+GEM_DBASE_URL="https://hpfx.collab.science.gc.ca/~sixf000/GEM/${GEM_DBASE}"
 GEM_DBASE_MD5SUM="5710fae7f3896e9f1dbee3991fe90284"
 
 printUsage() {
