@@ -96,6 +96,8 @@ if __name__ == "__main__":
         if not nml2 in cfg.keys():
             cfg.add(FtnNmlSection(nml2))
         if not key2 in cfg.get(nml2).keys():
+            a=FtnNmlVal(value)
+            kv=FtnNmlKeyVal(key2,FtnNmlVal(value))
             cfg.get(nml2).add(FtnNmlKeyVal(key2,FtnNmlVal(value)))
         else:
             cfg.get(nml2).get(key2).get('v').set(value)
