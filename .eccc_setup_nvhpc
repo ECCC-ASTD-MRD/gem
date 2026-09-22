@@ -27,10 +27,10 @@ esac
 . r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@nvhpc-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20260512-beta
-. r.load.dot rpn/utils/20260512-beta
+. r.load.dot rpn/libs/20260922-beta
+. r.load.dot rpn/utils/20260922-beta
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
+. r.load.dot rpn/MIG/ENV/rpnpy/2.3.0
 
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then
