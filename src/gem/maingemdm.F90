@@ -2,8 +2,8 @@ program gem
       
    use app
    use iso_fortran_env
-#if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    use app_mpmd
+#if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    use iris_mod
 #endif
    implicit none
@@ -15,7 +15,7 @@ program gem
 #endif
 
    integer(kind=int32) ierror
-   integer :: colors(3), COMMs(3), wnum, wme, cnum, cme, un_out
+   integer :: colors(3), COMMs(3), cnum, cme, un_out
    character(len=256) :: component_S
 #if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    integer :: model_comm
@@ -38,9 +38,7 @@ program gem
 #endif
 
    component_S= 'GEMDM' ; colors= (/1,3,4/)
-   call MiMd_init (component_S,colors,3,COMMs,wnum, wme, cnum, cme)
-
-   call app_start()
+   call MiMd_init (component_S,colors,3,COMMs, cnum, cme)
 
 #if defined(HAVE_NEMO) && !defined(HAVE_GOSSIP)
    iris_component = App_MPMD_GetComponentId("iris")
@@ -65,6 +63,7 @@ program gem
 
    app_status=app_end(-1)
 
+   call App_MPMD_Finalize()
    call MPI_FINALIZE(ierror)  
 
 end program gem
