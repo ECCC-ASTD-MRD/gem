@@ -20,6 +20,11 @@ case ${SETUP_SCRIPT_NAME} in
         unset SSMUSE_LD_PREPEND
         . r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@gnu-15.2.0
         ;;
+    .eccc_setup_gnu_16.1.0)
+        # to avoid linking with libgfortran.so in /lib64
+        unset SSMUSE_LD_PREPEND
+        . r.load.dot rpn/code-tools/test/env/exp/rhel-9-amd64-64@gnu-16.1.0
+        ;;
 esac
 
 # Load latest version of RPN-SI libraries and utilities
