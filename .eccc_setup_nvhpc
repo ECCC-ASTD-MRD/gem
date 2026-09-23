@@ -27,7 +27,7 @@ case ${SETUP_SCRIPT_NAME} in
         ;;
 esac
 # Load code-tools 
-. r.load.dot rpn/code-tools/test/env/exp/rhel-9-amd64-64@nvhpc-${COMPILER_VERSION}
+. r.load.dot rpn/code-tools/20260916/env/exp/rhel-9-amd64-64@nvhpc-${COMPILER_VERSION}
 
 # Load latest version of RPN-SI libraries and utilities
 . r.load.dot rpn/libs/20260922-beta

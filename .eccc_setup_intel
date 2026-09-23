@@ -36,15 +36,15 @@ esac
 
 # Load code-tools 
 if [[ ${SETUP_SCRIPT_NAME} = ".eccc_setup_intel_2025.1.0_ubuntu-24" ]]; then
-    . r.load.dot rpn/code-tools/20260602/env/ubuntu-24.04-amd64-64@inteloneapi-2025.1.0
+    . r.load.dot rpn/code-tools/20260916/env/ubuntu-24.04-amd64-64@inteloneapi-2025.1.0
     export ORDENV_PLAT=ubuntu-24.04-amd64-64
     export EC_ARCH=ubuntu-24.04-amd-64/inteloneapi-2025.1.0
 elif [[ ${SETUP_SCRIPT_NAME} = ".eccc_setup_intel_2025.1.0_ubuntu-22" ]]; then
-    . r.load.dot rpn/code-tools/20260602/env/ubuntu-22.04-amd64-64@inteloneapi-2025.1.0
+    . r.load.dot rpn/code-tools/20260916/env/ubuntu-22.04-amd64-64@inteloneapi-2025.1.0
     export ORDENV_PLAT=ubuntu-22.04-amd64-64
     export EC_ARCH=ubuntu-22.04-amd-64/inteloneapi-2025.1.0
 else
-    . r.load.dot rpn/code-tools/20260602/env/inteloneapi-${COMPILER_VERSION}
+    . r.load.dot rpn/code-tools/20260916/env/inteloneapi-${COMPILER_VERSION}
 fi
 
 # Load latest version of RPN-SI libraries and utilities
