@@ -847,3 +847,6 @@ fileVersion: 6.3.0-a23 > 6.3.0-b01
 #------
 fileVersion: 6.3.0-b02 > 6.3.0-b02
 
+#------
+fileVersion: 6.3.0-b02 > 6.3.0-b03
+#New:  convection_cfgs/kfctrigdt

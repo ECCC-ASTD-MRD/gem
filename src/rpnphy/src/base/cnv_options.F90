@@ -262,6 +262,10 @@ module cnv_options
    real              :: kfctriga        = -1.0
    namelist /convection_cfgs/ kfctriga
 
+   !# Rescaling of trigger temperature perturbation
+   real :: kfctrigdt = 1.
+   namelist /convection_cfgs/ kfctrigdt
+
    !# Over land and lakes we keep the value set by the "ramp" above over sea water:
    !# * for |lat| >= TRIGLAT(2) we keep value set by the "ramp" KFCTRIG4
    !# * for |lat| <= TRIGLAT(1) we use the new value KFCTRIGL [m/s]
@@ -322,6 +326,12 @@ module cnv_options
         /)
 
    !# Modulation of the minimum environmental mass flux for mid-level convection
+   !# * 'NIL'     : No Modulation, unless mid_minemf(2:4) vals are specified
+   !#               (User-defined latitude ramp with smooth transitions
+   !#               between anchors at 30 deg, 40 deg and equator (cap).)
+   !# * 'LATITUDE': Inverse-sine baseline scaling, increasing toward the equator, capped at around 5 deg.
+   !# * 'LATMOD1' : LATITUDE enhanced by 50% below 30 deg, tapering to baseline at 40 deg.
+   !# * 'LATMOD2' : LATITUDE enhanced by 25% below 30 deg, tapering to 80% of baseline at 40 deg.
    character(len=16) :: mid_emfmod = 'nil'
    namelist /convection_cfgs/ mid_emfmod
    namelist /convection_cfgs_p/ mid_emfmod
@@ -332,8 +342,17 @@ module cnv_options
         'LATMOD2 ' &
         /)
 
-   !# Minimum environmental mass flux for mid-level convection (kg/s)
-   real              :: mid_minemf = 1e7
+   !# Minimum environmental mass flux for mid-level convection (kg/s) and
+   !# User-defined latitude ramp with smooth transitions between anchors
+   !# at 30 deg, 40 deg and equator (cap) when mid_minemf(2:4) >= 0.
+   !# This is a 4 parameters (M0, S40, S30, SEQ)
+   !# * M0  : Minimum environmental mass flux (mass-flux threshold at the pole) (kg/s)
+   !# * S40 : (optional) 
+   !# * S30 : (optional) 
+   !# * SEQ : (optional)
+   !# When S40, S30, SEQ are specified (values>=0.) for the modulation ramp,
+   !# then no other modulation should be specified (mid_emfmod="NIL")
+   real              :: mid_minemf(4) = (/1e7, -1., -1., -1./)
    namelist /convection_cfgs/ mid_minemf
    namelist /convection_cfgs_p/ mid_minemf
 

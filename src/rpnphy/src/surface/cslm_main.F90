@@ -120,17 +120,10 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
            TKEMIN,DELMAX,DELMIN,EMSW,DELZLK,DELSKIN,DHMAX,TKECL
       COMMON /LAKECON/ TKECN,TKECF,TKECE,TKECS,HDPTHMIN,TKEMIN,DELMAX, &
                       DELMIN,EMSW,DELZLK,DELSKIN,DHMAX,TKECL,DUMAX, QAMIN                                      
-      DATA  TKECN,      TKECF,      TKECE,      TKECS,      TKECL      &
-      /     1.33,       0.25,       1.15,       0.20,      0.2350/ 
-      DATA  HDPTHMIN, TKEMIN,  DELMAX,  DELMIN,  DELZLK,  DELSKIN      &
-      /     0.5,      1.0E-12, 5.0,     0.5,     0.5,     0.050 /   
-      DATA  DHMAX,    DUMAX,   EMSW,  QAMIN                             &
-      /     2.0,      0.1,     0.97,  1.0E-5   /                                       
-
 ! CLASS common blocks
 !     * THE FOLLOWING COMMON BLOCKS ARE DEFINED SPECIFICALLY FOR USE 
 !     * IN CLASS, AND ARE RETAINED HERE TO MAINTAIN COMPATIBILITY
-      REAL DELTAT,TFREZ, CLHVAP, CPDzz,                                   &
+      REAL DELTAT,TFREZ, CLHVAP,                                          &
            RGAS,RGASVzz,GRAVzz,SBC,VKC,CTzz,VMIN,TCW,TCICE,TCSAND,TCCLAY, &
            TCOM,TCDRYS,RHOSOL,RHOOM,HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,      &
            HCPCLY,SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,TCGLAC,CLHMLT
@@ -140,27 +133,15 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,             &
                       SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,              &
                       TCGLAC,CLHMLT,CLHVAP
-      DATA      CTzz,       TCW,        TCICE,      TCSAND,    TCCLAY,  TCOM     &
-             /  1.15E-3,    0.57,       2.24,       2.5,       2.5,     0.25  /
-      DATA      TCDRYS,     RHOSOL,     RHOOM                                    &
-             /  0.275,      2.65E3,     1.30E3  /    
-      DATA      HCPW,       HCPICE,     HCPSOL,    HCPOM                         &
-             /  4.187E6,    1.9257E6,   2.25E6,    2.50E6 /
-      DATA      HCPSND,     HCPCLY,     SPHW,      SPHICE,  SPHVEG               &
-             /  2.13E6,     2.38E6,     4.186E3,   2.10E3,  2.70E3 /
-      DATA      RHOW,       RHOICE,     TCGLAC                                   &
-             /  1.0E3,      0.917E3,    2.24                       /
 
 ! these parameters kept local for now
-      REAL CKARM,CGRAV,ASXlocal,ANGMAXlocal,BSlocal,FACTNlocal,HMINlocal
-      REAL DELTAlocal, ASlocal, CIlocal, BETAlocal
+      REAL DELTAlocal,CGRAV,CKARM,CPDzz
       COMMON /PHYCON/ DELTAlocal,CGRAV,CKARM,CPDzz
+
+      REAL ASlocal, ASXlocal, CIlocal, BSlocal
+      REAL BETAlocal, FACTNlocal, HMINlocal, ANGMAXlocal
       COMMON /CLASSD2/ ASlocal,ASXlocal,CIlocal,BSlocal,BETAlocal,FACTNlocal,HMINlocal,ANGMAXlocal              
  
-      DATA      DELTAlocal,    ASlocal,       ASXlocal,      ANGMAXlocal           &
-             /  0.608,         12.0,          4.7,           0.85   /
-      DATA      CIlocal,       BSlocal,       BETAlocal,     FACTNlocal, HMINlocal & 
-             /  40.0,          1.0,           1.0,           1.2,        40.   /
 
 !-- LOCAL CONSTANTS AND VARIABLES.
       INTEGER I,J,K,JBOT,JTOP,NLEV,JMIX,JMIXP1
@@ -288,6 +269,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       CLHVAP=0.2501000000000e+07   !thermoconsts CHLC = 0.2501000000000e+07  ! ch. lat. condens.(0C) J kg-1
       CGRAV=0.9806160000000e+01    !only for CLASS !thermoconsts GRAV = 0.9806160000000e+01  ! acc. de gravite       m s-2
       GRAVzz=CGRAV                 !only for CLASS
+      DELTAlocal=0.608             !only for CLASS !variable for PHYCON common
       RGASVzz=0.4615100000000e+03  !thermoconsts RGASV = 0.4615100000000e+03  ! cte gaz - vap eau     J kg-1 K-1
       RGAS=0.2870500000000e+03     !thermoconsts RGASD = 0.2870500000000e+03  ! cte gaz - air sec     J kg-1 K-1
       SBC=0.5669800000000e-07      !thermoconsts STEFAN = 0.5669800000000e-07  ! cte stefan-boltzmann  J m-2 s-1 K-4
@@ -420,7 +402,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
         RUNFRAC(I)=ZLAKEFR(I)
 ! fixed water extinction coefficients
         CQ1A(I)=CQ1ACON
-        CQ1B(I)=BLAK(I)	!input value
+        CQ1B(I)=BLAK(I) !input value
         CQ2A(I)=CQ2ACON
         CQ2B(I)=CQ2BCON
         CQ3A(I)=CQ3ACON
@@ -534,7 +516,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
       DO 120 I=1,N
           ZPONDL(I)=0.0
           LKICEH0(I)=LKICEH(I)
-!         ICELIM=LLAK(I)*5.45E-6		! Garnaud et al 2022
+!         ICELIM=LLAK(I)*5.45E-6                ! Garnaud et al 2022
           ICELIM=(1.909E-4)*(LLAK(I))**0.666667 ! VE Mackay GRL 2023
           FICE(I)=MIN(ICELIM,LKICEH(I))/ICELIM   
           FTOT(I)=1.0
@@ -1101,10 +1083,10 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !
        Z2=DELZLK+DELSKIN
        ZBOT=DELSKIN+DELZLK*NLAK(I)
-       IF (HDPTH(I) .LT. Z2) THEN	!fully stratified: no mixing
+       IF (HDPTH(I) .LT. Z2) THEN         !fully stratified: no mixing
          JMIX=1
          ZMIX=DELZLK+DELSKIN
-       ELSE IF (HDPTH(I) .GE. ZBOT) THEN	!fully mixed
+       ELSE IF (HDPTH(I) .GE. ZBOT) THEN  !fully mixed
          JMIX=NLAK(I)
          ZMIX=ZBOT
        ELSE
@@ -1183,7 +1165,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
        CALL EQNST(XXX,RHO1,TLAK(I,JMIXP1)-TFREZ,HDPTH(I))
        GRED(I) = CGRAV*ABS(RHO1-RHOMIX(I))/RHOW
 !mdm   GRED(I) = GRAV*ABS(RHO1-RHOMIX(I))/RHO1
-       IF (GRED(I).LT.0.) 		CALL XIT('CLASSL',-2)
+       IF (GRED(I).LT.0.)    CALL XIT('CLASSL',-2)
 !
 !-----------------------------------------------------------------------
 ! ---* MIX TEMPERATURE IN THERMOCLINE LAYER 
@@ -1220,7 +1202,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
        IF (JBOT.LT.1) JBOT=1
        ZBOT=DELZLK*JBOT
        TBOT=TLAK(I,JBOT)
-       IF (JBOT.LT.JTOP) 		CALL XIT('CLASSL',-3)
+       IF (JBOT.LT.JTOP)          CALL XIT('CLASSL',-3)
 
 !-DISABLED
 !-       IF (JBOT.GT.JTOP) THEN
@@ -1233,7 +1215,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 !--Compute temperature jump beneath mixed layer
 !--
        IF (JMIX .LT. NLAK(I)) THEN
-          DTEMP(I)=TMIX-TLAK(I,JBOT) 	!see Spigel et al 1986
+          DTEMP(I)=TMIX-TLAK(I,JBOT)    !see Spigel et al 1986
        ELSE 
           DTEMP(I)=0.
        ENDIF
@@ -1258,7 +1240,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! --RESET SNICEH IF ICE HAS COMPLETELY MELTED; ENSURE CONSISTENCY BETWEEN
 !   FICE AND LKICEH
        IF  (LKICEH(I) .LE. 0.0 ) SNICEH(I)=0.0
-!      ICELIM=LLAK(I)*5.45E-6		! Garnaud et al 2022
+!      ICELIM=LLAK(I)*5.45E-6       ! Garnaud et al 2022
        ICELIM=(1.909E-4)*(LLAK(I))**0.666667 ! VE Mackay GRL 2023
        FICE(I)=MIN(ICELIM,LKICEH(I))/ICELIM
 
@@ -1312,7 +1294,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
           TFLUX(I)=-QSENS(I)/(RHOAIR(I)*SPHAIR)
           QEVAP(I)=HEVL(I)+HEVS(I)
           EVAP(I)=QFL(I)+QFN(I)
-	  zevlak(I) = zevlak(I) + QFL(I)/adj_cslm_liquevap * DELT + QFN(I) * DELT
+          zevlak(I) = zevlak(I) + QFL(I)/adj_cslm_liquevap * DELT + QFN(I) * DELT
           QFLUX(I)=-EVAP(I)/RHOAIR(I)
           EVPPOT(I)=EVAP(I)
           EVAPB(I)=1.0
@@ -1345,12 +1327,12 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 
 ! check if the grid-cell belongs to a big lake by comparing the area of the grid cell
 ! to the actual full area of the lake.
-	    IF ( (ZLAKEAREA(I)*1000000.0) .GT. ZDXDY(I) ) THEN
-	       ! Grid-cell belongs to a large lake spanning over multiple grid cells;
-	       ! don't slowdown lake outflow, let the routing scheme handle this.
+           IF ( (ZLAKEAREA(I)*1000000.0) .GT. ZDXDY(I) ) THEN
+              ! Grid-cell belongs to a large lake spanning over multiple grid cells;
+              ! don't slowdown lake outflow, let the routing scheme handle this.
                 ZRUNOFFTOT(I) = HLAKSIL(I) * RHOW
             ELSE
-	       ! Rating curve for rectangular weir (CMS) converted to kg/m^2
+              ! Rating curve for rectangular weir (CMS) converted to kg/m^2
                 ZRUNOFFTOT(I) = (DELT*RHOW/(ZLAKEFR(I)*ZDXDY(I)))* &
                  0.001*SQRT(ZLAKEFR(I)*ZDXDY(I))*RC1(I)*(HLAKSIL(I)**RC2(I))
             ENDIF
@@ -1369,7 +1351,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! to still close the water balance, and let the routing scheme remove the evaporation from lakes.
 !          HLAKSIL(I) = HLAKSIL(I) + (DELT*(PCPIN(I)-PCPN(I)-EVAP(I)+QFN(I)+ROFN(I)) &
 !                       + ZROFINLAK(I) - ZRUNOFFTOT(I))/RHOW
-	  HLAKSIL(I) = HLAKSIL(I) + (DELT*(PCPIN(I)-PCPN(I)+ROFN(I)) &
+         HLAKSIL(I) = HLAKSIL(I) + (DELT*(PCPIN(I)-PCPN(I)+ROFN(I)) &
                        + ZROFINLAK(I) - ZRUNOFFTOT(I))/RHOW
 ! END_EG_MOD2
 
@@ -1380,7 +1362,7 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 ! EG_MOD3: in order to close the water balance due to not removing evap. from lake, change 
 ! the way LFXO is computed:
 !          LFXO(I) = LFXO(I)           + DELT*EVAP(I)  + ZRUNOFFTOT(I)
-	 LFXO(I) = LFXO(I)           + DELT*QFN(I)  + ZRUNOFFTOT(I)
+          LFXO(I) = LFXO(I)           + DELT*QFN(I)  + ZRUNOFFTOT(I)
 ! END_EG_MOD3
 
           LSTD(I) = RHOW*HLAKSILM1(I) + SNOM1(I)      + WSNOWM1(I)
@@ -1420,3 +1402,50 @@ subroutine cslm_main(bus, bussiz, ptsurf, ptsurfsiz, lcl_indx, trnch, kount, n, 
 
  end subroutine cslm_main
 end module  cslm_main_mod
+  block data cslm_common
+! CSLM common blocks
+      REAL TKECN,TKECF,TKECE,TKECS,HDPTHMIN, DUMAX, QAMIN,              &
+           TKEMIN,DELMAX,DELMIN,EMSW,DELZLK,DELSKIN,DHMAX,TKECL
+      COMMON /LAKECON/ TKECN,TKECF,TKECE,TKECS,HDPTHMIN,TKEMIN,DELMAX, &
+                      DELMIN,EMSW,DELZLK,DELSKIN,DHMAX,TKECL,DUMAX, QAMIN                                      
+      DATA  TKECN,      TKECF,      TKECE,      TKECS,      TKECL      &
+      /     1.33,       0.25,       1.15,       0.20,      0.2350/ 
+      DATA  HDPTHMIN, TKEMIN,  DELMAX,  DELMIN,  DELZLK,  DELSKIN      &
+      /     0.5,      1.0E-12, 5.0,     0.5,     0.5,     0.050 /   
+      DATA  DHMAX,    DUMAX,   EMSW,  QAMIN                             &
+      /     2.0,      0.1,     0.97,  1.0E-5   /                                       
+
+! CLASS common blocks
+!     * THE FOLLOWING COMMON BLOCKS ARE DEFINED SPECIFICALLY FOR USE 
+!     * IN CLASS, AND ARE RETAINED HERE TO MAINTAIN COMPATIBILITY
+      REAL DELTAT,TFREZ, CLHVAP,                                          &
+           RGAS,RGASVzz,GRAVzz,SBC,VKC,CTzz,VMIN,TCW,TCICE,TCSAND,TCCLAY, &
+           TCOM,TCDRYS,RHOSOL,RHOOM,HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,      &
+           HCPCLY,SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,TCGLAC,CLHMLT
+      COMMON /CLASS1/ DELTAT,TFREZ
+      COMMON /CLASS2/ RGAS,RGASVzz,GRAVzz,SBC,VKC,CTzz,VMIN
+      COMMON /CLASS3/ TCW,TCICE,TCSAND,TCCLAY,TCOM,TCDRYS,RHOSOL,RHOOM
+      COMMON /CLASS4/ HCPW,HCPICE,HCPSOL,HCPOM,HCPSND,HCPCLY,             &
+                      SPHW,SPHICE,SPHVEG,SPHAIR,RHOW,RHOICE,              &
+                      TCGLAC,CLHMLT,CLHVAP
+      DATA      CTzz,       TCW,        TCICE,      TCSAND,    TCCLAY,  TCOM     &
+             /  1.15E-3,    0.57,       2.24,       2.5,       2.5,     0.25  /
+      DATA      TCDRYS,     RHOSOL,     RHOOM                                    &
+             /  0.275,      2.65E3,     1.30E3  /    
+      DATA      HCPW,       HCPICE,     HCPSOL,    HCPOM                         &
+             /  4.187E6,    1.9257E6,   2.25E6,    2.50E6 /
+      DATA      HCPSND,     HCPCLY,     SPHW,      SPHICE,  SPHVEG               &
+             /  2.13E6,     2.38E6,     4.186E3,   2.10E3,  2.70E3 /
+      DATA      RHOW,       RHOICE,     TCGLAC                                   &
+             /  1.0E3,      0.917E3,    2.24                       /
+
+! these parameters kept local for now
+      REAL ASXlocal,ANGMAXlocal,BSlocal,FACTNlocal,HMINlocal
+      REAL ASlocal, CIlocal, BETAlocal
+      COMMON /CLASSD2/ ASlocal,ASXlocal,CIlocal,BSlocal,BETAlocal,FACTNlocal,HMINlocal,ANGMAXlocal              
+ 
+      DATA      ASlocal,       ASXlocal,      ANGMAXlocal           &
+             /  12.0,          4.7,           0.85   /
+      DATA      CIlocal,       BSlocal,       BETAlocal,     FACTNlocal, HMINlocal & 
+             /  40.0,          1.0,           1.0,           1.2,        40.   /
+  end

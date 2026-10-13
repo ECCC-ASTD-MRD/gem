@@ -51,7 +51,7 @@ target_include_directories(rpnphy PRIVATE
 target_link_libraries(rpnphy PUBLIC
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
-  vgrid::vgrid
+  vgrid::vgrid-ompi
   tdpack::tdpack
   modelutils
   )
