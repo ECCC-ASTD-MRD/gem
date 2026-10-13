@@ -18,17 +18,17 @@ subroutine cpl_declare_exchanged_fields()
     endif
 
     level = 0.0
-    write(error_unit,*) "NEMO calling Iris%Model_Provide for variable ", cplocn_iris_provides
+    write(error_unit,*) "GEM calling Iris%Model_Provide for variable ", cplocn_iris_provides
     ierr = iris%model_provide(iris_grid, cplocn_iris_provides, level)
     if(ierr /= 0) then
-        write(error_unit,*) "NEMO: Iris%Model_Provide level=", level
+        write(error_unit,*) "GEM: Iris%Model_Provide level=", level
         return
     endif
 
-    write(error_unit,*) "NEMO: Calling Iris%Model_Consume for variable ", cplocn_iris_consumes
+    write(error_unit,*) "GEM: Calling Iris%Model_Consume for variable ", cplocn_iris_consumes
     ierr = iris%model_consume(iris_grid, cplocn_iris_consumes, level)
     if(ierr /= 0) then
-        write(error_unit,*) "NEMO: Iris%Model_Provide level=", level
+        write(error_unit,*) "GEM: Iris%Model_Provide level=", level
         return
     endif
 end subroutine
