@@ -201,6 +201,7 @@
 !     
 !--------------------------------------------------------------------
 !
+      if(F_i0 > F_in)return
       nis = Out_in - Out_i0 + 1
       njs = Out_jn - Out_j0 + 1
       wk_njs = njs ;  gtyp='Z'      

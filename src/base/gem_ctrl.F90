@@ -62,7 +62,7 @@
                                     INs_Nes_tag,INs_Nes_nrequests)
          endif
          if ( (Spn_indyn_L) .and. Spn_ON_L .and. (spn_freq > 0) ) then
-            call itf_Iserv_request (Step_runstrt_S,INs_Spnlist_S,&
+            call itf_Iserv_request (Step_tstp0_S,INs_Spnlist_S,&
                                     INs_Spn_tag,INs_Spn_nrequests)
          endif
          if (INs_server_L .and. Ctrl_iau_L) then

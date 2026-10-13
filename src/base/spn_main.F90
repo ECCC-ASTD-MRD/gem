@@ -48,7 +48,7 @@
           if (time_now>=Spn_end_hour) Spn_end_L=.true.
       end if
 
-      if (Spn_end_L) return
+      if ((Lctl_step<Spn_start_step).or.Spn_end_L) return
 
       call gtmg_start ( 59, 'SPN_main', 1 )
 
@@ -82,7 +82,6 @@
             return
          else
             if (Lun_out > 0) write(Lun_out,1001) Lctl_step
-
 !$omp single
             if (Grd_yinyang_L) then
                if (Spn_indyn_L) then
@@ -92,15 +91,17 @@
                                        l_minx,l_maxx,l_miny,l_maxy             ,&
                                  1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                                  varname='',inttype= 'cubic',levtype='P' )
-                  if (Spn_yy_nudge_data_stats_L) &
-                  !call glbstat (nudge ,'uu','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  if (Spn_yy_nudge_data_stats_L) then
+                     call glbstat (nudge ,'uu','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  endif
                   call spn_apply (ut1, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                   call vertint2 ( nudge,pw_log_pm,G_nk, nest_v,Spn_pres,Spn_nka,&
                                        l_minx,l_maxx,l_miny,l_maxy             ,&
                                  1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                                  varname='',inttype= 'cubic',levtype='P' )
-                  if (Spn_yy_nudge_data_stats_L) &
-                  !call glbstat (nudge ,'vv','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  if (Spn_yy_nudge_data_stats_L) then
+                     call glbstat (nudge ,'vv','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  endif
                   call spn_apply (vt1, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                end if
                if (Spn_nudge_TT_L) then
@@ -108,8 +109,9 @@
                                   l_minx,l_maxx,l_miny,l_maxy             ,&
                             1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                             varname='', inttype= 'cubic', levtype='P' )
-                  if (Spn_yy_nudge_data_stats_L) &
-                  !call glbstat (nudge ,'tt','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  if (Spn_yy_nudge_data_stats_L) then
+                     call glbstat (nudge ,'tt','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  endif
                   call spn_apply (tt1, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                end if              
                if (Spn_nudge_HU_L) then
@@ -118,8 +120,9 @@
                                   l_minx,l_maxx,l_miny,l_maxy             ,&
                             1-G_halox,l_ni+G_halox, 1-G_haloy,l_nj+G_haloy,&
                             varname='', inttype= 'cubic', levtype='P' )
-                  if (Spn_yy_nudge_data_stats_L) &
-                  !call glbstat (nudge ,'hu','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  if (Spn_yy_nudge_data_stats_L) then
+                     call glbstat (nudge ,'hu','', l_minx,l_maxx,l_miny,l_maxy,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+                  endif
                   call spn_apply (tracers_P(Tr3d_hu)%pntr, nudge, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                end if
                deallocate (nudge)
@@ -139,7 +142,8 @@
                   istat=gmm_get('N_hu',nudge_hu)
                   call spn_apply (tracers_P(Tr3d_hu)%pntr, nudge_hu, l_minx,l_maxx,l_miny,l_maxy, l_nk)
                end if
-               end if
+            end if
+
             else ! LAM
                ib=(Tr3d_hu-1)*G_nk+1
                if (Spn_nudge_UV_L) then

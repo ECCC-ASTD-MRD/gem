@@ -23,7 +23,7 @@
       character(len=*), intent(IN ) :: F_datev
 
       logical :: success
-      integer :: un,dim,ierr
+      integer :: un,d1,d2,ierr
 !     
 !--------------------------------------------------------------------
 !
@@ -35,20 +35,21 @@
       if (Lun_out>0) call clock ( Lun_out, 'IAU Read+Hint', .false. )
       
       call gtmg_start ( 22, 'IAU_Read', 1)
-      dim= ubound(IAU_DATA,1)
+      d1= ubound(IAU_DATA,1)
+      d2= ubound(IAU_DATA,2)
       SRL(:)%vname(2) = ''
       INs_nplans=0
       if (IOS_couleur==0) then
-         call INs_read (IAU_DATA(1,1),Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4, dim )
+         call INs_read2 (IAU_DATA(1,1,1),Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4, d1,d2)
       endif
       if (IOS_couleur==1) then
-         call INs_read (IAU_DATA(1,2),RotY_ig1, RotY_ig2, RotY_ig3, RotY_ig4, dim )
+         call INs_read2 (IAU_DATA(1,1,2),RotY_ig1, RotY_ig2, RotY_ig3, RotY_ig4, d1,d2)
       endif
       call gtmg_stop ( 22 )
       
       call gtmg_start ( 23, 'IAU_SEND', 1)
-      call INs_Iau_send (IAU_DATA(1,IOS_couleur+1),1-G_halox,G_ni+G_halox,1-G_haloy,&
-                         G_nj+G_haloy,ierr)
+      call INs_Iau_send (IAU_DATA(1,1,IOS_couleur+1),&
+           1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,ierr)
       call gtmg_stop ( 23 )
 
       un= IAU_file%get_unit()

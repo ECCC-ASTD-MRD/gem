@@ -16,6 +16,7 @@
 !**s/r hzd_exp_set
 
       subroutine hzd_exp_set
+      use dynkernel_options
       use hzd_mod
       use hvdif_options
       use tdpack
@@ -92,8 +93,10 @@
             end if
          endif
       endif
+       
+      if ( trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H' ) then
 
-      allocate(pres_pt (l_minx:l_maxx,l_miny:l_maxy,1:l_nk), &
+         allocate(pres_pt (l_minx:l_maxx,l_miny:l_maxy,1:l_nk), &
                theta(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),    & 
                theta0(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),   &
                wk1(l_minx:l_maxx,l_miny:l_maxy,1:l_nk),      &
@@ -128,15 +131,16 @@
        	       b_th(l_minx:l_maxx, l_miny:l_maxy,l_nk) ,&
        	       d_th(l_minx:l_maxx, l_miny:l_maxy,l_nk))
 
-      pres_pt=0. ; theta=0.; theta0=0. ; wk1=0. ; wk2=0. 
-      wrkt1=0. ; wrkd1=0. ; wrkt2=0.; wrkd2=0.
-      u_wrk=0.  ; v_wrk  =0. ; w_wrk  =0. ; zdt_wrk  =0.
-      u_wrk1=0. ; v_wrk1 =0. ; w_wrk1 =0. ; zdt_wrk1 =0.
-      sfd=0. ; sfd1=0.;fdg2_4=0.;
-      Afdg1=0.d0; Bfdg1=0.d0; Afdg2=0.d0; Bfdg2=0.d0
-      bdd_v8=0.d0; add_v8=0.d0; cdd_v8=0.d0; cdd_v82=0.d0; cdd_v81=0.d0
-      a_th=0.d0; b_th=0.d0; d_th=0.d0;
-      stencilV=0.d0; cflux=0.d0
+         pres_pt=0. ; theta=0.; theta0=0. ; wk1=0. ; wk2=0. 
+         wrkt1=0. ; wrkd1=0. ; wrkt2=0.; wrkd2=0.
+         u_wrk=0.  ; v_wrk  =0. ; w_wrk  =0. ; zdt_wrk  =0.
+         u_wrk1=0. ; v_wrk1 =0. ; w_wrk1 =0. ; zdt_wrk1 =0.
+         sfd=0. ; sfd1=0.;fdg2_4=0.;
+         Afdg1=0.d0; Bfdg1=0.d0; Afdg2=0.d0; Bfdg2=0.d0
+         bdd_v8=0.d0; add_v8=0.d0; cdd_v8=0.d0; cdd_v82=0.d0; cdd_v81=0.d0
+         a_th=0.d0; b_th=0.d0; d_th=0.d0;
+         stencilV=0.d0; cflux=0.d0
+      endif
 
       call hzd_exp_geom ()
 

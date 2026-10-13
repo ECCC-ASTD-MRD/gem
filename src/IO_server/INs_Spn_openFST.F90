@@ -31,8 +31,9 @@
       real :: dim
       type(C_PTR), save :: basepntr2
       
-      logical :: success,found_L,done=.false.
+      logical :: success,found_L
       character(len=2048) :: fn,filename,root,spn_files,cmd
+      character(len=  10) :: runstrt_S
       integer :: i,j,err,unf,unit3,lislon
       integer, parameter :: nlis = 1024
       type(fst_record) :: my_record,recs3(nlis)
@@ -47,16 +48,18 @@
 
       Inp_datev= F_datev
       call datp2f ( Inp_cmcdate, F_datev )
-      root= trim(Path_input_S)//'/NUDGE/'//INs_runstrt_S(1:8)//INs_runstrt_S(10:11)//'/'
-      spn_files = trim(IOs_path_work_S)//'/iau_files'
+      runstrt_S= INs_runstrt_S(1:8)//INs_runstrt_S(10:11)
+      root= trim(Path_input_S)//'/NUDGE/'//runstrt_S//'/'
+      spn_files = trim(IOs_path_work_S)//'/spn_files'//runstrt_S
 
-      if (.not.done .or. INs_Spn_listfst_L) then
-         if (INs_1o1_L) then
+      if (INs_1o1_L) then
+         err= clib_fileexist (trim(trim(spn_files)))
+         if ((err < 0) .or. INs_Spn_listfst_L) then
+            print*, 'INVESTIGATING Nudge input directory: ',trim(root)
             cmd='cd '//trim(root)//&
-            ' ; find ./ -maxdepth 1 -type f | sort > '//trim(spn_files)
+            ' ; find ./ -maxdepth 1 -type f,l | sort > '//trim(spn_files)
             call system(trim(cmd))
          endif
-         done= .true.
       endif
 
       call MPI_barrier (MY_WORLD_COMM,err)
@@ -73,6 +76,7 @@
             if (Lun_out > 0) print*, 'FOUND TT   valid at: ',&
                         F_datev, ' in file ',trim(fn)
             found_L= .true.
+            err = fclos(unf)
             goto 33
          else
             success= SPN_file%close()
@@ -120,8 +124,8 @@
                                    INs_host, basepntr2, SPN_win, err)
       call MPI_Win_shared_query(SPN_win, MPI_PROC_NULL, WINSIZE  ,&
                                 disp_unit, basepntr2, err)
-      n2= n1*n2*n3
-      call C_F_POINTER (basepntr2,SPN_DATA,[n2,2] )
+      n2= n1*n2
+      call C_F_POINTER (basepntr2,SPN_DATA,[n2,n3,2] )
       call MPI_barrier (MY_WORLD_COMM, err)
       
       allocate (DIP1(n3*2))

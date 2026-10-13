@@ -33,7 +33,7 @@ EOF
    exit 1
 fi
 
-abs=$(which prgemnml)
+abs=$(command which prgemnml)
 if [[ x"${abs}" == x"" ]] ; then
    cat 1>&2 <<EOF
 ERROR: gemdyn environment not properly set, cannot find all print nml prog, prgemnml

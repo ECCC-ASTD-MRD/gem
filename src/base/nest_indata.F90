@@ -114,7 +114,9 @@
       include 'mpif.h'
       character(len=16) :: Next_pilot_S
       integer :: i,j,k,err
+      integer :: yy,mo,dd,hh,mm,ss,dum
       real, dimension(:,:  ), pointer :: nest_orols
+      real(kind=REAL64) :: tx_last,tx_end
       real(kind=REAL64) :: dayfrac
       real(kind=REAL64), parameter :: one=1.0d0, sid=86400.0d0, rsid=one/sid
 !     
@@ -122,22 +124,21 @@
 !             
       Inp_src_GZ_L= .false.
       if (INs_server_L) then
-      ! Impossible to use gtmg_start outside an omp parallel region
-!         call gtmg_start ( 77, 'INs_wait', 90)
          call gemtime (Lun_out, 'Input-svr: wait for NES data', .false.)
          call MPI_waitall (size(INs_Nes_irecv),INs_Nes_irecv,&
                            MPI_STATUSES_IGNORE,err)
          call gemtime (Lun_out, 'Input-svr: NES data received', .false.)
-!         call gtmg_stop ( 77 )
          call itf_Iserv_GZ3d ()
          dayfrac = Step_nesdt*rsid
          call incdatsd (Next_pilot_S, F_datev_S, dayfrac)
-         if (Next_pilot_S<=Step_runend_S) then
-            call itf_Iserv_request (Next_pilot_S,INs_Neslist_S,1001,INs_Nes_nrequests)
+         call prsdate   (yy,mo,dd,hh,mm,ss,dum,F_datev_S)
+         call pdfjdate2 (tx_last, yy,mo,dd,hh,mm,ss)
+         call prsdate   (yy,mo,dd,hh,mm,ss,dum,Step_runend_S)
+         call pdfjdate2 (tx_end, yy,mo,dd,hh,mm,ss)
+         if (tx_last<tx_end) then
+            call itf_Iserv_request (Next_pilot_S,INs_Neslist_S,INs_Nes_tag,INs_Nes_nrequests)
          endif
       endif
-
-!      call gtmg_start ( 78, 'NEST_data', 90)
       Inp_gtmg= (/79,78/)
       call inp_data (F_u , F_v, F_w, F_t , F_q, F_zd, F_s, F_tr     ,&
                      F_topo(l_minx,l_miny,1),F_topo(l_minx,l_miny,2),&
@@ -165,7 +166,6 @@
                            F_topo(l_minx,l_miny,1),nest_orols,nest_metric,&
                            l_minx,l_maxx,l_miny,l_maxy, G_nk             ,&
                            .not.Inp_zd_L, .not.Inp_w_L, .not. Inp_qt_L )
-!       call gtmg_stop ( 78 )
 !
 !     ---------------------------------------------------------------
 !

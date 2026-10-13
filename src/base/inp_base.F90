@@ -895,9 +895,10 @@ contains
       character(len=1), optional,intent(in) :: F_type_S
 
       character(len=1) :: typ
-      integer err,err2,i,j,k,nk
+      integer err,err2,i,j,k,nk,kind
       integer, dimension (:    ), pointer     :: ip1_list
       real   , dimension (:,:,:), pointer     :: wrk
+      real   , dimension (:    ), allocatable :: rna
       character(len=1) :: grid_S(3)
 !
 !---------------------------------------------------------------------
@@ -961,6 +962,51 @@ contains
             F_LSsv(:,:) = wrk(:,:,3)*100.
             deallocate (wrk,ip1_list) ; nullify (wrk,ip1_list)
          endif
+      else
+         if (Inp_kind == 2.and..not.Schm_autobar_L) then
+            if (Inp_src_PX_L) then
+               allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy),&
+                          F_su(l_minx:l_maxx,l_miny:l_maxy),&
+                          F_sv(l_minx:l_maxx,l_miny:l_maxy) )
+               F_sq(:,:) = PX3d%valq(:,:,PX3d%nk)
+               F_su(:,:) = PX3d%valu(:,:,PX3d%nk)
+               F_sv(:,:) = PX3d%valv(:,:,PX3d%nk)
+               err=0
+            else
+
+            err = inp_read_mt ( 'GEOPOTENTIAL', 'Q', wrk, 1,&
+                                 ip1_list, nk )
+            if (nk == F_nka) then
+               allocate (rna(nk))
+               do k=1,nk
+                  call convip(ip1_list(k),rna(k),kind,-1,' ',.false.)
+               end do
+               allocate ( F_sq(l_minx:l_maxx,l_miny:l_maxy), &
+                          F_su(l_minx:l_maxx,l_miny:l_maxy), &
+                          F_sv(l_minx:l_maxx,l_miny:l_maxy) )
+               call gz2p0 ( F_sq, wrk, F_topo, rna     ,&
+                            l_minx,l_maxx,l_miny,l_maxy,&
+                      nk,1-G_halox,l_ni+G_halox,1-G_haloy,l_nj+G_haloy )
+               do j=1-G_haloy,l_nj+G_haloy
+                  do i=1-G_halox,l_ni+G_halox-1
+                     F_su(i,j)= (F_sq(i,j) + F_sq(i+1,j)) * 0.5d0
+                  end do
+               end do
+               if (l_east) F_su(l_ni+G_halox,:)=F_sq(l_ni+G_halox,:)
+               do j=1-G_haloy,l_nj+G_haloy-1
+                  do i=1-G_halox,l_ni+G_halox
+                     F_sv(i,j)= (F_sq(i,j) + F_sq(i,j+1)) * 0.5d0
+                  end do
+               end do
+               if (l_north) F_sv (:,l_nj+G_haloy)= F_sq(:,l_nj+G_haloy)
+               deallocate (rna,wrk,ip1_list) ; nullify (wrk,ip1_list)
+               call gem_xch_halo (F_su, l_minx, l_maxx, l_miny, l_maxy, 1)
+               call gem_xch_halo (F_sv, l_minx, l_maxx, l_miny, l_maxy, 1)
+            else
+               err = -1
+            end if
+            end if
+        end if
       endif
 
       call gem_error ( err,'inp_src_surface','MISSING SURFACE DATA' )

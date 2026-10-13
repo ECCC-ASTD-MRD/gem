@@ -48,11 +48,11 @@
 !
 !     ---------------------------------------------------------------
 !
-! Avoid non-associated pointers
-      if (Grd_yinyang_L) then
-         nest_t => ut1
-         nest_q => ut1
-      end if
+!!$! Avoid non-associated pointers
+!!$      if (Grd_yinyang_L) then
+!!$         nest_t => ut1
+!!$         nest_q => ut1
+!!$      end if
 
       i0= 1   +pil_w
       in= l_ni-pil_e

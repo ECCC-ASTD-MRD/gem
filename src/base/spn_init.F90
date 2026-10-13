@@ -213,6 +213,8 @@
       else
           return
       end if
+
+      Spn_nudge_dir_S= 'NUDGE/'//Step_tstp0_S(1:8)//Step_tstp0_S(10:11)
       
  999  call gem_error ( min(err1,err2),'spn_init',&
           'Wrong choice for Spn_trans_shape_S or transpose problems')

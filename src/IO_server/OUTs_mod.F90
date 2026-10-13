@@ -50,6 +50,7 @@ module OUTs
       type(vgrid_usr), pointer, dimension(:) :: vgd_usr
       type :: hgrid_usr
          integer :: ni, nj, ip1, ip2, ip3, ig1, ig2, ig3, ig4, usr_grid_index
+         character(len=1) :: grtyp
          real, pointer, dimension(:) :: tic,tac
          integer :: ezgdid
          logical :: same_rotation_L
@@ -76,7 +77,7 @@ module OUTs
       character(len=1   ) :: Out_typvar_S,chac1,Out_previous_usr_grid_S
       logical :: OUTs_server_L=.false.
       logical :: OUTs_1o1_L, Out_reduc_L, Out_rewrit_L
-      integer :: OUTs_GEM_COMM,OUTs_me1o1,OUTs_gem1o1
+      integer :: OUTs_GEM_COMM,OUTs_me1o1,OUTs_gem1o1,MAX_ECRPROC
       integer :: clients,data_wm,IOS_events=0
       integer :: nout_files, Out_kind, Out_nbit
       integer :: Out_i0,Out_in,Out_j0,Out_jn
@@ -161,6 +162,7 @@ module OUTs
            endif
            fh%ip1=rec%ip1; fh%ip2=rec%ip2; fh%ip3=rec%ip3
            fh%ig1=rec%ig1; fh%ig2=rec%ig2; fh%ig3=rec%ig3; fh%ig4=rec%ig4
+           fh%grtyp=rec%grtyp
            ier=fstfrm(unit); ier=fclos(unit)
            unit=unit+1
         end do
@@ -223,7 +225,9 @@ module OUTs
            endif
         end do
         if(.not.found_L)then
-           write(Lun_out,'("OUTs_set_horizontal_interpolation, internale error could not find matching user horizontal grid for stag ",s)')F_stag_S
+           write(Lun_out,&
+           '("OUTs_set_horizontal_interpolation, internale error could not ",&
+             "find matching user horizontal grid for stag ",s)')F_stag_S
            return
         endif
         gdid = ezdefset(hgd_usr(Out_hgd_usr_index)%ezgdid,F_src_ezgdid)
@@ -279,7 +283,9 @@ module OUTs
         endif
         if(Out_n_hgd_src+1 > Out_max_hgd_src)then
            if (Lun_out>0)then
-              write(Lun_out,'("WARNING!! Too many source grid definitions, skipping current and next ones.")')
+              write(Lun_out,&
+              '("WARNING!! Too many source grid definitions, ",&
+                "skipping current and next ones.")')
               status_L=.false.
               return
            endif
@@ -300,11 +306,11 @@ module OUTs
         real :: wk
         err=fstecr(F_f%tic,wk,-32,Out_unf,Out_dateo   ,&
              0,0,F_f%ni,1,1,F_f%ip1,F_f%ip2,F_f%ip3,'X','>>',&
-             Out_etik_S,'E',&
+             Out_etik_S,F_f%grtyp,&
              F_f%ig1,F_f%ig2,F_f%ig3,F_f%ig4,5,.true.)
         err=fstecr(F_f%tac,wk,-32,Out_unf,Out_dateo   ,&
                     0,0,1,F_f%nj,1,F_f%ip1,F_f%ip2,F_f%ip3,'X', '^^'    ,&
-                    Out_etik_S,'E',&
+                    Out_etik_S,F_f%grtyp,&
                     F_f%ig1,F_f%ig2,F_f%ig3,F_f%ig4,5, .true.)
         call OUTs_wrtvref(F_stag_S,F_f%ip1,F_f%ip2)
       end subroutine OUTs_wrtref_usr
@@ -409,7 +415,8 @@ module OUTs
         F_vector_int_L=.false.
         F_wait_for_v_L=.false.
         if(.not.UTL_get_usr_int_info(usr_int_info,F_nomvar_S,OUT_usr_int_info))then
-           print*,'Error in OUTs_process_data with, UTL_get_usr_int_info'
+        print*,&
+        'Error in OUTs_process_data with, UTL_get_usr_int_info'
            ! TODO handle error gracefully
         endif
         
@@ -470,7 +477,8 @@ module OUTs
                   return
                endif
             else
-               print*,'WARNING OUTs_hor_int, got VV but did not see UU, make sure UU appears first in output request'
+               print*,'WARNING OUTs_hor_int, got VV but did not see UU, ",&
+                      "make sure UU appears first in output request'
                return
             endif
          endif            
@@ -498,7 +506,8 @@ module OUTs
          else
             do k=F_k0, F_kn
                if( ezsint(wk2(1,1,k), F_wk(1,1,k)) < 0)then
-                  print*,'ERROR in horizontal interpolation in OUTs_hor_int'
+                  print*,&
+                  'ERROR in horizontal interpolation in OUTs_hor_int'
                   ! TODO handle error gracefully
                   ! TODO trap EXTRAP ABORT gracefully when version of ezscint returns error value
                   stop
@@ -551,7 +560,8 @@ module OUTs
             ! a warning
             wind_warning_done_L=.true.
             if( Lun_out>0.and. (.not.wind_warning_done_L) )then
-               write(Lun_out,'("Skipping diag level wind output since user and model grids have a different rotation")')
+               write(Lun_out,'("Skipping diag level wind output since ",&
+               "user and model grids have a different rotation")')
                status_L=.true.
             endif
             wind_cycle_L=.true.

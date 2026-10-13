@@ -77,7 +77,7 @@
 
       OK_list_S = ['1','2','3','4','5','6','7','8','9']
 
-      print*,'F_argv_S(1)=',F_argv_S(1)
+!      print*,'F_argv_S(1)=',F_argv_S(1)
       read(F_argv_S(1),*) usrdirset
       
       OutUsrdir_sets = OutUsrdir_sets + 1

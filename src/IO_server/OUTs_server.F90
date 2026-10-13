@@ -89,7 +89,8 @@
          call MPI_bcast (Out_filenames_S,cnt,MPI_CHARACTER,0,&
                          MY_WORLD_COMM,ierr)
 
-         call OUTs_openFST (me_S)
+         if (myproc_IOS<=MAX_ECRPROC-1) call OUTs_openFST (me_S)
+                         
          call MPI_barrier (MY_WORLD_COMM,ierr)
          
          call gtmg_stop ( 11 )
@@ -119,7 +120,7 @@
             deallocate (metaG)
          endif
          
-         call OUTs_closFST (wm(3))
+         if (myproc_IOS<=MAX_ECRPROC-1) call OUTs_closFST (wm(3))
          
          call MPI_barrier (MY_WORLD_COMM,ierr)
 

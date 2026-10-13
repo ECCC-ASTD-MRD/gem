@@ -102,9 +102,9 @@
          call out_outdir()
 
          if ( Grd_yinyang_L .and. Spn_ON_L ) then
-            if (Spn_indyn_L) call nest_intt ('GY')
+            if (Spn_indyn_L.and.(Lctl_step>0)) call nest_intt ('GY')
          endif
-            
+     
          call dynstep()
 
          call out_dyn (.false., .true.) ! casc output
