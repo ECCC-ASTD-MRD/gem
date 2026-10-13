@@ -957,6 +957,7 @@ contains
           call physeterror('kfrpn', 'no trigger type '//trim(deeptrig(i)))
           return
        end select
+       dtlcl = kfctrigdt * dtlcl
 
        ! Parcel is convectively unstable
        ! Calculate the tendencies

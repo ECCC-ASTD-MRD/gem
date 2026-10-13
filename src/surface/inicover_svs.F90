@@ -323,6 +323,13 @@ subroutine inicover_svs(pvars, kount, ni)
    real numin_z0m
    data numin_z0m /1.E-4/
 
+!$OMP THREADPRIVATE (ALDAT,D2DAT,D50DAT,D95DAT)
+!$OMP THREADPRIVATE (RSMINDAT,GEXPDAT,LAIDAT,VEGDAT,EMISDAT)
+!$OMP THREADPRIVATE (CVDAT,RGLDAT,GAMMADAT,Z0MDAT,MAXPDAT)
+!$OMP THREADPRIVATE (d50veg15,d95veg15,d50veg16,d95veg16)
+!$OMP THREADPRIVATE (vegcrops,vegdat14,vegdat16,vegdat17)
+!$OMP THREADPRIVATE (lai11, lai14, lai15, lai16, lai17)
+
 ! This macro only gets pointer address to pass as an argument to calling function --- to MANIPULATE VARIABLE, USE MACROS  MK... below
 #define PTR1D(NAME2) pvars(vd%NAME2%idxv)%data(:)
 ! Assign local variables below

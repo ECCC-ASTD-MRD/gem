@@ -253,7 +253,7 @@ contains
 
       ! Transfer from the 3D source grid into the physics folded space
       k0 = F_ijk0(3)
-!$omp parallel private(i,j,vptr)
+!$omp parallel private(i,j,ik,vptr)
 !$omp do
       do j = 1, phydim_nj
          nullify(vptr)
