@@ -25,8 +25,10 @@ target_include_directories(modelutils PRIVATE
 target_link_libraries(modelutils PUBLIC
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
+  MPI::MPI_Fortran
+  MPI::MPI_C
   tdpack::tdpack
-  vgrid::vgrid
+  vgrid::vgrid-ompi
   rpncomm::rpncomm
   )
 
@@ -37,21 +39,21 @@ set_target_properties(modelutils PROPERTIES
 add_library(modelutils_ov_ifort STATIC ov_ifort/ifort_fpe_handler.F90)
 add_dependencies(modelutils_ov_ifort ${PROJECT_NAME}_build_info)
 target_link_libraries(modelutils_ov_ifort PUBLIC
-  rmn::rmn
+  rmn::rmn-ompi
   modelutils
   )
 
 add_library(modelutils_stubs STATIC stubs/drv_dyn_itf_stubs.F90)
 add_dependencies(modelutils_stubs ${PROJECT_NAME}_build_info)
 target_link_libraries(modelutils_stubs PUBLIC
-  vgrid::vgrid
+  vgrid::vgrid-ompi
   modelutils
   )
 
 add_library(modelutils_tmg_stubs STATIC tmg_stubs/tmg_stubs.F90)
 add_dependencies(modelutils_tmg_stubs ${PROJECT_NAME}_build_info)
 target_link_libraries(modelutils_tmg_stubs PUBLIC
-  vgrid::vgrid
+  vgrid::vgrid-ompi
   )
 
 install(TARGETS modelutils

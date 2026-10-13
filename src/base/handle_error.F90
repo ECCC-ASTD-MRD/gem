@@ -123,11 +123,12 @@ contains
 !!$   integer, external :: callback_call_ftn
       logical :: debug_bk_L
       !---------------------------------------------------------------------
-      if (debug_L .and. F_errorCode < STOP_OK) then
+      if (F_errorCode < STOP_OK) then
          write(message,'(2a)') &
               trim(F_Message)//"\n",&
               "= ABORTING - PREMATURED STOP IN: "//trim(F_FromSubName)//"\n"
          call msg_toall(MSG_CRITICAL,message)
+         call msg_buffer_flush()
       endif
 
       debug_bk_L = debug_L
