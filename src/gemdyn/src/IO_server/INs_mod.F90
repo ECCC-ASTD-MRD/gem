@@ -33,8 +33,8 @@ module INs
       integer :: INs_Nes_nkd,INs_Iau_nkd,INs_Spn_nkd
        
       real, dimension(:,:,:), pointer :: GZ
-      real, dimension(:,:  ), pointer :: IAU_DATA, SPN_DATA
-      real, dimension(:    ), pointer :: NES_data
+      real, dimension(:,:,:), pointer :: IAU_DATA, SPN_DATA
+      real, dimension(:,:  ), pointer :: NES_data
       real, dimension(:,:  ), allocatable :: GZbuf, &
                                Nesbuf, Iaubuf, Spnbuf
       integer, dimension(:), allocatable :: DIP1, GZIP1, &

@@ -8,9 +8,8 @@
 #include <fcntl.h>
 
 void main_gem_monitor_end (int argc, char **argv) {
-   int i, fd;
+   int fd;
    int count=30;
-   char buffer[32768];
    pid_t pp=getppid();
 
    if(argc-1 != 1) {

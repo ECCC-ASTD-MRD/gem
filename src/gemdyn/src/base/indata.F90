@@ -124,8 +124,8 @@
 
       if ( Grd_yinyang_L .and. Spn_ON_L ) then
          if (Spn_indyn_L) then
-            call nest_intt ('GY')
-            call nest_init_current ()
+            call spn_indata (Step_tstp0_S)
+            call nest_init_current (Step_tstp0_S)
          else
             call nudge_read (0,Lctl_step)
          endif

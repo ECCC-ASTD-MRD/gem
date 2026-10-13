@@ -38,8 +38,8 @@
 !MPI_THREAD_FUNNELED: The process may be multi-threaded, but only the main thread will make MPI calls (all MPI calls are funneled to the main thread). 
 !MPI_THREAD_SERIALIZED: The process may be multi-threaded, and multiple threads may make MPI calls, but only one at a time: MPI calls are not made concurrently from two distinct threads (all MPI calls are serialized). 
 !MPI_THREAD_MULTIPLE: Multiple threads may call MPI, with no restrictions.
-!      required = MPI_THREAD_MULTIPLE
-      required = MPI_THREAD_SINGLE
+      required = MPI_THREAD_MULTIPLE
+!      required = MPI_THREAD_SINGLE
       call MPI_Init_thread (required, provided, ierr)
       if (provided /= required ) then
          if (MiMd_Wmyproc==0) write (6,'(/3x,a/)')&

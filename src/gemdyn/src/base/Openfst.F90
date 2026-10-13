@@ -15,6 +15,7 @@
 module Openfst
       
    use, intrinsic :: iso_fortran_env
+   use clib_itf_mod
    use rmn_fst24
    use vGrid_Descriptors
    implicit none
@@ -37,7 +38,7 @@ contains
       type(fst_file), intent(OUT) :: F_file
 
       character(len=2048) root,list_files,cmd,filename,fn
-      logical :: success,found_L,done=.false.
+      logical :: success,found_L
       integer :: err,err_code,indx,cmcdate,unf,unit,kind,version
       integer, parameter :: n123_dim=3 , nlis = 1024
       integer n123(n123_dim), liste_sorted(nlis)
@@ -57,12 +58,12 @@ contains
       list_files = trim(list_files)//'_files'
       call datp2f ( cmcdate, F_datev )
 
-      if (.not.done .or. F_updlst_L) then
-         if (Inp_iome >= 0) then
+      if (Inp_iome >= 0) then
+         err= clib_fileexist (trim(trim(list_files)))
+         if ((err < 0) .or. F_updlst_L) then
             cmd='ls -1 '//trim(root)//' > '//trim(list_files)
             call system(cmd)
          endif
-         done= .true.
       endif
       
       if (Inp_iome >= 0) then
@@ -78,6 +79,7 @@ contains
             if (my_query%find_next(my_record)) then
                if (Lun_out > 0) print*, 'FOUND TT valid at: ', F_datev, ' in file ',trim(filename)
                found_L= .true.
+               err = fclos(unf)
                goto 33
             else
                success= F_file%close()

@@ -76,7 +76,7 @@ contains
 
       include 'mpif.h'
       character(len=7) vname
-      integer:: i,n1,n2,dim,cnt,tag,item(4),err
+      integer:: i,n1,n2,dim,cnt,tstp0,tag,item(4),err
 !
 !------------------------------------------------------------------
 !
@@ -129,9 +129,10 @@ contains
          INs_nrequests= INs_Nes_nrequests+INs_Iau_nrequests+INs_Spn_nrequests
          INs_request= MPI_REQUEST_NULL
          if (INs_comm_L) then
+            call datp2f ( tstp0, Step_tstp0_S)
             tag = 121
             item(1) = INs_nrequests
-            item(2) = Step_CMCdate0
+            item(2) = tstp0
             item(3) = TRANSFER(.false., i)
             item(4) = TRANSFER(Spn_listfst_L, i)
             call MPI_send (item,size(item),MPI_INTEGER,&
@@ -343,6 +344,7 @@ contains
 
          SRL(1:nreqs)%vname(1)= cBUF(1:nreqs)                 
          SRL(1:nreqs)%vname(2)= cBUF(nreqs+1:2*nreqs)
+         cBUF='SCRAP'
          
          INS_GZ(1:) => Rcv_GZr(1:)
          INS_ND(1:) => Rcv_NDr(1:)

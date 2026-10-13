@@ -42,15 +42,21 @@
       character(len=512) :: fullname
       integer i,j,k,ii,n,nko,model_nk,knd,istat,indxtr,ind0(1)
       integer, dimension(:), pointer :: indo, ip1t
+      integer, dimension(3), save :: lijk = [ -1,-1,-1 ]
+      integer, dimension(3), save :: uijk = [ -1,-1,-1 ]
       real, dimension(:), pointer :: hybt, rf
       save hybt
       real,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), target :: w4
       real, dimension(:,:,:), pointer :: cible, usr_src
-      real, dimension(:,:,:), pointer :: tr5
+      real, dimension(:,:,:), pointer :: tr5,ptr3d
       logical :: write_diag_lev,near_sfc_L,outvar_L
 !
 !----------------------------------------------------------------------
 !
+      lijk(3) = G_nk+1
+      uijk(3) = G_nk+1
+      ptr3d => w4(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
+
       nullify(indo, rf, cible, usr_src, tr5)
 
       ! Check if any tracer are required
@@ -104,6 +110,10 @@
                   if (trim(Tr3d_name_S(indxtr))=='HU') then
                      w4(:,:,G_nk+1) = qdiag(:,:)
                      istat= 0
+                  else
+                     w4(:,:,G_nk+1) = tracers_P(indxtr)%pntr(:,:,G_nk)
+                     istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
+                                      F_start=lijk, F_end=uijk, F_quiet=.true.)
                   end if
                end if
                if (istat == 0) model_nk = G_nk + 1
@@ -178,6 +188,10 @@
                   if (trim(Tr3d_name_S(indxtr))=='HU') then
                      w4(:,:,G_nk+1) = qdiag(:,:)
                      istat= 0
+                  else
+                     w4(:,:,G_nk+1) = tracers_P(indxtr)%pntr(:,:,G_nk)
+                     istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
+                                      F_start=lijk, F_end=uijk, F_quiet=.true.)
                   end if
                end if
                if (istat == 0) then

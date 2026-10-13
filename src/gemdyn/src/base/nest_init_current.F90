@@ -14,16 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r nest_init_current -- Initializes nesting times
 
-      subroutine nest_init_current ()
+      subroutine nest_init_current (F_datev_S)
       use lam_options
       use step_options
       implicit none
+
+      character(len=16), intent(IN) :: F_datev_S
+
 
       integer yy,mo,dd,hh,mm,ss,dum
 !
 !     ---------------------------------------------------------------
 !
-      Lam_current_S = Step_runstrt_S
+      Lam_current_S = F_datev_S
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
       call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)
       Lam_tdeb      = Lam_tfin

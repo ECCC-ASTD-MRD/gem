@@ -30,10 +30,11 @@
       logical :: signal
       integer :: i,j,k,tag,myhost,DISP_UNIT,ierr,ind,ind2,nk,sortie_largest_list
       integer :: size_usr_grid_info,n_hgrid_usr,n_vgrid_usr,index,sizestr,sizei
-      integer :: vgd_table_size(3), hgrid_param(9)
+      integer :: vgd_table_size(3), hgrid_param(10)
       integer(KIND=MPI_ADDRESS_KIND) :: WINSIZE
       integer, dimension(100) :: usr_grid_info
       character(len=UTL_string_len_dic), dimension(:), pointer :: list_S
+      character(len=1) :: dumc1
       integer, dimension(:), pointer :: ilist
       real :: dim
       type(C_PTR), save :: basepntr
@@ -49,7 +50,7 @@
 
       disp_unit = 4
       dim = 0.
-      ! Use variable sortie_largest_list just to clirifie code
+      ! Use variable sortie_largest_list just to clarifie code
       sortie_largest_list=F_grid_info(29)
       nk=max((G_nk+1)*2,sortie_largest_list)
       if (OUTs_hostmyproc == 0) dim = real(G_ni)*real(G_nj)*real(nk)&
@@ -102,13 +103,15 @@
       if (OUTs_1o1_L) then
          if(n_hgrid_usr > 0)then
             if(.not.OUTS_read_hgrid_usr(hgd_usr))then
-               write(Lun_out,'("OUTs_server, error in reading user horizontal grid, see above")')
+               write(Lun_out,'("OUTs_server, error in",&
+               &" reading user horizontal grid, see above")')
                ! TODO handle error
             endif
          endif
          if(n_vgrid_usr > 0)then
             if(.not.OUTS_read_vgrid_usr(vgd_usr))then
-               write(Lun_out,'("OUTs_server, error in reading user vertical grid, see above")')
+               write(Lun_out,'("OUTs_server, error in",&
+               &" reading user vertical grid, see above")')
                ! TODO handle error
             endif
          endif
@@ -117,7 +120,8 @@
          if (OUTs_1o1_L) then
             hgrid_param=(/hgd_usr(i)%ni,hgd_usr(i)%nj,&
                  hgd_usr(i)%ip1,hgd_usr(i)%ip2,hgd_usr(i)%ip3,&
-                 hgd_usr(i)%ig1,hgd_usr(i)%ig2,hgd_usr(i)%ig3,hgd_usr(i)%ig4/)
+                 hgd_usr(i)%ig1,hgd_usr(i)%ig2,hgd_usr(i)%ig3,hgd_usr(i)%ig4,&
+                 TRANSFER(hgd_usr(i)%grtyp,k)/)
          endif
          call MPI_bcast (hgrid_param, size(hgrid_param), MPI_INTEGER , 0, MY_WORLD_COMM, ierr)
          if(.not.OUTs_1o1_L)then               
@@ -125,6 +129,7 @@
             hgd_usr(i)%ip1=hgrid_param(3); hgd_usr(i)%ip2=hgrid_param(4); hgd_usr(i)%ip3=hgrid_param(5)
             hgd_usr(i)%ig1=hgrid_param(6); hgd_usr(i)%ig2=hgrid_param(7)
             hgd_usr(i)%ig3=hgrid_param(8); hgd_usr(i)%ig4=hgrid_param(9)
+            hgd_usr(i)%grtyp=TRANSFER(hgrid_param(10),dumc1)
             allocate(hgd_usr(i)%tic(hgd_usr(i)%ni),hgd_usr(i)%tac(hgd_usr(i)%nj))
          end if
          call MPI_bcast (hgd_usr(i)%tic, size(hgd_usr(i)%tic), MPI_REAL , 0, MY_WORLD_COMM, ierr)
@@ -148,7 +153,7 @@
          ierr=vgd_get(vgd_usr(i)%vgd,'KIND',vgd_usr(i)%kind)
       end do
       do i=1,n_hgrid_usr
-         hgd_usr(i)%ezgdid = ezgdef_fmem(hgd_usr(i)%ni,hgd_usr(i)%nj,'Z','E',&
+         hgd_usr(i)%ezgdid = ezgdef_fmem(hgd_usr(i)%ni,hgd_usr(i)%nj,'Z',hgd_usr(i)%grtyp,&
               hgd_usr(i)%ig1,hgd_usr(i)%ig2,hgd_usr(i)%ig3,hgd_usr(i)%ig4,&
               hgd_usr(i)%tic,hgd_usr(i)%tac)
          if(Grd_yinyang_L)then
@@ -199,13 +204,17 @@
             end do
          end do
          allocate(OUT_usr_int_info(size(list_S)))
-         if(.not.UTL_crack_usr_int_dic(OUT_usr_int_info,list_S,'interpolation_dictionary.txt',F_verbose_L=.false.))then
+         if(.not.UTL_crack_usr_int_dic(OUT_usr_int_info,list_S,&
+         'interpolation_dictionary.txt',F_verbose_L=.false.))then
             print*,'Error cracking user interpolation dirctonary'
             error stop 1
          endif
       endif
       Out_previous_usr_grid_S=' '
       Out_previous_src_ezgdid=-1
+      MAX_ECRPROC= min(numproc_IOS,G_nk)
+      if (Lun_out>0) write(Lun_out,'(/,"  FSTECR: ",&
+      &i4," processors will be used to write to disk")') MAX_ECRPROC
 !     
 !--------------------------------------------------------------------
 !

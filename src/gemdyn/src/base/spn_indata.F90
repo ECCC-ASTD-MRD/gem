@@ -32,7 +32,6 @@
       character(len=*), intent(in):: F_datev_S
 
       include 'mpif.h'
-      character(len=2048) dir
       character(len=16) :: Next_pilot_S
       logical :: success
       integer :: i,j,k,n, err, nka_tt, nka_uv, nka, kind, k0
@@ -50,7 +49,6 @@
 !
       if (.not. Spn_ON_L) return
       if (Lun_out > 0) write(lun_out,9000) trim(F_datev_S)
-      dir='NUDGE/'//Step_runstrt_S(1:8)//Step_runstrt_S(10:11)
       nullify (ip1_list,TT_ip1_list, UV_ip1_list)
       nullify (uur,vvr,tt,hu,wkpt8)
       
@@ -131,7 +129,7 @@
          end do
       else
          call open_fst (F_datev_S, Spn_file, Spn_vgd_src, TT_ip1_list,&
-                                       nka_tt, trim(dir),Spn_listfst_L)
+                                 nka_tt, Spn_nudge_dir_S,Spn_listfst_L)
          if (.not.associated(nest_now)) call nest_set_mem (max(G_nk,nka_tt))
          call inp_read_uv ( uur, vvr, 'UV' , UV_ip1_list, nka_uv, F_datev_S, Spn_file )
       endif

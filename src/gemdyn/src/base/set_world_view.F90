@@ -183,6 +183,11 @@
          end if
       end if
 
+      if (.not.Dynamics_hauteur_L.and.Iau_indyn_L) &
+      call gem_error ( -1,'set_world_view', &
+                       'Iau_indyn_L NOT allowed in GEM-P')
+
+
 ! Master output PE for all none distributed components
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL

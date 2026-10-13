@@ -14,14 +14,30 @@
 !----------------------------------LICENCE END ---------------------------------
 
       subroutine gem_stop ()
+      use svri_mod
+      use svro_mod
       use inp_mod
       implicit none
 
-      integer err
+      include 'mpif.h'
+      integer tag,send(5),err
 !
 !     ---------------------------------------------------------------
 !
       if (Inp_window/=0) call MPI_Win_free (Inp_window,err)
+      
+      send= -1
+      if (INs_comm_L) then
+         tag= 801
+         call MPI_send (send,1,MPI_INTEGER,&
+                        INs_1on1,tag,INs_COMM,err )
+      endif
+      if (OUTs_comm_L) then
+         tag= 601
+         call MPI_send ( send,size(send),MPI_INTEGER,&
+                         OUTs_1on1,tag,OUTs_COMM,err )
+      endif
+      
       call MPI_finalize (err)
       stop
 !

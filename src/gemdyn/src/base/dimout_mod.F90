@@ -32,6 +32,6 @@ module dimout
 ! MAXGRID            | maximum number of grid output definitions       |
 !----------------------------------------------------------------------
 !
-   integer, parameter :: MAXSET = 32, MAXELEM = 200, MAXGRID=4
+   integer, parameter :: MAXSET = 100, MAXELEM = 200, MAXGRID=4
 
 end module dimout

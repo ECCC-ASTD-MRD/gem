@@ -439,5 +439,56 @@ contains
 !
       return
       end function INs_hwnd
+      
+      integer function INs_hwnd2 (F_vname, F_nk, F_deb, F_data, &
+                                 F_ig1, F_ig2, F_ig3, F_ig4, F_d1, F_d2 )
+      implicit none
+
+      character(len=*), intent (OUT) :: F_vname
+      integer, intent (IN ) :: F_ig1, F_ig2, F_ig3, F_ig4, F_d1, F_d2
+      integer, intent (OUT) :: F_nk, F_deb
+      real   , intent (OUT) :: F_data(F_d1,F_d2)
+      
+      character(len=6) vname
+      integer nkau,nkav,err,deb1,initial
+!
+!---------------------------------------------------------------------
+!
+      INs_hwnd2= -1 ; initial= INs_nplans
+      F_vname= '' ; F_nk=0
+      deb1= INs_nplans+1
+      F_deb= deb1
+      err= INs_read_mt ('URT1','U',vname,F_data(1,deb1),1,DIP1(deb1),nkau,F_ig1, F_ig2, F_ig3, F_ig4)
+      if (nkau>0) then
+         INs_nplans= INs_nplans+nkau
+         deb1= INs_nplans+1
+         err= INs_read_mt ('VRT1','V',vname,F_data(1,deb1),1,DIP1(deb1),nkav,F_ig1, F_ig2, F_ig3, F_ig4)
+         if (nkav/=nkau) then
+            print*, 'URT1 / VRT1 are unusable'
+            INs_nplans= initial
+            F_deb=-1
+         else
+            INs_nplans= INs_nplans+nkav
+            INs_hwnd2= 0
+            F_vname= 'UVRT1' ; F_nk=2*nkau
+         endif
+      endif
+
+      if (INs_hwnd2/=0) then
+         deb1= INs_nplans+1
+         F_deb= deb1
+         err= INs_read_uv (F_data(1,deb1),DIP1(deb1),nkau,&
+                           F_ig1, F_ig2, F_ig3, F_ig4)
+         if (nkau>0) then
+            INs_nplans= INs_nplans+nkau
+            INs_hwnd2=0
+            F_vname= 'UV' ; F_nk=nkau
+         endif
+      end if
+!     
+!---------------------------------------------------------------------
+!
+      return
+      end function INs_hwnd2
 
 end module INs_base

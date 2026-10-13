@@ -86,10 +86,10 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (timing_barrier_L) then
-!$OMP BARRIER
-      endif
-!$omp single
+!      if (timing_barrier_L) then
+!!$OMP BARRIER
+!      endif
+!$omp master
       if (timing_barrier_L) call MPI_barrier (gtmg_COMM, err)
       if (Gem_timing_dyn_L) then
          nam_subr_S (mynum) = myname_S
@@ -99,7 +99,7 @@ contains
       else if(New_timing_dyn_L) then
          call timing_start2 ( mynum, myname_S, mylevel )
       endif
-!$omp end single
+!$omp end master
 !
 !-------------------------------------------------------------------
 !
@@ -116,17 +116,17 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (timing_barrier_L) then
-!$OMP BARRIER
-      endif
-!$omp single
+!      if (timing_barrier_L) then
+!!$OMP BARRIER
+!      endif
+!$omp master
       if (timing_barrier_L) call MPI_barrier (gtmg_COMM, err)
       if (Gem_timing_dyn_L) then
          sum_tb(mynum)= sum_tb (mynum) + (omp_get_wtime() - tb (mynum))
       else if(New_timing_dyn_L) then
          call timing_stop (mynum)
       endif
-!$omp end single
+!$omp end master
 !
 !-------------------------------------------------------------------
 !

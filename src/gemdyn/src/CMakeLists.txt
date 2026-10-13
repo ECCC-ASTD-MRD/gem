@@ -23,7 +23,7 @@ target_include_directories(gemdyn PRIVATE base)
 
 target_link_libraries(gemdyn PUBLIC
   rmn::rmn-ompi
-  vgrid::vgrid
+  vgrid::vgrid-ompi
   tdpack::tdpack
   rpncomm::rpncomm
   modelutils
