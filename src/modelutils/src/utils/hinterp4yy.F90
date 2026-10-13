@@ -128,14 +128,16 @@ contains
            call msg(MSG_INFOPLUS,'(hinterp4yy) Horizontal Interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S ))
 
       if (F_varname2_S == ' ' .or. .not.associated(F_indata2) .or. .not.associated(F_outdata2)) then
+         call msg_toall(MSG_INFOPLUS,'(hinterp4yy) Scalar '//trim(trim(h_int_S))//' Horizontal Interpolation for: '//trim(F_varname_S ))
          F_istat = ezsint(F_outdata(:,:,F_k),F_indata)
       else
          if (subgridid < 0) then
 !!$            print *,'[input] hInterp vect fields: '//trim(F_varname_S )//' '//trim(F_varname2_S ) ; call flush(6)
+            call msg_toall(MSG_INFOPLUS,'(hinterp4yy) Vectorial '//trim(trim(h_int_S))//' Horizontal Interpolation for: '//trim(F_varname_S )//' '//trim(F_varname2_S ))
             F_istat = ezuvint(F_outdata(:,:,F_k),F_outdata2(:,:,F_k),F_indata,F_indata2)
          else
-            call msg(MSG_INFOPLUS, &
-                 '(hinterp4yy2d_vect) Scalar Hinterp done for vect fields on samegrid for: '// &
+            call msg_toall(MSG_INFOPLUS, &
+                 '(hinterp4yy2d) Scalar '//trim(trim(h_int_S))//' Horizontal Interpolation for vect fields on samegrid for: '// &
                  trim(F_varname_S )//' '//trim(F_varname2_S ))
             F_istat = ezsint(F_outdata(:,:,F_k),F_indata)
             F_istat = min(ezsint(F_outdata2(:,:,F_k),F_indata2),F_istat)
