@@ -19,7 +19,7 @@ export EC_ARCH=rhel-9-graniterapids-64/inteloneapi-2025.1.0
 export ARCH=${EC_ARCH}
 
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
+. r.load.dot rpn/MIG/ENV/rpnpy/2.3.0
 
 # Load Intel FFTW if on rhel, and if using Intel 2021 or Intel 2022
 . r.load.dot main/opt/fftw3/fftw3-3.3.10/intelmpi-${COMPILER_VERSION}/01
