@@ -123,11 +123,6 @@
                            exp(GVM%lg_pstar_8(i0:in,j0:jn,l_nk+1)+qt1(i0:in,j0:jn,l_nk+1)/ &
                            (rgasd_8*Cstv_Tstr_8) ) )
       do k = l_nk, 1, -1
-         !Computing delq at level k from k+1 for IAU increments
-         delq(i0:in,j0:jn)=delq(i0:in,j0:jn)+ grav_8*Cstv_Tstr_8* &
-              (1.d0/vt(i0:in,j0:jn,k) - 1.d0/tt1(i0:in,j0:jn,k))/ & 
-                           GVM%mc_iJz_8(i0:in,j0:jn,k)
-                  
          !Updating qt1 at level k with the IAU increments
          qt1(i0:in,j0:jn,k) = qt1(i0:in,j0:jn,k) + rgasd_8*Cstv_Tstr_8* &
                                 log(1.d0 + weight*(exp(delq(i0:in,j0:jn)/ &

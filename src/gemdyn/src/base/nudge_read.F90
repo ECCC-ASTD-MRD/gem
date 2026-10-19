@@ -110,7 +110,7 @@ subroutine nudge_read (F_step_kount, F_Lctl_step)
 !!$      dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
 !!$      call incdatsd (datev,Step_runstrt_S,dayfrac)
 
-   NUDG_FILE = 'NUDGE/'//Step_runstrt_S(1:8)//Step_runstrt_S(10:11)
+   NUDG_FILE = Spn_nudge_dir_S !'NUDGE/'//Step_runstrt_S(1:8)//Step_runstrt_S(10:11)
    if (.not. Grd_yinyang_L .or. spn_freq < 0 ) return
 
    if (.not.is_converted) then

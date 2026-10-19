@@ -4,11 +4,12 @@
 
 # Source this file to:
 # - Load profile and code-tools for llvm
+# - Load RPN-SI libraries and utilities, and RPNPY
 # - Load a script for common setup to all compilers
 
 unset SSMUSE_LD_PREPEND
 
-# Check name of the script called, to export corresponding nvhpc compiler version
+# Check name of the script called, to export corresponding llvm compiler version
 SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 
 case ${SETUP_SCRIPT_NAME} in
@@ -21,10 +22,13 @@ case ${SETUP_SCRIPT_NAME} in
 esac
 
 # Load code-tools 
-. r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@llvm-${COMPILER_VERSION}
+. r.load.dot rpn/code-tools/20260916/env/exp/rhel-9-amd64-64@llvm-${COMPILER_VERSION}
 
+# Load latest version of RPN-SI libraries and utilities
+. r.load.dot rpn/libs/20260922-beta
+. r.load.dot rpn/utils/20260922-beta
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
+. r.load.dot rpn/MIG/ENV/rpnpy/2.3.0
 
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then
@@ -36,9 +40,8 @@ fi
 
 # Call common setup file
 export COMPILER_SUITE=llvm
-export GOAS_SCRIPT_MODE=TRUE
 . ./.common_setup ${COMPILER_SUITE}
 
 # Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
-export WITH_SYSTEM_RPN=FALSE
+export WITH_SYSTEM_RPN=TRUE
 export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}

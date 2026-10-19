@@ -28,10 +28,6 @@ target_link_libraries(${gem_exe}
    modelutils
    modelutils_tmg_stubs
    modelutils_ov_ifort
-   vgrid::vgrid
-   tdpack::tdpack
-   rpncomm::rpncomm
-   rmn::rmn-ompi
    $<$<AND:$<BOOL:WITH_NEMO>,$<NOT:$<BOOL:WITH_GOSSIP>>>:iris::iris>
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran

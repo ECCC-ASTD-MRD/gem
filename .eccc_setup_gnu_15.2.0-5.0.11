@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# For internal use at ECCC
+
+# Source this file to:
+# - Load profile and code-tools for gnu, depending on compiler version
+# - Load RPNPY
+# - Load a script for common setup to all compilers
+
+# Check name of the script called, to load the proper code-tools
+SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
+
+# Load code-tools 
+# to avoid linking with libgfortran.so in /lib64
+unset SSMUSE_LD_PREPEND
+. r.load.dot rpn/code-tools/20260916/env/exp/rhel-9-amd64-64@gnu-15.2.0-openmpi-5.0.11
+
+# Load latest version of RPNPY
+. r.load.dot rpn/MIG/ENV/rpnpy/2.3.0
+
+# Check and tell if maestro is loaded
+if [ -z "${MAESTRO_VERSION}" ]; then
+    echo ""
+    echo "Maestro is not loaded: GEM task setup scripts will be used instead of maestro scripts."
+else
+    echo "Maestro ${MAESTRO_VERSION} scripts will be used"
+fi
+
+export COMPILER_SUITE=gnu
+COMPILER_VERSION=$(utils/compiler.sh gnu)
+export COMPILER_VERSION
+export GOAS_SCRIPT_MODE=TRUE
+
+# Call common setup file
+. ./.common_setup ${COMPILER_SUITE}
+
+# Set WITH_SYSTEM_RPN variable with default value TRUE for ECCC users
+export WITH_SYSTEM_RPN=FALSE
+export GEM_SETUP_SCRIPT_NAME=${SETUP_SCRIPT_NAME}

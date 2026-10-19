@@ -19,10 +19,6 @@ target_link_libraries(checkdmpart
    ${phy_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
-   vgrid::vgrid
-   tdpack::tdpack
-   rpncomm::rpncomm
-   rmn::rmn-ompi
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
    ${FFTW}
@@ -37,10 +33,6 @@ target_link_libraries(gemgrid
    ${phy_LIBRARIES}
    modelutils
    modelutils_tmg_stubs
-   vgrid::vgrid
-   tdpack::tdpack
-   rpncomm::rpncomm
-   rmn::rmn-ompi
    OpenMP::OpenMP_Fortran
    MPI::MPI_Fortran
    ${GCC_S}
@@ -51,7 +43,6 @@ target_link_libraries(prgemnml
    gemdyn
    modelutils
    modelutils_tmg_stubs
-   rmn::rmn
    ${GCC_S}
 )
 
@@ -60,9 +51,6 @@ target_link_libraries(serverOUT
   gemdyn
   modelutils
   modelutils_tmg_stubs
-  rmn::rmn-ompi
-  vgrid::vgrid
-  tdpack::tdpack
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
   MPI::MPI_Fortran
@@ -75,9 +63,6 @@ target_link_libraries(serverIN
   gemdyn
   modelutils
   modelutils_tmg_stubs
-  rmn::rmn-ompi
-  vgrid::vgrid
-  tdpack::tdpack
   OpenMP::OpenMP_Fortran
   OpenMP::OpenMP_C
   MPI::MPI_Fortran

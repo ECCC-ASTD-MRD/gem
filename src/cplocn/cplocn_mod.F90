@@ -62,7 +62,7 @@ module cplocn_mod
                           'S'  ,'S'  ,'S'  ,'S'        /
 
       character(len=151) :: cplocn_iris_consumes
-      data cplocn_iris_consumes /'MCP,ALO,ALI,T40,T4I,SHO,SHI,LHO,LHI,TXO/TYO,TXI/TYI,ZTO,ZQO,ZUO,ZVO,ZTI,ZQI,ZUI/ZVI,GLI,I8I,SDI,TMO,UUO/VVO,I7I,UUI/VVI,QSO,QSI,ILO,ILI,ZMO,ZMI,ZHO,ZHI'/
+      data cplocn_iris_consumes /'MCP,ALO,ALI,T40,T4I,SHO,SHI,LHO,LHI,TXO/TYO,TXI/TYI,ZTO,ZQO,ZUO/ZVO,ZTI,ZQI,ZUI/ZVI,GLI,I8I,SDI,TMO,UUO/VVO,I7I,UUI/VVI,QSO,QSI,ILO,ILI,ZMO,ZMI,ZHO,ZHI'/
 
       real, dimension (:,:,:),   pointer :: ocn_busou
 

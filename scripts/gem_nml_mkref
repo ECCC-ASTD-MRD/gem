@@ -10,13 +10,13 @@ eval $(rpy.cclargparse \
    ${0##*/} \
    "${DESC}" \
    "Example: ${0##*/} -v gem_settings.${gem_version}.ref" \
-   "positional"   'nargs=*'        "gem_settings.${gem_version}.ref"     "[FILENAME]" \
+   "positional"   'nargs=*'        "gem_settings.${ATM_MODEL_VERSION}.ref"     "[FILENAME]" \
    "-v,--verbose" 'action=count'   '0'     '[verbose mode]' \
    ++++ $*)
 myverbose=''
 [[ ${verbose} -gt 0 ]] && myverbose='-v' || true
 
-myfile="${1:-gem_settings.${gem_version}.ref}"
+myfile="${1:-gem_settings.${ATM_MODEL_VERSION}.ref}"
 
 if [[ x"${myfile}" == x"" ]] ; then
    cat 1>&2 <<EOF
@@ -34,8 +34,8 @@ fi
 
 export gemdyn_version=${gemdyn_version:-${ATM_MODEL_VERSION}}
 export rpnphy_version=${rpnphy_version:-${ATM_MODEL_VERSION}}
-a=$(which gemdyn_nml_mkref)
-b=$(which rpnphy_nml_mkref)
+a=$(command which gemdyn_nml_mkref)
+b=$(command which rpnphy_nml_mkref)
 if [[ x"${a}" == x"" || x"${b}" == x"" ]] ; then
    cat 1>&2 <<EOF
 ERROR: GEM environment not properly set, cannot find all print nml progs

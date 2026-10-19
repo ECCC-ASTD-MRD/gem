@@ -271,7 +271,7 @@ contains
       include 'mpif.h'
       
       character(len=2048) :: cmd,filen,filen_copy,step_S
-      integer :: v1,v2,v3,err,tag,len,me,toto(100)
+      integer :: v1,v2,v3,err,tag,len,me
       integer :: status(mpi_status_size,Ptopo_numproc)
       integer, save :: cnt=0
 !

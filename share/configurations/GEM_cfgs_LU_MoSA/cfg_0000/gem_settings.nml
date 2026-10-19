@@ -225,7 +225,7 @@
   Radghg_L     = .true.        ,
   Rad_esfc     = .true.        ,
   Rad_atmpath  = 'LI06'        ,
-  Rad_cond_rei = 30.           ,
+  Rad_cond_rei = '30.'         ,
   Advectke     = .true.        ,
   
   Satuco       = .true.        ,

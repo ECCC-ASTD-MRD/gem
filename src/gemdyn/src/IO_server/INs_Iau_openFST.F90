@@ -31,8 +31,9 @@
       real :: dim
       type(C_PTR), save :: basepntr2
       
-      logical :: success,found_L,done=.false.
+      logical :: success,found_L
       character(len=2048) :: fn,root,iau_files,cmd,filename
+      character(len=  10) :: runstrt_S
       integer :: i,j,err,unf,unit3,lislon
       integer, parameter :: nlis = 1024
       type(fst_record) :: my_record,recs3(nlis)
@@ -47,16 +48,19 @@
 
       Inp_datev= F_datev
       call datp2f ( Inp_cmcdate, F_datev )
+      runstrt_S= INs_runstrt_S(1:8)//INs_runstrt_S(10:11)
       root= trim(Path_input_S)//'/IAUREP/'
-      iau_files = 'iau_files'
+      iau_files = 'iau_files'//runstrt_S
 
-      if (.not.done) then
-         if (INs_1o1_L) then
+      if (INs_1o1_L) then
+         err= clib_fileexist (trim(trim(iau_files)))
+         if (err < 0) then
+            print*, 'INVESTIGATING Nudge input directory: ',trim(root)
             cmd='ls -1 '//trim(root)//' > '//trim(iau_files)
             call system(cmd)
          endif
-         done= .true.
       endif
+      
       call MPI_barrier (MY_WORLD_COMM,err)
 
       unf= 0
@@ -72,6 +76,7 @@
             if (Lun_out > 0) print*, 'FOUND P0 valid at: ',&
                         F_datev, ' in file ',trim(filename)
             found_L= .true.
+            err = fclos(unf)
             goto 33
          else
             success= IAU_file%close()
@@ -119,8 +124,8 @@
                                    INs_host, basepntr2, IAU_win, err)
       call MPI_Win_shared_query(IAU_win, MPI_PROC_NULL, WINSIZE  ,&
                                 disp_unit, basepntr2, err)
-      n2= n1*n2*n3
-      call C_F_POINTER (basepntr2,IAU_DATA,[n2,2] )
+      n2= n1*n2
+      call C_F_POINTER (basepntr2,IAU_DATA,[n2,n3,2] )
       call MPI_barrier (MY_WORLD_COMM, err)
       
       allocate (DIP1(n3*2))

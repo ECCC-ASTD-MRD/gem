@@ -113,11 +113,10 @@
       i0 = 1+pil_w ; j0 = 1+pil_s ; in = l_ni-pil_e ; jn = l_nj-pil_n
 
       if ( Terminator_L .and. F_cnt==2 ) then
-         stop 'mass_tr is OpenMP - must adjust canonical_terminator_2'
 
          !Print the mass of CLY scaled by area (CORE)
          !-------------------------------------------
-         !!!! call mass_tr (F_tracer_8,cly,F_airmass,minx,maxx,miny,maxy,F_nk,i0,in,j0,jn,F_k0)
+         call mass_tr (F_tracer_8,cly,F_airmass,minx,maxx,miny,maxy,F_nk,i0,in,j0,jn,F_k0)
 
          if (F_unout>0.and.F_couleur==0) then
             write(F_unout,1002) 'TRACERS: ', F_type_S, F_time_S,'  C= ',F_tracer_8/Adz_gc_area_8,"CLY ",F_comment_S

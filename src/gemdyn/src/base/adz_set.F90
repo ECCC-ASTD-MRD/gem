@@ -370,7 +370,6 @@
       end if
 
       allocate (Adz_stack(max(10,Tr3d_ntr)))
-      allocate (pnt_stack(max(10,Tr3d_ntr)))
 
       !Allocation Conservation Postprocessing
       !--------------------------------------

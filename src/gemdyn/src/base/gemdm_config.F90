@@ -45,6 +45,7 @@
       use wb_itf_mod
       use mem_iau
       use ptopo
+      use spn_options
       use omp_timing
       use, intrinsic :: iso_fortran_env
       implicit none
@@ -85,13 +86,6 @@
          call mu_set_leap_year (MU_JDATE_LEAP_IGNORED)
          if (Lun_out>0) write(Lun_out,6010)
       end if
-      if(.not.Grd_yinyang_L.and.Fcst_rstrt_S < Fcst_nesdt_S) then
-         if (Lun_out > 0) then
-            write(Lun_out,*) &
-            ' Fcst_rstrt_S < Fcst_nesdt_S is not allowed'
-         end if
-         return
-      endif
 
       dayfrac= Step_total * Step_dt / sec_in_day
       call incdatsd (Step_runend_S, Step_runstrt_S, dayfrac)
@@ -100,6 +94,8 @@
       call datp2f ( Out3_date, datev )
       if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
       call datp2f ( Step_CMCdate0, Step_runstrt_S)
+      dayfrac= ((0-Step_initial) * Step_dt / sec_in_day)
+      call incdatsd (Step_tstp0_S, Step_runstrt_S, dayfrac)
 
       Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc == 0)
 
@@ -162,6 +158,12 @@
       if (Dynamics_hydro_L.and.Dynamics_hauteur_L) then
          if(lun_out>0) write (Lun_out, &
          '(/"   ====> Dynamics_hydro_L= .TRUE. Not allowed in GEM-H")' )
+         return
+      endif
+
+      if (Spn_freq.gt.0.and.mod(Spn_freq,int(Cstv_dt_8)).ne.0) then
+         if(lun_out>0) write (Lun_out, &
+         '(/"   ====> Error in Spn configuration: Spn_freq must be an integer multiple of Cstv_dt_8")' )
          return
       endif
 

@@ -125,8 +125,13 @@ module spn_options
    namelist /spn  / Spn_skip_threshold
    namelist /spn_p/ Spn_skip_threshold
 
+   !# Spectral nudging applied from this timestep
+   integer :: Spn_start_step = 0
+   namelist /spn  / Spn_start_step
+   namelist /spn_p/ Spn_start_step
+      
    !# Spectral nudging is not applied beyond this lead time (in hours)
-   real :: Spn_end_hour = -10.0
+   real :: Spn_end_hour = -huge(1.)
    namelist /spn  / Spn_end_hour
    namelist /spn_p/ Spn_end_hour
 

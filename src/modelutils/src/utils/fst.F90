@@ -55,7 +55,9 @@ contains
       !@return
       integer :: F_fileid
       !@/
-      integer,parameter :: NMAXFILES = 2048, FSTD89 = 1, FSTD98 = 33
+      integer,parameter :: NMAXFILES = 2048
+      integer,parameter :: FSTD89 = 1, FSTD98 = 33, FSTSTDRSF = 39
+      integer,parameter,dimension(3) :: OKFMT = (/FSTD89, FSTD98, FSTSTDRSF/)
  
       logical :: readonly_L,dir_ok_L,is_file_L,is_dir_L,can_read_L
       integer :: istat,nfiles,nfiles2,ifile,unitlist(NMAXFILES),ftype
@@ -118,7 +120,7 @@ contains
             is_file_L  = RMN_IS_OK(clib_isfile(trim(filelist_S(ifile))))
             can_read_L = RMN_IS_OK(clib_isreadok(trim(filelist_S(ifile))))
             ftype = wkoffit(trim(filelist_S(ifile)))
-            if (.not.(is_file_L.and.can_read_L.and.(ftype==FSTD89.or.ftype==FSTD98))) then
+            if (.not.(is_file_L.and.can_read_L.and.any(ftype==OKFMT))) then
                call msg(MSG_WARNING,'(fst_open) ignoring: '//trim(filelist_S(ifile)))
                cycle
             endif

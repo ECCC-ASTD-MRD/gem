@@ -86,6 +86,7 @@ if __name__ == "__main__":
         mylist = ([args.nml_name] if args.nml_name else cfg.keys())
         for nml in ([args.nml_name] if args.nml_name else sorted(cfg.keys())):
             for myvar in sorted(cfg.get(nml).keys()):
+                ## sys.stderr.write("nml_get1: {}\n".format(repr(cfg.get(nml).get(myvar))))
                 print("{}/{}".format(nml, cfg.get(nml).get(myvar).toStr(clean=True).strip()))
         sys.exit(0)
  
@@ -109,7 +110,11 @@ if __name__ == "__main__":
                     if cleanName(key2) in cfg.get(nmlname).keys():
                         nml2 = nmlname
             if nml2:
-                value = cfg.get(nml2).get(key2).get('v')
+                value = cfg.get(nml2).get(key2).get('v').get(unquote=args.unquote)
+                ## sys.stderr.write("nml_get1: {}\n".format(repr(cfg.get(nml2))))
+                ## sys.stderr.write("nml_get2: {}\n".format(repr(cfg.get(nml2).get(key2))))
+                ## sys.stderr.write("nml_get3: {}\n".format(repr(cfg.get(nml2).get(key2).get('v'))))
+                ## sys.stderr.write("nml_get4: {}\n".format(repr(value)))
             else:
                 raise KeyError(" Oops! Key not found: %s" % (key2))
         except KeyError:
@@ -124,10 +129,10 @@ if __name__ == "__main__":
                 sys.exit(1)
         else:
             fd = sys.stdout
-        if args.unquote:
-            value = str(value).rstrip().lstrip()
-            if value[0] == value[-1]:
-                value = value.strip('\"').strip("\'")
+        ## if args.unquote:
+        ##     value = str(value).rstrip().lstrip()
+        ##     if value[0] == value[-1]:
+        ##         value = value.strip('\"').strip("\'")
         fd.write(expr+str(value)+'\n')
         if outFile: fd.close()
 

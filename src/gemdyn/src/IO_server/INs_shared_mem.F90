@@ -71,8 +71,7 @@
                                       INs_host, basepntr, NEST_win, ierr)
          call MPI_Win_shared_query(NEST_win, MPI_PROC_NULL, WINSIZE  ,&
                                    disp_unit, basepntr, ierr)
-         n2= INs_hord*n3
-         call C_F_POINTER (basepntr,NES_DATA,[n2] )
+         call C_F_POINTER (basepntr,NES_DATA,[INs_hord,n3] )
          call MPI_barrier (MY_WORLD_COMM,ierr)
          allocate (DIP1(n3*2))
       else

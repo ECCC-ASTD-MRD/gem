@@ -94,10 +94,11 @@
          if (stag(2:2) == 'G')then
             if(Out_kind == 1 .or. Out_kind == 5)then
                level_ground(1)=1.
-            else if(Out_kind == 4 )then
+            else if(Out_kind == 4 .or. Out_kind == 21 )then
                level_ground(1)=0.
             else
-               if (OUTs_1o1_L) print*,'WARNING, ground level is not defined for kind ',&
+               if (OUTs_1o1_L) print*,&
+               'WARNING, ground level is not defined for kind ',&
                     Out_kind,', setting level to 0.0'
                level_ground(1)=0.
             endif
@@ -150,7 +151,8 @@
             endif
             if(OUTs_hor_int_L(stag))then
                if(.not.UTL_get_usr_int_info(vsfc(cnt)%usr_int_info,vsfc(cnt)%nv,OUT_usr_int_info))then
-                  print*,'Error in OUTs_process_data with, UTL_get_usr_int_info'
+               print*,&
+               'Error in OUTs_process_data with, UTL_get_usr_int_info'
                   ! TODO handle error gracefully
                endif               
             endif
@@ -180,9 +182,10 @@
          call MPI_barrier (MY_WORLD_COMM,err)
          call gtmg_stop ( 31 )
          call gtmg_start ( 32, 'FSTECR', 21)
-
-         call splitW ( myproc_IOS, numproc_IOS,nko,1,&
-                       sfc_lcl, kstart, kend )
+         
+         sfc_lcl=0 ; kstart=1 ; kend=0
+         if (myproc_IOS<=MAX_ECRPROC-1) call splitW ( myproc_IOS, MAX_ECRPROC,nko,1,&
+                                                      sfc_lcl, kstart, kend )
          call OUTs_fstecr (levels,indo,nko,kstart,kend,k0,stag)
 
          call MPI_barrier (MY_WORLD_COMM,err)
@@ -192,8 +195,9 @@
       
       if (cnt>=1) then
          call gtmg_start ( 33, 'OneLevel', 21)
-         call splitW ( myproc_IOS, numproc_IOS,cnt,1,&
-                       sfc_lcl, sfc_i0, sfc_in)
+         sfc_lcl=0 ; sfc_i0=1 ; sfc_in=0
+         if (myproc_IOS<=MAX_ECRPROC-1) call splitW ( myproc_IOS, MAX_ECRPROC,cnt,1,&
+                                                      sfc_lcl, sfc_i0, sfc_in)
          do i=1,cnt
          do n=client_pestart,client_peend
             offs=n-IOS_YIN*IOS_couleur-clients_npes(2,gem_id)+1

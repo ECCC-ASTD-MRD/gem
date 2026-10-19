@@ -92,7 +92,9 @@
 
       Grd_yinyang_L = .false. ; Grd_yinyang_S = ''
       if ((Domains_ngrids < 1) .or. (Domains_ngrids > 2)) then
-         write(6,'(/a,i4)') 'Unknown multigrid configuration: ABORT in init_component with Domains_ngrids=',Domains_ngrids
+         write(6,'(/a,i4)') &
+         'Unknown multigrid configuration: ',&
+         'ABORT in init_component with Domains_ngrids=',Domains_ngrids
          stop -1
       else
          if (Domains_ngrids == 2) Grd_yinyang_L = .true.

@@ -38,9 +38,9 @@ def ftnNmlDtype2List(cfg, dtypename, dtypeattr, dtypeattrval):
                     sys.exit(0)
                 if not ii in values.keys():
                     values[ii] = copy.copy(dtypeattrval)
-                values[ii][ii2] = nml.get(nmlkeyname).get('v')
+                values[ii][ii2] = nml.get(nmlkeyname).get('v').get()
                 if isinstance(values[ii][ii2], FtnNmlVal):
-                    values[ii][ii2] = values[ii][ii2].data
+                    values[ii][ii2] = values[ii][ii2].get()
                 try:
                     values[ii][ii2] = values[ii][ii2].rstrip(), rstrip(', ')
                 except:
@@ -53,7 +53,7 @@ def ftnNmlDtype2List(cfg, dtypename, dtypeattr, dtypeattrval):
             for ii in range(max(values.keys())):
                 valuelist.append(copy.copy(dtypeattrval))
             for ii in values.keys():
-                #valuelist[int(ii)-1] = ', '.join([x.data for x in values[ii]])
+                #valuelist[int(ii)-1] = ', '.join([x.get() for x in values[ii]])
                 valuelist[int(ii)-1] = ', '.join(values[ii])
             nml.add(FtnNmlKeyVal(dtypename, FtnNmlVal(', '.join(valuelist))))
     return cfg
@@ -67,9 +67,10 @@ def ftnNmlNbMax(cfg, nbmax, lenmax=32):
         nml = cfg.get(nmlname)
         for nmlkeyname in nml.keys():
             keyVal = nml.get(nmlkeyname)
-            ## valList = ', '.join(keyVal.get('v').data.split()).split(', ')
-            ##valList = ', '.join(keyVal.get('v').data.replace('\n ', '').split()).split(', ')
-            val = ' '.join(keyVal.get('v').data.replace('\n ', '').split())
+            ## valList = ', '.join(keyVal.get('v').get().split()).split(', ')
+            ##valList = ', '.join(keyVal.get('v').get().replace('\n ', '').split()).split(', ')
+            # sys.stderr.write("1: {}".format(repr(keyVal.get('v').get())))
+            val = ' '.join(keyVal.get('v').get().replace('\n ', '').split())
             valList = val.split(', ')
             if len(valList) == 1: valList = val.split()
             if len(valList) > nbmax:
@@ -77,7 +78,8 @@ def ftnNmlNbMax(cfg, nbmax, lenmax=32):
                 ## print nmlname, nmlkeyname, valList[0:nbmax]
                 keyVal.set(FtnNmlVal(', '.join(valList[0:nbmax])))
             else:
-                val = keyVal.get('v').data
+                # sys.stderr.write("2: {}".format(repr(keyVal.get('v').get())))
+                val = keyVal.get('v').get()
                 if len(val) > lenmax:
                     keyVal.set(FtnNmlVal(val.strip()))
                     #TODO: clip at nearest whitespace or punctuation?
@@ -149,8 +151,8 @@ if __name__ == "__main__":
         cfg = FtnNmlFile(args.nml_file)
     except:
         logging.warning('{}\n'.format(str(sys.exc_info()[1])))
-        sys.exit(1)
-        
+        raise # sys.exit(1)
+    
     if len(args.types) > 0:
         for mytype in args.types:
             mytype = mytype.split(')')[0]

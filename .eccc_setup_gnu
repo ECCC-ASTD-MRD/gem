@@ -13,20 +13,25 @@ SETUP_SCRIPT_NAME=$(echo $(basename ${BASH_SOURCE[0]}))
 # Load code-tools 
 case ${SETUP_SCRIPT_NAME} in
     .eccc_setup_gnu)
-        . r.load.dot rpn/code-tools/20260602/env/gnu
+        . r.load.dot rpn/code-tools/20260916/env/gnu
         ;;
     .eccc_setup_gnu_15.2.0)
         # to avoid linking with libgfortran.so in /lib64
         unset SSMUSE_LD_PREPEND
-        . r.load.dot rpn/code-tools/20260602/env/exp/rhel-9-amd64-64@gnu-15.2.0
+        . r.load.dot rpn/code-tools/20260916/env/exp/rhel-9-amd64-64@gnu-15.2.0
+        ;;
+    .eccc_setup_gnu_16.1.0)
+        # to avoid linking with libgfortran.so in /lib64
+        unset SSMUSE_LD_PREPEND
+        . r.load.dot rpn/code-tools/20260916/env/exp/rhel-9-amd64-64@gnu-16.1.0
         ;;
 esac
 
 # Load latest version of RPN-SI libraries and utilities
-. r.load.dot rpn/libs/20260512-beta
-. r.load.dot rpn/utils/20260512-beta
+. r.load.dot rpn/libs/20260922-beta
+. r.load.dot rpn/utils/20260922-beta
 # Load latest version of RPNPY
-. r.load.dot rpn/MIG/ENV/rpnpy/2.2.0
+. r.load.dot rpn/MIG/ENV/rpnpy/2.3.0
 
 # Check and tell if maestro is loaded
 if [ -z "${MAESTRO_VERSION}" ]; then

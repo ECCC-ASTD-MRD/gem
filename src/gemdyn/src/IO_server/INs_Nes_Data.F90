@@ -40,10 +40,10 @@
       if (Lun_out>0) call clock ( Lun_out, 'NES Read+Hint', .false. )
       
       call gtmg_start ( 12, 'NES_Read', 1)
-      dim= ubound(NES_DATA,1)
+      dim= ubound(NES_DATA,2)
       SRL(:)%vname(2) = ''
       INs_nplans=0
-      call INs_read (NES_DATA, Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4, dim )
+      call INs_read2 (NES_DATA, Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4, INs_hord, dim )
       call gtmg_stop ( 12 )
       
       call gtmg_start ( 13, 'NES_SEND', 1)

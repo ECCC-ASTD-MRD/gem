@@ -248,13 +248,13 @@ mpi_exec_linux_launch() {
             EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} $(s.prefix '-x ' $(env | grep -v "[']" | grep -v '"' | grep -v '^BASH_' | grep  '^[a-zA-Z0-9]' | sed 's/=.*//' | sort ))"
 	          # ignore rank file in interactive case
 	          tty -s && bind="none"  # no rank file if interactive
-		  rankfile=${MY_RANKFILE}
-		  [[ -n ${singleworld} ]] && rankfile=${MY_RANKFILE_ORI}
+		       rankfile=${MY_RANKFILE}
+		       [[ -n ${singleworld} ]] && rankfile=${MY_RANKFILE_ORI}
 	          [[ "$bind" == "none" ]] || EXTRA_MPI_PARMS="${EXTRA_MPI_PARMS} --rankfile ${rankfile}"
 	          ;;
       esac
 
-      [[ -z ${singleworld} ]] && log_print DEBUG "Command: ${mpirun} ${debugflag}${EXTRA_MPI_PARMS} -machinefile ${MY_NODEFILE} -n ${PeInWorld[${MpiCommWorld}]} $* ${ParallelScript}.${MpiCommWorld}"
+      [[ -z ${singleworld} ]] && log_print DEBUG "Command: ${prerun} ${mpirun} ${debugflag}${EXTRA_MPI_PARMS} -machinefile ${MY_NODEFILE} -n ${PeInWorld[${MpiCommWorld}]} $* ${ParallelScript}.${MpiCommWorld}"
 
       if ((MpiCommWorlds>1)); then
          if [[ -z ${singleworld} ]]; then  # more than one MPI world, launch mpirun in background
@@ -781,8 +781,11 @@ wait_for() {
 #Version="2.2.0"               # Check for unknown state nodes to count the down nodes
 #Version="2.2.1"               # Changed default stack from unlimited to 4G
 #Version="2.3.0"               # Added darshan profiler and moved -jio to the profiler flag options
+#Version="2.3.1"               # More robust single world management
 true
-Version="2.3.1"              # More robust single world management
+Version="2.3.2"              # Multiple fixes related to environment, slave status propagation and added DDT arguments
+
+[[ -d "${TMPDIR}" ]] || { log_print ERROR "TMPDIR does not exist (${TMPDIR})" && exit 1; }
 
 MY_NODEFILE=${PARALLEL_NODEFILE:-${GECOSHEP_PNET_HOSTFILE:-${LOADL_HOSTFILE:-${PBS_NODEFILE:-${HOME}/.NODEFILE}}}}
 #SLURM uses SLURM_JOB_NODELIST env variable
@@ -798,7 +801,7 @@ eval `cclargs_lite -D "" $0 "[high level MPI launcher CRAY/OpenMPI/MPICH]" \
     -args "" "" "[arguments to the command]" \
     -bind "none" "socket" "[process binding (e.g. none, socket, core)]" \
     -coremap "NoNe" "NoNe" "[core affinity map]" \
-    -debug "" "" "[enable debugger (gdb,gdb:[file] Cray=ddt,ddt:batch)]" \
+    -debug "" "" "[enable debugger (gdb,gdb:[file],ddt [<args>...],ddt:batch [<args>...])]" \
     -dryrun "" "dryrun" "[]" \
     -e "NO" "YES" "[list failed processes" \
     -env "" "" "[environment variables to write to instance env file]" \
@@ -869,6 +872,7 @@ export APRUN="$(which aprun 2>/dev/null)"
 exec_prefix=""
 if [[ -n ${debug} ]]; then
    exec_prefix="exec"
+   dbg=( ${debug} )
    case "${debug}" in
       gdb*)
          preexec="$(which gdb) -batch -ex run -ex where"                                 # -debug gdb
@@ -877,8 +881,8 @@ if [[ -n ${debug} ]]; then
 
       ddt*)
          which ddt >/dev/null 2>&1  || . r.load.dot main/opt/forge/21.1.3
-         prerun="$(which ddt 2>/dev/null) "                            # -debug ddt
-         [[ ${debug:4} = "batch" ]] && prerun="${prerun} --connect"    # -debug ddt:batch
+         prerun="$(which ddt 2>/dev/null) ${dbg[@]:1} "                # -debug ddt [<args...>]
+         [[ ${dbg[0]#*:} = "batch" ]] && prerun="${prerun} --connect"  # -debug ddt:batch [<args...>]
          ;;
       tv*)
          which totalview >/dev/null 2>&1  || . r.load.dot main/opt/totalview/totalview-2018.0.5
@@ -1068,8 +1072,8 @@ if [[ -n "${instancedir}" && -n "${instances}" ]] ; then
          set +x
          echo ""
          for i in ${instances} ; do
-            mv ${instancedir}/${i} ${instancedir}/${i}.DONE      # remove slave work requests
             # Acknowledge completion of all slave tasks by creating DONE and then deleting ACK
+            echo ${StAtUs} > ${instancedir}/${i}.DONE   # propagate exit status
             rm ${instancedir}/${i}.ACK                  # remove acknowledge flag
             log_print INFO "(master) ${instancedir}/${i}.DONE"
          done
@@ -1084,10 +1088,11 @@ if [[ -n "${instancedir}" && -n "${instances}" ]] ; then
          #   all other arguments : ignored
 
          if [[ -n "${env}" ]]; then
-                 rm -f ${instancedir}/${instances}.env
+            rm -f ${instancedir}/${instances}.env
             for var in ${env}; do
-               echo "export ${var}=\"$(printenv ${var})\"" >> ${instancedir}/${instances}.env
-                 done
+               value="$(printenv ${var})";
+               [ $? -eq 0 ] && printf "export %s=%q\n" "${var}" "${value}" >> ${instancedir}/${instances}.env
+            done
          fi
          (( 1 == $(echo ${pgm} | wc -w) )) && pgm=" ${pgm} 0 1 $((npe_total-1)) "     # transform -pgm name  into -pgm name first increment last
          echo "~~${instances} %%${OMP_NUM_THREADS} /./$(pwd -P) ::${npex}x${npey} ${pgm} @@ " >${instancedir}/${instances}.tmp || exit 1
@@ -1098,14 +1103,16 @@ if [[ -n "${instancedir}" && -n "${instances}" ]] ; then
          then
             wait_for deletion 2000000000 ${instancedir} ${instances}.ACK  # wait for master to signal job done (infinite timeout)
             wait_for creation ${timeout} ${instancedir} ${instances}.DONE # done is signalled by creating DONE and then deleting ACK
+            StAtUs=$(cat ${instancedir}/${instances}.DONE)
             if [[ -z "${nocleanup}" ]]; then
+               rm ${instancedir}/${instances}
                rm ${instancedir}/${instances}.DONE
                rm -f ${instancedir}/${instances}.args
                rm -f ${instancedir}/${instances}.env
             fi
             log_print INFO "(slave ${instances}) ${instances}.DONE received"
             log_print INFO "END of slave instance ${instances}"
-            exit $?     # slave job done
+            exit ${StAtUs}    # slave job done
          else
             log_print ERROR "Instance ${instances} never found ${instances}.ACK"
             exit 1
@@ -1480,6 +1487,7 @@ do
    cat <<EOT > ${ParallelScript}.${MpiCommWorld}
 #!/bin/bash
 ulimit -s ${stack}
+ulimit -c $(ulimit -c)
 [[ ${LOG_LEVEL} = "EXTRA" ]] && set -x
 #
 export MP_CHILD=\${MP_CHILD:-\${PMI_RANK:-\${OMPI_COMM_WORLD_RANK:-\${ALPS_APP_PE}}}}  # poe/mpich/openmpi/CrayALPS

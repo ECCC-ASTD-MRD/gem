@@ -205,6 +205,18 @@ contains
          call msg(MSG_ERROR,'(cnv_nml_check) mid_emfmod = '//trim(mid_emfmod)//' : Should be one of: '//trim(msg_S))
          return
       end if
+      
+      if (mid_emfmod /= 'NIL' .and. any(mid_minemf(2:) >= 0.)) then
+         call msg(MSG_ERROR,'(cnv_nml_check) Cannot specify both mid_emfmod/=NIL and mid_minemf lat modulation ramp')
+         return
+      endif
+      
+      if (mid_emfmod == 'NIL' .and. any(mid_minemf(2:) >= 0.)) then
+         if (.not.all(mid_minemf(2:) >= 0.)) then
+            call msg(MSG_ERROR,'(cnv_nml_check) With mid_emfmod == "NIL" all or none mid_minemf lat modulation ramp should be >0 or <0., not a mix')
+            return
+         endif
+      endif
 
       if (RMN_IS_OK(str_toreal(mid_peff_tmp,mid_peff))) then
          mid_peff_const = mid_peff_tmp

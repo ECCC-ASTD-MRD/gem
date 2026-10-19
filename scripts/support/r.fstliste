@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#
+
 set -o errexit
 eval `cclargs_lite $0 "[ Utilitaire pour extraire des parametres des fichiers standard]"\
  -izfst bidon  "[rep et nom du fichier standard]"\
@@ -17,13 +17,15 @@ eval `cclargs_lite $0 "[ Utilitaire pour extraire des parametres des fichiers st
  -champs 0 1   "[liste les colonnes et variables]"\
  -nosort 0 1   "[ne pas trier les sorties lorsque unique = 1]"\
  ++ $*`
-#
+
 if test ${champs} -eq 1
 then
   r.fstinfo -champs
   exit
 fi
-#
+
+[[ -d "${TMPDIR}" ]] || { echo "(ERROR) TMPDIR does not exist (${TMPDIR})" && exit 1; }
+
 list=""
 r.fstinfo -izfst "${izfst}" -datev =${datev} -vdatev =${vdatev} -etiket "${etiket}" -ip1 =${ip1} -ip2 =${ip2} -ip3 =${ip3} -typvar ${typvar} -nomvar ${nomvar} \
  -otxt ${TMPDIR}/fstlist.$$ > /dev/null 2>&1
@@ -33,7 +35,7 @@ then
     echo ${list}
     exit $infoexit
 fi
-#
+
 if test "${col}" != "0"
 then
   if test ${unique} -ne 0

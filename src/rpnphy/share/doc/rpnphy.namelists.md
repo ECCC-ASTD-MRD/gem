@@ -36,6 +36,7 @@
 | kfctaucape | Varies convective timescale as a function of CAPE for Kain-Fritsch scheme<br>KFCTAUCAPE = time1, time2, cmean, dcape<br>- time1 (s): max kfctimec<br>- time2 (s): min kfctimec<br>- cmean (J/Kg): cape value at which kfctimec will be mean of time1 and time2<br>- dcape (J/Kg): decrease in kfctimec from time1 to time2 will occur over range cmean-dcape to cmean+dcape | (/-1., -1., -1., -1./) | real |
 | kfctrig4 | Trigger parameter of Kain-Fritsch convection scheme (WKLCL).<br>Trigger parameter will increase from kfctrig4(3) to kfctrig4(4) [m/s]<br>between timestep kfctrig4(1) and timestep kfctrig4(2) | (/0., 0., 0.05, 0.05/) | real |
 | kfctriga | Nominal resolution for which KFCTRIG4 is set.<br>This is inactive if value <= 0. | -1.0 | real |
+| kfctrigdt | Rescaling of trigger temperature perturbation | 1. | real |
 | kfctrigl | Over land and lakes we keep the value set by the "ramp" above over sea water:<br>- for :lat: >= TRIGLAT(2) we keep value set by the "ramp" KFCTRIG4<br>- for :lat: <= TRIGLAT(1) we use the new value KFCTRIGL [m/s]<br>- and linear interpolation in between TRIGLAT(1) and TRIGLAT(2) | 0.05 | real |
 | kfctriglat | Logical key for variation of the trigger function depending on latitude and land-sea-lake mask | .false. | logical |
 | kfctrigsgo | Coefficient for trigger adjustment by subgrid-scale orography (sgo) | 0. | real |
@@ -47,10 +48,10 @@
 | mid_depth | Minimum cloud depth for mid-level convection (m) | 2000. | real |
 | mid_dpdd | Downdraft detrainment depth for mid-level convection (Pa) | 6000. | real |
 | mid_emffrac | Fraction of environmental mass flux that enters updrafts | 'all' | character(len=16) |
-| mid_emfmod | Modulation of the minimum environmental mass flux for mid-level convection | 'nil' | character(len=16) |
+| mid_emfmod | Modulation of the minimum environmental mass flux for mid-level convection<br>- 'NIL'     : No Modulation, unless mid_minemf(2:4) vals are specified<br>(User-defined latitude ramp with smooth transitions<br>between anchors at 30 deg, 40 deg and equator (cap).)<br>- 'LATITUDE': Inverse-sine baseline scaling, increasing toward the equator, capped at around 5 deg.<br>- 'LATMOD1' : LATITUDE enhanced by 50% below 30 deg, tapering to baseline at 40 deg.<br>- 'LATMOD2' : LATITUDE enhanced by 25% below 30 deg, tapering to 80% of baseline at 40 deg. | 'nil' | character(len=16) |
 | mid_maxcape | Maximum deep CAPE (J/kg/m2) for mid-level convective triggering | -1 | real |
 | mid_minbase | Minimum parcel departure level for mid-level convection (m) | 500. | real |
-| mid_minemf | Minimum environmental mass flux for mid-level convection (kg/s) | 1e7 | real |
+| mid_minemf | Minimum environmental mass flux for mid-level convection (kg/s) and<br>User-defined latitude ramp with smooth transitions between anchors<br>at 30 deg, 40 deg and equator (cap) when mid_minemf(2:4) >= 0.<br>This is a 4 parameters (M0, S40, S30, SEQ)<br>- M0  : Minimum environmental mass flux (mass-flux threshold at the pole) (kg/s)<br>- S40 : (optional)<br>- S30 : (optional)<br>- SEQ : (optional)<br>When S40, S30, SEQ are specified (values>=0.) for the modulation ramp,<br>then no other modulation should be specified (mid_emfmod="NIL") | (/1e7, -1., -1., -1./) | real |
 | mid_peff |  | -1. | real |
 | mid_wavg | Use time-averaged vertical motion for mid-level trigger | .false. | logical |
 | shal | Switch for shallow convection<br>- 'NIL'<br>- 'KTRSNT'<br>- 'BECHTOLD' | 'nil' | character(len=16) |

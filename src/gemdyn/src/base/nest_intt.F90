@@ -22,6 +22,7 @@
       use mem_nest
       use glb_ld
       use step_options
+      use svri_mod
       use spn_options
       use omp_timing
       use ptopo
@@ -35,29 +36,37 @@
 
       integer,external ::  newdate
       
-      character(len=16) :: datev, previous_S
-      logical :: stag_L,apply_L
-      integer :: i,ib,yy,mo,dd,hh,mm,ss,dum
+      character(len=16) :: datev, previous_S, runstart_S, Next_pilot_S
+      logical :: stag_L, IN_server_L
+      integer :: i,yy,mo,dd,hh,mm,ss,dum
       integer topo_diff,comm,err,gathV(Ptopo_numproc*Ptopo_ncolors)
-      real(kind=REAL64) :: dayfrac,tx,dtf,a,b
+      real(kind=REAL64), save :: tx = 0.d0
+      real(kind=REAL64) :: tx_last,tx_end
+      real(kind=REAL64) :: dayfrac,a,b
       real(kind=REAL64), parameter :: one=1.0d0, &
                        sid=86400.0d0, rsid=one/sid
 !
 !     ---------------------------------------------------------------
 !
 !     The following code is NON re-entrant so we use a
-!     a single + broadcast strategy for tx
+!     a single on the saved variable tx
+      
 !$omp single
       dayfrac = dble(Step_kount) * Cstv_dt_8 * rsid
       call incdatsd  (datev, Step_runstrt_S, dayfrac)
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,datev)
       call pdfjdate2 (tx, yy,mo,dd,hh,mm,ss)
-!$omp end single copyprivate(tx)
+!$omp end single
 
-      if (F_GYLU_S == 'LU') dayfrac = Step_nesdt*rsid
-      if (F_GYLU_S == 'GY') dayfrac = Spn_yy_nudge_data_freq*rsid
-      ib=(Tr3d_hu-1)*G_nk+1
-      apply_L= .true.
+      if (F_GYLU_S == 'LU') then
+         dayfrac = Step_nesdt*rsid
+         runstart_S= Step_runstrt_S
+      endif
+      if (F_GYLU_S == 'GY') then
+         dayfrac = Spn_yy_nudge_data_freq*rsid
+         runstart_S= Step_tstp0_S
+      endif
+      IN_server_L= INs_server_L
 
 !$omp single      
       if ( (.not.associated(nest_now)) .and. (F_GYLU_S == 'LU') )&
@@ -66,11 +75,10 @@
 
       call gtmg_start (90, 'NEST_input', 20)
 
-!$omp single
-!!!!$omp master
-      if (tx < Lam_tdeb) then
-         
-         Lam_current_S  = Step_runstrt_S
+!$omp master
+      if (tx < Lam_tdeb) then ! when restarting
+
+         Lam_current_S  = runstart_S
          previous_S = Lam_current_S
          call prsdate   (yy,mo,dd,hh,mm,ss,dum,Step_runstrt_S)
          call pdfjdate2 (Lam_tdeb,yy,mo,dd,hh,mm,ss)
@@ -87,19 +95,32 @@
          Lam_tfin      = Lam_tdeb
          stag_L= .true.
          if ( previous_S == Step_runstrt_S) stag_L= .false.
+         
+         if (INs_server_L) then
+            call incdatsd (Next_pilot_S, Lam_current_S, dayfrac)
+            call prsdate  (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
+            call pdfjdate2 (tx_last, yy,mo,dd,hh,mm,ss)
+            call prsdate   (yy,mo,dd,hh,mm,ss,dum,Step_runend_S)
+            call pdfjdate2 (tx_end, yy,mo,dd,hh,mm,ss)
+            if (tx_last<tx_end) then
+            if (F_GYLU_S == 'LU') call itf_Iserv_request (Next_pilot_S,INs_Neslist_S,INs_Nes_tag,INs_Nes_nrequests)
+            if (F_GYLU_S == 'GY') call itf_Iserv_request (Next_pilot_S,INs_Spnlist_S,INs_Spn_tag,INs_Spn_nrequests)
+            endif
+            INs_server_L= .false.
+         endif
+         
          if (F_GYLU_S == 'LU') call nest_indata  (nest_u_fin, nest_v_fin , nest_w_fin, nest_t_fin ,&
                             nest_q_fin, nest_zd_fin, nest_s_fin, nest_tr_fin,&
                             nest_fullme_fin,stag_L,previous_S               ,&
                             l_minx,l_maxx,l_miny,l_maxy,G_nk,Tr3d_ntr)
          if (F_GYLU_S == 'GY') call spn_indata  (previous_S)
-         if (Lam_current_S == Step_runstrt_S) apply_L= .false.
+
+         INs_server_L= IN_server_L
 
       end if
 
-      dtf = 1.0d0
       if (tx > Lam_tfin) then
 
-         dtf = (tx-Lam_tfin) * sid / Cstv_dt_8
          Lam_tdeb       = Lam_tfin
 
          call incdatsd (datev, Lam_current_S, dayfrac)
@@ -133,25 +154,21 @@
          endif
 
       end if
-!$omp end single copyprivate(apply_L)
-!!!$omp end master
+!$omp end master
 !$OMP BARRIER
       call gtmg_stop (90)
-      
-      if (apply_L) then
+
       call gtmg_start (91, 'NEST_tint', 20)
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
       a = one - b
-      
 !$omp do
       do i= lbound(nest_now,1), ubound(nest_now,1)
          nest_now(i) = a*nest_deb(i) + b*nest_fin(i)
       end do
 !$omp enddo
       call gtmg_stop (91)
-      endif
-!      call nest_glbstat ((/'now','deb','fin'/),3)
 
+!     call nest_glbstat ((/'now','deb','fin'/),3)
 !     
 !     ---------------------------------------------------------------
 !

@@ -94,7 +94,9 @@ contains
            upnew,vmflcl,norm,wlcl,wtw,dpup,     &
            dpdown,dqdtdk,dqcdtdk,denom,tvdiff,intdudt,      &
            intdvdt,intdp,dxsq,rholcl,wabs,zmix,thta,delp,    &
-           nuer,nudr,lambda,rhmixg,rad,ww
+           nuer,nudr,lambda,rhmixg,rad,ww,    &
+           phi,phic,tt,ss,fac
+      real :: ramp_scale(3) 
       real, dimension(1) :: subcloud_pw, subcloud_pws
       real, dimension(ix) :: dpthmxg,pmixg,tmixg,qmixg,thmixg,tlclg,    &
            plclg,psb,thvmixg,minemf,radmult,dpddmult
@@ -199,7 +201,7 @@ contains
       timec = delt
 
       ! Stochastic perturbations of sensitive parameters
-      minemf(:) = ens_spp_get('mid_minemf', mrk2, mid_minemf)
+      minemf(:) = ens_spp_get('mid_minemf', mrk2, mid_minemf(1))
       radmult(:) = ens_spp_get('crad_mult', mrk2, 1.) 
       dpddmult(:) = ens_spp_get('dpdd_mult', mrk2, 1.)
       
@@ -299,17 +301,47 @@ contains
          ! ===================
 
          ! Parameterize the minimum environmental mass flux on request
-         if (mid_emfmod == 'LATITUDE') then
+         IF_EMFMIN: if (mid_emfmod == 'LATITUDE') then
             minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * minemf(i)
          elseif (mid_emfmod == 'LATMOD1') then
+            
             ww = max(0., min(1., 0.1*( 40. - 57.2958*abs(latr(i)) ) ))
             minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * &
                  ( ww*(1.5*minemf(i)) + (1.-ww)*(1.*minemf(i)) )
+            
          elseif (mid_emfmod == 'LATMOD2') then
+            
             ww = max(0., min(1., 0.1*( 40. - 57.2958*abs(latr(i)) ) ))
             minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * &
                  ( ww*(1.25*minemf(i)) + (1.-ww)*(0.8*minemf(i)) )
-         endif
+
+         elseif (mid_emfmod == 'NIL' .and. all(mid_minemf(2:) >= 0.)) then
+            
+            ramp_scale = [mid_minemf(2), mid_minemf(3), mid_minemf(4)]
+            phi = min(90., abs(latr(i)) * (180. / PI))
+            phic = asin(0.1) * (180. / PI)
+            if (phi <= phic) then
+               fac = ramp_scale(3)
+            elseif (phi <= 30.) then
+               tt = (phi - phic) / (30. - phic)
+               ss = tt*tt*(3. - 2.*tt)
+               fac = ramp_scale(3) + &
+               ss*(ramp_scale(2) - ramp_scale(3))
+            elseif (phi <= 40.) then
+               tt = (phi - 30.) / 10.
+               ss = tt*tt*(3. - 2.*tt)
+               fac = ramp_scale(2) + &
+               ss*(ramp_scale(1) - ramp_scale(2))
+            else
+               tt = (phi - 40.) / 50.
+               ss = tt*tt*(3. - 2.*tt)
+               fac = ramp_scale(1) + ss*(1. - ramp_scale(1))
+            endif
+            minemf(i) = min(1./max(abs(sin(latr(i))),epsilon(latr)),10.) * &
+               fac * minemf(i)
+
+         endif IF_EMFMIN
+
 
          ! Find the first level that meets the vertical motion criterion
          k = 1

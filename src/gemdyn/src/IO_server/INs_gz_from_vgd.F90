@@ -48,28 +48,30 @@
       
       if ( minval(err) < 0) goto 988
       sleve_L = minval(src_rcoef(3:4)) >=0.
-      src_me  (1:INs_nid, 1:INs_njd, 1:3) => NES_DATA(1:)
-      src_mels(1:INs_nid, 1:INs_njd, 1:3) => NES_DATA(3*INs_hord+1:)
-      err(1) = INs_read_mt ('ME',grid_S, vname, src_me, 3, ip1_list,&
+      allocate(src_me(INs_nid,INs_njd,3),src_mels(INs_nid,INs_njd,3))
+      err(1) = INs_read_mt ('ME',grid_S, vname, NES_DATA, 3, ip1_list,&
                           src_nka,Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4)
       if ( err(1) < 0 ) then
          if (Lun_out > 0) write(lun_out,9001) 'ME'
          goto 988
       endif
+      src_me = reshape(NES_DATA,(/INs_nid,INs_njd,3/))
       GZcaract(3)= 1
       if (sleve_L) then
-         err(1) = INs_read_mt ('MELS',grid_S, vname, src_mels, 3,&
+         err(1) = INs_read_mt ('MELS',grid_S, vname, NES_DATA(1,4:), 3,&
              ip1_list, src_nka,Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4)
          if ( err(1) < 0) then
             if (Lun_out > 0) write(lun_out,9001) 'MELS'
             goto 988
          endif
+         src_mels = reshape(NES_DATA(1,4:),(/INs_nid,INs_njd,3/))
          GZcaract(4)= 1
       else
          src_mels= 0.
       endif
       
-      err(1) = vgd_get ( Inp_vgd_src, key='NL_M - number of momentum levels' ,value=src_nka)
+      err(1) = vgd_get ( Inp_vgd_src, &
+               key='NL_M - number of momentum levels' ,value=src_nka)
       if ( err(1) < 0 ) then
          if (Lun_out > 0) write(lun_out,9001) 'VGD:NL_M'
          goto 988
@@ -78,15 +80,20 @@
                  src_hybmB(src_nka), src_hybtB(src_nka),&
                  src_hybmC(src_nka), src_hybtC(src_nka) )
       nullify(wkpt8)
-      err(1)= vgd_get ( Inp_vgd_src, key='CA_M - vertical A coefficient (m)' ,value=wkpt8)
+      err(1)= vgd_get ( Inp_vgd_src, &
+                        key='CA_M - vertical A coefficient (m)' ,value=wkpt8)
       if (err(1)==0)  src_hybmA= wkpt8(1:src_nka); deallocate(wkpt8); nullify(wkpt8)
-      err(2)= vgd_get ( Inp_vgd_src, key='CB_M - vertical B coefficient (m)' ,value=wkpt8)
+      err(2)= vgd_get ( Inp_vgd_src, &
+                        key='CB_M - vertical B coefficient (m)' ,value=wkpt8)
       if (err(2)==0)  src_hybmB= wkpt8(1:src_nka); deallocate(wkpt8); nullify(wkpt8)
-      err(3)= vgd_get ( Inp_vgd_src, key='CC_M - vertical C coefficient (m)' ,value=wkpt8)
+      err(3)= vgd_get ( Inp_vgd_src, &
+                        key='CC_M - vertical C coefficient (m)' ,value=wkpt8)
       if (err(3)==0)  src_hybmC= wkpt8(1:src_nka); deallocate(wkpt8); nullify(wkpt8)
-      err(4)= vgd_get ( Inp_vgd_src, key='CA_T - vertical A coefficient (t)' ,value=wkpt8)
+      err(4)= vgd_get ( Inp_vgd_src, &
+                        key='CA_T - vertical A coefficient (t)' ,value=wkpt8)
       if (err(4)==0)  src_hybtA= wkpt8(1:src_nka); deallocate(wkpt8); nullify(wkpt8)
-      err(5)= vgd_get ( Inp_vgd_src, key='CB_T - vertical B coefficient (t)' ,value=wkpt8)
+      err(5)= vgd_get ( Inp_vgd_src, &
+                        key='CB_T - vertical B coefficient (t)' ,value=wkpt8)
       if (err(5)==0)  src_hybtB= wkpt8(1:src_nka); deallocate(wkpt8); nullify(wkpt8)
       err(6)= vgd_get ( Inp_vgd_src, &
                         key='CC_T - vertical C coefficient (t)',value=wkpt8)
@@ -132,6 +139,7 @@
          end do
       endif
       call MPI_barrier (MY_WORLD_COMM,err)
+      deallocate (src_me,src_mels)
 
       GZcaract(1)= n3
       GZcaract(2)= 21

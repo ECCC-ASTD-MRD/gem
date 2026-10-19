@@ -68,7 +68,8 @@ module step_options
 
    ! Internal variables NOT in step namelist
 
-   character(len=16) :: Step_runend_S
+   character(len=16) :: Step_tstp0_S, Step_runend_S, Spn_nudge_dir_S
+
    integer Step_total, Step_gstat, Step_delay, Step_spinphy, &
            Step_kount, Step_CMCdate0, Step_initial         , &
            Step_bkup_additional, Lctl_step

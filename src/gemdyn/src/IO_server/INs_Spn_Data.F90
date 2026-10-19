@@ -23,7 +23,7 @@
       character(len=*), intent(IN ) :: F_datev
 
       logical :: success
-      integer :: un,dim,ierr
+      integer :: un,d1,d2,ierr
 !     
 !--------------------------------------------------------------------
 !
@@ -33,8 +33,7 @@
       call gtmg_stop ( 41 )
       if (ierr < 0) then
          if (Lun_out>0) then
-            write (Lun_out,'(/" FOUND NO SPN data valid at ",&
-                             a/," ABORT ABORT ABORT"//)') F_datev
+            write (Lun_out,9001) F_datev
          endif
          stop
       endif
@@ -42,21 +41,22 @@
       if (Lun_out>0) call clock ( Lun_out, 'SPN Read+Hint', .false. )
       
       call gtmg_start ( 42, 'SPN_Read', 1)
-      dim= ubound(SPN_DATA,1)
+      d1= ubound(SPN_DATA,1)
+      d2= ubound(SPN_DATA,2)
       SRL(:)%vname(2) = ''
       INs_nplans=0
 
       if (IOS_couleur==0) then
-         call INs_read (SPN_DATA(1,1),Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4, dim )
+         call INs_read2 (SPN_DATA(1,1,1),Rot_ig1, Rot_ig2, Rot_ig3, Rot_ig4, d1,d2 )
       endif
       if (IOS_couleur==1) then
-         call INs_read (SPN_DATA(1,2),RotY_ig1, RotY_ig2, RotY_ig3, RotY_ig4, dim )
+         call INs_read2 (SPN_DATA(1,1,2),RotY_ig1, RotY_ig2, RotY_ig3, RotY_ig4, d1,d2 )
       endif
       call gtmg_stop ( 42 )
       
       call gtmg_start ( 43, 'SPN_SEND', 1)
-      call INs_Spn_send (SPN_DATA(1,IOS_couleur+1),1-G_halox,G_ni+G_halox,1-G_haloy,&
-                         G_nj+G_haloy,ierr)
+      call INs_Spn_send (SPN_DATA(1,1,IOS_couleur+1),&
+           1-G_halox,G_ni+G_halox,1-G_haloy,G_nj+G_haloy,ierr)
       call gtmg_stop ( 43 )
 
       un= SPN_file%get_unit()
@@ -69,6 +69,7 @@
 
  9000 format(/,' TREATING INPUT ',a,' DATA VALID AT: ',a,&
              /,' ===============================================')
+ 9001 format(/" FOUND NO SPN data valid at ",a,/" ABORT ABORT ABORT"//)
 !     
 !--------------------------------------------------------------------
 !

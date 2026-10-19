@@ -16,6 +16,7 @@
 
       subroutine nest_init ()
       use lam_options
+      use step_options
       use glb_ld
       use gmm_vt1
       use mem_nest
@@ -70,7 +71,7 @@
 
       endif
       
-      call nest_init_current ()
+      call nest_init_current (Step_runstrt_S)
 !
 !     ---------------------------------------------------------------
 !

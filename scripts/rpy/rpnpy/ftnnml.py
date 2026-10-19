@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
@@ -25,7 +25,7 @@ _cleanName    = lambda x: x.lower().replace('\n', ' ').strip()
 
 class FtnNmlObj(object):
     """
-    Fortran Namlist container base class (need to be subclassed)
+    Fortran Namelist container base class (need to be subclassed)
     """
     allowedSubClass = None
     (splitPattern, matchStartPattern, matchEndPattern)  = (None, None, None)
@@ -52,6 +52,7 @@ class FtnNmlObj(object):
     def parseToList(cls, mystr):
         """Parse string"""
         mystr2 = cls.encode(mystr)
+        ## print(cls.__name__," tolist:",mystr2,":") 
         myitemList = [mystr2]
         if cls.splitPattern:
             myitemList = [item.replace("\x01", '\n')
@@ -105,7 +106,7 @@ class FtnNmlObj(object):
         return changeCase(mystr.lstrip() if clean else mystr)
 
     def __init__(self, name):
-        (self.name, self.data) = (_cleanName(name), [])
+        (self._name, self._data) = (_cleanName(name), [])
         self.prop = { #Start SepS Sep1 data End SepE
             'strStart' : name,
             'strSepS'  : '',
@@ -115,15 +116,15 @@ class FtnNmlObj(object):
            }
 
     def rename(self, name):
-        """Properly set name of object (please avoid obj.name = 'name')"""
-        (self.name, self.prop['strStart']) = (_cleanName(name), name)
+        """Properly set name of object (please avoid obj._name = 'name')"""
+        (self._name, self.prop['strStart']) = (_cleanName(name), name)
 
     def get(self, name=None):
         """Return sub object with given name
            return the list of contained objects otherwise"""
-        if not name: return self.data
+        if not name: return self._data
         try:
-            return self.data[self.keyIndex(name)]
+            return self._data[self.keyIndex(name)]
         except:
             ## sys.stderr.write('Known Keys:'+repr(self.keys()))
             raise KeyError(" ({0}) Oops! get, Key not found: {1}"\
@@ -135,51 +136,51 @@ class FtnNmlObj(object):
         name = (namedata if data else None)
         if not data: data = namedata
         if name: self.get(name).set(data)
-        else:    self.data = (data if _islisttype(data) else [data])
+        else:    self._data = (data if _islisttype(data) else [data])
 
     def add(self, data=None):
         if not isinstance(data, self.allowedSubClass):
             raise TypeError(" ({0}) Oops! add, provided data is of wrong type: {1} (accepting: {2})"\
                             .format(self.__class__.__name__, str(type(data)),
                                     str(self.allowedSubClass)))
-        if _cleanName(data.name) in self.keys():
+        if _cleanName(data._name) in self.keys():
             raise KeyError(" ({0}) Oops! add, Key already exists: {1}"\
-                           .format(self.__class__.__name__, data.name))
-        self.data.append(data)
+                           .format(self.__class__.__name__, data._name))
+        self._data.append(data)
 
     def rm(self, name=None):
         """Delete sub object with given name
            delete all contained objects otherwise"""
         if not name:
-            self.data = []
+            self._data = []
         else:
             try:
-                del self.data[self.keyIndex(name)]
+                del self._data[self.keyIndex(name)]
             except:
                 raise KeyError(" ({0}) Oops! rm, Key not found: {1}"\
                                .format(self.__class__.__name__, name))
 
     def keyIndex(self, name):
         (name2, myindex) = (_cleanName(name), -1)
-        for item in self.data:
+        for item in self._data:
             myindex += 1
-            if isinstance(item, FtnNmlObj) and item.name == name2:
+            if isinstance(item, FtnNmlObj) and item._name == name2:
                 return myindex
         raise KeyError(" ({0}) Oops! keyIndex, Key not found: {1}"\
                        .format(self.__class__.__name__, name))
 
     def keys(self):
         """Return list of keys (contained objects names)"""
-        return [item.name for item in self.data
-                if isinstance(item, FtnNmlObj) and item.name]
+        return [item._name for item in self._data
+                if isinstance(item, FtnNmlObj) and item._name]
 
     def __repr__(self):
         return "{0}({1},{2},{3},{4},d={5},{6},{7})"\
-                .format(self.__class__.__name__, repr(self.name),
+                .format(self.__class__.__name__, repr(self._name),
                         repr(self.prop['strStart']),
                         repr(self.prop['strSepS']),
                         repr(self.prop['strSep1']),
-                        repr(self.data),
+                        repr(self._data),
                         repr(self.prop['strEnd']),
                         repr(self.prop['strSepE'])
                     )
@@ -197,6 +198,7 @@ class FtnNmlObj(object):
                             clean, uplowcase)
 
     def _myToStr(self, data, clean=False, uplowcase=None, updnsort=None):
+        # sys.stderr.write("{}._myToStr({}, {})\n".format(self.__class__, repr(data), clean))
         if isinstance(data, FtnNmlObj):
             return data.toStr(clean, uplowcase, updnsort)
         else:
@@ -205,13 +207,13 @@ class FtnNmlObj(object):
     def toStr(self, clean=False, uplowcase=None, updnsort=None):
         """Return String representation of the FtnNml Object, recursively"""
         if updnsort: clean=True
-        data = (self.data if _islisttype(self.data) else [self.data])
+        data = (self._data if _islisttype(self._data) else [self._data])
         if clean: data = [s for s in data if type(s) != type(' ')]
         if updnsort:
             datakeys = []
             ii = 0
             for item in data:
-                datakeys.append((item.name.lower(), ii))
+                datakeys.append((item._name.lower(), ii))
                 ii += 1
             datakeys.sort()
             data2 = []
@@ -227,38 +229,90 @@ class FtnNmlObj(object):
 
 class FtnNmlVal(FtnNmlObj):
     """
-    Fortran Namlist value container
+    Fortran Namelist value container
     """
+            
+    _re_encode = re.compile(r'("[^"]+?"|\'[^\']+?\'|""|\'\')')
+    _re_split1 = re.compile(r'([\s\t]*![^\n]*\n|[\s\t]*![^\n]*$)')
+    _re_split2 = re.compile(r'([\s\t\n]*,[\s\t\n]*)')
+
+    _SPLIT1  = lambda cls, s: re.split(cls._re_split1, cls.encode(s))  #Note: minimize calling this as it is very heavy
+    _FILTER1 = lambda cls, s: ("comment", cls.decode(s)) if (len(s.lstrip()) > 0 and s.lstrip()[0] == '!') else s
+    _SPLIT2  = lambda cls, s: re.split(cls._re_split2, s)
+    _FILTER2 = lambda cls, s: ("sep", cls.decode(s)) if (len(s.lstrip()) > 0 and s.lstrip()[0] == ',') else cls.decode(s)
+    _FILTER3 = lambda cls, s: [cls._FILTER2(cls, s) for s in cls._SPLIT2(cls, s) if len(s) > 0] if isinstance(s, str) else [s]
+
+    @classmethod
+    def encode(cls, data):
+        return re.sub(cls._re_encode,
+                      lambda m: m.group(0).replace("!", "\x00").replace(",", "\x01"),
+                      data)
+
+    @classmethod
+    def decode(cls, data):
+        return data.replace("\x00", "!").replace("\x01", ',')
 
     @classmethod
     def parseToList(cls, mystr):
-        if not mystr: return ['']
-        m = re.match(r'^([\s\t\n]*)([\w\W]+?)([\s\t\n,]*)$', mystr, re.I)
-        if m:
-            return [s for s in [str(m.group(1)), cls(str(m.group(2))),
-                                str(m.group(3))] if s]
+        if not mystr:
+            return ['']
+        mystr = cls.encode(mystr)
+        if '!' in mystr:
+            mylist = [cls._FILTER1(cls, s) for s in cls._SPLIT1(cls, mystr)]
         else:
-            return [cls(str(mystr))]
+            mylist = (cls._FILTER1(cls, mystr), )
+        listdata = [x for y in mylist for x in cls._FILTER3(cls, y)]
+        return cls(listdata)
+
+    def get(self, name=None, unquote=False):
+        """Return sub object with given name
+           return the list of contained objects otherwise"""
+        #if not name: return self._data
+        ## sys.stderr.write("{}.get({})\n".format(self.__class__, name))
+        return self.toStr(clean=True, unquote=unquote)
 
     def __init__(self, value):
         FtnNmlObj.__init__(self, 'v')
-        self.data = value
+        self._data = value
 
     def __repr__(self):
-        return "{0}(d={1})".format(self.__class__.__name__, repr(self.data))
+        return "{0}(d={1})".format(self.__class__.__name__, repr(self._data))
 
-    def toStr(self, clean=False, uplowcase=None, updnsort=None):
-        data = (self.data[0] if _islisttype(self.data) else self.data)
-        if clean: return str(data).replace('\n', '')
-        else:     return str(data)
-
+    def toStr(self, clean=False, uplowcase=None, updnsort=None, unquote=False):
+        ## sys.stderr.write("{}.toStr({},{},{})\n".format(self.__class__, clean,uplowcase,updnsort))
+        # if updnsort: clean=False
+        # print(repr(self._data))
+        data = (self._data if _islisttype(self._data) else [self._data])
+        data = [s if _islisttype(s) else ('',s) for s in data]
+        ## print(repr(data))
+        if clean:
+            data = [s for s in data if s[0] != 'comment']
+            if data[-1][0] == 'sep':
+                del data[-1]
+            ## sys.stderr.write("FtnNmlVal.toStr(): data={}\n".format(repr(data)))
+            # print(1,repr(data))
+            data = [s[1] if isinstance(s, (list, tuple)) else s for s in data]
+            # print(2,repr(data))
+            data = [s.strip() for s in data]
+            # print(3,repr(data))
+            if unquote:
+                data = [s.strip(s[0]) if s[0] in ("'", '"') else s for s in data]
+        else:
+            #Note: doesn't make sens to "unquote" if not clean. should we warn?
+            data = [s[1] for s in data]
+        try:
+           return ''.join(data)
+        except:
+            print(repr(data))
+            raise
+ 
     def rename(self, name):
         pass
 
 
 class FtnNmlKeyVal(FtnNmlObj):
     """
-    Fortran Namlist key=value container
+    Fortran Namelist key=value container
     """
 
     allowedSubClass   = FtnNmlVal
@@ -271,13 +325,17 @@ class FtnNmlKeyVal(FtnNmlObj):
 
     @classmethod
     def encode(cls, data):
-        return re.sub(r'("[^"]+?"|\'[^\']+?\'|""|\'\')',
-                      lambda m: m.group(0).replace("=", "\x00"),
-                      data.replace('\n', "\x01"))
+        s = re.sub(r'("[^"]+?"|\'[^\']+?\'|""|\'\')',
+                   lambda m: m.group(0).replace("=", "\x00").replace("!", "\x02"),
+                   data.replace('\n', "\x01"))
+        s = re.sub(r'([\s\t]*![^\x01]*\x01)',
+                   lambda m: m.group(0).replace("=", "\x00"),
+                   s)
+        return s
 
     @classmethod
     def decode(cls, data):
-        return data.replace("\x00", "=").replace("\x01", '\n')
+        return data.replace("\x00", "=").replace("\x02", '!').replace("\x01", '\n')
 
     def __init__(self, name, data=None):
         FtnNmlObj.__init__(self, name)
@@ -286,7 +344,7 @@ class FtnNmlKeyVal(FtnNmlObj):
         if data: self.set(data)
 
     def startStr(self, clean=False, uplowcase=None):
-        if clean: return self.prepStr(self.name, clean, uplowcase)
+        if clean: return self.prepStr(self._name, clean, uplowcase)
         else:     return FtnNmlObj.startStr(self, clean, uplowcase)
 
     def sepStr(self, clean=False, uplowcase=None):
@@ -300,7 +358,7 @@ class FtnNmlKeyVal(FtnNmlObj):
 
 class FtnNmlSection(FtnNmlObj):
     """
-    Fortran Namlist 'namelist' container
+    Fortran Namelist 'namelist' container
     """
 
     allowedSubClass = FtnNmlKeyVal
@@ -321,12 +379,12 @@ class FtnNmlSection(FtnNmlObj):
             self.prop['strStart'] = name
         else:
             self.prop['strStart'] = '&'+name.lstrip().replace('\n', '')
-        self.name = _cleanName(self.prop['strStart'].replace('&', ''))
+        self._name = _cleanName(self.prop['strStart'].replace('&', ''))
 
 
 class FtnNmlFile(FtnNmlObj):
     """
-    Fortran Namlist file container
+    Fortran Namelist file container
     """
 
     allowedSubClass = FtnNmlSection
@@ -343,17 +401,18 @@ class FtnNmlFile(FtnNmlObj):
     def printtmp(self, myobj):
         for item in myobj:
             if isinstance(item, FtnNmlObj):
-                print("name: ",item.name,item.__class__)
-                if isinstance(item.data, (list, FtnNmlFile)):
-                    self.printtmp(item.data)
-                else:
-                    print(item.data,item.data.__class__)
-            else:
-                print(repr(item),item.__class__)
+                print("1 ", repr(item))
+                if isinstance(item._data, (list, FtnNmlObj)):
+                    self.printtmp(item._data)
+                ## else:
+                ##     # print("2 ",repr(item._data),repr(item))
+                ##     print("2 ", repr(item))
+            ## else:
+            ##     print("3 ", repr(item))
         
     def parse(self, mystr):
-        self.data = self.__class__.parseToList(mystr)
-        # self.printtmp(self.data)
+        self._data = self.__class__.parseToList(mystr)
+        # self.printtmp(self._data)
  
     def read(self, filename):
         """Read and parse file"""
@@ -412,7 +471,7 @@ if __name__ == '__main__':
     ## for nmlkey in mynmls:
     ##     nml = b.get(nmlkey)
     ##     mykeys = nml.keys()
-    ##     print '&'+nml.name+': '+', '.join(mykeys)
+    ##     print '&'+nml._name+': '+', '.join(mykeys)
     ## print '---- List of values'
     ## for nmlkey in mynmls:
     ##     nml = b.get(nmlkey)
@@ -422,7 +481,7 @@ if __name__ == '__main__':
     ##         val = kv.get('v')
     ##         #valstr = str(val) #equivalent to: val.toStr()
     ##         valstr = val.toStr(clean=True)
-    ##         print '&'+nml.name+'/'+varkey+'='+valstr
+    ##         print '&'+nml._name+'/'+varkey+'='+valstr
 
     ## #T: set
     ## print '---- Change value'
@@ -432,22 +491,22 @@ if __name__ == '__main__':
     ## print '&gem_cfgs/lctl_debug_l= '+str(val)
     ## print '---- Change var name'
     ## kv = b.get('gem_cfgs').get('hyb')
-    ## print [kv.name,kv.prop['strStart']]
+    ## print [kv._name,kv.prop['strStart']]
     ## kv.rename('levels')
-    ## print [kv.name,kv.prop['strStart']]
+    ## print [kv._name,kv.prop['strStart']]
     ## print '---- Change nml name'
     ## nml = b.get('gem_cfgs')
-    ## print [nml.name,nml.prop['strStart']]
+    ## print [nml._name,nml.prop['strStart']]
     ## nml.rename('sps_cfgs')
-    ## print [nml.name,nml.prop['strStart']]
+    ## print [nml._name,nml.prop['strStart']]
 
     ## #T: del
     ## print '---- Delete nml var'
     ## nml = b.get('sps_cfgs')
-    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## print '&'+nml._name+': '+', '.join(nml.keys())
     ## nml.rm('sol_type2_s')
     ## nml.rm('etiket')
-    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## print '&'+nml._name+': '+', '.join(nml.keys())
     ## print '---- Delete nml'
     ## print filename+': ',', '.join(b.keys())
     ## b.rm('grid_gu')
@@ -457,10 +516,10 @@ if __name__ == '__main__':
     ## print repr(b)
     ## print '---- Add nml var'
     ## nml = b.get('sps_cfgs')
-    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## print '&'+nml._name+': '+', '.join(nml.keys())
     ## nml.add(FtnNmlKeyVal('newvar',FtnNmlVal(1)))
     ## nml.add(FtnNmlKeyVal('n2',FtnNmlVal(4)))
-    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## print '&'+nml._name+': '+', '.join(nml.keys())
     ## print '---- Add nml'
     ## print filename+': ',', '.join(b.keys())
     ## b.add(FtnNmlSection('mytoto'))

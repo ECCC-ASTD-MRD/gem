@@ -125,7 +125,7 @@ contains
 
       !#TODO: adapt for 4D vars (ni,nk*fmul,nj)
       ! Transfer from the physics folded space into the 3D dest grid
-!$omp parallel private(i,j,k,ik,vptr)
+!$omp parallel private(i,j,k,ik,k1,vptr)
 !$omp do
       do j = 1, phydim_nj
          nullify(vptr)
@@ -189,7 +189,7 @@ contains
       !#TODO: adapt for 4D vars (ni,nk*fmul,nj)
       ! Transfer from the physics folded space into the 3D dest grid
       k0 = F_ijk0(3)
-!$omp parallel private(i,j,vptr)
+!$omp parallel private(i,j,ik,vptr)
 !$omp do
       do j = 1, phydim_nj
          nullify(vptr)
